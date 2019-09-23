@@ -1,0 +1,76 @@
+{
+  "name": "dc-cli",
+  "version": "1.0.0",
+  "description": "Dynamic Content CLI Tool",
+  "main": "dist/index.js",
+  "scripts": {
+    "precommit": "npm run lint",
+    "commit": "npx git-cz",
+    "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
+    "pretest": "npm run lint",
+    "test": "jest --silent",
+    "fix": "prettier --write '**/*.ts'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com-simonmudd:amplience/dc-cli.git"
+  },
+  "keywords": [
+    "Dynamic",
+    "Content",
+    "CLI"
+  ],
+  "author": "Amplience",
+  "license": "Apache-2.0",
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "header-max-length": [
+        2,
+        "always",
+        100
+      ],
+      "type-case": [
+        1,
+        "always",
+        "lower-case"
+      ],
+      "subject-case": [
+        1,
+        "always",
+        "lower-case"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^8.2.0",
+    "@commitlint/config-conventional": "^8.2.0",
+    "@types/jest": "^24.0.18",
+    "@typescript-eslint/eslint-plugin": "^2.3.0",
+    "@typescript-eslint/parser": "^2.3.0",
+    "babel-jest": "^24.9.0",
+    "commitizen": "^4.0.3",
+    "cz-conventional-changelog": "^3.0.2",
+    "eslint": "^6.4.0",
+    "eslint-config-prettier": "^6.3.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "husky": "^3.0.5",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.1.0",
+    "typescript": "^3.6.3"
+  }
+}
