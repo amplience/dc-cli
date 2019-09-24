@@ -1,6 +1,6 @@
 {
   "name": "dc-cli",
-  "version": "1.0.0",
+  "version": "1.0.0-0",
   "description": "Dynamic Content CLI Tool",
   "main": "dist/index.js",
   "scripts": {
@@ -9,7 +9,10 @@
     "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
     "pretest": "npm run lint",
     "test": "jest --silent",
-    "fix": "prettier --write '**/*.ts'"
+    "fix": "prettier --write '**/*.ts'",
+    "release": "standard-version",
+    "prerelease": "standard-version --prerelease",
+    "releaseas": "standard-version --release-as "
   },
   "repository": {
     "type": "git",
@@ -70,6 +73,7 @@
     "husky": "^3.0.5",
     "jest": "^24.9.0",
     "prettier": "^1.18.2",
+    "standard-version": "^7.0.0",
     "ts-jest": "^24.1.0",
     "typescript": "^3.6.3"
   }
