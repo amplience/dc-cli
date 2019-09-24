@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const Zip = require('adm-zip');
+
+const VERSION = require('../package.json').version;
+const PACKAGES_DIR = path.join(__dirname, '../packages');
+
+const dir = fs.readdirSync(PACKAGES_DIR);
+
+dir.filter(filename => filename.match(/^dc-cli.*$/))
+  .forEach(filename => {
+    const toFilename = `dc-cli${filename.match(/\.exe$/) ? '.exe' : ''}`;
+    fs.copyFileSync(path.join(PACKAGES_DIR, filename), path.join(PACKAGES_DIR, toFilename));
+    
+    const zip = new Zip();
+    zip.addLocalFile(path.join(PACKAGES_DIR, toFilename));
+    zip.writeZip(`${PACKAGES_DIR}/${filename.replace(/\.exe$/, '')}-${VERSION}.zip`);
+    
+    fs.unlinkSync(path.join(PACKAGES_DIR, filename));
+    fs.unlinkSync(path.join(PACKAGES_DIR, toFilename));
+});

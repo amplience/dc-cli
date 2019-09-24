@@ -3,6 +3,9 @@
   "version": "1.0.0-0",
   "description": "Dynamic Content CLI Tool",
   "main": "dist/index.js",
+  "bin": {
+    "dc-cli": "./dist/index.js"
+  },
   "scripts": {
     "precommit": "npm run lint",
     "commit": "npx git-cz",
@@ -12,7 +15,11 @@
     "fix": "prettier --write '**/*.ts'",
     "release": "standard-version",
     "prerelease": "standard-version --prerelease",
-    "releaseas": "standard-version --release-as "
+    "releaseas": "standard-version --release-as ",
+    "clean": "rimraf dist packages",
+    "build": "npm run clean && tsc",
+    "build:package": "npm run build && pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 --out-dir packages .",
+    "build:compress": "npm run build:package && scripts/compress"
   },
   "repository": {
     "type": "git",
@@ -58,13 +65,18 @@
       ]
     }
   },
+  "pkg": {
+    "scripts": [
+      "./dist/**/*.js"
+    ]
+  },
   "devDependencies": {
     "@commitlint/cli": "^8.2.0",
     "@commitlint/config-conventional": "^8.2.0",
     "@types/jest": "^24.0.18",
     "@typescript-eslint/eslint-plugin": "^2.3.0",
     "@typescript-eslint/parser": "^2.3.0",
-    "babel-jest": "^24.9.0",
+    "adm-zip": "^0.4.13",
     "commitizen": "^4.0.3",
     "cz-conventional-changelog": "^3.0.2",
     "eslint": "^6.4.0",
@@ -72,7 +84,9 @@
     "eslint-plugin-prettier": "^3.1.1",
     "husky": "^3.0.5",
     "jest": "^24.9.0",
+    "pkg": "^4.4.0",
     "prettier": "^1.18.2",
+    "rimraf": "^3.0.0",
     "standard-version": "^7.0.0",
     "ts-jest": "^24.1.0",
     "typescript": "^3.6.3"
