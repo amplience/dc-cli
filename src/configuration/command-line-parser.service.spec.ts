@@ -1,4 +1,4 @@
-import { CommandLineParserService, GLOBALCONFIG_FILENAME } from './command-line-parser.service';
+import CommandLineParserService, { GLOBALCONFIG_FILENAME } from './command-line-parser.service';
 import { join } from 'path';
 import * as fs from 'fs';
 

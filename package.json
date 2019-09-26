@@ -19,7 +19,8 @@
     "clean": "rimraf dist packages",
     "build": "npm run clean && tsc",
     "build:package": "npm run build && pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 --out-dir packages .",
-    "build:compress": "npm run build:package && scripts/compress"
+    "build:compress": "npm run build:package && scripts/compress",
+    "dev": "ts-node ./src/index.ts"
   },
   "repository": {
     "type": "git",

@@ -1,7 +1,3 @@
-#!/usr/bin/env node
+import cli from './cli';
 
-export default function helloWorld(name: string): string {
-  return `Hello ${name}`;
-}
-
-console.log(helloWorld('World'));
+cli();
