@@ -1,7 +1,6 @@
 import { Arguments } from 'yargs';
 import { CommandOptions } from '../../interfaces/command-options.interface';
 import { GlobalConfigurationParameters } from '../../configuration/command-line-parser.service';
-import { DynamicContent } from 'dc-management-sdk-js';
 import { renderData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 
