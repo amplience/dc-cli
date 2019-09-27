@@ -1,17 +1,15 @@
 import * as yargs from 'yargs';
-import { Arguments, Options } from 'yargs';
+import { Arguments } from 'yargs';
 import * as fs from 'fs';
 import { join } from 'path';
+import { CommandOptions } from '../interfaces/command-options.interface';
+import YargsCommandBuilderOptions from '../common/yargs/yargs-command-builder-options';
 
-type GlobalConfigurationParameters = {
+export type GlobalConfigurationParameters = {
   key: string;
   secret: string;
   hub: string;
 };
-
-interface CommandOptions {
-  [key: string]: Options;
-}
 
 export const globalCommandOptions: CommandOptions = {
   key: { type: 'string', demandOption: true },
@@ -50,6 +48,8 @@ export default class CommandLineParserService implements CommandLineParser<Globa
           });
         }
       )
+      .commandDir('../commands', YargsCommandBuilderOptions)
+      .demandCommand()
       .parse(args);
   }
 

@@ -31,7 +31,7 @@ describe('command line parser service', (): void => {
     expect(result.hub).toEqual('123456789');
     expect(result.key).toEqual('abcdefghijk');
     expect(result.secret).toEqual('qwertyuiop');
-    expect(processExitSpy).toHaveBeenCalledTimes(0);
+    expect(processExitSpy).toHaveBeenCalledTimes(1);
   });
 
   it('can save global params into config file', (): void => {
@@ -62,7 +62,7 @@ describe('command line parser service', (): void => {
     expect(result.hub).toEqual('test_config_hub');
     expect(result.key).toEqual('test_config_key');
     expect(result.secret).toEqual('test_config_secret');
-    expect(processExitSpy).toHaveBeenCalledTimes(0);
+    expect(processExitSpy).toHaveBeenCalledTimes(1);
   });
 
   it('can override params in config file by specifying in another config file', (): void => {
@@ -77,6 +77,6 @@ describe('command line parser service', (): void => {
     expect(result.hub).toEqual('123456789');
     expect(result.key).toEqual('abcdefghijk');
     expect(result.secret).toEqual('qwertyuiop');
-    expect(processExitSpy).toHaveBeenCalledTimes(0);
+    expect(processExitSpy).toHaveBeenCalledTimes(1);
   });
 });
