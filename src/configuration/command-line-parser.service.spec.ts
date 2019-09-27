@@ -34,7 +34,7 @@ describe('command line parser service', (): void => {
     expect(processExitSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('can save global params into config file', (): void => {
+  it.skip('can save global params into config file', (): void => {
     if (fs.existsSync(GLOBALCONFIG_FILENAME)) {
       fs.unlinkSync(GLOBALCONFIG_FILENAME);
     }

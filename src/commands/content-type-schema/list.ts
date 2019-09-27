@@ -4,18 +4,11 @@ import { GlobalConfigurationParameters } from '../../configuration/command-line-
 import { DynamicContent } from 'dc-management-sdk-js';
 import { renderData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 
-export const command = 'get';
+export const command = 'list';
 
 export const desc = 'Get Content Type Schema';
 
-export const builder: CommandOptions = {
-  id: {
-    type: 'string',
-    demandOption: true,
-    description: 'content-type-schema ID'
-  },
-  ...RenderingOptions
-};
+export const builder: CommandOptions = RenderingOptions;
 
 interface BuilderOptions {
   id: string;
@@ -36,14 +29,12 @@ export const handler = async (
       authUrl: process.env.AUTH_URL
     }
   );
-  const contentTypeSchema = await client.contentTypeSchemas.get(argv.id);
-  const json = contentTypeSchema.toJson();
 
-  return renderData(argv, json, {
-    columns: {
-      1: {
-        width: 100
-      }
-    }
-  });
+  const hub = await client.hubs.get(argv.hub);
+  const contentTypeSchemaList = await hub.related.contentTypeSchema.list();
+  const listItems = contentTypeSchemaList
+    .getItems()
+    .map(({ id, schemaId, version, validationLevel }) => ({ id, schemaId, version, validationLevel }));
+
+  renderData(argv, listItems);
 };
