@@ -20,7 +20,7 @@ export const globalCommandOptions: CommandOptions = {
 };
 
 interface CommandLineParser<T> {
-  parse(args: string[]): Arguments;
+  parse(args: string | string[]): Arguments;
 
   storeGlobal(jsonObj: T): void;
 }
@@ -33,8 +33,12 @@ export const GLOBALCONFIG_FILENAME = join(getUserHome(), '.amplience', 'dc-cli-c
 
 export default class CommandLineParserService implements CommandLineParser<GlobalConfigurationParameters> {
   public parse(args: string | string[] = process.argv.slice(2)): Arguments {
+    let globalConfig: object = {};
+    if (fs.existsSync(GLOBALCONFIG_FILENAME)) {
+      globalConfig = JSON.parse(fs.readFileSync(GLOBALCONFIG_FILENAME, 'utf-8'));
+    }
     return yargs
-      .config()
+      .config(globalConfig)
       .options(globalCommandOptions)
       .command(
         'configure',
@@ -54,9 +58,9 @@ export default class CommandLineParserService implements CommandLineParser<Globa
   }
 
   public storeGlobal(jsonObj: GlobalConfigurationParameters): void {
-    fs.writeFile(GLOBALCONFIG_FILENAME, JSON.stringify(jsonObj), err => {
+    fs.writeFile(GLOBALCONFIG_FILENAME, JSON.stringify(jsonObj), (err: Error) => {
       if (err) {
-        console.error(err);
+        console.error(err.message);
       }
     });
   }
