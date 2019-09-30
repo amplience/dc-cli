@@ -1,6 +1,6 @@
 import yargs from 'yargs';
 import { Arguments } from 'yargs';
-import * as fs from 'fs';
+import fs from 'fs';
 import { join } from 'path';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import YargsCommandBuilderOptions from '../common/yargs/yargs-command-builder-options';
@@ -18,7 +18,7 @@ export const globalCommandOptions: CommandOptions = {
 };
 
 interface CommandLineParser<T> {
-  parse(args: string[]): Arguments;
+  parse(args: string | string[]): Arguments;
 
   storeGlobal(jsonObj: T): void;
 }
@@ -33,8 +33,12 @@ export default class CommandLineParserService implements CommandLineParser<Globa
   constructor(private readonly yargsInstance: yargs.Argv = yargs) {}
 
   public parse(args: string | string[] = process.argv.slice(2)): Arguments {
+    let globalConfig: object = {};
+    if (fs.existsSync(GLOBALCONFIG_FILENAME)) {
+      globalConfig = JSON.parse(fs.readFileSync(GLOBALCONFIG_FILENAME, 'utf-8'));
+    }
     return this.yargsInstance
-      .config()
+      .config(globalConfig)
       .options(globalCommandOptions)
       .command(
         'configure',
@@ -56,9 +60,9 @@ export default class CommandLineParserService implements CommandLineParser<Globa
   }
 
   public storeGlobal(jsonObj: GlobalConfigurationParameters): void {
-    fs.writeFile(GLOBALCONFIG_FILENAME, JSON.stringify(jsonObj), err => {
+    fs.writeFile(GLOBALCONFIG_FILENAME, JSON.stringify(jsonObj), (err: Error) => {
       if (err) {
-        console.error(err);
+        console.error(err.message);
       }
     });
   }
