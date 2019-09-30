@@ -7,7 +7,7 @@ export interface PreRenderedData {
   [key: string]: unknown;
 }
 export interface RenderingArguments {
-  json: boolean;
+  json?: boolean;
 }
 
 export const RenderingOptions: CommandOptions = {

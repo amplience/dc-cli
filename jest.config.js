@@ -5,5 +5,6 @@ module.exports = {
   transform: {
     '^.+\\.ts?$': 'ts-jest'
   },
-  collectCoverage: true
+  collectCoverage: true,
+  preset: 'ts-jest'
 };

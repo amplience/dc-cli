@@ -1,4 +1,4 @@
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { Arguments } from 'yargs';
 import * as fs from 'fs';
 import { join } from 'path';
@@ -30,8 +30,10 @@ function getUserHome(): string {
 export const GLOBALCONFIG_FILENAME = join(getUserHome(), '.amplience', 'dc-cli-config.json');
 
 export default class CommandLineParserService implements CommandLineParser<GlobalConfigurationParameters> {
+  constructor(private readonly yargsInstance: yargs.Argv = yargs) {}
+
   public parse(args: string | string[] = process.argv.slice(2)): Arguments {
-    return yargs
+    return this.yargsInstance
       .config()
       .options(globalCommandOptions)
       .command(
