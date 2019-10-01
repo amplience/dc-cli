@@ -11,9 +11,17 @@ describe('DataPresenter', (): void => {
     hubId: 'hub-id'
   };
 
+  beforeAll(() => {
+    stdoutWriteSpy.mockImplementation(() => true);
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   it('should render a vertical table', (): void => {
     const data = {
-      toJson: () => ({
+      toJson: (): { [key: string]: string } => ({
         foo: 'bar',
         key: 'value'
       })
@@ -24,7 +32,7 @@ describe('DataPresenter', (): void => {
 
   it('should render a horizontal table', (): void => {
     const data = {
-      toJson: () => [
+      toJson: (): { [key: string]: string }[] => [
         {
           foo: 'bar',
           key: 'value'
@@ -37,7 +45,7 @@ describe('DataPresenter', (): void => {
 
   it('should render a horizontal table with some page information', (): void => {
     const data = {
-      toJson: () => [
+      toJson: (): { [key: string]: string }[] => [
         {
           foo: 'bar',
           key: 'value'
@@ -54,7 +62,7 @@ describe('DataPresenter', (): void => {
 
   it('should render some json', (): void => {
     const data = {
-      toJson: () => ({
+      toJson: (): { [key: string]: string } => ({
         foo: 'bar',
         key: 'value'
       })
@@ -69,7 +77,9 @@ describe('DataPresenter', (): void => {
       key: 'value'
     };
 
-    new DataPresenter(argv, { ...data, toJson: () => data }).parse(({ foo }) => ({ foo })).render();
+    new DataPresenter(argv, { ...data, toJson: (): { [key: string]: string } => data })
+      .parse(({ foo }): { [key: string]: string } => ({ foo }))
+      .render();
     expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
   });
 });
