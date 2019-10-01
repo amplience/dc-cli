@@ -27,11 +27,12 @@ describe('content-item-schema get command', () => {
     const contentItemSchema = {
       id: 'content-type-schema-id'
     };
-    mockGet.mockResolvedValue({
-      toJson: () => {
+    const getResponse = {
+      toJson: (): { id: string } => {
         return contentItemSchema;
       }
-    });
+    };
+    mockGet.mockResolvedValue(getResponse);
 
     const argv = { ...yargArgs, id: 'content-type-schema-id', ...config };
     await handler(argv);
@@ -43,6 +44,6 @@ describe('content-item-schema get command', () => {
         }
       }
     };
-    expect(renderData).toHaveBeenCalledWith(argv, contentItemSchema, expectedUserConfig);
+    expect(renderData).toHaveBeenCalledWith(argv, getResponse, undefined, expectedUserConfig);
   });
 });

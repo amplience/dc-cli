@@ -2,6 +2,7 @@ import { Arguments } from 'yargs';
 import { CommandOptions } from '../../interfaces/command-options.interface';
 import { renderData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { ContentTypeSchema, Page } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 
 export const command = 'list';
@@ -21,9 +22,10 @@ export const handler = async (
 
   const hub = await client.hubs.get(argv.hubId);
   const contentTypeSchemaList = await hub.related.contentTypeSchema.list();
-  const listItems = contentTypeSchemaList
-    .getItems()
-    .map(({ id, schemaId, version, validationLevel }) => ({ id, schemaId, version, validationLevel }));
 
-  renderData(argv, listItems);
+  renderData(argv, contentTypeSchemaList, (contentTypeSchemaList: Page<ContentTypeSchema>) => {
+    return contentTypeSchemaList
+      .getItems()
+      .map(({ id, schemaId, version, validationLevel }) => ({ id, schemaId, version, validationLevel }));
+  });
 };

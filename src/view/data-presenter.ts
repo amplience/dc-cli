@@ -2,6 +2,7 @@ import { Arguments } from 'yargs';
 import { getBorderCharacters, table, TableUserConfig } from 'table';
 import chalk from 'chalk';
 import { CommandOptions } from '../interfaces/command-options.interface';
+import { PageMetadata } from 'dc-management-sdk-js';
 
 export interface PreRenderedData {
   [key: string]: unknown;
@@ -33,15 +34,25 @@ function renderSingle(json: PreRenderedData): unknown[][] {
   return [[chalk.bold('Property'), chalk.bold('Value')], ...rows];
 }
 
-export function renderData(
+export function renderPageInfo(page: PageMetadata = {}): void {
+  if (page && page.number !== undefined && page.totalPages !== undefined) {
+    process.stdout.write(chalk.bold(`Displaying page ${page.number + 1} of ${page.totalPages}\n\n`));
+  }
+}
+
+export function renderData<T extends { toJson: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }>(
   argv: Arguments<RenderingArguments>,
-  json: PreRenderedData | PreRenderedData[],
+  preRenderedData: T,
+  formatterFn?: (preRenderedData: T) => PreRenderedData | PreRenderedData[],
   userConfig?: TableUserConfig
 ): void {
   if (argv.json) {
-    process.stdout.write(JSON.stringify(json, null, 2));
+    process.stdout.write(JSON.stringify(preRenderedData.toJson(), null, 2));
     return;
   }
+  const json = formatterFn ? formatterFn(preRenderedData) : preRenderedData.toJson();
   const output = Array.isArray(json) ? renderList(json) : renderSingle(json);
-  process.stdout.write(table(output, { ...tableUserConfig, ...userConfig }));
+
+  process.stdout.write(`${table(output, { ...tableUserConfig, ...userConfig })}\n`);
+  renderPageInfo(preRenderedData.page);
 }
