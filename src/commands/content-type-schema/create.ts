@@ -27,13 +27,13 @@ export const builder: CommandOptions = {
   ...RenderingOptions
 };
 
-interface BuilderOptions {
+export interface BuilderOptions {
   schema: string;
   validationLevel: string;
 }
 
 async function getSchemaBody(schema: string): Promise<string> {
-  if (schema.match(/http?s:\/\//)) {
+  if (schema.match(/^(http|https):\/\//)) {
     const result = await axios.get(schema);
     if (typeof result.data == 'string') {
       return result.data;
@@ -51,7 +51,6 @@ export const handler = async (
   argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const schemaBody = await getSchemaBody(argv.schema);
-
   const schemaJson = JSON.parse(schemaBody);
   if (schemaJson.id == undefined) {
     throw new Error('Missing id from schema');
