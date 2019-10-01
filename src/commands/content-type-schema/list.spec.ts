@@ -4,16 +4,24 @@ import DataPresenter from '../../view/data-presenter';
 import { ContentTypeSchema, Page } from 'dc-management-sdk-js';
 
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../../view/data-presenter');
 
-xdescribe('content-item-schema list command', (): void => {
-  const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<Page<ContentTypeSchema>>>;
+const mockParse = jest.fn();
+const mockRender = jest.fn();
+jest.mock('../../view/data-presenter', () => {
+  return jest.fn(() => ({
+    parse: mockParse.mockImplementation(() => ({
+      render: mockRender
+    }))
+  }));
+});
+const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<Page<ContentTypeSchema>>>;
 
+describe('content-item-schema list command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
 
-  xit("should list a hubs content-item-schema's", async (): Promise<void> => {
+  it('should list a hubs content-item-schema', async (): Promise<void> => {
     const yargArgs = {
       $0: 'test',
       _: ['test']
@@ -52,17 +60,11 @@ xdescribe('content-item-schema list command', (): void => {
       }
     });
 
-    (mockDataPresenter as jest.Mock).mockReturnValue(
-      jest.fn(() => ({
-        parse: 'pop'
-      }))
-    );
-
     const argv = { ...yargArgs, ...config };
     await handler(argv);
 
     expect(mockDataPresenter).toHaveBeenCalledWith(argv, listResponse);
-    expect(mockDataPresenter.mock.instances[0].parse).toHaveBeenCalled();
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
+    expect(mockParse).toHaveBeenCalled();
+    expect(mockRender).toHaveBeenCalled();
   });
 });
