@@ -1,8 +1,8 @@
 import { Arguments } from 'yargs';
 import { CommandOptions } from '../../interfaces/command-options.interface';
-import { GlobalConfigurationParameters } from '../../configuration/command-line-parser.service';
 import { renderData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { ConfigurationParameters } from '../configure';
 
 export const command = 'get';
 
@@ -22,7 +22,7 @@ interface BuilderOptions {
 }
 
 export const handler = async (
-  argv: Arguments<BuilderOptions & GlobalConfigurationParameters & RenderingArguments>
+  argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
 

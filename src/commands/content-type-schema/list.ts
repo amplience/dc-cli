@@ -1,8 +1,8 @@
 import { Arguments } from 'yargs';
 import { CommandOptions } from '../../interfaces/command-options.interface';
-import { GlobalConfigurationParameters } from '../../configuration/command-line-parser.service';
 import { renderData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { ConfigurationParameters } from '../configure';
 
 export const command = 'list';
 
@@ -15,11 +15,11 @@ interface BuilderOptions {
 }
 
 export const handler = async (
-  argv: Arguments<BuilderOptions & GlobalConfigurationParameters & RenderingArguments>
+  argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
 
-  const hub = await client.hubs.get(argv.hub);
+  const hub = await client.hubs.get(argv.hubId);
   const contentTypeSchemaList = await hub.related.contentTypeSchema.list();
   const listItems = contentTypeSchemaList
     .getItems()

@@ -13,9 +13,9 @@ describe('content-item-schema get command', () => {
       _: ['test']
     };
     const config = {
-      key: 'client-key',
-      secret: 'client-secret',
-      hub: 'hub-id'
+      clientId: 'client-id',
+      clientSecret: 'client-id',
+      hubId: 'hub-id'
     };
 
     const mockGet = jest.fn();

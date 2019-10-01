@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { DynamicContent } from 'dc-management-sdk-js';
-import { GlobalConfigurationParameters } from '../configuration/command-line-parser.service';
+import { ConfigurationParameters } from '../commands/configure';
 
-const dynamicContentClientFactory = (config: GlobalConfigurationParameters): DynamicContent =>
+const dynamicContentClientFactory = (config: ConfigurationParameters): DynamicContent =>
   new DynamicContent(
     {
-      client_id: config.key,
-      client_secret: config.secret
+      client_id: config.clientId,
+      client_secret: config.clientSecret
     },
     {
       apiUrl: process.env.API_URL,

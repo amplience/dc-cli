@@ -1,15 +1,37 @@
 import cli from './cli';
-import CommandLineParserService from './configuration/command-line-parser.service';
-
-jest.mock('./configuration/command-line-parser.service');
+import Yargs from 'yargs/yargs';
+import { CONFIG_FILENAME, configureCommandOptions } from './commands/configure';
+import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-options';
+import { basename } from 'path';
 
 describe('cli', (): void => {
-  it('should invoke parse', (): void => {
+  it('should configure yarg instance', (): void => {
+    const argv = Yargs(process.argv.slice(2));
+    const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
+    const spyConfig = jest.spyOn(argv, 'config').mockReturnThis();
+    const spyCommandDir = jest.spyOn(argv, 'commandDir').mockReturnThis();
+    const spyDemandCommand = jest.spyOn(argv, 'demandCommand').mockReturnValue(argv);
+
+    cli(argv);
+
+    expect(spyOptions).toHaveBeenCalledWith(configureCommandOptions);
+    expect(spyConfig).toHaveBeenCalledWith('config', expect.any(Function));
+    expect(spyCommandDir).toHaveBeenCalledWith('./commands', YargsCommandBuilderOptions);
+    expect(spyDemandCommand).toHaveBeenCalledWith(1, 'Please specify at least one command');
+  });
+
+  it('should create a yarg instance if one is not supplied', () => {
+    let buffer = '';
+    const processExitSpy = jest.spyOn(process, 'exit').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation((output: string) => (buffer = `${buffer}${output}`));
+
     cli();
 
-    const commandLineParserServiceMock = CommandLineParserService as jest.Mock;
-    expect(commandLineParserServiceMock).toBeCalled();
-    const createdInstance = commandLineParserServiceMock.mock.instances[0];
-    expect(createdInstance.parse).toHaveBeenCalled();
+    // replace config file and script entry point
+    buffer = buffer.replace(new RegExp(CONFIG_FILENAME(), 'g'), 'config.json');
+    buffer = buffer.replace(new RegExp(basename(process.argv[1]), 'g'), '<<ENTRYPOINT>>');
+
+    expect(processExitSpy).toHaveBeenCalledTimes(1);
+    expect(buffer).toMatchSnapshot();
   });
 });

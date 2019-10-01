@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
-import CommandLineParserService from './configuration/command-line-parser.service';
 import { Arguments } from 'yargs';
-
 import Yargs from 'yargs/yargs';
+import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-options';
+import { configureCommandOptions, readConfigFile } from './commands/configure';
 
-export default (): Arguments => {
-  const argv = Yargs(process.argv.slice(2));
-  return new CommandLineParserService(argv).parse();
+export default (yargInstance = Yargs(process.argv.slice(2))): Arguments => {
+  return yargInstance
+    .options(configureCommandOptions)
+    .config('config', readConfigFile)
+    .commandDir('./commands', YargsCommandBuilderOptions)
+    .demandCommand(1, 'Please specify at least one command').argv;
 };

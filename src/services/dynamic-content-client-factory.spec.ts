@@ -12,20 +12,28 @@ describe('dynamic-content-client-factory', function() {
   beforeEach(resetEnv);
   afterEach(resetEnv);
 
-  it('should creaye a new DynamicContent client', () => {
-    const dynamicContent = dynamicContentClientFactory({ key: 'client-key', secret: 'client-secret', hub: 'hub-id' });
+  it('should create a new DynamicContent client', () => {
+    const dynamicContent = dynamicContentClientFactory({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      hubId: 'hub-id'
+    });
     expect(dynamicContent).toBeInstanceOf(DynamicContent);
-    expect(DynamicContent).toHaveBeenCalledWith({ client_id: 'client-key', client_secret: 'client-secret' }, {});
+    expect(DynamicContent).toHaveBeenCalledWith({ client_id: 'client-id', client_secret: 'client-secret' }, {});
   });
 
   it('should create a new DynamicContent client using the supplied env vars', () => {
     process.env.API_URL = 'API_URL';
     process.env.AUTH_URL = 'AUTH_URL';
 
-    const dynamicContent = dynamicContentClientFactory({ key: 'client-key', secret: 'client-secret', hub: 'hub-id' });
+    const dynamicContent = dynamicContentClientFactory({
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      hubId: 'hub-id'
+    });
     expect(dynamicContent).toBeInstanceOf(DynamicContent);
     expect(DynamicContent).toHaveBeenCalledWith(
-      { client_id: 'client-key', client_secret: 'client-secret' },
+      { client_id: 'client-id', client_secret: 'client-secret' },
       {
         apiUrl: 'API_URL',
         authUrl: 'AUTH_URL'
