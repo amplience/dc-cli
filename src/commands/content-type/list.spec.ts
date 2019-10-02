@@ -1,13 +1,13 @@
 import { handler, parseDataPresenter } from './list';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import DataPresenter from '../../view/data-presenter';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentType } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
-describe('content-type-schema list command', (): void => {
+describe('content-type list command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -25,14 +25,14 @@ describe('content-type-schema list command', (): void => {
 
     const pagingOptions = { page: 3, size: 10, sort: 'createdDate,desc' };
 
-    const contentTypeSchemaResponse: ContentTypeSchema[] = [new ContentTypeSchema()];
+    const ContentTypeResponse: ContentType[] = [new ContentType()];
 
-    const listResponse = new MockPage(ContentTypeSchema, contentTypeSchemaResponse);
+    const listResponse = new MockPage(ContentType, ContentTypeResponse);
     const mockList = jest.fn().mockResolvedValue(listResponse);
 
     const mockGetHub = jest.fn().mockResolvedValue({
       related: {
-        contentTypeSchema: {
+        contentTypes: {
           list: mockList
         }
       }
@@ -64,21 +64,34 @@ describe('content-type-schema list command', (): void => {
   });
 
   it('should run the formatRow function', async (): Promise<void> => {
-    const contentTypeSchema = new ContentTypeSchema({
-      id: 'id',
-      schemaId: 'schemaId',
-      version: 'version',
-      validationLevel: 'validationLevel',
-      body: '{}'
-    });
-    const contentTypeSchemaPage = new MockPage(ContentTypeSchema, [contentTypeSchema]);
-    const result = parseDataPresenter(contentTypeSchemaPage);
+    const contentTypePage = new MockPage(ContentType, [
+      new ContentType({
+        id: 'id',
+        contentTypeUri: 'contentTypeUri',
+        settings: {
+          label: 'label'
+        },
+        icons: {
+          size: 256,
+          url: 'http://example.com'
+        }
+      }),
+      new ContentType({
+        id: 'id',
+        contentTypeUri: 'contentTypeUri'
+      })
+    ]);
+    const result = parseDataPresenter(contentTypePage);
     expect(result).toEqual([
       {
         id: 'id',
-        schemaId: 'schemaId',
-        validationLevel: 'validationLevel',
-        version: 'version'
+        label: 'label',
+        contentTypeUri: 'contentTypeUri'
+      },
+      {
+        id: 'id',
+        label: '',
+        contentTypeUri: 'contentTypeUri'
       }
     ]);
   });
