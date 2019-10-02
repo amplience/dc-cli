@@ -5,7 +5,7 @@ import { ContentType } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import GetBuilderOptions from '../../interfaces/get-builder-options';
 
-export const command = 'get';
+export const command = 'get [id]';
 
 export const desc = 'Get Content Type';
 
@@ -13,16 +13,10 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'content-type ID',
-      type: 'string'
+      type: 'string',
+      demandOption: true
     })
-    .options({
-      id: {
-        type: 'string',
-        demandOption: true,
-        description: 'content-type ID'
-      },
-      ...RenderingOptions
-    });
+    .options(RenderingOptions);
 };
 
 export const handler = async (
