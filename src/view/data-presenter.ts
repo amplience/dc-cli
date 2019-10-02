@@ -26,7 +26,7 @@ export const RenderingOptions: CommandOptions = {
 export default class DataPresenter<
   T extends { toJson: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }
 > {
-  private convertedData: PreRenderedData | PreRenderedData[];
+  private formattedData: PreRenderedData | PreRenderedData[];
   private readonly page: PageMetadata;
 
   constructor(
@@ -35,6 +35,7 @@ export default class DataPresenter<
     private readonly tableRenderingOptions?: TableUserConfig
   ) {
     this.page = this.unformattedData.page || {};
+    this.formattedData = this.unformattedData.toJson();
 
     return this;
   }
@@ -57,7 +58,7 @@ export default class DataPresenter<
   }
 
   public parse(converter: (unformattedData: T) => PreRenderedData | PreRenderedData[]): DataPresenter<T> {
-    this.convertedData = converter(this.unformattedData);
+    this.formattedData = converter(this.unformattedData);
     return this;
   }
 
@@ -67,9 +68,9 @@ export default class DataPresenter<
       return;
     }
 
-    const output = Array.isArray(this.convertedData)
-      ? this.generateHorizontalTable(this.convertedData)
-      : this.generateVerticalTable(this.convertedData);
+    const output = Array.isArray(this.formattedData)
+      ? this.generateHorizontalTable(this.formattedData)
+      : this.generateVerticalTable(this.formattedData);
 
     process.stdout.write(`${table(output, { ...DEFAULT_TABLE_CONFIG, ...this.tableRenderingOptions })}\n`);
     this.renderPageInfo();

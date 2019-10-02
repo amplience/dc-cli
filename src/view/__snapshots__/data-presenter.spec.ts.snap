@@ -1,0 +1,59 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DataPresenter should parse some data 1`] = `
+"+----------+---------+
+| [1mProperty[22m | [1mValue[22m   |
+|----------|---------|
+| foo      | \\"bar\\"   |
+|----------|---------|
+| key      | \\"value\\" |
++----------+---------+
+
+"
+`;
+
+exports[`DataPresenter should render a horizontal table 1`] = `
+"+----------+---------+
+| [1mProperty[22m | [1mValue[22m   |
+|----------|---------|
+| foo      | \\"bar\\"   |
+|----------|---------|
+| key      | \\"value\\" |
++----------+---------+
+
+"
+`;
+
+exports[`DataPresenter should render a horizontal table with some page information 1`] = `
+"+-----+-------+
+| [1mfoo[22m | [1mkey[22m   |
+|-----|-------|
+| bar | value |
++-----+-------+
+
+"
+`;
+
+exports[`DataPresenter should render a vertical table 1`] = `
+"+----------+---------+
+| [1mProperty[22m | [1mValue[22m   |
+|----------|---------|
+| foo      | \\"bar\\"   |
+|----------|---------|
+| key      | \\"value\\" |
++----------+---------+
+
+"
+`;
+
+exports[`DataPresenter should render some json 1`] = `
+"+----------+---------+
+| [1mProperty[22m | [1mValue[22m   |
+|----------|---------|
+| foo      | \\"bar\\"   |
+|----------|---------|
+| key      | \\"value\\" |
++----------+---------+
+
+"
+`;
