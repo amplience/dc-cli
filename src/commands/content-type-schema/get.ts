@@ -1,5 +1,5 @@
+import * as yargs from 'yargs';
 import { Arguments } from 'yargs';
-import { CommandOptions } from '../../interfaces/command-options.interface';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
@@ -9,13 +9,20 @@ export const command = 'get';
 
 export const desc = 'Get Content Type Schema';
 
-export const builder: CommandOptions = {
-  id: {
-    type: 'string',
-    demandOption: true,
-    description: 'content-type-schema ID'
-  },
-  ...RenderingOptions
+export const builder = (yargs: yargs.Argv): void => {
+  yargs
+    .positional('id', {
+      describe: 'content-type-schema ID',
+      type: 'string'
+    })
+    .options({
+      id: {
+        type: 'string',
+        demandOption: true,
+        description: 'content-type-schema ID'
+      },
+      ...RenderingOptions
+    });
 };
 
 interface BuilderOptions {
