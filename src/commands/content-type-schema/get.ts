@@ -3,6 +3,7 @@ import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
+import GetBuilderOptions from '../../interfaces/get-builder-options';
 
 export const command = 'get [id]';
 
@@ -25,12 +26,8 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-interface BuilderOptions {
-  id: string;
-}
-
 export const handler = async (
-  argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
+  argv: Arguments<GetBuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
 
