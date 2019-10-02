@@ -134,4 +134,23 @@ describe('content type schema create command', function() {
 
     await successfulHandlerAxiosInvocation(input);
   });
+
+  async function unSuccessfulHandlerInvocation(input: BuilderOptions, expectedError: string): Promise<void> {
+    const createResponse = { id: 'test' };
+    const mockCreate = jest.fn();
+    mockGetHub.mockResolvedValue({ related: { contentTypeSchema: { create: mockCreate } } });
+    mockCreate.mockResolvedValue(createResponse);
+
+    const argv = { ...yargArgs, ...config, ...input };
+    await expect(handler(argv)).rejects.toThrowError(expectedError);
+  }
+
+  it('should failed to load schema with missing id', async function() {
+    const input = {
+      schema: 'file://' + __dirname + '/__fixtures/invalid_schema.json',
+      validationLevel: ValidationLevel.CONTENT_TYPE
+    };
+
+    await unSuccessfulHandlerInvocation(input, 'Missing id from schema');
+  });
 });
