@@ -13,6 +13,5 @@ Options:
   --clientId                                                 [string] [required]
   --clientSecret                                             [string] [required]
   --hubId                                                    [string] [required]
-  --config        Path to JSON config file
-             [string] [default: \\"config.json\\"]undefinedPlease specify at least one command"
+  --config        Path to JSON config file     [string] [default: \\"config.json\\"]undefinedPlease specify at least one command"
 `;
