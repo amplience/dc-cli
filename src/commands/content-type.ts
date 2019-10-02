@@ -5,6 +5,10 @@ export const command = 'content-type';
 
 export const desc = 'Content Type';
 
-export const builder = (yargs: Argv): Argv => yargs.commandDir('content-type', YargsCommandBuilderOptions);
+export const builder = (yargs: Argv): Argv =>
+  yargs
+    .commandDir('content-type', YargsCommandBuilderOptions)
+    .demandCommand()
+    .help();
 
 export const handler = (): void => {};

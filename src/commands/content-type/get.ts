@@ -1,29 +1,22 @@
 import { Arguments, Argv } from 'yargs';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentType } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import GetBuilderOptions from '../../interfaces/get-builder-options';
 
 export const command = 'get [id]';
 
-export const desc = 'Get Content Type Schema by ID';
+export const desc = 'Get Content Type';
 
 export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
-      describe: 'Content Type Schema ID',
+      describe: 'content-type ID',
       type: 'string',
       demandOption: true
     })
-    .options({
-      id: {
-        type: 'string',
-        demandOption: true,
-        description: 'Content Type Schema ID'
-      },
-      ...RenderingOptions
-    });
+    .options(RenderingOptions);
 };
 
 export const handler = async (
@@ -31,7 +24,6 @@ export const handler = async (
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
 
-  const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(argv.id);
   const tableOptions = {
     columns: {
       1: {
@@ -39,6 +31,6 @@ export const handler = async (
       }
     }
   };
-
-  new DataPresenter(argv, contentTypeSchema, tableOptions).render();
+  const contentType: ContentType = await client.contentTypes.get(argv.id);
+  new DataPresenter(argv, contentType, tableOptions).render();
 };
