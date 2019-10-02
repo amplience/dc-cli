@@ -1,12 +1,18 @@
 import { handler } from './get';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { renderData } from '../../view/data-presenter';
+import DataPresenter from '../../view/data-presenter';
 import { TableUserConfig } from 'table';
+import { ContentTypeSchema } from 'dc-management-sdk-js';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
 describe('content-item-schema get command', () => {
+  const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentTypeSchema>>;
+  afterEach((): void => {
+    jest.restoreAllMocks();
+  });
+
   it('should get a content-item-schema', async () => {
     const yargArgs = {
       $0: 'test',
@@ -37,13 +43,14 @@ describe('content-item-schema get command', () => {
     const argv = { ...yargArgs, id: 'content-type-schema-id', ...config };
     await handler(argv);
 
-    const expectedUserConfig: TableUserConfig = {
+    const tableConfig: TableUserConfig = {
       columns: {
         1: {
           width: 100
         }
       }
     };
-    expect(renderData).toHaveBeenCalledWith(argv, getResponse, undefined, expectedUserConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(argv, getResponse, tableConfig);
+    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
   });
 });

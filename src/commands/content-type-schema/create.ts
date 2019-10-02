@@ -1,5 +1,5 @@
 import { CommandOptions } from '../../interfaces/command-options.interface';
-import { renderData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
+import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import { Arguments } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
@@ -65,11 +65,11 @@ export const handler = async (
   const hub = await client.hubs.get(argv.hubId);
   const contentTypeSchemaResult = await hub.related.contentTypeSchema.create(contentTypeSchema);
 
-  return renderData(argv, contentTypeSchemaResult, undefined, {
+  return new DataPresenter(argv, contentTypeSchemaResult, {
     columns: {
       1: {
         width: 100
       }
     }
-  });
+  }).render();
 };

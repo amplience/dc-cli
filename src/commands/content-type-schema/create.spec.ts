@@ -1,13 +1,15 @@
 import { builder, BuilderOptions, command, desc, handler } from './create';
-import { ValidationLevel } from 'dc-management-sdk-js';
+import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { TableUserConfig } from 'table';
-import { renderData } from '../../view/data-presenter';
 import axios from 'axios';
+import DataPresenter from '../../view/data-presenter';
 
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../../view/data-presenter');
 jest.mock('axios');
+jest.mock('../../view/data-presenter');
+
+const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentTypeSchema>>;
 
 describe('content type schema create command', function() {
   const yargArgs = {
@@ -77,7 +79,8 @@ describe('content type schema create command', function() {
         }
       }
     };
-    expect(renderData).toHaveBeenCalledWith(argv, createResponse, undefined, expectedUserConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(argv, createResponse, expectedUserConfig);
+    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
   }
 
   it('should load a schema from a local file (relative path)', async function() {

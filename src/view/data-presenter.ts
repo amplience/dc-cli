@@ -4,6 +4,10 @@ import chalk from 'chalk';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import { PageMetadata } from 'dc-management-sdk-js';
 
+const DEFAULT_TABLE_CONFIG = {
+  border: getBorderCharacters('ramac')
+};
+
 export interface PreRenderedData {
   [key: string]: unknown;
 }
@@ -19,40 +23,55 @@ export const RenderingOptions: CommandOptions = {
   }
 };
 
-const tableUserConfig = {
-  border: getBorderCharacters('ramac')
-};
+export default class DataPresenter<
+  T extends { toJson: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }
+> {
+  private convertedData: PreRenderedData | PreRenderedData[];
+  private readonly page: PageMetadata;
 
-function renderList(json: PreRenderedData[]): unknown[][] {
-  const rows = json.map(row => Object.values(row));
-  const headerRow = Object.keys(json[0]).map(key => chalk.bold(key));
-  return [headerRow, ...rows];
-}
+  constructor(
+    private readonly argv: Arguments<RenderingArguments>,
+    private readonly unformattedData: T,
+    private readonly tableRenderingOptions?: TableUserConfig
+  ) {
+    this.page = this.unformattedData.page || {};
 
-function renderSingle(json: PreRenderedData): unknown[][] {
-  const rows = Object.entries(json).map(value => [value[0], JSON.stringify(value[1])]);
-  return [[chalk.bold('Property'), chalk.bold('Value')], ...rows];
-}
-
-export function renderPageInfo(page: PageMetadata = {}): void {
-  if (page && page.number !== undefined && page.totalPages !== undefined) {
-    process.stdout.write(chalk.bold(`Displaying page ${page.number + 1} of ${page.totalPages}\n\n`));
+    return this;
   }
-}
 
-export function renderData<T extends { toJson: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }>(
-  argv: Arguments<RenderingArguments>,
-  preRenderedData: T,
-  formatterFn?: (preRenderedData: T) => PreRenderedData | PreRenderedData[],
-  userConfig?: TableUserConfig
-): void {
-  if (argv.json) {
-    process.stdout.write(JSON.stringify(preRenderedData.toJson(), null, 2));
-    return;
+  private renderPageInfo(): void {
+    if (this.page.number !== undefined && this.page.totalPages !== undefined) {
+      process.stdout.write(chalk.bold(`Displaying page ${this.page.number + 1} of ${this.page.totalPages}\n\n`));
+    }
   }
-  const json = formatterFn ? formatterFn(preRenderedData) : preRenderedData.toJson();
-  const output = Array.isArray(json) ? renderList(json) : renderSingle(json);
 
-  process.stdout.write(`${table(output, { ...tableUserConfig, ...userConfig })}\n`);
-  renderPageInfo(preRenderedData.page);
+  private generateHorizontalTable(json: PreRenderedData[]): unknown[][] {
+    const rows = json.map(row => Object.values(row));
+    const headerRow = Object.keys(json[0]).map(key => chalk.bold(key));
+    return [headerRow, ...rows];
+  }
+
+  private generateVerticalTable(json: PreRenderedData): unknown[][] {
+    const rows = Object.entries(json).map(value => [value[0], JSON.stringify(value[1])]);
+    return [[chalk.bold('Property'), chalk.bold('Value')], ...rows];
+  }
+
+  public parse(converter: (unformattedData: T) => PreRenderedData | PreRenderedData[]): DataPresenter<T> {
+    this.convertedData = converter(this.unformattedData);
+    return this;
+  }
+
+  public render(): void {
+    if (this.argv.json) {
+      process.stdout.write(JSON.stringify(this.unformattedData.toJson(), null, 2));
+      return;
+    }
+
+    const output = Array.isArray(this.convertedData)
+      ? this.generateHorizontalTable(this.convertedData)
+      : this.generateVerticalTable(this.convertedData);
+
+    process.stdout.write(`${table(output, { ...DEFAULT_TABLE_CONFIG, ...this.tableRenderingOptions })}\n`);
+    this.renderPageInfo();
+  }
 }
