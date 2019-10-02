@@ -1,25 +1,25 @@
-import * as yargs from 'yargs';
-import { Arguments } from 'yargs';
+import { Arguments, Argv } from 'yargs';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 
-export const command = 'get';
+export const command = 'get [id]';
 
-export const desc = 'Get Content Type Schema';
+export const desc = 'Get Content Type Schema by ID';
 
-export const builder = (yargs: yargs.Argv): void => {
+export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
-      describe: 'content-type-schema ID',
-      type: 'string'
+      describe: 'Content Type Schema ID',
+      type: 'string',
+      demandOption: true
     })
     .options({
       id: {
         type: 'string',
         demandOption: true,
-        description: 'content-type-schema ID'
+        description: 'Content Type Schema ID'
       },
       ...RenderingOptions
     });
