@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { Arguments } from 'yargs';
 import Yargs from 'yargs/yargs';
 import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-options';
