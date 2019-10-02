@@ -6,6 +6,7 @@ exports[`cli should create a yarg instance if one is not supplied 1`] = `
 Commands:
   <<ENTRYPOINT>> configure            Saves the configuration options to a file
   <<ENTRYPOINT>> content-type-schema  Content Type Schema
+  <<ENTRYPOINT>> content-type         Content Type
 
 Options:
   --help          Show help                                            [boolean]
@@ -14,5 +15,5 @@ Options:
   --clientSecret                                             [string] [required]
   --hubId                                                    [string] [required]
   --config        Path to JSON config file
-               [string] [default: \\"config.json\\"]undefinedPlease specify at least one command"
+            [string] [default: \\"config.json\\"]undefinedPlease specify at least one command"
 `;

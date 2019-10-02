@@ -31,7 +31,7 @@ describe('cli', (): void => {
     buffer = buffer.replace(new RegExp(CONFIG_FILENAME(), 'g'), 'config.json');
     buffer = buffer.replace(new RegExp(basename(process.argv[1]), 'g'), '<<ENTRYPOINT>>');
 
-    expect(processExitSpy).toHaveBeenCalledTimes(1);
+    expect(processExitSpy).toHaveBeenCalled();
     expect(buffer).toMatchSnapshot();
   });
 });
