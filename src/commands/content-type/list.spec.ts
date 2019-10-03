@@ -17,7 +17,8 @@ describe('content-type list command', (): void => {
   it('should page the data', async (): Promise<void> => {
     const yargArgs = {
       $0: 'test',
-      _: ['test']
+      _: ['test'],
+      json: true
     };
     const config = {
       clientId: 'client-id',
@@ -69,7 +70,7 @@ describe('content-type list command', (): void => {
     expect(mockList).toBeCalledWith(pagingOptions);
 
     expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypes);
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ json: undefined, itemMapFn });
+    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ json: argv.json, itemMapFn });
   });
 
   describe('itemMapFn tests', function() {

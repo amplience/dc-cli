@@ -14,7 +14,8 @@ const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 describe('content type schema create command', function() {
   const yargArgs = {
     $0: 'test',
-    _: ['test']
+    _: ['test'],
+    json: true
   };
   const config = {
     clientId: 'client-id',
@@ -75,7 +76,7 @@ describe('content type schema create command', function() {
     expect(mockCreate).toHaveBeenCalled();
     expect(mockDataPresenter).toHaveBeenCalledWith(plainContentTypeSchema);
     expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
-      json: undefined,
+      json: argv.json,
       tableUserConfig: singleItemTableOptions
     });
   }

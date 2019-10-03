@@ -37,17 +37,18 @@ describe('content-item-schema get command', () => {
   });
 
   describe('handler tests', function() {
-    it('should get a content-item-schema', async () => {
-      const yargArgs = {
-        $0: 'test',
-        _: ['test']
-      };
-      const config = {
-        clientId: 'client-id',
-        clientSecret: 'client-id',
-        hubId: 'hub-id'
-      };
+    const yargArgs = {
+      $0: 'test',
+      _: ['test'],
+      json: true
+    };
+    const config = {
+      clientId: 'client-id',
+      clientSecret: 'client-id',
+      hubId: 'hub-id'
+    };
 
+    it('should get a content-item-schema', async () => {
       const mockGet = jest.fn();
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         contentTypeSchemas: {
@@ -67,7 +68,7 @@ describe('content-item-schema get command', () => {
 
       expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchema);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
-        json: undefined,
+        json: argv.json,
         tableUserConfig: singleItemTableOptions
       });
     });

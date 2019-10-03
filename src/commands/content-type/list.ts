@@ -28,6 +28,7 @@ export const handler = async (
   const contentTypeSchemaList = await hub.related.contentTypes.list(extractPageableSortable(argv));
 
   new DataPresenter(contentTypeSchemaList.getItems().map(v => v.toJSON())).render({
+    json: argv.json,
     itemMapFn: itemMapFn
   });
 };

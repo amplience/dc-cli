@@ -11,6 +11,17 @@ jest.mock('../../view/data-presenter');
 describe('ContentType.sync', () => {
   const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
+  const yargArgs = {
+    $0: 'test',
+    _: ['test'],
+    json: true
+  };
+  const config = {
+    clientId: 'client-id',
+    clientSecret: 'client-id',
+    hubId: 'hub-id'
+  };
+
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -37,16 +48,6 @@ describe('ContentType.sync', () => {
 
   describe('handler tests', function() {
     it('should sync a content type with the schema', async () => {
-      const yargArgs = {
-        $0: 'test',
-        _: ['test']
-      };
-      const config = {
-        clientId: 'client-id',
-        clientSecret: 'client-id',
-        hubId: 'hub-id'
-      };
-
       const mockGet = jest.fn();
       const mockUpdate = jest.fn();
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
@@ -75,7 +76,7 @@ describe('ContentType.sync', () => {
 
       expect(mockDataPresenter).toHaveBeenCalledWith(plainContentTypeCachedSchema);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
-        json: undefined,
+        json: argv.json,
         tableUserConfig: singleItemTableOptions
       });
     });
