@@ -29,10 +29,9 @@ describe('Content type register update', () => {
       visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }]
     }
   });
-  const tableConfig = { columns: { '1': { width: 100 } } };
   const mockUpdate = jest.fn();
   const mockGetContentType = jest.fn();
-  const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentType>>;
+  const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -56,7 +55,7 @@ describe('Content type register update', () => {
 
     expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
     expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 
@@ -81,7 +80,7 @@ describe('Content type register update', () => {
 
     expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
     expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 
@@ -105,7 +104,7 @@ describe('Content type register update', () => {
 
     expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
     expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 
@@ -128,7 +127,7 @@ describe('Content type register update', () => {
 
     expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
     expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 });

@@ -5,6 +5,7 @@ import { Arguments } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentType, ContentTypeVisualization, ContentTypeIcon } from 'dc-management-sdk-js';
 import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 export const command = 'update';
 
@@ -55,9 +56,10 @@ export const handler = async (
     },
     _links: contentType._links
   });
-  console.log(argv);
   const updatedContentType = await contentType.related.update(mutatedContentType);
-  const tableOptions = { columns: { 1: { width: 100 } } };
 
-  new DataPresenter(argv, updatedContentType, tableOptions).render();
+  new DataPresenter(updatedContentType.toJson()).render({
+    json: argv.json,
+    tableUserConfig: singleItemTableOptions
+  });
 };
