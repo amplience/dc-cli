@@ -84,7 +84,7 @@ describe('Content type register', () => {
     expect(mockGetHub).toBeCalledWith('hub-id');
     expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(registerResponse.toJson()));
     expect(mockDataPresenter).toHaveBeenCalledWith(argv, registerResponse, tableConfig);
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
+    expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 
   it('should register a content type with ordered icon and visualization', async () => {
@@ -162,6 +162,6 @@ describe('Content type register', () => {
     expect(mockGetHub).toBeCalledWith('hub-id');
     expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(registerResponse.toJson()));
     expect(mockDataPresenter).toHaveBeenCalledWith(argv, registerResponse, tableConfig);
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
+    expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 });
