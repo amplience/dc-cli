@@ -1,4 +1,3 @@
-import { Arguments } from 'yargs';
 import { getBorderCharacters, table, TableUserConfig } from 'table';
 import chalk from 'chalk';
 import { CommandOptions } from '../interfaces/command-options.interface';
@@ -8,9 +7,6 @@ const DEFAULT_TABLE_CONFIG = {
   border: getBorderCharacters('ramac')
 };
 
-export interface PreRenderedData {
-  [key: string]: unknown;
-}
 export interface RenderingArguments {
   json?: boolean;
 }
@@ -23,56 +19,49 @@ export const RenderingOptions: CommandOptions = {
   }
 };
 
-export default class DataPresenter<
-  T extends { toJSON: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }
-> {
-  private formattedData: PreRenderedData | PreRenderedData[];
-  private readonly page: PageMetadata;
+type MapFn = (data: object) => object;
 
-  constructor(
-    private readonly argv: Arguments<RenderingArguments>,
-    private readonly unformattedData: T,
-    private readonly tableRenderingOptions?: TableUserConfig
-  ) {
-    this.page = this.unformattedData.page || {};
-    this.formattedData = this.unformattedData.toJSON();
+interface RenderOptions {
+  json?: boolean;
+  tableUserConfig?: TableUserConfig;
+  itemMapFn?: MapFn;
+}
 
-    return this;
-  }
+export default class DataPresenter {
+  constructor(private readonly data: object | object[], private readonly page?: PageMetadata) {}
 
-  private renderPageInfo(): void {
-    if (this.page.number !== undefined && this.page.totalPages !== undefined) {
-      process.stdout.write(chalk.bold(`Displaying page ${this.page.number + 1} of ${this.page.totalPages}\n\n`));
-    }
-  }
-
-  private generateHorizontalTable(json: PreRenderedData[]): unknown[][] {
+  private generateHorizontalTable(json: object[]): unknown[][] {
     const rows = json.map(row => Object.values(row));
     const headerRow = Object.keys(json[0]).map(key => chalk.bold(key));
     return [headerRow, ...rows];
   }
 
-  private generateVerticalTable(json: PreRenderedData): unknown[][] {
+  private generateVerticalTable(json: object): unknown[][] {
     const rows = Object.entries(json).map(value => [value[0], JSON.stringify(value[1])]);
     return [[chalk.bold('Property'), chalk.bold('Value')], ...rows];
   }
 
-  public parse(converter: (unformattedData: T) => PreRenderedData | PreRenderedData[]): DataPresenter<T> {
-    this.formattedData = converter(this.unformattedData);
-    return this;
-  }
+  public render(renderOptions: RenderOptions = {}): void {
+    const itemMapFn: MapFn = renderOptions.itemMapFn ? renderOptions.itemMapFn : (v: object): object => v;
 
-  public render(): void {
-    if (this.argv.json) {
-      process.stdout.write(JSON.stringify(this.unformattedData, null, 2));
-      return;
+    let output = '';
+    if (renderOptions.json) {
+      output = JSON.stringify(this.data, null, 2);
+    } else {
+      const tableData = Array.isArray(this.data)
+        ? this.generateHorizontalTable(this.data.map(itemMapFn))
+        : this.generateVerticalTable(itemMapFn(this.data));
+
+      output += table(tableData, { ...DEFAULT_TABLE_CONFIG, ...renderOptions.tableUserConfig }) + '\n';
+      if (
+        Array.isArray(this.data) &&
+        this.page &&
+        this.page.number !== undefined &&
+        this.page.totalPages !== undefined
+      ) {
+        output += chalk.bold(`Displaying page ${this.page.number + 1} of ${this.page.totalPages}`) + '\n';
+      }
     }
-
-    const output = Array.isArray(this.formattedData)
-      ? this.generateHorizontalTable(this.formattedData)
-      : this.generateVerticalTable(this.formattedData);
-
-    process.stdout.write(`${table(output, { ...DEFAULT_TABLE_CONFIG, ...this.tableRenderingOptions })}\n`);
-    this.renderPageInfo();
+    process.stdout.write(output);
   }
 }

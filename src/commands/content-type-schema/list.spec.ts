@@ -1,4 +1,4 @@
-import { handler, parseDataPresenter } from './list';
+import { handler, itemMapFn } from './list';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import DataPresenter from '../../view/data-presenter';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
@@ -8,6 +8,8 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
 describe('content-type-schema list command', (): void => {
+  const mockDataPresenter = DataPresenter as jest.Mock;
+
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -25,7 +27,21 @@ describe('content-type-schema list command', (): void => {
 
     const pagingOptions = { page: 3, size: 10, sort: 'createdDate,desc' };
 
-    const contentTypeSchemaResponse: ContentTypeSchema[] = [new ContentTypeSchema()];
+    const plainListContentTypeSchemas = [
+      {
+        id: '1',
+        body: '{}',
+        schemaId: 'schemaId1'
+      },
+      {
+        id: '2',
+        body: '{}',
+        schemaId: 'schemaId2'
+      }
+    ];
+    const contentTypeSchemaResponse: ContentTypeSchema[] = plainListContentTypeSchemas.map(
+      v => new ContentTypeSchema(v)
+    );
 
     const listResponse = new MockPage(ContentTypeSchema, contentTypeSchemaResponse);
     const mockList = jest.fn().mockResolvedValue(listResponse);
@@ -44,23 +60,14 @@ describe('content-type-schema list command', (): void => {
       }
     });
 
-    const mockParse = jest.fn();
-    const mockRender = jest.fn();
-    const mockDataPresenter = DataPresenter as jest.Mock;
-    mockDataPresenter.mockImplementation(() => ({
-      parse: mockParse.mockReturnThis(),
-      render: mockRender.mockReturnThis()
-    }));
-
     const argv = { ...yargArgs, ...config, ...pagingOptions };
     await handler(argv);
 
     expect(mockGetHub).toBeCalledWith('hub-id');
     expect(mockList).toBeCalledWith(pagingOptions);
 
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, listResponse);
-    expect(mockParse).toHaveBeenCalledWith(parseDataPresenter);
-    expect(mockRender).toHaveBeenCalled();
+    expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchemas);
+    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ itemMapFn, json: undefined });
   });
 
   it('should run the formatRow function', async (): Promise<void> => {
@@ -71,15 +78,12 @@ describe('content-type-schema list command', (): void => {
       validationLevel: 'validationLevel',
       body: '{}'
     });
-    const contentTypeSchemaPage = new MockPage(ContentTypeSchema, [contentTypeSchema]);
-    const result = parseDataPresenter(contentTypeSchemaPage);
-    expect(result).toEqual([
-      {
-        id: 'id',
-        schemaId: 'schemaId',
-        validationLevel: 'validationLevel',
-        version: 'version'
-      }
-    ]);
+    const result = itemMapFn(contentTypeSchema.toJson());
+    expect(result).toEqual({
+      id: 'id',
+      schemaId: 'schemaId',
+      validationLevel: 'validationLevel',
+      version: 'version'
+    });
   });
 });

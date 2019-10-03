@@ -4,9 +4,10 @@ import { Arguments } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
 import * as fs from 'fs';
-import { ValidationLevel, ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import { URL } from 'url';
 import axios from 'axios';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 export const command = 'create';
 
@@ -65,11 +66,8 @@ export const handler = async (
   const hub = await client.hubs.get(argv.hubId);
   const contentTypeSchemaResult = await hub.related.contentTypeSchema.create(contentTypeSchema);
 
-  return new DataPresenter(argv, contentTypeSchemaResult, {
-    columns: {
-      1: {
-        width: 100
-      }
-    }
-  }).render();
+  return new DataPresenter(contentTypeSchemaResult.toJson()).render({
+    json: argv.json,
+    tableUserConfig: singleItemTableOptions
+  });
 };

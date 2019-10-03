@@ -1,56 +1,75 @@
-import { handler } from './get';
+import { builder, command, handler } from './get';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import DataPresenter from '../../view/data-presenter';
-import { TableUserConfig } from 'table';
+import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { singleItemTableOptions } from '../../common/table/table.consts';
+import Yargs from 'yargs/yargs';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
 describe('content-item-schema get command', () => {
-  const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentTypeSchema>>;
+  const mockDataPresenter = DataPresenter as jest.Mock;
+
   afterEach((): void => {
     jest.restoreAllMocks();
   });
 
-  it('should get a content-item-schema', async () => {
-    const yargArgs = {
-      $0: 'test',
-      _: ['test']
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
+  it('should command should defined', function() {
+    expect(command).toEqual('get [id]');
+  });
 
-    const mockGet = jest.fn();
-    (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-      contentTypeSchemas: {
-        get: mockGet
-      }
+  describe('builder tests', function() {
+    it('should configure yargs', function() {
+      const argv = Yargs(process.argv.slice(2));
+      const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
+      const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
+
+      builder(argv);
+
+      expect(spyPositional).toHaveBeenCalledWith('id', {
+        demandOption: true,
+        describe: 'Content Type Schema ID',
+        type: 'string'
+      });
+      expect(spyOptions).toHaveBeenCalledWith(RenderingOptions);
     });
-    const contentItemSchema = {
-      id: 'content-type-schema-id'
-    };
-    const getResponse = {
-      toJSON: (): { id: string } => {
-        return contentItemSchema;
-      }
-    };
-    mockGet.mockResolvedValue(getResponse);
+  });
 
-    const argv = { ...yargArgs, id: 'content-type-schema-id', ...config };
-    await handler(argv);
+  describe('handler tests', function() {
+    it('should get a content-item-schema', async () => {
+      const yargArgs = {
+        $0: 'test',
+        _: ['test']
+      };
+      const config = {
+        clientId: 'client-id',
+        clientSecret: 'client-id',
+        hubId: 'hub-id'
+      };
 
-    const tableConfig: TableUserConfig = {
-      columns: {
-        1: {
-          width: 100
+      const mockGet = jest.fn();
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        contentTypeSchemas: {
+          get: mockGet
         }
-      }
-    };
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, getResponse, tableConfig);
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
+      });
+      const plainListContentTypeSchema = {
+        id: '1',
+        body: '{}',
+        schemaId: 'schemaId1'
+      };
+      const getResponse = new ContentTypeSchema(plainListContentTypeSchema);
+      mockGet.mockResolvedValue(getResponse);
+
+      const argv = { ...yargArgs, id: 'content-type-schema-id', ...config };
+      await handler(argv);
+
+      expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchema);
+      expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
+        json: undefined,
+        tableUserConfig: singleItemTableOptions
+      });
+    });
   });
 });

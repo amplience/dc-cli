@@ -4,6 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import BuilderOptions from '../../interfaces/builder-options';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 export const command = 'get [id]';
 
@@ -16,14 +17,7 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       demandOption: true
     })
-    .options({
-      id: {
-        type: 'string',
-        demandOption: true,
-        description: 'Content Type Schema ID'
-      },
-      ...RenderingOptions
-    });
+    .options(RenderingOptions);
 };
 
 export const handler = async (
@@ -32,13 +26,5 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
 
   const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(argv.id);
-  const tableOptions = {
-    columns: {
-      1: {
-        width: 100
-      }
-    }
-  };
-
-  new DataPresenter(argv, contentTypeSchema, tableOptions).render();
+  new DataPresenter(contentTypeSchema.toJson()).render({ json: argv.json, tableUserConfig: singleItemTableOptions });
 };
