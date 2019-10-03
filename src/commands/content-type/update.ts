@@ -21,12 +21,10 @@ export const builder: CommandOptions = {
     description: 'Content type label'
   },
   icons: {
-    description: 'Content type icons',
-    default: {}
+    description: 'Content type icons'
   },
   visualizations: {
-    description: 'Content type visualizations',
-    default: {}
+    description: 'Content type visualizations'
   },
   ...RenderingOptions
 };
@@ -34,8 +32,8 @@ export const builder: CommandOptions = {
 interface ContentTypeUpdateBuilderOptions {
   id: string;
   label?: string;
-  icons?: YargObject<ContentTypeIcon>;
-  visualizations?: YargObject<ContentTypeVisualization>;
+  icons?: YargObject<ContentTypeIcon> | boolean;
+  visualizations?: YargObject<ContentTypeVisualization> | boolean;
 }
 
 export const handler = async (
@@ -57,6 +55,7 @@ export const handler = async (
     },
     _links: contentType._links
   });
+  console.log(argv);
   const updatedContentType = await contentType.related.update(mutatedContentType);
   const tableOptions = { columns: { 1: { width: 100 } } };
 

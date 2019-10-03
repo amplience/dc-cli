@@ -21,14 +21,14 @@ describe('Content type register update', () => {
     ...config,
     id: 'content-type-id'
   };
-  const contentTypeData = {
+  const contentType = new ContentType({
     contentTypeUri: 'https://content-type-uri',
     settings: {
       label: 'content-type-label',
-      icons: [],
-      visualizations: []
+      icons: [{ size: 256, url: 'https://test-icon-url' }],
+      visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }]
     }
-  };
+  });
   const tableConfig = { columns: { '1': { width: 100 } } };
   const mockUpdate = jest.fn();
   const mockGetContentType = jest.fn();
@@ -45,9 +45,8 @@ describe('Content type register update', () => {
 
   it('should update the content type label', async () => {
     const argv = { ...defaultArgv, label: 'mutated-content-type-label' };
-    const contentType = new ContentType(contentTypeData);
     const mutatedContentType = new ContentType({
-      settings: { ...contentTypeData.settings, label: 'mutated-content-type-label' }
+      settings: { ...contentType.settings, label: 'mutated-content-type-label' }
     });
     mockGetContentType.mockReturnValue(contentType);
     mockUpdate.mockReturnValue(mutatedContentType);
@@ -61,37 +60,64 @@ describe('Content type register update', () => {
     expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
   });
 
-  it('should update the content type icons', async () => {
+  it('should update the content type icons and visualizations', async () => {
     const argv = {
       ...defaultArgv,
-      icons: { 0: { size: 256, url: 'https://test-icon-url' } }
+      icons: { 0: { size: 256, url: 'https://mutated-test-icon-url' } },
+      visualizations: { 0: { label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true } }
     };
-    const contentType = new ContentType(contentTypeData);
-    const mutatedContentType = new ContentType({
-      settings: { ...contentTypeData.settings, icons: [{ size: 256, url: 'https://test-icon-url' }] }
-    });
-    mockGetContentType.mockReturnValue(contentType);
-    mockUpdate.mockReturnValue(mutatedContentType);
-    contentType.related.update = mockUpdate;
-
-    await handler(argv);
-
-    expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
-    expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
-  });
-
-  it('should update the content type visualizations', async () => {
-    const argv = {
-      ...defaultArgv,
-      visualizations: { 0: { label: 'viz-label', templatedUri: 'https://test-viz-url', default: true } }
-    };
-    const contentType = new ContentType(contentTypeData);
     const mutatedContentType = new ContentType({
       settings: {
-        ...contentTypeData.settings,
-        visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }]
+        ...contentType.settings,
+        icons: [{ size: 256, url: 'https://mutated-test-icon-url' }],
+        visualizations: [{ label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true }]
+      }
+    });
+    mockGetContentType.mockReturnValue(contentType);
+    mockUpdate.mockReturnValue(mutatedContentType);
+    contentType.related.update = mockUpdate;
+
+    await handler(argv);
+
+    expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
+    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
+    expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
+  });
+
+  it('should only only update specified setting', async () => {
+    const argv = {
+      ...defaultArgv,
+      visualizations: { 0: { label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true } }
+    };
+
+    const mutatedContentType = new ContentType({
+      settings: {
+        ...contentType.settings,
+        visualizations: [{ label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true }]
+      }
+    });
+    mockGetContentType.mockReturnValue(contentType);
+    mockUpdate.mockReturnValue(mutatedContentType);
+    contentType.related.update = mockUpdate;
+
+    await handler(argv);
+
+    expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
+    expect(mockDataPresenter).toHaveBeenCalledWith(argv, mutatedContentType, tableConfig);
+    expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
+  });
+
+  it('should clear setting e.g. only using --visualization with nothing else set', async () => {
+    const argv = {
+      ...defaultArgv,
+      visualizations: true
+    };
+    const mutatedContentType = new ContentType({
+      settings: {
+        ...contentType.settings,
+        visualizations: []
       }
     });
     mockGetContentType.mockReturnValue(contentType);
