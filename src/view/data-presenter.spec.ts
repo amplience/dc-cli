@@ -2,84 +2,109 @@ import DataPresenter from './data-presenter';
 
 const stdoutWriteSpy = jest.spyOn(process.stdout, 'write');
 
-describe('DataPresenter', (): void => {
-  const argv = {
-    $0: 'test',
-    _: ['test'],
-    clientId: 'client-id',
-    clientSecret: 'client-id',
-    hubId: 'hub-id'
-  };
+interface TestItem {
+  foo: string;
+  key: string;
+}
 
+describe('DataPresenter', (): void => {
   beforeAll(() => {
     stdoutWriteSpy.mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
   });
 
   afterAll(() => {
     jest.restoreAllMocks();
   });
 
-  it('should render a vertical table', (): void => {
-    const data = {
-      toJson: (): { [key: string]: string } => ({
-        foo: 'bar',
-        key: 'value'
-      })
+  describe('single item', function() {
+    const singleItem: TestItem = {
+      foo: 'bar',
+      key: 'value '.repeat(20)
     };
-    new DataPresenter(argv, data).render();
-    expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
-  });
 
-  it('should render a horizontal table', (): void => {
-    const data = {
-      toJson: (): { [key: string]: string }[] => [
-        {
-          foo: 'bar',
-          key: 'value'
-        }
-      ]
-    };
-    new DataPresenter(argv, data).render();
-    expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
-  });
+    it('should render a single item vertical table', (): void => {
+      new DataPresenter(singleItem).render();
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
 
-  it('should render a horizontal table with some page information', (): void => {
-    const data = {
-      toJson: (): { [key: string]: string }[] => [
-        {
-          foo: 'bar',
-          key: 'value'
-        }
-      ],
-      page: {
+    it('should render a single item as json', (): void => {
+      new DataPresenter(singleItem).render({ json: true });
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
+
+    it('should not output page information for a single item', (): void => {
+      const page = {
         number: 0,
         totalPages: 20
+      };
+      new DataPresenter(singleItem, page).render();
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
+
+    it('should render a single item as vertical table using tableUserConfig', (): void => {
+      new DataPresenter(singleItem).render({
+        tableUserConfig: {
+          columns: {
+            1: {
+              width: 100
+            }
+          }
+        }
+      });
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
+  });
+
+  describe('collection of items', function() {
+    const collectionOfItems: TestItem[] = [
+      {
+        foo: 'bar1',
+        key: 'value1 '.repeat(20)
+      },
+      {
+        foo: 'bar2',
+        key: 'value2 '.repeat(20)
       }
-    };
-    new DataPresenter(argv, data).render();
-    expect(stdoutWriteSpy.mock.calls[1][0]).toMatchSnapshot();
-  });
+    ];
+    it('should render a collection of items in a horizontal table', (): void => {
+      new DataPresenter(collectionOfItems).render();
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
 
-  it('should render some json', (): void => {
-    const data = {
-      toJson: (): { [key: string]: string } => ({
-        foo: 'bar',
-        key: 'value'
-      })
-    };
-    new DataPresenter({ ...argv, json: true }, data).render();
-    expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
-  });
+    it('should render a collection of items as json', (): void => {
+      new DataPresenter(collectionOfItems).render({ json: true });
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
 
-  it('should parse some data', (): void => {
-    const data = {
-      foo: 'bar',
-      key: 'value'
-    };
+    it('should render using the supplied map() for a collection of items in a horizontal table', (): void => {
+      new DataPresenter(collectionOfItems).render({ itemMapFn: ({ foo }: TestItem): object => ({ foo }) });
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
 
-    new DataPresenter(argv, { ...data, toJson: (): { [key: string]: string } => data })
-      .parse(({ foo }): { [key: string]: string } => ({ foo }))
-      .render();
-    expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    it('should render a collection of items horizontal table with some page information', (): void => {
+      const page = {
+        number: 0,
+        totalPages: 20
+      };
+      new DataPresenter(collectionOfItems, page).render();
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
+
+    it('should render a collection of items horizontal table using with table config', (): void => {
+      new DataPresenter(collectionOfItems).render({
+        tableUserConfig: {
+          columns: {
+            1: {
+              width: 100
+            }
+          }
+        }
+      });
+      expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();
+    });
   });
 });

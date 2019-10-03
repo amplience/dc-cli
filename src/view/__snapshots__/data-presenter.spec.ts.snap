@@ -1,59 +1,109 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`DataPresenter should parse some data 1`] = `
-"+----------+---------+
-| [1mProperty[22m | [1mValue[22m   |
-|----------|---------|
-| foo      | \\"bar\\"   |
-|----------|---------|
-| key      | \\"value\\" |
-+----------+---------+
+exports[`DataPresenter collection of items should render a collection of items as json 1`] = `
+"[
+  {
+    \\"foo\\": \\"bar1\\",
+    \\"key\\": \\"value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 \\"
+  },
+  {
+    \\"foo\\": \\"bar2\\",
+    \\"key\\": \\"value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 \\"
+  }
+]"
+`;
+
+exports[`DataPresenter collection of items should render a collection of items horizontal table using with table config 1`] = `
+"+------+------------------------------------------------------------------------------------------------------+
+| [1mfoo[22m  | [1mkey[22m                                                                                                  |
+|------|------------------------------------------------------------------------------------------------------|
+| bar1 | value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 va |
+|      | lue1 value1 value1 value1 value1 value1                                                              |
+|------|------------------------------------------------------------------------------------------------------|
+| bar2 | value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 va |
+|      | lue2 value2 value2 value2 value2 value2                                                              |
++------+------------------------------------------------------------------------------------------------------+
 
 "
 `;
 
-exports[`DataPresenter should render a horizontal table 1`] = `
-"+----------+---------+
-| [1mProperty[22m | [1mValue[22m   |
-|----------|---------|
-| foo      | \\"bar\\"   |
-|----------|---------|
-| key      | \\"value\\" |
-+----------+---------+
+exports[`DataPresenter collection of items should render a collection of items horizontal table with some page information 1`] = `
+"+------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| [1mfoo[22m  | [1mkey[22m                                                                                                                                          |
+|------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| bar1 | value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1  |
+|------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| bar2 | value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2  |
++------+----------------------------------------------------------------------------------------------------------------------------------------------+
+
+[1mDisplaying page 1 of 20[22m
+"
+`;
+
+exports[`DataPresenter collection of items should render a collection of items in a horizontal table 1`] = `
+"+------+----------------------------------------------------------------------------------------------------------------------------------------------+
+| [1mfoo[22m  | [1mkey[22m                                                                                                                                          |
+|------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| bar1 | value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1  |
+|------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| bar2 | value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2  |
++------+----------------------------------------------------------------------------------------------------------------------------------------------+
 
 "
 `;
 
-exports[`DataPresenter should render a horizontal table with some page information 1`] = `
-"+-----+-------+
-| [1mfoo[22m | [1mkey[22m   |
-|-----|-------|
-| bar | value |
-+-----+-------+
+exports[`DataPresenter collection of items should render using the supplied map() for a collection of items in a horizontal table 1`] = `
+"+------+
+| [1mfoo[22m  |
+|------|
+| bar1 |
+|------|
+| bar2 |
++------+
 
 "
 `;
 
-exports[`DataPresenter should render a vertical table 1`] = `
-"+----------+---------+
-| [1mProperty[22m | [1mValue[22m   |
-|----------|---------|
-| foo      | \\"bar\\"   |
-|----------|---------|
-| key      | \\"value\\" |
-+----------+---------+
+exports[`DataPresenter single item should not output page information for a single item 1`] = `
+"+----------+----------------------------------------------------------------------------------------------------------------------------+
+| [1mProperty[22m | [1mValue[22m                                                                                                                      |
+|----------|----------------------------------------------------------------------------------------------------------------------------|
+| foo      | \\"bar\\"                                                                                                                      |
+|----------|----------------------------------------------------------------------------------------------------------------------------|
+| key      | \\"value value value value value value value value value value value value value value value value value value value value \\" |
++----------+----------------------------------------------------------------------------------------------------------------------------+
 
 "
 `;
 
-exports[`DataPresenter should render some json 1`] = `
-"+----------+---------+
-| [1mProperty[22m | [1mValue[22m   |
-|----------|---------|
-| foo      | \\"bar\\"   |
-|----------|---------|
-| key      | \\"value\\" |
-+----------+---------+
+exports[`DataPresenter single item should render a single item as json 1`] = `
+"{
+  \\"foo\\": \\"bar\\",
+  \\"key\\": \\"value value value value value value value value value value value value value value value value value value value value \\"
+}"
+`;
+
+exports[`DataPresenter single item should render a single item as vertical table using tableUserConfig 1`] = `
+"+----------+------------------------------------------------------------------------------------------------------+
+| [1mProperty[22m | [1mValue[22m                                                                                                |
+|----------|------------------------------------------------------------------------------------------------------|
+| foo      | \\"bar\\"                                                                                                |
+|----------|------------------------------------------------------------------------------------------------------|
+| key      | \\"value value value value value value value value value value value value value value value value val |
+|          | ue value value value \\"                                                                               |
++----------+------------------------------------------------------------------------------------------------------+
+
+"
+`;
+
+exports[`DataPresenter single item should render a single item vertical table 1`] = `
+"+----------+----------------------------------------------------------------------------------------------------------------------------+
+| [1mProperty[22m | [1mValue[22m                                                                                                                      |
+|----------|----------------------------------------------------------------------------------------------------------------------------|
+| foo      | \\"bar\\"                                                                                                                      |
+|----------|----------------------------------------------------------------------------------------------------------------------------|
+| key      | \\"value value value value value value value value value value value value value value value value value value value value \\" |
++----------+----------------------------------------------------------------------------------------------------------------------------+
 
 "
 `;

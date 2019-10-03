@@ -5,6 +5,7 @@ import { ConfigurationParameters } from '../configure';
 import { ContentType, ContentTypeIcon, ContentTypeVisualization } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 export const command = 'register';
 
@@ -52,13 +53,9 @@ export const handler = async (
     }
   });
   const registeredContentType = await hub.related.contentTypes.register(contentType);
-  const tableOptions = {
-    columns: {
-      1: {
-        width: 100
-      }
-    }
-  };
 
-  new DataPresenter(argv, registeredContentType, tableOptions).render();
+  new DataPresenter(registeredContentType.toJSON()).render({
+    json: argv.json,
+    tableUserConfig: singleItemTableOptions
+  });
 };

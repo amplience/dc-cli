@@ -1,21 +1,25 @@
-import { handler, parseDataPresenter } from './list';
+import { handler, itemMapFn } from './list';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import DataPresenter from '../../view/data-presenter';
 import { ContentType } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
+import { DEFAULT_SIZE } from '../../common/dc-management-sdk-js/paginator';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
 describe('content-type list command', (): void => {
+  const mockDataPresenter = DataPresenter as jest.Mock;
+
   afterEach((): void => {
     jest.restoreAllMocks();
   });
 
-  it('should page the data', async (): Promise<void> => {
+  it('should pass sort information into the service', async (): Promise<void> => {
     const yargArgs = {
       $0: 'test',
-      _: ['test']
+      _: ['test'],
+      json: true
     };
     const config = {
       clientId: 'client-id',
@@ -23,11 +27,27 @@ describe('content-type list command', (): void => {
       hubId: 'hub-id'
     };
 
-    const pagingOptions = { page: 3, size: 10, sort: 'createdDate,desc' };
+    const pagingOptions = { sort: 'createdDate,desc' };
 
-    const ContentTypeResponse: ContentType[] = [new ContentType()];
+    const plainListContentTypes = [
+      {
+        id: '1',
+        contentTypeUri: '{}',
+        settings: {
+          label: 'label 1'
+        }
+      },
+      {
+        id: '2',
+        contentTypeUri: '{}',
+        settings: {
+          label: 'label 1'
+        }
+      }
+    ];
+    const contentTypeResponse: ContentType[] = plainListContentTypes.map(v => new ContentType(v));
 
-    const listResponse = new MockPage(ContentType, ContentTypeResponse);
+    const listResponse = new MockPage(ContentType, contentTypeResponse);
     const mockList = jest.fn().mockResolvedValue(listResponse);
 
     const mockGetHub = jest.fn().mockResolvedValue({
@@ -44,55 +64,50 @@ describe('content-type list command', (): void => {
       }
     });
 
-    const mockParse = jest.fn();
-    const mockRender = jest.fn();
-    const mockDataPresenter = DataPresenter as jest.Mock;
-    mockDataPresenter.mockImplementation(() => ({
-      parse: mockParse.mockReturnThis(),
-      render: mockRender.mockReturnThis()
-    }));
-
     const argv = { ...yargArgs, ...config, ...pagingOptions };
     await handler(argv);
 
     expect(mockGetHub).toBeCalledWith('hub-id');
-    expect(mockList).toBeCalledWith(pagingOptions);
+    expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE, ...pagingOptions });
 
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, listResponse);
-    expect(mockParse).toHaveBeenCalledWith(parseDataPresenter);
-    expect(mockRender).toHaveBeenCalled();
+    expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypes);
+    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ json: argv.json, itemMapFn });
   });
 
-  it('should run the formatRow function', async (): Promise<void> => {
-    const contentTypePage = new MockPage(ContentType, [
-      new ContentType({
-        id: 'id',
-        contentTypeUri: 'contentTypeUri',
-        settings: {
-          label: 'label'
-        },
-        icons: {
-          size: 256,
-          url: 'http://example.com'
-        }
-      }),
-      new ContentType({
-        id: 'id',
-        contentTypeUri: 'contentTypeUri'
-      })
-    ]);
-    const result = parseDataPresenter(contentTypePage);
-    expect(result).toEqual([
-      {
+  describe('itemMapFn tests', function() {
+    it('should render settings.label', function() {
+      const result = itemMapFn(
+        new ContentType({
+          id: 'id',
+          contentTypeUri: 'contentTypeUri',
+          settings: {
+            label: 'label'
+          },
+          icons: {
+            size: 256,
+            url: 'http://example.com'
+          }
+        })
+      );
+      expect(result).toEqual({
         id: 'id',
         label: 'label',
         contentTypeUri: 'contentTypeUri'
-      },
-      {
+      });
+    });
+
+    it('should default settings.label to empty string', function() {
+      const result = itemMapFn(
+        new ContentType({
+          id: 'id',
+          contentTypeUri: 'contentTypeUri'
+        })
+      );
+      expect(result).toEqual({
         id: 'id',
         label: '',
         contentTypeUri: 'contentTypeUri'
-      }
-    ]);
+      });
+    });
   });
 });
