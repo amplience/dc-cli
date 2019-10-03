@@ -6,46 +6,52 @@ import DataPresenter from '../../view/data-presenter';
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
-const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentType>>;
-
 describe('Content type register update', () => {
-  let mockGetContentType: jest.Mock;
+  const yargArgs = {
+    $0: 'test',
+    _: ['test']
+  };
+  const config = {
+    clientId: 'client-id',
+    clientSecret: 'client-id',
+    hubId: 'hub-id'
+  };
+  const defaultArgv = {
+    ...yargArgs,
+    ...config,
+    id: 'content-type-id'
+  };
+  const contentTypeData = {
+    contentTypeUri: 'https://content-type-uri',
+    settings: {
+      label: 'content-type-label',
+      icons: [],
+      visualizations: []
+    }
+  };
+  const tableConfig = { columns: { '1': { width: 100 } } };
+  const mockUpdate = jest.fn();
+  const mockGetContentType = jest.fn();
+  const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentType>>;
 
   beforeEach(() => {
-    mockGetContentType = jest.fn();
+    jest.resetAllMocks();
     (dynamicContentClientFactory as jest.Mock).mockReturnValue({
       contentTypes: {
         get: mockGetContentType
       }
     });
   });
+
   it('should update the content type label', async () => {
-    const yargArgs = {
-      $0: 'test',
-      _: ['test']
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
-    const argv = { ...yargArgs, ...config, id: 'content-type-id', label: 'mutated-content-type-label' };
-    const contentTypeData = {
-      contentTypeUri: 'https://content-type-uri',
-      settings: {
-        label: 'content-type-label',
-        icons: [],
-        visualiazations: []
-      }
-    };
-    const tableConfig = { columns: { '1': { width: 100 } } };
+    const argv = { ...defaultArgv, label: 'mutated-content-type-label' };
     const contentType = new ContentType(contentTypeData);
     const mutatedContentType = new ContentType({
       settings: { ...contentTypeData.settings, label: 'mutated-content-type-label' }
     });
-    const mockUpdate = jest.fn().mockReturnValue(mutatedContentType);
-    contentType.related.update = mockUpdate;
     mockGetContentType.mockReturnValue(contentType);
+    mockUpdate.mockReturnValue(mutatedContentType);
+    contentType.related.update = mockUpdate;
 
     await handler(argv);
 
@@ -56,37 +62,17 @@ describe('Content type register update', () => {
   });
 
   it('should update the content type icons', async () => {
-    const yargArgs = {
-      $0: 'test',
-      _: ['test']
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
     const argv = {
-      ...yargArgs,
-      ...config,
-      id: 'content-type-id',
+      ...defaultArgv,
       icons: { 0: { size: 256, url: 'https://test-icon-url' } }
     };
-    const contentTypeData = {
-      contentTypeUri: 'https://content-type-uri',
-      settings: {
-        label: 'content-type-label',
-        icons: [],
-        visualizations: []
-      }
-    };
-    const tableConfig = { columns: { '1': { width: 100 } } };
     const contentType = new ContentType(contentTypeData);
     const mutatedContentType = new ContentType({
       settings: { ...contentTypeData.settings, icons: [{ size: 256, url: 'https://test-icon-url' }] }
     });
-    const mockUpdate = jest.fn().mockReturnValue(mutatedContentType);
-    contentType.related.update = mockUpdate;
     mockGetContentType.mockReturnValue(contentType);
+    mockUpdate.mockReturnValue(mutatedContentType);
+    contentType.related.update = mockUpdate;
 
     await handler(argv);
 
@@ -97,30 +83,10 @@ describe('Content type register update', () => {
   });
 
   it('should update the content type visualizations', async () => {
-    const yargArgs = {
-      $0: 'test',
-      _: ['test']
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
     const argv = {
-      ...yargArgs,
-      ...config,
-      id: 'content-type-id',
+      ...defaultArgv,
       visualizations: { 0: { label: 'viz-label', templatedUri: 'https://test-viz-url', default: true } }
     };
-    const contentTypeData = {
-      contentTypeUri: 'https://content-type-uri',
-      settings: {
-        label: 'content-type-label',
-        icons: [],
-        visualizations: []
-      }
-    };
-    const tableConfig = { columns: { '1': { width: 100 } } };
     const contentType = new ContentType(contentTypeData);
     const mutatedContentType = new ContentType({
       settings: {
@@ -128,9 +94,9 @@ describe('Content type register update', () => {
         visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }]
       }
     });
-    const mockUpdate = jest.fn().mockReturnValue(mutatedContentType);
-    contentType.related.update = mockUpdate;
     mockGetContentType.mockReturnValue(contentType);
+    mockUpdate.mockReturnValue(mutatedContentType);
+    contentType.related.update = mockUpdate;
 
     await handler(argv);
 

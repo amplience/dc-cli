@@ -4,7 +4,7 @@ import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { ContentType, ContentTypeIcon, ContentTypeVisualization } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { parseYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-parser';
+import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
 
 export const command = 'register';
 
@@ -47,10 +47,8 @@ export const handler = async (
     contentTypeUri: schemaId,
     settings: {
       label: label,
-      icons: parseYargObjectToArray<YargObject<ContentTypeIcon>, ContentTypeIcon>(icons),
-      visualizations: parseYargObjectToArray<YargObject<ContentTypeVisualization>, ContentTypeVisualization>(
-        visualizations
-      )
+      icons: transformYargObjectToArray<ContentTypeIcon>(icons),
+      visualizations: transformYargObjectToArray<ContentTypeVisualization>(visualizations)
     }
   });
   const registeredContentType = await hub.related.contentTypes.register(contentType);

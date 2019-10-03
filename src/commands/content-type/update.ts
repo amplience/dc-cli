@@ -4,7 +4,7 @@ import { ConfigurationParameters } from '../configure';
 import { Arguments } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentType, ContentTypeVisualization, ContentTypeIcon } from 'dc-management-sdk-js';
-import { parseYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-parser';
+import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
 
 export const command = 'update';
 
@@ -48,12 +48,10 @@ export const handler = async (
     settings: {
       ...contentType.settings,
       ...(label ? { label } : {}),
-      ...(icons ? { icons: parseYargObjectToArray<YargObject<ContentTypeIcon>, ContentTypeIcon>(icons) } : {}),
+      ...(icons ? { icons: transformYargObjectToArray<ContentTypeIcon>(icons) } : {}),
       ...(visualizations
         ? {
-            visualizations: parseYargObjectToArray<YargObject<ContentTypeVisualization>, ContentTypeVisualization>(
-              visualizations
-            )
+            visualizations: transformYargObjectToArray<ContentTypeVisualization>(visualizations)
           }
         : {})
     },
