@@ -3,7 +3,6 @@ import { handler } from './sync';
 import { TableUserConfig } from 'table';
 import DataPresenter from '../../view/data-presenter';
 import { ContentType } from 'dc-management-sdk-js';
-import * as cachedContentTypeFixture from './__fixtures/content-type-cached-schema.json';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
