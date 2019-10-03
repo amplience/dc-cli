@@ -44,7 +44,7 @@ interface ContentTypeBuilderOptions {
   visualizations: VisualizationOption;
 }
 
-function parseSettingsArg(objectArg: IconOption | VisualizationOption): ContentTypeIcon[] | ContentTypeVisualization[] {
+function parseSettingsArg<T, U>(objectArg: T): U[] {
   return Object.entries(objectArg)
     .sort((a, b) => (parseInt(a[0], 10) > parseInt(b[0], 10) ? 1 : -1))
     .map(entry => entry[1]);
@@ -59,11 +59,18 @@ export const handler = async (
     contentTypeUri: argv.schemaId,
     settings: {
       label: argv.label,
-      icons: parseSettingsArg(argv.icons),
-      visualizations: parseSettingsArg(argv.visualizations)
+      icons: parseSettingsArg<IconOption, ContentTypeIcon>(argv.icons),
+      visualizations: parseSettingsArg<VisualizationOption, ContentTypeVisualization>(argv.visualizations)
     }
   });
   const registeredContentType = await hub.related.contentTypes.register(contentType);
+  const tableOptions = {
+    columns: {
+      1: {
+        width: 100
+      }
+    }
+  };
 
-  new DataPresenter(argv, registeredContentType).render();
+  new DataPresenter(argv, registeredContentType, tableOptions).render();
 };
