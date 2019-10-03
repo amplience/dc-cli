@@ -40,8 +40,13 @@ describe('ContentType.sync', () => {
         }
       }
     };
+
+    const contentTypeCachedSchema = {
+      id: 'content-type-cached-schema-id'
+    };
+
     mockGet.mockResolvedValue(contentType);
-    mockUpdate.mockResolvedValue(cachedContentTypeFixture);
+    mockUpdate.mockResolvedValue(contentTypeCachedSchema);
 
     const argv = { ...yargArgs, id: 'content-type-id', ...config };
     await handler(argv);
@@ -53,7 +58,7 @@ describe('ContentType.sync', () => {
         }
       }
     };
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, cachedContentTypeFixture, tableConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(argv, contentTypeCachedSchema, tableConfig);
     expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
   });
 });
