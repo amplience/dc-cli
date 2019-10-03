@@ -1,19 +1,20 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { handler } from './get';
+import { handler } from './sync';
 import { TableUserConfig } from 'table';
 import DataPresenter from '../../view/data-presenter';
 import { ContentType } from 'dc-management-sdk-js';
+import * as cachedContentTypeFixture from './__fixtures/content-type-cached-schema.json';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
-describe('ContentType.get', () => {
+describe('ContentType.sync', () => {
   const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentType>>;
   afterEach((): void => {
     jest.restoreAllMocks();
   });
 
-  it('should return a content type', async () => {
+  it('should sync a content type with the schema', async () => {
     const yargArgs = {
       $0: 'test',
       _: ['test']
@@ -25,20 +26,22 @@ describe('ContentType.get', () => {
     };
 
     const mockGet = jest.fn();
+    const mockUpdate = jest.fn();
     (dynamicContentClientFactory as jest.Mock).mockReturnValue({
       contentTypes: {
         get: mockGet
       }
     });
+
     const contentType = {
-      id: 'content-type-id'
-    };
-    const getResponse = {
-      toJSON: (): { id: string } => {
-        return contentType;
+      related: {
+        contentTypeSchema: {
+          update: mockUpdate
+        }
       }
     };
-    mockGet.mockResolvedValue(getResponse);
+    mockGet.mockResolvedValue(contentType);
+    mockUpdate.mockResolvedValue(cachedContentTypeFixture);
 
     const argv = { ...yargArgs, id: 'content-type-id', ...config };
     await handler(argv);
@@ -50,7 +53,7 @@ describe('ContentType.get', () => {
         }
       }
     };
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, getResponse, tableConfig);
+    expect(mockDataPresenter).toHaveBeenCalledWith(argv, cachedContentTypeFixture, tableConfig);
     expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
   });
 });

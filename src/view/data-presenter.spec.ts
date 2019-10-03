@@ -21,7 +21,7 @@ describe('DataPresenter', (): void => {
 
   it('should render a vertical table', (): void => {
     const data = {
-      toJson: (): { [key: string]: string } => ({
+      toJSON: (): { [key: string]: string } => ({
         foo: 'bar',
         key: 'value'
       })
@@ -32,7 +32,7 @@ describe('DataPresenter', (): void => {
 
   it('should render a horizontal table', (): void => {
     const data = {
-      toJson: (): { [key: string]: string }[] => [
+      toJSON: (): { [key: string]: string }[] => [
         {
           foo: 'bar',
           key: 'value'
@@ -45,7 +45,7 @@ describe('DataPresenter', (): void => {
 
   it('should render a horizontal table with some page information', (): void => {
     const data = {
-      toJson: (): { [key: string]: string }[] => [
+      toJSON: (): { [key: string]: string }[] => [
         {
           foo: 'bar',
           key: 'value'
@@ -62,7 +62,7 @@ describe('DataPresenter', (): void => {
 
   it('should render some json', (): void => {
     const data = {
-      toJson: (): { [key: string]: string } => ({
+      toJSON: (): { [key: string]: string } => ({
         foo: 'bar',
         key: 'value'
       })
@@ -77,7 +77,7 @@ describe('DataPresenter', (): void => {
       key: 'value'
     };
 
-    new DataPresenter(argv, { ...data, toJson: (): { [key: string]: string } => data })
+    new DataPresenter(argv, { ...data, toJSON: (): { [key: string]: string } => data })
       .parse(({ foo }): { [key: string]: string } => ({ foo }))
       .render();
     expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();

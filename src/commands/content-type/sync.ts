@@ -1,13 +1,26 @@
 import { Arguments, Argv } from 'yargs';
-import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
+import DataPresenter, { PreRenderedData, RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentType } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import BuilderOptions from '../../interfaces/builder-options';
 
-export const command = 'get [id]';
+interface CachedSchema {
+  $schema: string;
+  id: string;
+  [key: string]: unknown;
+}
 
-export const desc = 'Get Content Type';
+export interface ContentTypeCachedSchema {
+  hubId?: string;
+  contentTypeUri?: string;
+  cachedSchema?: CachedSchema;
+  toJSON: () => PreRenderedData;
+}
+
+export const command = 'sync [id]';
+
+export const desc = 'Sync Content Type with the schema';
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -32,5 +45,6 @@ export const handler = async (
     }
   };
   const contentType: ContentType = await client.contentTypes.get(argv.id);
-  new DataPresenter(argv, contentType, tableOptions).render();
+  const contentTypeCachedSchema: ContentTypeCachedSchema = await contentType.related.contentTypeSchema.update();
+  new DataPresenter(argv, contentTypeCachedSchema, tableOptions).render();
 };

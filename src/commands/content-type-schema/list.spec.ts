@@ -39,7 +39,7 @@ describe('content-item-schema list command', (): void => {
     ];
 
     const listResponse = {
-      toJson: (): { id: string }[] => {
+      toJSON: (): { id: string }[] => {
         return contentTypeSchemaResponse;
       },
       getItems: (): { id: string }[] => contentTypeSchemaResponse
@@ -91,7 +91,7 @@ describe('content-item-schema list command', (): void => {
     ];
 
     const listResponse = {
-      toJson: (): { id: string }[] => {
+      toJSON: (): { id: string }[] => {
         return contentTypeSchemaResponse;
       },
       getItems: (): { id: string }[] => contentTypeSchemaResponse
@@ -143,7 +143,7 @@ describe('content-item-schema list command', (): void => {
     ];
 
     const listResponse = {
-      toJson: (): { id: string }[] => {
+      toJSON: (): { id: string }[] => {
         return contentTypeSchemaResponse;
       },
       getItems: (): { id: string }[] => contentTypeSchemaResponse
@@ -192,7 +192,7 @@ describe('content-item-schema list command', (): void => {
     ];
 
     const listResponse = {
-      toJson: (): { id: string }[] => {
+      toJSON: (): { id: string }[] => {
         return contentTypeSchemaResponse;
       },
       getItems: (): { id: string }[] => contentTypeSchemaResponse

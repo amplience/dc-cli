@@ -34,7 +34,7 @@ describe('content-item-schema get command', () => {
       id: 'content-type-schema-id'
     };
     const getResponse = {
-      toJson: (): { id: string } => {
+      toJSON: (): { id: string } => {
         return contentItemSchema;
       }
     };

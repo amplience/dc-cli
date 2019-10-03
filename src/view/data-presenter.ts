@@ -24,7 +24,7 @@ export const RenderingOptions: CommandOptions = {
 };
 
 export default class DataPresenter<
-  T extends { toJson: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }
+  T extends { toJSON: () => PreRenderedData | PreRenderedData[]; page?: PageMetadata }
 > {
   private formattedData: PreRenderedData | PreRenderedData[];
   private readonly page: PageMetadata;
@@ -35,7 +35,7 @@ export default class DataPresenter<
     private readonly tableRenderingOptions?: TableUserConfig
   ) {
     this.page = this.unformattedData.page || {};
-    this.formattedData = this.unformattedData.toJson();
+    this.formattedData = this.unformattedData.toJSON();
 
     return this;
   }
@@ -64,7 +64,7 @@ export default class DataPresenter<
 
   public render(): void {
     if (this.argv.json) {
-      process.stdout.write(JSON.stringify(this.unformattedData.toJson(), null, 2));
+      process.stdout.write(JSON.stringify(this.unformattedData, null, 2));
       return;
     }
 
