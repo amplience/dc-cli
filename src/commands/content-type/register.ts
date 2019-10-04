@@ -15,19 +15,19 @@ export const builder: CommandOptions = {
   schemaId: {
     type: 'string',
     demandOption: true,
-    description: 'content-type-schema ID'
+    describe: 'content-type-schema ID'
   },
   label: {
     type: 'string',
     demandOption: true,
-    description: 'Content type label'
+    describe: 'content-type label'
   },
   icons: {
-    description: 'Content type icons',
+    describe: 'content-type icons',
     default: {}
   },
   visualizations: {
-    description: 'Content type visualizations',
+    describe: 'content-type visualizations',
     default: {}
   },
   ...RenderingOptions
