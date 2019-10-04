@@ -36,6 +36,9 @@ describe('content-type register update', () => {
         visualizations: {
           describe: 'content-type visualizations'
         },
+        cards: {
+          describe: 'content-type cards'
+        },
         ...RenderingOptions
       });
     });
@@ -61,7 +64,8 @@ describe('content-type register update', () => {
       settings: {
         label: 'content-type-label',
         icons: [{ size: 256, url: 'https://test-icon-url' }],
-        visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }]
+        visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }],
+        cards: [{ label: 'cards-label', templatedUri: 'https://test-cards-url', default: true }]
       }
     });
     const mockUpdate = jest.fn();
@@ -79,6 +83,7 @@ describe('content-type register update', () => {
     afterEach(() => {
       jest.resetAllMocks();
     });
+
     it('should update the content type label', async () => {
       const argv = { ...defaultArgv, label: 'mutated-content-type-label' };
       const mutatedContentType = new ContentType({
@@ -96,19 +101,23 @@ describe('content-type register update', () => {
       expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
     });
 
-    it('should update the content type icons and visualizations', async () => {
+    it('should update the content type cards, icons and visualizations', async () => {
       const argv = {
         ...defaultArgv,
         icons: { 0: { size: 256, url: 'https://mutated-test-icon-url' } },
         visualizations: {
           0: { label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true }
+        },
+        cards: {
+          0: { label: 'mutated-cards-label', templatedUri: 'https://mutated-test-cards-url', default: true }
         }
       };
       const mutatedContentType = new ContentType({
         settings: {
           ...contentType.settings,
           icons: [{ size: 256, url: 'https://mutated-test-icon-url' }],
-          visualizations: [{ label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true }]
+          visualizations: [{ label: 'mutated-viz-label', templatedUri: 'https://mutated-test-viz-url', default: true }],
+          cards: [{ label: 'mutated-cards-label', templatedUri: 'https://mutated-test-cards-url', default: true }]
         }
       });
       mockGetContentType.mockReturnValue(contentType);

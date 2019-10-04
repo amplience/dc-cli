@@ -3,7 +3,7 @@ import DataPresenter, { RenderingOptions, RenderingArguments } from '../../view/
 import { ConfigurationParameters } from '../configure';
 import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, ContentTypeVisualization, ContentTypeIcon } from 'dc-management-sdk-js';
+import { ContentType, ContentTypeVisualization, ContentTypeIcon, ContentTypeCard } from 'dc-management-sdk-js';
 import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
@@ -29,6 +29,9 @@ export const builder = (yargs: Argv): void => {
       visualizations: {
         describe: 'content-type visualizations'
       },
+      cards: {
+        describe: 'content-type cards'
+      },
       ...RenderingOptions
     });
 };
@@ -37,6 +40,7 @@ interface ContentTypeUpdateBuilderOptions {
   id: string;
   label?: string;
   icons?: YargObject<ContentTypeIcon> | boolean;
+  cards?: YargObject<ContentTypeCard> | boolean;
   visualizations?: YargObject<ContentTypeVisualization> | boolean;
 }
 
@@ -44,13 +48,14 @@ export const handler = async (
   argv: Arguments<ContentTypeUpdateBuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
-  const { id, label, icons, visualizations } = argv;
+  const { id, label, icons, visualizations, cards } = argv;
   const contentType = await client.contentTypes.get(id);
   const mutatedContentType = new ContentType({
     settings: {
       ...contentType.settings,
       ...(label ? { label } : {}),
       ...(icons ? { icons: transformYargObjectToArray<ContentTypeIcon>(icons) } : {}),
+      ...(cards ? { cards: transformYargObjectToArray<ContentTypeCard>(cards) } : {}),
       ...(visualizations
         ? {
             visualizations: transformYargObjectToArray<ContentTypeVisualization>(visualizations)
