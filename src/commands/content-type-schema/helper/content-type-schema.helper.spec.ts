@@ -1,156 +1,55 @@
-import { builder, BuilderOptions, command, desc, handler } from './create';
-import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
-import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { TableUserConfig } from 'table';
 import axios from 'axios';
-import DataPresenter from '../../view/data-presenter';
+import fs from 'fs';
+import { getSchemaBody } from './content-type-schema.helper';
 
-jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('axios');
-jest.mock('../../view/data-presenter');
+jest.mock('fs');
 
-const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentTypeSchema>>;
-
-describe('content type schema create command', function() {
-  const yargArgs = {
-    $0: 'test',
-    _: ['test']
-  };
-  const config = {
-    clientId: 'client-id',
-    clientSecret: 'client-id',
-    hubId: 'hub-id'
-  };
-
-  const mockGetHub = jest.fn();
-  (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-    hubs: {
-      get: mockGetHub
-    }
+describe('content type schema helper', function() {
+  beforeEach((): void => {
+    jest.resetAllMocks();
   });
 
-  it('should have a command', function() {
-    expect(command).toEqual('create');
-  });
-
-  it('should have a description', function() {
-    expect(desc).toEqual('Create Content Type Schema');
-  });
-
-  it('should have a builder that has a schema option', function() {
-    expect(builder.schema).toEqual({
-      type: 'string',
-      demandOption: true,
-      description: 'content-type-schema Source Location'
-    });
-  });
-
-  it('should have a builder that has a validation level option', function() {
-    expect(builder.validationLevel).toEqual({
-      type: 'string',
-      choices: ['SLOT', 'CONTENT_TYPE', 'PARTIAL'],
-      demandOption: true,
-      description: 'content-type-schema Validation Level'
-    });
-  });
-
-  async function successfulHandlerInvocation(
-    input: BuilderOptions,
-    beforeInvocation: Function = (): void => {},
-    afterInvocation: Function = (): void => {}
-  ): Promise<void> {
-    const createResponse = { id: 'test' };
-    const mockCreate = jest.fn();
-    mockGetHub.mockResolvedValue({ related: { contentTypeSchema: { create: mockCreate } } });
-    mockCreate.mockResolvedValue(createResponse);
-
-    const argv = { ...yargArgs, ...config, ...input };
-
-    beforeInvocation();
-    await handler(argv);
-    afterInvocation();
-
-    expect(mockGetHub).toHaveBeenCalledWith(config.hubId);
-    expect(mockCreate).toHaveBeenCalled();
-    const expectedUserConfig: TableUserConfig = {
-      columns: {
-        1: {
-          width: 100
-        }
-      }
-    };
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, createResponse, expectedUserConfig);
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
-  }
-
-  it('should load a schema from a local file (relative path)', async function() {
-    const input = {
-      schema: __dirname + '/__fixtures/schema.json',
-      validationLevel: ValidationLevel.CONTENT_TYPE
-    };
-    await successfulHandlerInvocation(input);
-  });
-
-  it('should load a schema from a local file (with file url)', async function() {
-    const input = {
-      schema: 'file://' + __dirname + '/__fixtures/schema.json',
-      validationLevel: ValidationLevel.CONTENT_TYPE
-    };
-    await successfulHandlerInvocation(input);
-  });
-
-  async function successfulHandlerAxiosInvocation(input: BuilderOptions): Promise<void> {
+  async function successfulAxiosGetInvocation(protocol: string, schema: string): Promise<void> {
     const mockAxiosGet = axios.get as jest.Mock;
-    await successfulHandlerInvocation(
-      input,
-      () => {
-        mockAxiosGet.mockResolvedValue({
-          data: {
-            $schema: 'test',
-            id: 'test'
-          }
-        });
-      },
-      () => {
-        expect(mockAxiosGet).toHaveBeenCalled();
+    const mockSchemaResponse = {
+      data: {
+        $schema: 'test',
+        id: 'test'
       }
-    );
+    };
+    mockAxiosGet.mockResolvedValue(mockSchemaResponse);
+    const response = await getSchemaBody(schema);
+    expect(mockAxiosGet).toHaveBeenCalledWith(expect.stringMatching(protocol));
+    expect(response).toEqual(JSON.stringify(mockSchemaResponse.data));
   }
 
   it('should load a schema from a url (http)', async function() {
-    const input = {
-      schema: 'http://example.com/schema.json',
-      validationLevel: ValidationLevel.CONTENT_TYPE
-    };
-
-    await successfulHandlerAxiosInvocation(input);
+    await successfulAxiosGetInvocation('http', 'http://example.com/schema.json');
   });
 
   it('should load a schema from a url (https)', async function() {
-    const input = {
-      schema: 'https://example.com/schema.json',
-      validationLevel: ValidationLevel.CONTENT_TYPE
-    };
-
-    await successfulHandlerAxiosInvocation(input);
+    await successfulAxiosGetInvocation('https', 'https://example.com/schema.json');
   });
 
-  async function unSuccessfulHandlerInvocation(input: BuilderOptions, expectedError: string): Promise<void> {
-    const createResponse = { id: 'test' };
-    const mockCreate = jest.fn();
-    mockGetHub.mockResolvedValue({ related: { contentTypeSchema: { create: mockCreate } } });
-    mockCreate.mockResolvedValue(createResponse);
-
-    const argv = { ...yargArgs, ...config, ...input };
-    await expect(handler(argv)).rejects.toThrowError(expectedError);
+  async function successfulLocalFileInvocation(pathOrProtocol: string | RegExp, schema: string): Promise<void> {
+    const mockFileRead = fs.readFileSync as jest.Mock;
+    const mockSchemaData = {
+      $schema: 'test',
+      id: 'test'
+    };
+    mockFileRead.mockResolvedValue(JSON.stringify(mockSchemaData));
+    const response = await getSchemaBody(schema);
+    expect(mockFileRead).toHaveBeenCalledTimes(1);
+    expect(mockFileRead).toHaveBeenCalledWith(expect.stringMatching(pathOrProtocol), 'utf-8');
+    expect(response).toEqual(JSON.stringify(mockSchemaData));
   }
 
-  it('should failed to load schema with missing id', async function() {
-    const input = {
-      schema: 'file://' + __dirname + '/__fixtures/invalid_schema.json',
-      validationLevel: ValidationLevel.CONTENT_TYPE
-    };
+  it('should load a schema from a local file (relative path)', async function() {
+    await successfulLocalFileInvocation('./content-type-schema/schema.json', './content-type-schema/schema.json');
+  });
 
-    await unSuccessfulHandlerInvocation(input, 'Missing id from schema');
+  it('should load a schema from a local file (with file url)', async function() {
+    await successfulLocalFileInvocation(new RegExp('file'), 'file:\\/\\/content-type-schema/schema.json');
   });
 });

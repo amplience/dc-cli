@@ -3,10 +3,8 @@ import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/
 import { Arguments } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
-import * as fs from 'fs';
 import { ValidationLevel, ContentTypeSchema } from 'dc-management-sdk-js';
-import { URL } from 'url';
-import axios from 'axios';
+import { getSchemaBody } from './helper/content-type-schema.helper';
 
 export const command = 'update';
 
@@ -36,22 +34,6 @@ export interface BuilderOptions {
   id: string;
   schema: string;
   validationLevel: string;
-}
-
-async function getSchemaBody(schema: string): Promise<string> {
-  if (schema.match(/^(http|https):\/\//)) {
-    const result = await axios.get(schema);
-
-    if (typeof result.data == 'string') {
-      return result.data;
-    }
-
-    return JSON.stringify(result.data);
-  }
-
-  const path = schema.match(/file:\/\//) ? new URL(schema) : schema;
-  const schemaBody = fs.readFileSync(path, 'utf-8');
-  return schemaBody;
 }
 
 export const handler = async (

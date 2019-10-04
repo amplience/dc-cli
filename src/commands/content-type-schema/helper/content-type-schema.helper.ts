@@ -1,6 +1,6 @@
-import axios from "axios";
-import {URL} from "url";
-import * as fs from "fs";
+import axios from 'axios';
+import { URL } from 'url';
+import * as fs from 'fs';
 
 export async function getSchemaBody(schema: string): Promise<string> {
   if (schema.match(/^(http|https):\/\//)) {
