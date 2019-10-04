@@ -32,7 +32,7 @@ describe('content type schema helper', function() {
     await successfulAxiosGetInvocation('https', 'https://example.com/schema.json');
   });
 
-  async function successfulLocalFileInvocation(pathOrProtocol: string | RegExp, schema: string): Promise<void> {
+  async function successfulLocalFileInvocation(schema: string): Promise<void> {
     const mockFileRead = fs.readFileSync as jest.Mock;
     const mockSchemaData = {
       $schema: 'test',
@@ -41,15 +41,14 @@ describe('content type schema helper', function() {
     mockFileRead.mockResolvedValue(JSON.stringify(mockSchemaData));
     const response = await getSchemaBody(schema);
     expect(mockFileRead).toHaveBeenCalledTimes(1);
-    expect(mockFileRead).toHaveBeenCalledWith(expect.stringMatching(pathOrProtocol), 'utf-8');
     expect(response).toEqual(JSON.stringify(mockSchemaData));
   }
 
   it('should load a schema from a local file (relative path)', async function() {
-    await successfulLocalFileInvocation('./content-type-schema/schema.json', './content-type-schema/schema.json');
+    await successfulLocalFileInvocation('./content-type-schema/schema.json');
   });
 
   it('should load a schema from a local file (with file url)', async function() {
-    await successfulLocalFileInvocation(new RegExp('file'), 'file:\\/\\/content-type-schema/schema.json');
+    await successfulLocalFileInvocation('file://content-type-schema/schema.json');
   });
 });
