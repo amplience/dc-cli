@@ -3,15 +3,16 @@ import { CommandOptions } from '../../interfaces/command-options.interface';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
-import { extractPageableSortable, PagingOptions, PagingParameters } from '../../common/yargs/paging-options';
+import { extractSortable, SortingOptions, PagingParameters } from '../../common/yargs/sorting-options';
 import { ContentType } from 'dc-management-sdk-js';
+import paginator from '../../common/dc-management-sdk-js/paginator';
 
 export const command = 'list';
 
 export const desc = "List Content Type's";
 
 export const builder: CommandOptions = {
-  ...PagingOptions,
+  ...SortingOptions,
   ...RenderingOptions
 };
 
@@ -25,9 +26,9 @@ export const handler = async (
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const contentTypeSchemaList = await hub.related.contentTypes.list(extractPageableSortable(argv));
+  const contentTypeList = await paginator(hub.related.contentTypes.list, extractSortable(argv));
 
-  new DataPresenter(contentTypeSchemaList.getItems().map(v => v.toJSON())).render({
+  new DataPresenter(contentTypeList.map(value => value.toJson())).render({
     json: argv.json,
     itemMapFn: itemMapFn
   });

@@ -4,6 +4,7 @@ import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { ContentType, ContentTypeIcon, ContentTypeVisualization } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
 export const command = 'register';
@@ -32,36 +33,23 @@ export const builder: CommandOptions = {
   ...RenderingOptions
 };
 
-interface IconOption {
-  [key: string]: ContentTypeIcon;
-}
-
-interface VisualizationOption {
-  [key: string]: ContentTypeVisualization;
-}
-
 interface ContentTypeBuilderOptions {
-  icons: IconOption;
-  visualizations: VisualizationOption;
-}
-
-function parseSettingsArg<T, U>(objectArg: T): U[] {
-  return Object.entries(objectArg)
-    .sort((a, b) => (parseInt(a[0], 10) > parseInt(b[0], 10) ? 1 : -1))
-    .map(entry => entry[1]);
+  icons: YargObject<ContentTypeIcon>;
+  visualizations: YargObject<ContentTypeVisualization>;
 }
 
 export const handler = async (
   argv: Arguments<ContentTypeBuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
-  const hub = await client.hubs.get(argv.hubId);
+  const { hubId, schemaId, label, icons, visualizations } = argv;
+  const hub = await client.hubs.get(hubId);
   const contentType = new ContentType({
-    contentTypeUri: argv.schemaId,
+    contentTypeUri: schemaId,
     settings: {
-      label: argv.label,
-      icons: parseSettingsArg<IconOption, ContentTypeIcon>(argv.icons),
-      visualizations: parseSettingsArg<VisualizationOption, ContentTypeVisualization>(argv.visualizations)
+      label: label,
+      icons: transformYargObjectToArray<ContentTypeIcon>(icons),
+      visualizations: transformYargObjectToArray<ContentTypeVisualization>(visualizations)
     }
   });
   const registeredContentType = await hub.related.contentTypes.register(contentType);

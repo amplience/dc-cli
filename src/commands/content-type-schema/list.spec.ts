@@ -3,6 +3,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import DataPresenter from '../../view/data-presenter';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
+import { DEFAULT_SIZE } from '../../common/dc-management-sdk-js/paginator';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
@@ -26,8 +27,8 @@ describe('content-type-schema list command', (): void => {
       hubId: 'hub-id'
     };
 
-    it('should page the data', async (): Promise<void> => {
-      const pagingOptions = { page: 3, size: 10, sort: 'createdDate,desc' };
+    it('should pass the sort data into the service', async (): Promise<void> => {
+      const pagingOptions = { sort: 'createdDate,desc' };
 
       const plainListContentTypeSchemas = [
         {
@@ -66,7 +67,7 @@ describe('content-type-schema list command', (): void => {
       await handler(argv);
 
       expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledWith(pagingOptions);
+      expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE, ...pagingOptions });
 
       expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchemas);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ itemMapFn, json: argv.json });
