@@ -49,7 +49,7 @@ describe('content-type register command', () => {
       jest.restoreAllMocks();
     });
 
-    it('should register content type with icons and visualization', async () => {
+    it('should register content type with icons, visualizations and cards', async () => {
       const registerArgs = {
         label: 'test-label',
         schemaId: 'schema-id',
@@ -81,6 +81,23 @@ describe('content-type register command', () => {
           '2': {
             label: 'viz-label-2',
             templatedUri: 'viz-test-url-2',
+            default: true
+          }
+        },
+        cards: {
+          '1': {
+            label: 'card-label-1',
+            templatedUri: 'card-test-url-1',
+            default: true
+          },
+          '0': {
+            label: 'card-label-0',
+            templatedUri: 'card-test-url-0',
+            default: true
+          },
+          '2': {
+            label: 'card-label-2',
+            templatedUri: 'card-test-url-2',
             default: true
           }
         }
@@ -119,6 +136,23 @@ describe('content-type register command', () => {
             {
               label: 'viz-label-2',
               templatedUri: 'viz-test-url-2',
+              default: true
+            }
+          ],
+          cards: [
+            {
+              label: 'card-label-0',
+              templatedUri: 'card-test-url-0',
+              default: true
+            },
+            {
+              label: 'card-label-1',
+              templatedUri: 'card-test-url-1',
+              default: true
+            },
+            {
+              label: 'card-label-2',
+              templatedUri: 'card-test-url-2',
               default: true
             }
           ]

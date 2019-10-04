@@ -2,7 +2,7 @@ import { CommandOptions } from '../../interfaces/command-options.interface';
 import DataPresenter, { RenderingOptions, RenderingArguments } from '../../view/data-presenter';
 import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentType, ContentTypeIcon, ContentTypeVisualization } from 'dc-management-sdk-js';
+import { ContentType, ContentTypeIcon, ContentTypeVisualization, ContentTypeCard } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
 import { singleItemTableOptions } from '../../common/table/table.consts';
@@ -30,31 +30,37 @@ export const builder: CommandOptions = {
     describe: 'content-type visualizations',
     default: {}
   },
+  cards: {
+    describe: 'content-type cards',
+    default: {}
+  },
   ...RenderingOptions
 };
 
 interface ContentTypeBuilderOptions {
   icons: YargObject<ContentTypeIcon>;
   visualizations: YargObject<ContentTypeVisualization>;
+  cards: YargObject<ContentTypeCard>;
 }
 
 export const handler = async (
   argv: Arguments<ContentTypeBuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
-  const { hubId, schemaId, label, icons, visualizations } = argv;
+  const { hubId, schemaId, label, icons, visualizations, cards } = argv;
   const hub = await client.hubs.get(hubId);
   const contentType = new ContentType({
     contentTypeUri: schemaId,
     settings: {
       label: label,
       icons: transformYargObjectToArray<ContentTypeIcon>(icons),
-      visualizations: transformYargObjectToArray<ContentTypeVisualization>(visualizations)
+      visualizations: transformYargObjectToArray<ContentTypeVisualization>(visualizations),
+      cards: transformYargObjectToArray<ContentTypeCard>(cards)
     }
   });
   const registeredContentType = await hub.related.contentTypes.register(contentType);
 
-  new DataPresenter(registeredContentType.toJSON()).render({
+  new DataPresenter(registeredContentType.toJson()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });
