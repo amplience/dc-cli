@@ -16,7 +16,7 @@ describe('content-repository assign-content-type command', () => {
   });
 
   it('should have a command defined', function() {
-    expect(command).toEqual('$0 <id> assign-content-type');
+    expect(command).toEqual('assign-content-type [id]');
   });
 
   describe('builder tests', function() {
