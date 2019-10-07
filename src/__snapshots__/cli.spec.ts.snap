@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`cli should create a yarg instance if one is not supplied 1`] = `
+"<<ENTRYPOINT>> <command>
+
+Commands:
+  <<ENTRYPOINT>> configure            Saves the configuration options to a file
+  <<ENTRYPOINT>> content-type-schema  Content Type Schema
+
+Options:
+  --help          Show help                                            [boolean]
+  --version       Show version number                                  [boolean]
+  --clientId                                                 [string] [required]
+  --clientSecret                                             [string] [required]
+  --hubId                                                    [string] [required]
+  --config        Path to JSON config file     [string] [default: \\"config.json\\"]undefinedPlease specify at least one command"
+`;

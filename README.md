@@ -2,6 +2,18 @@
 
 Command line interface for Amplience Dynamic Content service.
 
+## Description
+**dc-cli** is a command line interface application for Amplience Dynamic Content management APIs.
+
+Run `dc-cli` to get a list of available commands
+
+## Configuration
+**dc-cli** requires a valid set of Amplience client credentials (`--client-key` & `--client-secret`) and hub ID (`--hub-id`) to operate. These must be supplied for each command or alternatively they can saved to a user-level configuration file using `dc-cli configure`.
+
+By default the configuration file is saved into the directory `<HOME_DIR>/.amplience/`, this can be overridden using the `--config` option.
+
+See `dc-cli configure --help` for more information.
+
 ## Installation
 Installing the DC CLI from the NPM package manager can be achieved using the following command:
 ```bash
@@ -27,8 +39,12 @@ npm run build
 ```
 <a name="building-executables"></a>
 ### Building Executables
+
+**Prerequisites**:
+* [ronn](http://rtomayko.github.io/ronn/ronn.1.html) is required to convert the markdown HOW_TO_USE.md to the manpage 
+
 To support the use of the CLI as a standalone application within Windows, Linux and Mac OS we have added a step to export the code as an executable.
-This step can be achived by running the command:
+This step can be achieved by running the command:
 ```bash
 npm run build:package
 ```

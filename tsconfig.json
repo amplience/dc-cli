@@ -1,18 +1,21 @@
 {
   "compilerOptions": {
+    "typeRoots" : ["./node_modules/@types", "./definitions"],
     "module": "commonjs",
     "target": "es2018",
     "outDir": "dist",
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "esModuleInterop": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "definitions/*.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "**/*.spec.ts"
+    "src/**/*.spec.ts"
   ]
 }
