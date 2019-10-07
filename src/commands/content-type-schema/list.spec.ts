@@ -1,82 +1,25 @@
-import { handler } from './list';
+import { handler, itemMapFn } from './list';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import DataPresenter from '../../view/data-presenter';
-import { ContentTypeSchema, Page } from 'dc-management-sdk-js';
+import { ContentTypeSchema } from 'dc-management-sdk-js';
+import MockPage from '../../common/dc-management-sdk-js/mock-page';
+import { DEFAULT_SIZE } from '../../common/dc-management-sdk-js/paginator';
 
 jest.mock('../../services/dynamic-content-client-factory');
+jest.mock('../../view/data-presenter');
 
-const mockParse = jest.fn();
-const mockRender = jest.fn();
-jest.mock('../../view/data-presenter', () => {
-  return jest.fn(() => ({
-    parse: mockParse.mockImplementation(() => ({
-      render: mockRender
-    }))
-  }));
-});
-const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<Page<ContentTypeSchema>>>;
+describe('content-type-schema list command', (): void => {
+  const mockDataPresenter = DataPresenter as jest.Mock;
 
-describe('content-item-schema list command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
 
-  it('should list a hubs content-item-schema', async (): Promise<void> => {
-    const yargArgs = {
-      $0: 'test',
-      _: ['test']
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
-
-    const contentTypeSchemaResponse = [
-      {
-        id: 'abc-123-def'
-      }
-    ];
-
-    const listResponse = {
-      toJson: (): { id: string }[] => {
-        return contentTypeSchemaResponse;
-      },
-      getItems: (): { id: string }[] => contentTypeSchemaResponse
-    };
-    const mockList = jest.fn().mockResolvedValue(listResponse);
-
-    const mockGetHub = jest.fn().mockResolvedValue({
-      related: {
-        contentTypeSchema: {
-          list: mockList
-        }
-      }
-    });
-
-    (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-      hubs: {
-        get: mockGetHub
-      }
-    });
-
-    const argv = { ...yargArgs, ...config };
-    await handler(argv);
-
-    expect(mockGetHub).toBeCalledWith('hub-id');
-    expect(mockList).toBeCalledWith({});
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, listResponse);
-    expect(mockParse).toHaveBeenCalled();
-    expect(mockRender).toHaveBeenCalled();
-  });
-
-  it('should page the data', async (): Promise<void> => {
-    const pagingOptions = { page: 3, size: 10, sort: 'createdDate,desc' };
-
+  describe('handler tests', function() {
     const yargArgs = {
       $0: 'test',
       _: ['test'],
-      ...pagingOptions
+      json: true
     };
     const config = {
       clientId: 'client-id',
@@ -84,145 +27,67 @@ describe('content-item-schema list command', (): void => {
       hubId: 'hub-id'
     };
 
-    const contentTypeSchemaResponse = [
-      {
-        id: 'abc-123-def'
-      }
-    ];
+    it('should pass the sort data into the service', async (): Promise<void> => {
+      const pagingOptions = { sort: 'createdDate,desc' };
 
-    const listResponse = {
-      toJson: (): { id: string }[] => {
-        return contentTypeSchemaResponse;
-      },
-      getItems: (): { id: string }[] => contentTypeSchemaResponse
-    };
-    const mockList = jest.fn().mockResolvedValue(listResponse);
-
-    const mockGetHub = jest.fn().mockResolvedValue({
-      related: {
-        contentTypeSchema: {
-          list: mockList
+      const plainListContentTypeSchemas = [
+        {
+          id: '1',
+          body: '{}',
+          schemaId: 'schemaId1'
+        },
+        {
+          id: '2',
+          body: '{}',
+          schemaId: 'schemaId2'
         }
-      }
-    });
+      ];
+      const contentTypeSchemaResponse: ContentTypeSchema[] = plainListContentTypeSchemas.map(
+        v => new ContentTypeSchema(v)
+      );
 
-    (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-      hubs: {
-        get: mockGetHub
-      }
-    });
+      const listResponse = new MockPage(ContentTypeSchema, contentTypeSchemaResponse);
+      const mockList = jest.fn().mockResolvedValue(listResponse);
 
-    const argv = { ...yargArgs, ...config };
-    await handler(argv);
-
-    expect(mockGetHub).toBeCalledWith('hub-id');
-    expect(mockList).toBeCalledWith(pagingOptions);
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, listResponse);
-    expect(mockParse).toHaveBeenCalled();
-    expect(mockRender).toHaveBeenCalled();
-  });
-
-  it('should supply only a page in the paging options', async (): Promise<void> => {
-    const pagingOptions = { page: 3 };
-
-    const yargArgs = {
-      $0: 'test',
-      _: ['test'],
-      ...pagingOptions
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
-
-    const contentTypeSchemaResponse = [
-      {
-        id: 'abc-123-def'
-      }
-    ];
-
-    const listResponse = {
-      toJson: (): { id: string }[] => {
-        return contentTypeSchemaResponse;
-      },
-      getItems: (): { id: string }[] => contentTypeSchemaResponse
-    };
-    const mockList = jest.fn().mockResolvedValue(listResponse);
-
-    const mockGetHub = jest.fn().mockResolvedValue({
-      related: {
-        contentTypeSchema: {
-          list: mockList
+      const mockGetHub = jest.fn().mockResolvedValue({
+        related: {
+          contentTypeSchema: {
+            list: mockList
+          }
         }
-      }
-    });
+      });
 
-    (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-      hubs: {
-        get: mockGetHub
-      }
-    });
-
-    const argv = { ...yargArgs, ...config };
-    await handler(argv);
-
-    expect(mockGetHub).toBeCalledWith('hub-id');
-    expect(mockList).toBeCalledWith(pagingOptions);
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, listResponse);
-    expect(mockParse).toHaveBeenCalled();
-    expect(mockRender).toHaveBeenCalled();
-  });
-
-  it('should run the parse function', async (): Promise<void> => {
-    const yargArgs = {
-      $0: 'test',
-      _: ['test']
-    };
-    const config = {
-      clientId: 'client-id',
-      clientSecret: 'client-id',
-      hubId: 'hub-id'
-    };
-
-    const contentTypeSchemaResponse = [
-      {
-        id: 'abc-123-def'
-      }
-    ];
-
-    const listResponse = {
-      toJson: (): { id: string }[] => {
-        return contentTypeSchemaResponse;
-      },
-      getItems: (): { id: string }[] => contentTypeSchemaResponse
-    };
-    const mockList = jest.fn().mockResolvedValue(listResponse);
-
-    const mockGetHub = jest.fn().mockResolvedValue({
-      related: {
-        contentTypeSchema: {
-          list: mockList
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub
         }
-      }
+      });
+
+      const argv = { ...yargArgs, ...config, ...pagingOptions };
+      await handler(argv);
+
+      expect(mockGetHub).toBeCalledWith('hub-id');
+      expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE, ...pagingOptions });
+
+      expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchemas);
+      expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ itemMapFn, json: argv.json });
     });
 
-    (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-      hubs: {
-        get: mockGetHub
-      }
+    it('should run the formatRow function', async (): Promise<void> => {
+      const contentTypeSchema = new ContentTypeSchema({
+        id: 'id',
+        schemaId: 'schemaId',
+        version: 'version',
+        validationLevel: 'validationLevel',
+        body: '{}'
+      });
+      const result = itemMapFn(contentTypeSchema.toJson());
+      expect(result).toEqual({
+        id: 'id',
+        schemaId: 'schemaId',
+        validationLevel: 'validationLevel',
+        version: 'version'
+      });
     });
-
-    const argv = { ...yargArgs, ...config };
-    await handler(argv);
-
-    const objectToParse = { id: 'id', schemaId: 'schemaId', version: 'version', validationLevel: 'validationLevel' };
-    const contentTypeSchemaList: { getItems: () => { [key: string]: string }[] } = {
-      getItems: () => [{ ...objectToParse, extraneousField: 'extraneousValue' }]
-    };
-
-    const actualParse = mockParse.mock.calls[0][0];
-    expect(actualParse(contentTypeSchemaList)).toEqual([objectToParse]);
-    expect(mockParse).toHaveBeenCalled();
   });
 });

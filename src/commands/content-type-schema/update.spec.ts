@@ -1,16 +1,16 @@
 import { builder, BuilderOptions, command, desc, handler } from './update';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { TableUserConfig } from 'table';
 import axios from 'axios';
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
 import Yargs from 'yargs/yargs';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('axios');
 jest.mock('../../view/data-presenter');
 
-const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentTypeSchema>>;
+const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
 describe('content type schema update command', function() {
   describe('command tests', function() {
@@ -58,7 +58,8 @@ describe('content type schema update command', function() {
   describe('handler tests', function() {
     const yargArgs = {
       $0: 'test',
-      _: ['test']
+      _: ['test'],
+      json: true
     };
     const config = {
       clientId: 'client-id',
@@ -86,19 +87,16 @@ describe('content type schema update command', function() {
         get: mockGet
       }
     });
-    mockUpdate.mockResolvedValue({
+    const plainListContentTypeSchema = {
       id: 'id'
-    });
+    };
+    mockUpdate.mockResolvedValue(new ContentTypeSchema(plainListContentTypeSchema));
 
     async function successfulHandlerInvocation(
       input: BuilderOptions,
       beforeInvocation: Function = (): void => {},
       afterInvocation: Function = (): void => {}
     ): Promise<void> {
-      const updateResponse = {
-        id: 'id'
-      };
-
       const argv = { ...yargArgs, ...config, ...input };
 
       beforeInvocation();
@@ -107,15 +105,11 @@ describe('content type schema update command', function() {
 
       expect(mockGet).toHaveBeenCalledWith(input.id);
       expect(mockUpdate).toHaveBeenCalled();
-      const expectedUserConfig: TableUserConfig = {
-        columns: {
-          1: {
-            width: 100
-          }
-        }
-      };
-      expect(mockDataPresenter).toHaveBeenCalledWith(argv, updateResponse, expectedUserConfig);
-      expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
+      expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchema);
+      expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
+        json: argv.json,
+        tableUserConfig: singleItemTableOptions
+      });
     }
 
     it('should update a schema from a local file (relative path)', async function() {

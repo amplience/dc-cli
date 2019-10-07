@@ -1,20 +1,21 @@
 import { builder, BuilderOptions, command, desc, handler } from './create';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { TableUserConfig } from 'table';
 import axios from 'axios';
 import DataPresenter from '../../view/data-presenter';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('axios');
 jest.mock('../../view/data-presenter');
 
-const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter<ContentTypeSchema>>;
+const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
 describe('content type schema create command', function() {
   const yargArgs = {
     $0: 'test',
-    _: ['test']
+    _: ['test'],
+    json: true
   };
   const config = {
     clientId: 'client-id',
@@ -59,7 +60,8 @@ describe('content type schema create command', function() {
     beforeInvocation: Function = (): void => {},
     afterInvocation: Function = (): void => {}
   ): Promise<void> {
-    const createResponse = { id: 'test' };
+    const plainContentTypeSchema = { id: 'test' };
+    const createResponse = new ContentTypeSchema(plainContentTypeSchema);
     const mockCreate = jest.fn();
     mockGetHub.mockResolvedValue({ related: { contentTypeSchema: { create: mockCreate } } });
     mockCreate.mockResolvedValue(createResponse);
@@ -72,15 +74,11 @@ describe('content type schema create command', function() {
 
     expect(mockGetHub).toHaveBeenCalledWith(config.hubId);
     expect(mockCreate).toHaveBeenCalled();
-    const expectedUserConfig: TableUserConfig = {
-      columns: {
-        1: {
-          width: 100
-        }
-      }
-    };
-    expect(mockDataPresenter).toHaveBeenCalledWith(argv, createResponse, expectedUserConfig);
-    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalled();
+    expect(mockDataPresenter).toHaveBeenCalledWith(plainContentTypeSchema);
+    expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
+      json: argv.json,
+      tableUserConfig: singleItemTableOptions
+    });
   }
 
   it('should load a schema from a local file (relative path)', async function() {

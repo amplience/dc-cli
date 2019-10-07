@@ -4,6 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ConfigurationParameters } from '../configure';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import { getSchemaBody } from './helper/content-type-schema.helper';
+import { singleItemTableOptions } from '../../common/table/table.consts';
 
 export const command = 'update [id]';
 
@@ -56,11 +57,8 @@ export const handler = async (
   const contentTypeSchema = await client.contentTypeSchemas.get(argv.id);
   const contentTypeSchemaResult = await contentTypeSchema.related.update(updatedSchema);
 
-  return new DataPresenter(argv, contentTypeSchemaResult, {
-    columns: {
-      1: {
-        width: 100
-      }
-    }
-  }).render();
+  new DataPresenter(contentTypeSchemaResult.toJson()).render({
+    json: argv.json,
+    tableUserConfig: singleItemTableOptions
+  });
 };
