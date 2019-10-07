@@ -1,7 +1,6 @@
 import { builder, BuilderOptions, command, desc, handler } from './update';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { TableUserConfig } from 'table';
 import axios from 'axios';
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
 import Yargs from 'yargs/yargs';
@@ -98,10 +97,6 @@ describe('content type schema update command', function() {
       beforeInvocation: Function = (): void => {},
       afterInvocation: Function = (): void => {}
     ): Promise<void> {
-      const updateResponse = {
-        id: 'id'
-      };
-
       const argv = { ...yargArgs, ...config, ...input };
 
       beforeInvocation();
@@ -110,13 +105,6 @@ describe('content type schema update command', function() {
 
       expect(mockGet).toHaveBeenCalledWith(input.id);
       expect(mockUpdate).toHaveBeenCalled();
-      const expectedUserConfig: TableUserConfig = {
-        columns: {
-          1: {
-            width: 100
-          }
-        }
-      };
       expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchema);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
         json: argv.json,
