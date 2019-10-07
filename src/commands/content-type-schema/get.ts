@@ -15,14 +15,7 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       demandOption: true
     })
-    .options({
-      id: {
-        type: 'string',
-        demandOption: true,
-        description: 'Content Type Schema ID'
-      },
-      ...RenderingOptions
-    });
+    .options(RenderingOptions);
 };
 
 interface BuilderOptions {
