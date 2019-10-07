@@ -4,7 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ConfigurationParameters } from '../configure';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = '$0 <id> assign-content-type';
+export const command = 'assign-content-type [id]';
 
 export const desc = 'Assign Content Type';
 
