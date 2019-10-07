@@ -39,8 +39,12 @@ npm run build
 ```
 <a name="building-executables"></a>
 ### Building Executables
+
+**Prerequisites**:
+* [ronn](http://rtomayko.github.io/ronn/ronn.1.html) is required to convert the markdown HOW_TO_USE.md to the manpage 
+
 To support the use of the CLI as a standalone application within Windows, Linux and Mac OS we have added a step to export the code as an executable.
-This step can be achived by running the command:
+This step can be achieved by running the command:
 ```bash
 npm run build:package
 ```
