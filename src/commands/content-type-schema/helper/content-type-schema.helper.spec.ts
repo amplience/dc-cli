@@ -10,26 +10,35 @@ describe('content type schema helper', function() {
     jest.resetAllMocks();
   });
 
-  async function successfulAxiosGetInvocation(protocol: string, schema: string): Promise<void> {
+  async function successfulAxiosGetInvocation(protocol: string, schema: string, stringifyData: boolean): Promise<void> {
     const mockAxiosGet = axios.get as jest.Mock;
+    const data = {
+      $schema: 'test',
+      id: 'test'
+    };
     const mockSchemaResponse = {
-      data: {
-        $schema: 'test',
-        id: 'test'
-      }
+      data: stringifyData ? JSON.stringify(data) : data
     };
     mockAxiosGet.mockResolvedValue(mockSchemaResponse);
     const response = await getSchemaBody(schema);
     expect(mockAxiosGet).toHaveBeenCalledWith(expect.stringMatching(protocol));
-    expect(response).toEqual(JSON.stringify(mockSchemaResponse.data));
+    expect(response).toEqual(JSON.stringify(data));
   }
 
-  it('should load a schema from a url (http)', async function() {
-    await successfulAxiosGetInvocation('http', 'http://example.com/schema.json');
+  it('should load a schema from a url (http) as object', async function() {
+    await successfulAxiosGetInvocation('http', 'http://example.com/schema.json', false);
   });
 
-  it('should load a schema from a url (https)', async function() {
-    await successfulAxiosGetInvocation('https', 'https://example.com/schema.json');
+  it('should load a schema from a url (https) as object', async function() {
+    await successfulAxiosGetInvocation('https', 'https://example.com/schema.json', false);
+  });
+
+  it('should load a schema from a url (http) as JSON string', async function() {
+    await successfulAxiosGetInvocation('http', 'http://example.com/schema.json', true);
+  });
+
+  it('should load a schema from a url (https) as JSON string', async function() {
+    await successfulAxiosGetInvocation('https', 'https://example.com/schema.json', true);
   });
 
   async function successfulLocalFileInvocation(schema: string): Promise<void> {
