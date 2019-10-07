@@ -1,33 +1,35 @@
-import { CommandOptions } from '../../interfaces/command-options.interface';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
-import { Arguments } from 'yargs';
+import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
-import { ValidationLevel, ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import { getSchemaBody } from './helper/content-type-schema.helper';
 
-export const command = 'update';
+export const command = 'update [id]';
 
 export const desc = 'Update Content Type Schema';
 
-export const builder: CommandOptions = {
-  id: {
-    type: 'string',
-    demandOption: true,
-    description: 'content-type-schema ID'
-  },
-  schema: {
-    type: 'string',
-    demandOption: true,
-    description: 'content-type-schema Source Location'
-  },
-  validationLevel: {
-    type: 'string',
-    choices: Object.values(ValidationLevel),
-    demandOption: true,
-    description: 'content-type-schema Validation Level'
-  },
-  ...RenderingOptions
+export const builder = (yargs: Argv): void => {
+  yargs
+    .positional('id', {
+      describe: 'Content Type Schema ID',
+      type: 'string',
+      demandOption: true
+    })
+    .options({
+      schema: {
+        type: 'string',
+        demandOption: true,
+        description: 'Content Type Schema Source Location'
+      },
+      validationLevel: {
+        type: 'string',
+        choices: Object.values(ValidationLevel),
+        demandOption: true,
+        description: 'Content Type Schema Validation Level'
+      },
+      ...RenderingOptions
+    });
 };
 
 export interface BuilderOptions {
