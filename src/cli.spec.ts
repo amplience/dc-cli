@@ -19,12 +19,6 @@ describe('cli', (): void => {
     return buffer.replace(new RegExp(basename(process.argv[1]), 'g'), '<<ENTRYPOINT>>');
   };
 
-  const throwErrorAndCaptureConsole = async (error: { message: string } | string | Error): Promise<string> => {
-    return await captureConsole(async () => {
-      await cli.displayError(error);
-    });
-  };
-
   it('should configure yarg instance', async (): Promise<void> => {
     const argv = Yargs(process.argv.slice(2));
     const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
@@ -50,27 +44,5 @@ describe('cli', (): void => {
 
     expect(buffer).toMatchSnapshot();
     expect(processExitSpy).not.toHaveBeenCalled();
-  });
-
-  it('should display sdk error (string)', async () => {
-    const spyDisplayError = jest.spyOn(cli, 'displayError');
-    expect(
-      await throwErrorAndCaptureConsole(
-        'The list-content-type-schemas action is not available, ensure you have permission to perform this action.'
-      )
-    ).toMatchSnapshot();
-    expect(spyDisplayError).toHaveBeenCalled();
-  });
-
-  it('should display sdk error ({message})', async () => {
-    const spyDisplayError = jest.spyOn(cli, 'displayError');
-    expect(await throwErrorAndCaptureConsole({ message: 'Error message' })).toMatchSnapshot();
-    expect(spyDisplayError).toHaveBeenCalled();
-  });
-
-  it('should display sdk error (Error)', async () => {
-    const spyDisplayError = jest.spyOn(cli, 'displayError');
-    expect(await throwErrorAndCaptureConsole(new Error('Error'))).toMatchSnapshot();
-    expect(spyDisplayError).toHaveBeenCalled();
   });
 });

@@ -16,9 +16,3 @@ Options:
   --hubId                                                    [string] [required]
   --config        Path to JSON config file     [string] [default: \\"config.json\\"]Error: Please specify at least one command"
 `;
-
-exports[`cli should display sdk error ({message}) 1`] = `"Error: Error message"`;
-
-exports[`cli should display sdk error (Error) 1`] = `"Error: Error"`;
-
-exports[`cli should display sdk error (string) 1`] = `"Error: The list-content-type-schemas action is not available, ensure you have permission to perform this action."`;
