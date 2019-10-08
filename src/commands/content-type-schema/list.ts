@@ -41,11 +41,15 @@ export const handler = async (argv: Arguments<ConfigurationParameters & Renderin
   const hub = await client.hubs.get(argv.hubId);
   const contentTypeSchemaList = await hub.related.contentTypeSchema.list(pagingOptions);
 
-  new DataPresenter(argv, contentTypeSchemaList)
-    .parse(contentTypeSchemaList =>
-      contentTypeSchemaList
-        .getItems()
-        .map(({ id, schemaId, version, validationLevel }) => ({ id, schemaId, version, validationLevel }))
-    )
-    .render();
+  if (contentTypeSchemaList.getItems().length > 0) {
+    new DataPresenter(argv, contentTypeSchemaList)
+      .parse(contentTypeSchemaList =>
+        contentTypeSchemaList
+          .getItems()
+          .map(({ id, schemaId, version, validationLevel }) => ({ id, schemaId, version, validationLevel }))
+      )
+      .render();
+  } else {
+    console.log('There are no content type schemas defined.');
+  }
 };
