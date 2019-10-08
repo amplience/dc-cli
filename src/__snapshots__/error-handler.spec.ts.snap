@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`error handler tests HttpErrors should display sdk http 401 error 1`] = `"Error: Unauthorized - Please ensure your client ID & secret are correct."`;
+
+exports[`error handler tests HttpErrors should display sdk http 403 error 1`] = `"Error: Forbidden - Please ensure you have permission to perform this action."`;
+
+exports[`error handler tests HttpErrors should display sdk http 429 error 1`] = `"Error: Too many requests - Please try again later."`;
+
+exports[`error handler tests HttpErrors should display sdk http 500 error 1`] = `"Error: Internal Server Error - Message"`;
+
+exports[`error handler tests HttpErrors should display sdk http 501 error - unmapped status code 1`] = `"Error: Message"`;
+
+exports[`error handler tests HttpErrors should display sdk http error 1`] = `"Error: Message"`;
+
+exports[`error handler tests should display sdk error ({message: string}) 1`] = `"Error: Error message"`;
+
+exports[`error handler tests should display sdk error (new Error()) 1`] = `"Error: Error instance"`;
+
+exports[`error handler tests should display sdk error (string) 1`] = `"Error: The list-content-type-schemas action is not available, ensure you have permission to perform this action."`;

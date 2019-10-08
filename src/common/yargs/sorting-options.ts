@@ -4,7 +4,7 @@ import { Pageable, Sortable } from 'dc-management-sdk-js';
 export const SortingOptions: CommandOptions = {
   sort: {
     type: 'string',
-    description: 'how to order the list e.g createdDate,asc'
+    description: 'how to order the list e.g "<property>,<asc|desc>..."'
   }
 };
 
