@@ -73,6 +73,35 @@ describe('content-type-schema list command', (): void => {
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ itemMapFn, json: argv.json });
     });
 
+    it('should not render a table if there are no schemas for a hub', async (): Promise<void> => {
+      const contentTypeSchemaResponse: ContentTypeSchema[] = [];
+
+      const listResponse = new MockPage(ContentTypeSchema, contentTypeSchemaResponse);
+      const mockList = jest.fn().mockResolvedValue(listResponse);
+
+      const mockGetHub = jest.fn().mockResolvedValue({
+        related: {
+          contentTypeSchema: {
+            list: mockList
+          }
+        }
+      });
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub
+        }
+      });
+      mockDataPresenter.mockClear();
+
+      const argv = { ...yargArgs, ...config };
+      await handler(argv);
+
+      expect(mockGetHub).toBeCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalled();
+      expect(mockDataPresenter).toHaveBeenCalledTimes(0);
+    });
+
     it('should run the formatRow function', async (): Promise<void> => {
       const contentTypeSchema = new ContentTypeSchema({
         id: 'id',
