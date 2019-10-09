@@ -1,6 +1,23 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`DataPresenter collection of items should render a collection of items as json 1`] = `
+exports[`DataPresenter collection of items tests collection of 0 items should render a collection of items as json 1`] = `"[]"`;
+
+exports[`DataPresenter collection of items tests collection of 0 items should render a collection of items horizontal table using with table config 1`] = `
+"0 items returned.
+"
+`;
+
+exports[`DataPresenter collection of items tests collection of 0 items should render a collection of items in a horizontal table 1`] = `
+"0 items returned.
+"
+`;
+
+exports[`DataPresenter collection of items tests collection of 0 items should render using the supplied map() for a collection of items in a horizontal table 1`] = `
+"0 items returned.
+"
+`;
+
+exports[`DataPresenter collection of items tests collection of items should render a collection of items as json 1`] = `
 "[
   {
     \\"foo\\": \\"bar1\\",
@@ -13,7 +30,7 @@ exports[`DataPresenter collection of items should render a collection of items a
 ]"
 `;
 
-exports[`DataPresenter collection of items should render a collection of items horizontal table using with table config 1`] = `
+exports[`DataPresenter collection of items tests collection of items should render a collection of items horizontal table using with table config 1`] = `
 "+------+------------------------------------------------------------------------------------------------------+
 | [1mfoo[22m  | [1mkey[22m                                                                                                  |
 |------|------------------------------------------------------------------------------------------------------|
@@ -27,20 +44,7 @@ exports[`DataPresenter collection of items should render a collection of items h
 "
 `;
 
-exports[`DataPresenter collection of items should render a collection of items horizontal table with some page information 1`] = `
-"+------+----------------------------------------------------------------------------------------------------------------------------------------------+
-| [1mfoo[22m  | [1mkey[22m                                                                                                                                          |
-|------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| bar1 | value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1 value1  |
-|------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| bar2 | value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2 value2  |
-+------+----------------------------------------------------------------------------------------------------------------------------------------------+
-
-[1mDisplaying page 1 of 20[22m
-"
-`;
-
-exports[`DataPresenter collection of items should render a collection of items in a horizontal table 1`] = `
+exports[`DataPresenter collection of items tests collection of items should render a collection of items in a horizontal table 1`] = `
 "+------+----------------------------------------------------------------------------------------------------------------------------------------------+
 | [1mfoo[22m  | [1mkey[22m                                                                                                                                          |
 |------|----------------------------------------------------------------------------------------------------------------------------------------------|
@@ -52,7 +56,7 @@ exports[`DataPresenter collection of items should render a collection of items i
 "
 `;
 
-exports[`DataPresenter collection of items should render using the supplied map() for a collection of items in a horizontal table 1`] = `
+exports[`DataPresenter collection of items tests collection of items should render using the supplied map() for a collection of items in a horizontal table 1`] = `
 "+------+
 | [1mfoo[22m  |
 |------|
@@ -60,18 +64,6 @@ exports[`DataPresenter collection of items should render using the supplied map(
 |------|
 | bar2 |
 +------+
-
-"
-`;
-
-exports[`DataPresenter single item should not output page information for a single item 1`] = `
-"+----------+----------------------------------------------------------------------------------------------------------------------------+
-| [1mProperty[22m | [1mValue[22m                                                                                                                      |
-|----------|----------------------------------------------------------------------------------------------------------------------------|
-| foo      | \\"bar\\"                                                                                                                      |
-|----------|----------------------------------------------------------------------------------------------------------------------------|
-| key      | \\"value value value value value value value value value value value value value value value value value value value value \\" |
-+----------+----------------------------------------------------------------------------------------------------------------------------+
 
 "
 `;

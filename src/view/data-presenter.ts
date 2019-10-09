@@ -1,7 +1,6 @@
 import { getBorderCharacters, table, TableUserConfig } from 'table';
 import chalk from 'chalk';
 import { CommandOptions } from '../interfaces/command-options.interface';
-import { PageMetadata } from 'dc-management-sdk-js';
 
 const DEFAULT_TABLE_CONFIG = {
   border: getBorderCharacters('ramac')
@@ -28,39 +27,36 @@ interface RenderOptions {
 }
 
 export default class DataPresenter {
-  constructor(private readonly data: object | object[], private readonly page?: PageMetadata) {}
+  constructor(private readonly data: object | object[]) {}
 
-  private generateHorizontalTable(json: object[]): unknown[][] {
+  private generateHorizontalTable(json: object[], tableUserConfig: TableUserConfig | undefined): string {
+    if (json.length === 0) {
+      return '0 items returned.';
+    }
     const rows = json.map(row => Object.values(row));
     const headerRow = Object.keys(json[0]).map(key => chalk.bold(key));
-    return [headerRow, ...rows];
+    return table([headerRow, ...rows], { ...DEFAULT_TABLE_CONFIG, ...(tableUserConfig || {}) });
   }
 
-  private generateVerticalTable(json: object): unknown[][] {
+  private generateVerticalTable(json: object, tableUserConfig: TableUserConfig | undefined): string {
     const rows = Object.entries(json).map(value => [value[0], JSON.stringify(value[1])]);
-    return [[chalk.bold('Property'), chalk.bold('Value')], ...rows];
+    return table([[chalk.bold('Property'), chalk.bold('Value')], ...rows], {
+      ...DEFAULT_TABLE_CONFIG,
+      ...(tableUserConfig || {})
+    });
   }
 
   public render(renderOptions: RenderOptions = {}): void {
     const itemMapFn: MapFn = renderOptions.itemMapFn ? renderOptions.itemMapFn : (v: object): object => v;
 
-    let output = '';
+    let output;
     if (renderOptions.json) {
       output = JSON.stringify(this.data, null, 2);
     } else {
-      const tableData = Array.isArray(this.data)
-        ? this.generateHorizontalTable(this.data.map(itemMapFn))
-        : this.generateVerticalTable(itemMapFn(this.data));
-
-      output += table(tableData, { ...DEFAULT_TABLE_CONFIG, ...renderOptions.tableUserConfig }) + '\n';
-      if (
-        Array.isArray(this.data) &&
-        this.page &&
-        this.page.number !== undefined &&
-        this.page.totalPages !== undefined
-      ) {
-        output += chalk.bold(`Displaying page ${this.page.number + 1} of ${this.page.totalPages}`) + '\n';
-      }
+      output = Array.isArray(this.data)
+        ? this.generateHorizontalTable(this.data.map(itemMapFn), renderOptions.tableUserConfig)
+        : this.generateVerticalTable(itemMapFn(this.data), renderOptions.tableUserConfig);
+      output += '\n';
     }
     process.stdout.write(output);
   }
