@@ -16,7 +16,7 @@ describe('content-type get command', () => {
   });
 
   it('should command should defined', function() {
-    expect(command).toEqual('get [id]');
+    expect(command).toEqual('get <id>');
   });
 
   describe('builder tests', function() {
@@ -28,7 +28,6 @@ describe('content-type get command', () => {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        demandOption: true,
         describe: 'Content Type ID',
         type: 'string'
       });
