@@ -6,7 +6,7 @@ import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import { getSchemaBody } from './helper/content-type-schema.helper';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'update [id]';
+export const command = 'update <id>';
 
 export const desc = 'Update Content Type Schema';
 
@@ -14,8 +14,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Type Schema ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options({
       schema: {

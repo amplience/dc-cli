@@ -26,7 +26,7 @@ describe('ContentType.sync', () => {
     jest.restoreAllMocks();
   });
   it('should command should defined', function() {
-    expect(command).toEqual('sync [id]');
+    expect(command).toEqual('sync <id>');
   });
 
   describe('builder tests', function() {
@@ -38,7 +38,6 @@ describe('ContentType.sync', () => {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        demandOption: true,
         describe: 'Content Type ID',
         type: 'string'
       });
