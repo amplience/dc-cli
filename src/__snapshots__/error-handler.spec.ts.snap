@@ -2,7 +2,9 @@
 
 exports[`error handler tests HttpErrors should display sdk http 401 error 1`] = `"Error: Unauthorized - Please ensure your client ID & secret are correct."`;
 
-exports[`error handler tests HttpErrors should display sdk http 403 error 1`] = `"Error: Forbidden - Please ensure you have permission to perform this action."`;
+exports[`error handler tests HttpErrors should display sdk http 403 error (with request) 1`] = `"Error: The requested action (PATCH: http://example.com) is not available (forbidden), ensure you have permission to perform this action."`;
+
+exports[`error handler tests HttpErrors should display sdk http 403 error 1`] = `"Error: The requested action is not available (forbidden), ensure you have permission to perform this action."`;
 
 exports[`error handler tests HttpErrors should display sdk http 429 error 1`] = `"Error: Too many requests - Please try again later."`;
 
