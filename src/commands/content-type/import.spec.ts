@@ -50,11 +50,10 @@ describe('content-type import command', (): void => {
       const contentTypeFile = {
         id: 'content-type-id'
       };
-      const mockContentType = new ContentType(contentTypeFile);
       mockReadFile.mockReturnValue(JSON.stringify(contentTypeFile));
       const dirName = 'my-dir';
-      const importObjects: ContentType[] = extractImportObjects<ContentType>(dirName, ContentType);
-      expect(importObjects.map(o => o.toJSON())).toEqual([mockContentType.toJSON()]);
+      const importObjects: ContentType[] = extractImportObjects<ContentType>(dirName);
+      expect(importObjects).toEqual([contentTypeFile]);
       expect(mockFileReadDir).toHaveBeenCalledWith(dirName);
       expect(mockReadFile).toHaveBeenCalledTimes(1);
       expect(mockReadFile).toHaveBeenCalledWith(path.join(dirName, mockFileNames[0]), 'utf-8');
@@ -68,7 +67,7 @@ describe('content-type import command', (): void => {
       const mockContentType = 'invalid json';
       mockReadFile.mockReturnValue(mockContentType);
       const dirName = 'my-dir';
-      expect(() => extractImportObjects<ContentType>(dirName, ContentType)).toThrowError(
+      expect(() => extractImportObjects<ContentType>(dirName)).toThrowError(
         'Non-JSON file found: a.json, aborting import'
       );
       expect(mockFileReadDir).toHaveBeenCalledWith(dirName);
@@ -77,7 +76,7 @@ describe('content-type import command', (): void => {
     });
   });
 
-  describe.skip('handler tests', () => {
+  describe('handler tests', () => {
     it('should call the handler', async (): Promise<void> => {
       const yargArgs = {
         $0: 'test',

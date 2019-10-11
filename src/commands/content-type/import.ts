@@ -1,5 +1,5 @@
 import { Arguments, Argv } from 'yargs';
-import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
+import { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import { ConfigurationParameters } from '../configure';
 import * as fs from 'fs';
 import path from 'path';
@@ -7,9 +7,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentType } from 'dc-management-sdk-js';
 import { differenceBy, intersectionBy } from 'lodash';
-import { itemMapFn } from './list';
-import allSettled, { PromiseResult } from 'promise.allsettled';
-import { PromiseResolution } from 'promise.allsettled/types';
+import allSettled from 'promise.allsettled';
 allSettled.shim();
 
 export const command = 'import [dir]';
@@ -30,12 +28,12 @@ export interface ImportBuilderOptions {
   dir: string;
 }
 
-export const extractImportObjects = <T>(dir: string, MyClass: new (t: T) => T): T[] => {
+export const extractImportObjects = <T>(dir: string): T[] => {
   const files = fs.readdirSync(dir);
   return files.map(fileName => {
     const file = fs.readFileSync(path.join(dir, fileName), 'utf-8');
     try {
-      return new MyClass(JSON.parse(file));
+      return JSON.parse(file);
     } catch (e) {
       throw new Error(`Non-JSON file found: ${fileName}, aborting import`);
     }
@@ -46,13 +44,13 @@ export const handler = async (
   argv: Arguments<ImportBuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
   const { dir } = argv;
-  const importedContentTypes = extractImportObjects<ContentType>(dir, ContentType);
+  const importedContentTypes = extractImportObjects<ContentType>(dir);
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
 
-  const compareContentType = (contentType: ContentType) => contentType.contentTypeUri;
+  const compareContentType = (contentType: ContentType): string | undefined => contentType.contentTypeUri;
   const contentTypesToCreate = differenceBy(importedContentTypes, storedContentTypes, compareContentType);
   const contentTypesToUpdate = intersectionBy(importedContentTypes, storedContentTypes, compareContentType);
 
@@ -60,20 +58,11 @@ export const handler = async (
   console.log('contentTypesToUpdate', contentTypesToUpdate);
 
   const createPromises = contentTypesToCreate.map(
-    (contentType): Promise<ContentType> => {
-      return hub.related.contentTypes.register(contentType);
-    }
+    (contentType): Promise<ContentType> => hub.related.contentTypes.register(new ContentType(contentType))
   );
-  const results = await allSettled(createPromises);
-  // new DataPresenter(
-  //   results.map(value => {
-  //     // if (value.status === 'fulfilled') {
-  //     //   return (value as PromiseResolution<ContentType>).value.toJson();
-  //     // }
-  //   })
-  // ).render({
-  //   json: argv.json,
-  //   itemMapFn: itemMapFn
-  // });
-  console.log(results);
+
+  // @ts-ignore only using the shim version work but we have type issue to resolve
+  const results = await Promise.allSettled(createPromises);
+  console.log('results', results);
+  results.forEach((result: any): void => console.log('result', result));
 };
