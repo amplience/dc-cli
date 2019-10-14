@@ -75,6 +75,31 @@ describe('content-type import command', (): void => {
   });
 
   describe('handler tests', () => {
+    const mockGetContentType = jest.fn();
+    const mockUpdate = jest.fn();
+    const mockGetHub = jest.fn();
+    const mockList = jest.fn();
+    const mockRegister = jest.fn();
+    beforeEach(() => {
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub
+        },
+        contentTypes: {
+          get: mockGetContentType
+        }
+      });
+
+      mockGetHub.mockResolvedValue({
+        related: {
+          contentTypes: {
+            list: mockList,
+            register: mockRegister
+          }
+        }
+      });
+    });
+
     it('should call the handler', async (): Promise<void> => {
       const yargArgs = {
         $0: 'test',
@@ -86,38 +111,13 @@ describe('content-type import command', (): void => {
         clientSecret: 'client-id',
         hubId: 'hub-id'
       };
-
-      const storedContentTypes = [
-        {
-          contentTypeUri: 'https://content-type-uri-a',
-          settings: {
-            label: 'content-type-label',
-            icons: [{ size: 256, url: 'https://test-icon-url' }],
-            visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }],
-            cards: [{ label: 'cards-label', templatedUri: 'https://test-cards-url', default: true }]
-          }
-        }
-      ];
-      const contentTypeResponse: ContentType[] = storedContentTypes.map(v => new ContentType(v));
-
-      const listResponse = new MockPage(ContentType, contentTypeResponse);
-      const mockList = jest.fn().mockResolvedValue(listResponse);
-      const mockRegister = jest.fn().mockResolvedValue(contentTypeResponse);
-
-      const mockGetHub = jest.fn().mockResolvedValue({
-        related: {
-          contentTypes: {
-            list: mockList,
-            register: mockRegister
-          }
-        }
-      });
-
       const mockFileReadDir = fs.readdirSync as jest.Mock;
       const mockFileNames: string[] = ['a.json', 'b.json'];
+
       mockFileReadDir.mockReturnValue(mockFileNames);
-      const mockReadFile = fs.readFileSync as jest.Mock;
-      const contentTypeUpdate = {
+
+      const storedContentType = {
+        id: 'stored-id',
         contentTypeUri: 'https://content-type-uri-a',
         settings: {
           label: 'content-type-label',
@@ -126,30 +126,32 @@ describe('content-type import command', (): void => {
           cards: [{ label: 'cards-label', templatedUri: 'https://test-cards-url', default: true }]
         }
       };
-      const contentTypeToCreate = { ...contentTypeUpdate, contentTypeUri: 'https://not-matching-content-type-uri' };
+      const storedContentTypes = [storedContentType];
+      const contentTypeResponse: ContentType[] = storedContentTypes.map(v => new ContentType(v));
+      const listResponse = new MockPage(ContentType, contentTypeResponse);
+
+      mockList.mockResolvedValue(listResponse);
+      mockRegister.mockResolvedValue(contentTypeResponse);
+
+      const mutatedContentType = {
+        ...storedContentType,
+        ...{ settings: { ...storedContentType.settings, ...{ label: 'mutated-content-type-label' } } }
+      };
+      const contentTypeToCreate = { ...storedContentType, contentTypeUri: 'https://not-matching-content-type-uri' };
+      const mockReadFile = fs.readFileSync as jest.Mock;
+
       mockReadFile
-        .mockReturnValueOnce(JSON.stringify(contentTypeUpdate))
+        .mockReturnValueOnce(JSON.stringify(mutatedContentType))
         .mockReturnValueOnce(JSON.stringify(contentTypeToCreate));
 
-      const mockGetContentType = jest.fn();
-      const mockUpdate = jest.fn();
+      const contentTypeToUpdate = new ContentType(storedContentType);
 
-      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        hubs: {
-          get: mockGetHub
-        },
-        contentTypes: {
-          get: mockGetContentType
-        }
-      });
-
-      const mockedContentType = new ContentType(contentTypeUpdate);
-      mockedContentType.related.update = mockUpdate;
-      mockGetContentType.mockResolvedValue(mockedContentType);
-
-      mockUpdate.mockResolvedValue(new ContentType(contentTypeUpdate));
+      contentTypeToUpdate.related.update = mockUpdate;
+      mockGetContentType.mockResolvedValue(contentTypeToUpdate);
+      mockUpdate.mockResolvedValue(new ContentType(mutatedContentType));
 
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
+
       await handler(argv);
 
       expect(mockGetHub).toBeCalledWith('hub-id');
@@ -157,8 +159,9 @@ describe('content-type import command', (): void => {
       expect(mockRegister).toHaveBeenCalledTimes(1);
       expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentTypeToCreate));
       expect(mockGetContentType).toHaveBeenCalledTimes(1);
+      expect(mockGetContentType).toHaveBeenCalledWith('stored-id');
       expect(mockUpdate).toHaveBeenCalledTimes(1);
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mockedContentType.toJSON()));
+      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType));
     });
   });
 });
