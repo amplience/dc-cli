@@ -1,5 +1,5 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
+import { RenderingOptions } from '../../view/data-presenter';
 import { ContentType } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import fs from 'fs';
@@ -12,8 +12,6 @@ jest.mock('../../view/data-presenter');
 jest.mock('fs');
 
 describe('content-type import command', (): void => {
-  const mockDataPresenter = DataPresenter as jest.Mock;
-
   afterEach((): void => {
     jest.resetAllMocks();
   });
@@ -91,7 +89,7 @@ describe('content-type import command', (): void => {
 
       const storedContentTypes = [
         {
-          contentTypeUri: 'https://content-type-uri',
+          contentTypeUri: 'https://content-type-uri-a',
           settings: {
             label: 'content-type-label',
             icons: [{ size: 256, url: 'https://test-icon-url' }],
@@ -119,8 +117,8 @@ describe('content-type import command', (): void => {
       const mockFileNames: string[] = ['a.json', 'b.json'];
       mockFileReadDir.mockReturnValue(mockFileNames);
       const mockReadFile = fs.readFileSync as jest.Mock;
-      const mockContentType = {
-        contentTypeUri: 'https://matching-content-type-uri',
+      const contentTypeUpdate = {
+        contentTypeUri: 'https://content-type-uri-a',
         settings: {
           label: 'content-type-label',
           icons: [{ size: 256, url: 'https://test-icon-url' }],
@@ -128,23 +126,39 @@ describe('content-type import command', (): void => {
           cards: [{ label: 'cards-label', templatedUri: 'https://test-cards-url', default: true }]
         }
       };
+      const contentTypeToCreate = { ...contentTypeUpdate, contentTypeUri: 'https://not-matching-content-type-uri' };
       mockReadFile
-        .mockReturnValueOnce(JSON.stringify(mockContentType))
-        .mockReturnValueOnce(
-          JSON.stringify({ ...mockContentType, contentTypeUri: 'https://not-matching-content-type-uri' })
-        );
+        .mockReturnValueOnce(JSON.stringify(contentTypeUpdate))
+        .mockReturnValueOnce(JSON.stringify(contentTypeToCreate));
+
+      const mockGetContentType = jest.fn();
+      const mockUpdate = jest.fn();
 
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         hubs: {
           get: mockGetHub
+        },
+        contentTypes: {
+          get: mockGetContentType
         }
       });
+
+      const mockedContentType = new ContentType(contentTypeUpdate);
+      mockedContentType.related.update = mockUpdate;
+      mockGetContentType.mockResolvedValue(mockedContentType);
+
+      mockUpdate.mockResolvedValue(new ContentType(contentTypeUpdate));
 
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
       await handler(argv);
 
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
+      expect(mockRegister).toHaveBeenCalledTimes(1);
+      expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentTypeToCreate));
+      expect(mockGetContentType).toHaveBeenCalledTimes(1);
+      expect(mockUpdate).toHaveBeenCalledTimes(1);
+      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mockedContentType.toJSON()));
     });
   });
 });

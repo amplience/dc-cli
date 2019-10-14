@@ -6,7 +6,7 @@ import path from 'path';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentType } from 'dc-management-sdk-js';
-import { differenceBy, intersectionBy } from 'lodash';
+import { differenceWith, intersectionWith } from 'lodash';
 import allSettled from 'promise.allsettled';
 allSettled.shim();
 
@@ -45,24 +45,22 @@ export const handler = async (
 ): Promise<void> => {
   const { dir } = argv;
   const importedContentTypes = extractImportObjects<ContentType>(dir);
-
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
+  const compareContentType = (imported: ContentType, stored: ContentType): boolean =>
+    stored.contentTypeUri === imported.contentTypeUri;
+  const contentTypesToCreate = differenceWith(importedContentTypes, storedContentTypes, compareContentType);
+  const contentTypesToUpdate = intersectionWith(importedContentTypes, storedContentTypes, compareContentType);
 
-  const compareContentType = (contentType: ContentType): string | undefined => contentType.contentTypeUri;
-  const contentTypesToCreate = differenceBy(importedContentTypes, storedContentTypes, compareContentType);
-  const contentTypesToUpdate = intersectionBy(importedContentTypes, storedContentTypes, compareContentType);
+  const createResults = [];
+  for (const contentType of contentTypesToCreate) {
+    createResults.push(await hub.related.contentTypes.register(new ContentType(contentType)));
+  }
 
-  console.log('contentTypesToCreate', contentTypesToCreate);
-  console.log('contentTypesToUpdate', contentTypesToUpdate);
-
-  const createPromises = contentTypesToCreate.map(
-    (contentType): Promise<ContentType> => hub.related.contentTypes.register(new ContentType(contentType))
-  );
-
-  // @ts-ignore only using the shim version work but we have type issue to resolve
-  const results = await Promise.allSettled(createPromises);
-  console.log('results', results);
-  results.forEach((result: any): void => console.log('result', result));
+  const updateResults = [];
+  for (const contentType of contentTypesToUpdate) {
+    const retrievedContentType = await client.contentTypes.get(contentType.id || '');
+    updateResults.push(await retrievedContentType.related.update(contentType));
+  }
 };
