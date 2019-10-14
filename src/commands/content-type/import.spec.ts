@@ -5,12 +5,13 @@ import fs from 'fs';
 import { builder, command, extractImportObjects, handler } from './import';
 import Yargs from 'yargs/yargs';
 import path from 'path';
+import { createStream } from 'table';
+import chalk from 'chalk';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 jest.mock('fs');
-
-// jest.mock('table', () => ({ createStream: jest.fn() }));
+jest.mock('table');
 
 describe('content-type import command', (): void => {
   afterEach((): void => {
@@ -25,7 +26,6 @@ describe('content-type import command', (): void => {
     it('should configure yargs', () => {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
-      const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
 
       builder(argv);
 
@@ -148,10 +148,10 @@ describe('content-type import command', (): void => {
       mockGetContentType.mockResolvedValue(contentTypeToUpdate);
       mockUpdate.mockResolvedValue(new ContentType(mutatedContentType));
 
-      // const mockStreamWrite = jest.fn();
-      // mockCreateStream.mockReturnValue({
-      //   write: mockStreamWrite
-      // });
+      const mockStreamWrite = jest.fn();
+      (createStream as jest.Mock).mockReturnValue({
+        write: mockStreamWrite
+      });
 
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
 
@@ -165,8 +165,28 @@ describe('content-type import command', (): void => {
       expect(mockGetContentType).toHaveBeenCalledWith('stored-id');
       expect(mockUpdate).toHaveBeenCalledTimes(1);
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType));
-
-      // expect(mockStreamWrite).toHaveBeenCalledTimes(3);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
+        chalk.bold('id'),
+        chalk.bold('contentTypeUri'),
+        chalk.bold('method'),
+        chalk.bold('status')
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
+        '',
+        'https://not-matching-content-type-uri',
+        'CREATE',
+        'SUCCESS'
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
+        'stored-id',
+        'https://content-type-uri-a',
+        'UPDATE',
+        'SUCCESS'
+      ]);
     });
+
+    it.skip('should abort on first failure when create content type throws an error', () => {});
+
+    it.skip('should abort on first failure when update content type throws an error', () => {});
   });
 });
