@@ -42,7 +42,8 @@ describe('content type schema create command', function() {
     expect(builder.schema).toEqual({
       type: 'string',
       demandOption: true,
-      description: 'content-type-schema Source Location'
+      description: 'content-type-schema Source Location',
+      requiresArg: true
     });
   });
 
@@ -51,7 +52,8 @@ describe('content type schema create command', function() {
       type: 'string',
       choices: ['SLOT', 'CONTENT_TYPE', 'PARTIAL'],
       demandOption: true,
-      description: 'content-type-schema Validation Level'
+      description: 'content-type-schema Validation Level',
+      requiresArg: true
     });
   });
 

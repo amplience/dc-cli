@@ -15,7 +15,7 @@ describe('content-repostories get command', () => {
     jest.restoreAllMocks();
   });
   it('should have a get command defined', () => {
-    expect(command).toEqual('get [id]');
+    expect(command).toEqual('get <id>');
   });
 
   describe('builder tests', () => {
