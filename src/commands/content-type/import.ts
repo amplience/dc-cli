@@ -103,5 +103,18 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
     tableStream.write(await doUpdate(client, contentType));
   }
 
+  // const contentTypesToProcess: ContentType[] = importedContentTypes.map(imported => {
+  //   const found = storedContentTypes.find(stored => stored.contentTypeUri === imported.contentTypeUri);
+  //   return found || imported;
+  // });
+  //
+  // for (const contentType of contentTypesToProcess) {
+  //   if (contentType.id) {
+  //     tableStream.write(await doUpdate(client, contentType));
+  //   } else {
+  //     tableStream.write(await doCreate(hub, contentType));
+  //   }
+  // }
+
   process.stdout.write('\n');
 };
