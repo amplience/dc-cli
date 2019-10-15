@@ -5,7 +5,7 @@ import path from 'path';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentType } from 'dc-management-sdk-js';
-import { differenceWith, intersectionWith } from 'lodash';
+import { differenceWith, intersectionWith, isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
 
@@ -87,11 +87,17 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   for (const contentType of contentTypesToUpdate) {
     try {
       if (!contentType.id) {
-        throw Error('Content type missing id.');
+        throw new Error('Content type missing id.');
       }
+
       const retrievedContentType = await client.contentTypes.get(contentType.id);
-      const updatedContentType = await retrievedContentType.related.update(contentType);
-      tableStream.write([updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS']);
+
+      if (isEqual(retrievedContentType.toJSON(), contentType)) {
+        tableStream.write([contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED']);
+      } else {
+        const updatedContentType = await retrievedContentType.related.update(contentType);
+        tableStream.write([updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS']);
+      }
     } catch (err) {
       throw new Error(`Error updating content type ${contentType.contentTypeUri || '<unknown>'}: ${err.message}`);
     }

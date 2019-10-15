@@ -291,8 +291,7 @@ describe('content-type import command', (): void => {
 
       const mockReadFile = fs.readFileSync as jest.Mock;
 
-      mockReadFile
-        .mockReturnValue(JSON.stringify(mutatedContentType));
+      mockReadFile.mockReturnValue(JSON.stringify(mutatedContentType));
 
       const contentTypeToUpdate = new ContentType(storedContentType);
 
@@ -314,6 +313,76 @@ describe('content-type import command', (): void => {
 
       expect(mockUpdate).toBeCalledTimes(1);
       expect(mockRegister).toBeCalledTimes(0);
+    });
+
+    it('should output status as update skipped when content type has no differences', async (): Promise<void> => {
+      const yargArgs = {
+        $0: 'test',
+        _: ['test'],
+        json: true
+      };
+      const config = {
+        clientId: 'client-id',
+        clientSecret: 'client-id',
+        hubId: 'hub-id'
+      };
+      const mockFileReadDir = fs.readdirSync as jest.Mock;
+      const mockFileNames: string[] = ['a.json'];
+
+      mockFileReadDir.mockReturnValue(mockFileNames);
+
+      const storedContentType = {
+        id: 'stored-id',
+        contentTypeUri: 'https://content-type-uri-a',
+        settings: {
+          label: 'content-type-label',
+          icons: [{ size: 256, url: 'https://test-icon-url' }],
+          visualizations: [{ label: 'viz-label', templatedUri: 'https://test-viz-url', default: true }],
+          cards: [{ label: 'cards-label', templatedUri: 'https://test-cards-url', default: true }]
+        }
+      };
+      const storedContentTypes = [storedContentType];
+      const contentTypeResponse: ContentType[] = storedContentTypes.map(v => new ContentType(v));
+      const listResponse = new MockPage(ContentType, contentTypeResponse);
+
+      mockList.mockResolvedValue(listResponse);
+
+      const mutatedContentType = { ...storedContentType };
+
+      const mockReadFile = fs.readFileSync as jest.Mock;
+
+      mockReadFile.mockReturnValue(JSON.stringify(mutatedContentType));
+
+      const contentTypeToUpdate = new ContentType(storedContentType);
+
+      contentTypeToUpdate.related.update = mockUpdate;
+      mockGetContentType.mockResolvedValue(contentTypeToUpdate);
+
+      const mockStreamWrite = jest.fn();
+      (createStream as jest.Mock).mockReturnValue({
+        write: mockStreamWrite
+      });
+
+      const argv = { ...yargArgs, ...config, dir: 'my-dir' };
+
+      await handler(argv);
+
+      expect(mockGetHub).toBeCalledWith('hub-id');
+      expect(mockList).toBeCalledTimes(1);
+
+      expect(mockUpdate).toBeCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
+        chalk.bold('id'),
+        chalk.bold('contentTypeUri'),
+        chalk.bold('method'),
+        chalk.bold('status')
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
+        'stored-id',
+        'https://content-type-uri-a',
+        'UPDATE',
+        'SKIPPED'
+      ]);
     });
   });
 });
