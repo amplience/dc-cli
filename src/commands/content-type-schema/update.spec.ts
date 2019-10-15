@@ -41,13 +41,15 @@ describe('content type schema update command', function() {
         schema: {
           type: 'string',
           demandOption: true,
-          description: 'Content Type Schema Source Location'
+          description: 'Content Type Schema Source Location',
+          requiresArg: true
         },
         validationLevel: {
           type: 'string',
           choices: ['SLOT', 'CONTENT_TYPE', 'PARTIAL'],
           demandOption: true,
-          description: 'Content Type Schema Validation Level'
+          description: 'Content Type Schema Validation Level',
+          requiresArg: true
         },
         ...RenderingOptions
       });
