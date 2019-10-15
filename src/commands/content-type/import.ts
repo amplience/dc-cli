@@ -86,11 +86,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
 
   for (const contentType of contentTypesToUpdate) {
     try {
-      if (!contentType.id) {
-        throw new Error('Content type missing id.');
-      }
-
-      const retrievedContentType = await client.contentTypes.get(contentType.id);
+      const retrievedContentType = await client.contentTypes.get(contentType.id || '');
 
       if (isEqual(retrievedContentType.toJSON(), contentType)) {
         tableStream.write([contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED']);
