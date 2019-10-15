@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import path from 'path';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { differenceWith, intersectionWith, isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
@@ -61,43 +61,47 @@ export const createTableStream = (): TableStream => {
   }) as unknown) as TableStream;
 };
 
+const doCreate = async (hub: Hub, contentType: ContentType): Promise<string[]> => {
+  try {
+    const createdContentType = await hub.related.contentTypes.register(new ContentType(contentType));
+    return [createdContentType.id || '', contentType.contentTypeUri || '', 'CREATE', 'SUCCESS'];
+  } catch (err) {
+    throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message}`);
+  }
+};
+
+const doUpdate = async (client: DynamicContent, contentType: ContentType): Promise<string[]> => {
+  try {
+    const retrievedContentType = await client.contentTypes.get(contentType.id || '');
+    if (isEqual(retrievedContentType.toJSON(), contentType)) {
+      return [contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED'];
+    }
+    const updatedContentType = await retrievedContentType.related.update(contentType);
+    return [updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS'];
+  } catch (err) {
+    throw new Error(`Error updating content type ${contentType.contentTypeUri || '<unknown>'}: ${err.message}`);
+  }
+};
+
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
   const importedContentTypes = extractImportObjects<ContentType>(dir);
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-  const compareContentType = (imported: ContentType, stored: ContentType): boolean =>
-    stored.contentTypeUri === imported.contentTypeUri;
-  const contentTypesToCreate = differenceWith(importedContentTypes, storedContentTypes, compareContentType);
-  const contentTypesToUpdate = intersectionWith(importedContentTypes, storedContentTypes, compareContentType);
-  const tableStream = createTableStream();
 
+  const tableStream = createTableStream();
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('method'), chalk.bold('status')]);
 
-  for (const contentType of contentTypesToCreate) {
-    try {
-      const createdContentType = await hub.related.contentTypes.register(new ContentType(contentType));
-      tableStream.write([createdContentType.id || '', contentType.contentTypeUri || '', 'CREATE', 'SUCCESS']);
-    } catch (err) {
-      throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message}`);
-    }
+  const compareContentType = (imported: ContentType, stored: ContentType): boolean =>
+    stored.contentTypeUri === imported.contentTypeUri;
+
+  for (const contentType of differenceWith(importedContentTypes, storedContentTypes, compareContentType)) {
+    tableStream.write(await doCreate(hub, contentType));
+  }
+  for (const contentType of intersectionWith(importedContentTypes, storedContentTypes, compareContentType)) {
+    tableStream.write(await doUpdate(client, contentType));
   }
 
-  for (const contentType of contentTypesToUpdate) {
-    try {
-      const retrievedContentType = await client.contentTypes.get(contentType.id || '');
-
-      if (isEqual(retrievedContentType.toJSON(), contentType)) {
-        tableStream.write([contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED']);
-      } else {
-        const updatedContentType = await retrievedContentType.related.update(contentType);
-        tableStream.write([updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS']);
-      }
-    } catch (err) {
-      throw new Error(`Error updating content type ${contentType.contentTypeUri || '<unknown>'}: ${err.message}`);
-    }
-
-    process.stdout.write('\n');
-  }
+  process.stdout.write('\n');
 };
