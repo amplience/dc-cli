@@ -151,6 +151,7 @@ describe('content-type import command', (): void => {
       mockRegister.mockResolvedValue(contentTypeResponse);
 
       const contentTypeToCreate = { ...storedContentType, contentTypeUri: 'https://not-matching-content-type-uri' };
+      delete contentTypeToCreate.id;
       const mockReadFile = fs.readFileSync as jest.Mock;
 
       mockReadFile
@@ -176,15 +177,15 @@ describe('content-type import command', (): void => {
         chalk.bold('status')
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
-        '',
-        'https://not-matching-content-type-uri',
-        'CREATE',
-        'SUCCESS'
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
         'stored-id',
         'https://content-type-uri-a',
         'UPDATE',
+        'SUCCESS'
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
+        '',
+        'https://not-matching-content-type-uri',
+        'CREATE',
         'SUCCESS'
       ]);
     });
@@ -198,11 +199,12 @@ describe('content-type import command', (): void => {
       mockRegister.mockRejectedValueOnce(new Error('Failed to register'));
 
       const contentTypeToCreate = { ...storedContentType, contentTypeUri: 'https://not-matching-content-type-uri' };
+      delete contentTypeToCreate.id;
       const mockReadFile = fs.readFileSync as jest.Mock;
 
       mockReadFile
-        .mockReturnValueOnce(JSON.stringify(mutatedContentType))
-        .mockReturnValueOnce(JSON.stringify(contentTypeToCreate));
+        .mockReturnValueOnce(JSON.stringify(contentTypeToCreate))
+        .mockReturnValueOnce(JSON.stringify(mutatedContentType));
 
       mockUpdate.mockResolvedValue(new ContentType(mutatedContentType));
 
@@ -211,7 +213,6 @@ describe('content-type import command', (): void => {
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
       expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentTypeToCreate));
-
       expect(mockUpdate).toBeCalledTimes(0);
       expect(mockGetContentType).toBeCalledTimes(0);
     });
@@ -233,7 +234,6 @@ describe('content-type import command', (): void => {
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType));
-
       expect(mockUpdate).toBeCalledTimes(1);
       expect(mockRegister).toBeCalledTimes(0);
     });
@@ -252,7 +252,6 @@ describe('content-type import command', (): void => {
 
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
-
       expect(mockUpdate).toBeCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
         chalk.bold('id'),

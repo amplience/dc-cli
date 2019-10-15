@@ -5,7 +5,7 @@ import path from 'path';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
-import { differenceWith, intersectionWith, isEqual } from 'lodash';
+import { isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
 
@@ -93,28 +93,15 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const tableStream = createTableStream();
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('method'), chalk.bold('status')]);
 
-  const compareContentType = (imported: ContentType, stored: ContentType): boolean =>
-    stored.contentTypeUri === imported.contentTypeUri;
+  const contentTypesToProcess: ContentType[] = importedContentTypes.map(imported => {
+    const found = storedContentTypes.find(stored => stored.contentTypeUri === imported.contentTypeUri);
+    return found ? { ...found.toJSON(), ...imported } : imported;
+  });
 
-  for (const contentType of differenceWith(importedContentTypes, storedContentTypes, compareContentType)) {
-    tableStream.write(await doCreate(hub, contentType));
+  for (const contentType of contentTypesToProcess) {
+    const result = contentType.id ? doUpdate(client, contentType) : doCreate(hub, contentType);
+    tableStream.write(await result);
   }
-  for (const contentType of intersectionWith(importedContentTypes, storedContentTypes, compareContentType)) {
-    tableStream.write(await doUpdate(client, contentType));
-  }
-
-  // const contentTypesToProcess: ContentType[] = importedContentTypes.map(imported => {
-  //   const found = storedContentTypes.find(stored => stored.contentTypeUri === imported.contentTypeUri);
-  //   return found || imported;
-  // });
-  //
-  // for (const contentType of contentTypesToProcess) {
-  //   if (contentType.id) {
-  //     tableStream.write(await doUpdate(client, contentType));
-  //   } else {
-  //     tableStream.write(await doCreate(hub, contentType));
-  //   }
-  // }
 
   process.stdout.write('\n');
 };
