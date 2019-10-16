@@ -133,6 +133,7 @@ describe('content-type import command', (): void => {
       expect(mockGetContentType).toHaveBeenCalledWith('stored-id');
       expect(mockUpdate).toHaveBeenCalledTimes(1);
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType));
+      expect(mockStreamWrite).toHaveBeenCalledTimes(3);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
         chalk.bold('id'),
         chalk.bold('contentTypeUri'),
@@ -178,6 +179,7 @@ describe('content-type import command', (): void => {
       expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentTypeToCreate));
       expect(mockUpdate).toBeCalledTimes(0);
       expect(mockGetContentType).toBeCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenCalledTimes(1);
     });
 
     it('should abort on first failure when update content type throws an error', async (): Promise<void> => {
@@ -199,6 +201,7 @@ describe('content-type import command', (): void => {
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType));
       expect(mockUpdate).toBeCalledTimes(1);
       expect(mockRegister).toBeCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenCalledTimes(1);
     });
 
     it('should output status as update skipped when content type has no differences', async (): Promise<void> => {
@@ -216,6 +219,7 @@ describe('content-type import command', (): void => {
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
       expect(mockUpdate).toBeCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenCalledTimes(2);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
         chalk.bold('id'),
         chalk.bold('contentTypeUri'),

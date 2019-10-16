@@ -38,9 +38,7 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
     if (isEqual(retrievedSchema.toJSON(), schema)) {
       return [schema.id || '', schema.schemaId || '', 'UPDATE', 'SKIPPED'];
     }
-    console.log('pre update', retrievedSchema);
     const updatedSchema = await retrievedSchema.related.update(schema);
-    console.log('all done');
     return [updatedSchema.id || '', schema.schemaId || '', 'UPDATE', 'SUCCESS'];
   } catch (err) {
     throw new Error(`Error updating content type schema ${schema.schemaId || '<unknown>'}: ${err.message}`);
