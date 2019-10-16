@@ -2,9 +2,8 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentType } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import fs from 'fs';
-import { builder, command, extractImportObjects, handler } from './import';
+import { builder, command, handler } from './import';
 import Yargs from 'yargs/yargs';
-import path from 'path';
 import { createStream } from 'table';
 import chalk from 'chalk';
 
@@ -34,41 +33,6 @@ describe('content-type import command', (): void => {
         describe: 'Path to Content Type definitions',
         type: 'string'
       });
-    });
-  });
-
-  describe('extractImportObjects tests', () => {
-    it('should return a list of content types to import', (): void => {
-      const mockFileReadDir = fs.readdirSync as jest.Mock;
-      const mockFileNames: string[] = ['a.json'];
-      mockFileReadDir.mockReturnValue(mockFileNames);
-      const mockReadFile = fs.readFileSync as jest.Mock;
-      const contentTypeFile = {
-        id: 'content-type-id'
-      };
-      mockReadFile.mockReturnValue(JSON.stringify(contentTypeFile));
-      const dirName = 'my-dir';
-      const importObjects: ContentType[] = extractImportObjects<ContentType>(dirName);
-      expect(importObjects).toEqual([contentTypeFile]);
-      expect(mockFileReadDir).toHaveBeenCalledWith(dirName);
-      expect(mockReadFile).toHaveBeenCalledTimes(1);
-      expect(mockReadFile).toHaveBeenCalledWith(path.join(dirName, mockFileNames[0]), 'utf-8');
-    });
-
-    it('should throw an error if any import file is not json', (): void => {
-      const mockFileReadDir = fs.readdirSync as jest.Mock;
-      const mockFileNames: string[] = ['a.json', 'b.json'];
-      mockFileReadDir.mockReturnValue(mockFileNames);
-      const mockReadFile = fs.readFileSync as jest.Mock;
-      const mockContentType = 'invalid json';
-      mockReadFile.mockReturnValue(mockContentType);
-      const dirName = 'my-dir';
-      expect(() => extractImportObjects<ContentType>(dirName)).toThrowError(
-        'Non-JSON file found: a.json, aborting import'
-      );
-      expect(mockFileReadDir).toHaveBeenCalledWith(dirName);
-      expect(mockReadFile).toHaveBeenCalledTimes(1);
-      expect(mockReadFile).toHaveBeenCalledWith(path.join(dirName, mockFileNames[0]), 'utf-8');
     });
   });
 
@@ -148,10 +112,9 @@ describe('content-type import command', (): void => {
 
       mockFileReadDir.mockReturnValue(mockFileNames);
 
-      mockRegister.mockResolvedValue(contentTypeResponse);
-
       const contentTypeToCreate = { ...storedContentType, contentTypeUri: 'https://not-matching-content-type-uri' };
       delete contentTypeToCreate.id;
+      mockRegister.mockResolvedValue(new ContentType(contentTypeToCreate));
       const mockReadFile = fs.readFileSync as jest.Mock;
 
       mockReadFile

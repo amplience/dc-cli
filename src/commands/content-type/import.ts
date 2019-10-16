@@ -1,13 +1,15 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import * as fs from 'fs';
-import path from 'path';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
+import { extractImportObjects } from '../../services/import.service';
+import { streamTableOptions } from '../../common/table/table.consts';
+import { TableStream } from '../../interfaces/table.interface';
+import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 
 export const command = 'import [dir]';
 
@@ -19,46 +21,6 @@ export const builder = (yargs: Argv): void => {
     type: 'string',
     demandOption: true
   });
-};
-
-export interface ImportBuilderOptions {
-  dir: string;
-}
-
-export const extractImportObjects = <T>(dir: string): T[] => {
-  const files = fs.readdirSync(dir);
-  return files.map(fileName => {
-    const file = fs.readFileSync(path.join(dir, fileName), 'utf-8');
-    try {
-      return JSON.parse(file);
-    } catch (e) {
-      throw new Error(`Non-JSON file found: ${fileName}, aborting import`);
-    }
-  });
-};
-
-interface TableStream {
-  write: (row: string[]) => void;
-}
-
-export const createTableStream = (): TableStream => {
-  return (createStream({
-    columnDefault: {
-      width: 50
-    },
-    columnCount: 4,
-    columns: {
-      0: {
-        width: 36
-      },
-      2: {
-        width: 10
-      },
-      3: {
-        width: 10
-      }
-    }
-  }) as unknown) as TableStream;
 };
 
 const doCreate = async (hub: Hub, contentType: ContentType): Promise<string[]> => {
@@ -90,7 +52,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
 
-  const tableStream = createTableStream();
+  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('method'), chalk.bold('status')]);
 
   const contentTypesToProcess: ContentType[] = importedContentTypes.map(imported => {
