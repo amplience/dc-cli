@@ -28,6 +28,12 @@ export const builder = (yargs: Argv): void => {
       remote: {
         describe: 'Path to file referencing remote Content Type Schema definitions',
         type: 'string'
+      },
+      validationLevel: {
+        type: 'string',
+        choices: Object.values(ValidationLevel),
+        demandOption: true,
+        description: 'content-type-schema Validation Level'
       }
     })
     .conflicts('dir', 'remote')
@@ -36,7 +42,11 @@ export const builder = (yargs: Argv): void => {
 
 const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
   try {
-    const createdSchemaType = await createContentTypeSchema(schema.body || '', ValidationLevel.CONTENT_TYPE, hub);
+    const createdSchemaType = await createContentTypeSchema(
+      schema.body || '',
+      schema.validationLevel || ValidationLevel.CONTENT_TYPE,
+      hub
+    );
     return [createdSchemaType.id || '', createdSchemaType.schemaId || '', 'CREATE', 'SUCCESS'];
   } catch (err) {
     throw new Error(`Error registering content type schema with body: ${schema.body}\n\n${err.message}`);
@@ -52,7 +62,7 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
     const updatedSchema = await updateContentTypeSchema(
       retrievedSchema,
       schema.body || '',
-      ValidationLevel.CONTENT_TYPE
+      schema.validationLevel || ValidationLevel.CONTENT_TYPE
     );
     return [updatedSchema.id || '', schema.schemaId || '', 'UPDATE', 'SUCCESS'];
   } catch (err) {
@@ -61,12 +71,12 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir } = argv;
+  const { dir, validationLevel } = argv;
   const schemaFileList = listDirectory(dir);
   const schemas: ContentTypeSchema[] = [];
   for (const schemaFile of schemaFileList) {
     const schemaBody = await getSchemaBody(schemaFile);
-    schemas.push(new ContentTypeSchema({ body: schemaBody }));
+    schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel }));
   }
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
@@ -78,7 +88,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const schemasToProcess: ContentTypeSchema[] = schemas.map(importedSchema => {
     const parsedSchemaBody = JSON.parse(importedSchema.body || '');
     const found = storedSchemaList.find(stored => stored.schemaId === parsedSchemaBody.id);
-    return found ? { ...found.toJSON(), body: importedSchema.body } : importedSchema;
+    return found ? { ...found.toJSON(), body: importedSchema.body, validationLevel } : importedSchema;
   });
 
   for (const schema of schemasToProcess) {
