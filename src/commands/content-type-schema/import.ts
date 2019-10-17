@@ -38,7 +38,7 @@ const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> 
     const createdSchemaType = await createContentTypeSchema(schema.body || '', ValidationLevel.CONTENT_TYPE, hub);
     return [createdSchemaType.id || '', createdSchemaType.schemaId || '', 'CREATE', 'SUCCESS'];
   } catch (err) {
-    throw new Error(`Error registering content type schema ${schema.schemaId}: ${err.message}`);
+    throw new Error(`Error registering content type schema with body: ${schema.body}\n\n${err.message}`);
   }
 };
 
@@ -57,14 +57,12 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
-
   const schemaFileList = listDirectory(dir);
   const schemas: ContentTypeSchema[] = [];
   for (const schemaFile of schemaFileList) {
     const schemaBody = await getSchemaBody(schemaFile);
     schemas.push(new ContentTypeSchema({ body: schemaBody }));
   }
-
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedSchemaList = await paginator(hub.related.contentTypeSchema.list);

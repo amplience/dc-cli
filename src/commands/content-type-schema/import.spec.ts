@@ -165,23 +165,26 @@ describe('content-type-schema import command', (): void => {
       ]);
     });
 
-    it.skip('should create a content schema and update a content schema when referenced from remote files', async () => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir' };
-      // const mockFileNames: string[] = ['a.json', 'b.json'];
-      //
-      // mockFileReadDir.mockReturnValue(mockFileNames);
+    it('should create a content schema and update a content schema when referenced from remote files', async () => {
+      const argv = { ...yargArgs, ...config, dir: 'my-file-of-remote-schemas' };
+      const mockFileNames: string[] = ['a.json', 'b.json'];
+
+      mockFileReadDir.mockReturnValue(mockFileNames);
 
       const schemaToUpdate = new ContentTypeSchema({
         ...storedContentTypeSchema,
         body:
           '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
       });
-      const schemaToCreate = { ...storedContentTypeSchema, schemaId: 'https://schema.localhost.com/new-test-1.json' };
+      const schemaToCreate = {
+        ...storedContentTypeSchema,
+        schemaId: 'https://schema.localhost.com/new-test-1.json',
+        body:
+          '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/new-test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
+      };
       delete schemaToCreate.id;
 
-      mockReadFile
-        .mockReturnValueOnce(JSON.stringify(schemaToUpdate.toJSON()))
-        .mockReturnValueOnce(JSON.stringify(schemaToCreate));
+      mockReadFile.mockReturnValueOnce(schemaToUpdate.body).mockReturnValueOnce(schemaToCreate.body);
 
       const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
 
@@ -221,7 +224,7 @@ describe('content-type-schema import command', (): void => {
       ]);
     });
 
-    it.skip('should abort on first failure when create content type schema (from directory) throws an error', async (): Promise<
+    it('should abort on first failure when create content type schema (from directory) throws an error', async (): Promise<
       void
     > => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
@@ -230,12 +233,17 @@ describe('content-type-schema import command', (): void => {
       mockFileReadDir.mockReturnValue(mockFileNames);
       mockCreate.mockRejectedValueOnce(new Error('Failed to create'));
 
-      const schemaToCreate = { ...storedContentTypeSchema, schemaId: 'https://schema.localhost.com/new-test-1.json' };
+      const schemaToCreate = {
+        ...storedContentTypeSchema,
+        schemaId: 'https://schema.localhost.com/new-test-1.json',
+        body:
+          '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/new-test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
+      };
       delete schemaToCreate.id;
 
-      mockReadFile.mockReturnValueOnce(JSON.stringify(schemaToCreate));
+      mockReadFile.mockReturnValueOnce(schemaToCreate.body);
 
-      await expect(handler(argv)).rejects.toThrowError('Failed to create');
+      await expect(handler(argv)).rejects.toThrowError(/Error registering content type schema with body/);
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(schemaToCreate));
@@ -244,7 +252,7 @@ describe('content-type-schema import command', (): void => {
       expect(mockStreamWrite).toHaveBeenCalledTimes(1);
     });
 
-    it.skip('should abort on first failure when update content type schema (from directory) throws an error', async (): Promise<
+    it('should abort on first failure when update content type schema (from directory) throws an error', async (): Promise<
       void
     > => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
@@ -263,7 +271,7 @@ describe('content-type-schema import command', (): void => {
       storedSchema.related.update = mockUpdate;
       mockGetContentTypeSchema.mockResolvedValue(storedSchema);
 
-      mockReadFile.mockReturnValueOnce(JSON.stringify(schemaToUpdate));
+      mockReadFile.mockReturnValueOnce(schemaToUpdate.body);
 
       await expect(handler(argv)).rejects.toThrowError(
         'Error updating content type schema https://schema.localhost.com/test-1.json: Failed to update'
@@ -276,7 +284,7 @@ describe('content-type-schema import command', (): void => {
       expect(mockStreamWrite).toHaveBeenCalledTimes(1);
     });
 
-    it.skip('should output status as update skipped when content type schema (from directory) has no differences', async (): Promise<
+    it('should output status as update skipped when content type schema (from directory) has no differences', async (): Promise<
       void
     > => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
@@ -286,11 +294,11 @@ describe('content-type-schema import command', (): void => {
 
       const schemaToUpdate = new ContentTypeSchema(storedContentTypeSchema);
 
-      mockReadFile.mockReturnValueOnce(JSON.stringify(schemaToUpdate.toJSON()));
+      mockReadFile.mockReturnValueOnce(schemaToUpdate.body);
 
       const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
 
-      mockUpdate.mockResolvedValue(schemaToUpdate);
+      mockUpdate.mockResolvedValue(schemaToUpdate.body);
       storedSchema.related.update = mockUpdate;
       mockGetContentTypeSchema.mockResolvedValue(storedSchema);
 

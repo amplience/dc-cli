@@ -13,7 +13,6 @@ export const createContentTypeSchema = async (
   contentTypeSchema.body = schemaBody;
   contentTypeSchema.schemaId = schemaJson.id;
   contentTypeSchema.validationLevel = validationLevel;
-  console.log('createContentTypeSchema end');
 
   return hub.related.contentTypeSchema.create(contentTypeSchema);
 };
