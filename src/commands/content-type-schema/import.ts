@@ -9,7 +9,8 @@ import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import chalk from 'chalk';
 import { isEqual } from 'lodash';
-import { listDirectory } from '../../common/directory-list';
+import { listDirectory } from '../../common/list-directory';
+import { getRemoteFileList, RemoteFile } from '../../common/list-remote-files';
 import { getSchemaBody } from './helper/content-type-schema.helper';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
@@ -36,8 +37,7 @@ export const builder = (yargs: Argv): void => {
         description: 'content-type-schema Validation Level'
       }
     })
-    .conflicts('dir', 'remote')
-    .demandCommand(1);
+    .demandCommand(2);
 };
 
 const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
@@ -71,10 +71,11 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, validationLevel } = argv;
-  const schemaFileList = listDirectory(dir);
+  const { dir, remote, validationLevel } = argv;
+  const remoteSchemaUrls = remote ? getRemoteFileList(remote).map((file: RemoteFile) => file.uri) : [];
+  const schemaFileList = dir ? listDirectory(dir) : [];
   const schemas: ContentTypeSchema[] = [];
-  for (const schemaFile of schemaFileList) {
+  for (const schemaFile of [...schemaFileList, ...remoteSchemaUrls]) {
     const schemaBody = await getSchemaBody(schemaFile);
     schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel }));
   }
