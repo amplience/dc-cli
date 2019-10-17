@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`create.service createContentTypeSchema should throw and error when schemaId is missing from the schemaBody 1`] = `"Missing id from schema"`;
