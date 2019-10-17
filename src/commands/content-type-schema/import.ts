@@ -9,9 +9,9 @@ import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import chalk from 'chalk';
 import { isEqual } from 'lodash';
-import { listDirectory } from '../../common/list-directory';
-import { getRemoteFileList, RemoteFile } from '../../common/list-remote-files';
-import { getSchemaBody } from './helper/content-type-schema.helper';
+import { listDirectory } from '../../common/import/list-directory';
+import { getRemoteFileList, RemoteFile } from '../../common/import/list-remote-files';
+import { getExternalJson } from '../../common/import/external-json';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 
@@ -76,7 +76,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const schemaFileList = dir ? listDirectory(dir) : [];
   const schemas: ContentTypeSchema[] = [];
   for (const schemaFile of [...schemaFileList, ...remoteSchemaUrls]) {
-    const schemaBody = await getSchemaBody(schemaFile);
+    const schemaBody = await getExternalJson(schemaFile);
     schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel }));
   }
   const client = dynamicContentClientFactory(argv);

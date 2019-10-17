@@ -6,7 +6,7 @@ import { ValidationLevel } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { createContentTypeSchema } from './create.service';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { getSchemaBody } from './helper/content-type-schema.helper';
+import { getExternalJson } from '../../common/import/external-json';
 
 export const command = 'create';
 
@@ -37,7 +37,7 @@ export const handler = async (
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const schemaBody = await getSchemaBody(argv.schema);
+  const schemaBody = await getExternalJson(argv.schema);
   const contentTypeSchemaResult = await createContentTypeSchema(
     schemaBody,
     argv.validationLevel as ValidationLevel,

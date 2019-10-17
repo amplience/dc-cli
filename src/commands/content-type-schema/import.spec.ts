@@ -6,14 +6,14 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import { createStream } from 'table';
 import chalk from 'chalk';
-import { getRemoteFileList } from '../../common/list-remote-files';
-import { getSchemaBody } from './helper/content-type-schema.helper';
+import { getRemoteFileList } from '../../common/import/list-remote-files';
+import { getExternalJson } from '../../common/import/external-json';
 
-jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('fs');
 jest.mock('table');
-jest.mock('../../common/list-remote-files');
-jest.mock('./helper/content-type-schema.helper');
+jest.mock('../../services/dynamic-content-client-factory');
+jest.mock('../../common/import/list-remote-files');
+jest.mock('../../common/import/external-json');
 
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {
@@ -66,7 +66,6 @@ describe('content-type-schema import command', (): void => {
     };
 
     const mockFileReadDir = fs.readdirSync as jest.Mock;
-    const mockReadFile = fs.readFileSync as jest.Mock;
     const mockGetHub = jest.fn();
     const mockList = jest.fn();
     const mockGetContentTypeSchema = jest.fn();
@@ -139,7 +138,7 @@ describe('content-type-schema import command', (): void => {
 
       mockFileReadDir.mockReturnValue(mockFileNames);
       (getRemoteFileList as jest.Mock).mockReturnValue([{ uri: 'https://example.com/a.json' }]);
-      (getSchemaBody as jest.Mock).mockReturnValueOnce(schemaToUpdate.body).mockReturnValueOnce(schemaToCreate.body);
+      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToUpdate.body).mockReturnValueOnce(schemaToCreate.body);
 
       const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
 
@@ -200,7 +199,7 @@ describe('content-type-schema import command', (): void => {
       };
       delete schemaToCreate.id;
 
-      (getSchemaBody as jest.Mock).mockReturnValueOnce(schemaToCreate.body);
+      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToCreate.body);
 
       await expect(handler(argv)).rejects.toThrowError(/Error registering content type schema with body/);
       expect(mockGetHub).toBeCalledWith('hub-id');
@@ -230,7 +229,7 @@ describe('content-type-schema import command', (): void => {
       storedSchema.related.update = mockUpdate;
       mockGetContentTypeSchema.mockResolvedValue(storedSchema);
 
-      (getSchemaBody as jest.Mock).mockReturnValueOnce(schemaToUpdate.body);
+      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToUpdate.body);
 
       await expect(handler(argv)).rejects.toThrowError(
         'Error updating content type schema https://schema.localhost.com/test-1.json: Failed to update'
@@ -255,7 +254,7 @@ describe('content-type-schema import command', (): void => {
 
       const schemaToUpdate = new ContentTypeSchema(storedContentTypeSchema);
 
-      (getSchemaBody as jest.Mock).mockReturnValueOnce(schemaToUpdate.body);
+      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToUpdate.body);
 
       const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
-import { getSchemaBody } from './content-type-schema.helper';
+import { getExternalJson } from './external-json';
 
 jest.mock('axios');
 jest.mock('fs');
@@ -20,7 +20,7 @@ describe('content type schema helper', function() {
       data: stringifyData ? JSON.stringify(data) : data
     };
     mockAxiosGet.mockResolvedValue(mockSchemaResponse);
-    const response = await getSchemaBody(schema);
+    const response = await getExternalJson(schema);
     expect(mockAxiosGet).toHaveBeenCalledWith(expect.stringMatching(protocol));
     expect(response).toEqual(JSON.stringify(data));
   }
@@ -48,7 +48,7 @@ describe('content type schema helper', function() {
       id: 'test'
     };
     mockFileRead.mockResolvedValue(JSON.stringify(mockSchemaData));
-    const response = await getSchemaBody(schema);
+    const response = await getExternalJson(schema);
     expect(mockFileRead).toHaveBeenCalledTimes(1);
     expect(response).toEqual(JSON.stringify(mockSchemaData));
   }
