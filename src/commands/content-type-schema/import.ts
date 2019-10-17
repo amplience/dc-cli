@@ -12,6 +12,7 @@ import { isEqual } from 'lodash';
 import { listDirectory } from '../../common/directory-list';
 import { getSchemaBody } from './helper/content-type-schema.helper';
 import { createContentTypeSchema } from './create.service';
+import { updateContentTypeSchema } from './update.service';
 
 export const command = 'import';
 
@@ -48,7 +49,11 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
     if (isEqual(retrievedSchema.toJSON(), schema)) {
       return [schema.id || '', schema.schemaId || '', 'UPDATE', 'SKIPPED'];
     }
-    const updatedSchema = await retrievedSchema.related.update(schema);
+    const updatedSchema = await updateContentTypeSchema(
+      retrievedSchema,
+      schema.body || '',
+      ValidationLevel.CONTENT_TYPE
+    );
     return [updatedSchema.id || '', schema.schemaId || '', 'UPDATE', 'SUCCESS'];
   } catch (err) {
     throw new Error(`Error updating content type schema ${schema.schemaId || '<unknown>'}: ${err.message}`);

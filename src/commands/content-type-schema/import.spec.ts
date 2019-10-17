@@ -143,7 +143,9 @@ describe('content-type-schema import command', (): void => {
       expect(mockGetContentTypeSchema).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchema).toHaveBeenCalledWith('stored-id');
       expect(mockUpdate).toHaveBeenCalledTimes(1);
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(schemaToUpdate.toJSON()));
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ body: schemaToUpdate.body, validationLevel: schemaToUpdate.validationLevel })
+      );
       expect(mockStreamWrite).toHaveBeenCalledTimes(3);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
         chalk.bold('id'),
@@ -202,7 +204,9 @@ describe('content-type-schema import command', (): void => {
       expect(mockGetContentTypeSchema).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchema).toHaveBeenCalledWith('stored-id');
       expect(mockUpdate).toHaveBeenCalledTimes(1);
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(schemaToUpdate.toJSON()));
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ body: schemaToUpdate.body, validationLevel: schemaToUpdate.validationLevel })
+      );
       expect(mockStreamWrite).toHaveBeenCalledTimes(3);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
         chalk.bold('id'),
@@ -278,7 +282,9 @@ describe('content-type-schema import command', (): void => {
       );
       expect(mockGetHub).toBeCalledWith('hub-id');
       expect(mockList).toBeCalledTimes(1);
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(schemaToUpdate.toJSON()));
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ body: schemaToUpdate.body, validationLevel: schemaToUpdate.validationLevel })
+      );
       expect(mockUpdate).toBeCalledTimes(1);
       expect(mockCreate).toBeCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenCalledTimes(1);

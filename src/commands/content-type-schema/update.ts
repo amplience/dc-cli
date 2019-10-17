@@ -2,9 +2,10 @@ import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/
 import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
+import { ValidationLevel } from 'dc-management-sdk-js';
 import { getSchemaBody } from './helper/content-type-schema.helper';
 import { singleItemTableOptions } from '../../common/table/table.consts';
+import { updateContentTypeSchema } from './update.service';
 
 export const command = 'update [id]';
 
@@ -42,20 +43,14 @@ export interface BuilderOptions {
 export const handler = async (
   argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
-  const schemaBody = await getSchemaBody(argv.schema);
-  const schemaJson = JSON.parse(schemaBody);
-  if (schemaJson.id == undefined) {
-    throw new Error('Missing id from schema');
-  }
-
   const client = dynamicContentClientFactory(argv);
-
-  const updatedSchema = new ContentTypeSchema();
-  updatedSchema.body = schemaBody;
-  updatedSchema.validationLevel = argv.validationLevel as ValidationLevel;
-
+  const schemaBody = await getSchemaBody(argv.schema);
   const contentTypeSchema = await client.contentTypeSchemas.get(argv.id);
-  const contentTypeSchemaResult = await contentTypeSchema.related.update(updatedSchema);
+  const contentTypeSchemaResult = await updateContentTypeSchema(
+    contentTypeSchema,
+    schemaBody,
+    ValidationLevel.CONTENT_TYPE
+  );
 
   new DataPresenter(contentTypeSchemaResult.toJson()).render({
     json: argv.json,
