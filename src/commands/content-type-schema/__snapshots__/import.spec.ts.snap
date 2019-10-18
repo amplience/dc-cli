@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`content-type-schema import command getSchemaList should throw and error when getting exteral json fails 1`] = `"Error retrieving external json"`;
+
+exports[`content-type-schema import command storedSchemaMapper should throw an exception if the schema body cannot be parsed 1`] = `"Failed to parse schema body"`;

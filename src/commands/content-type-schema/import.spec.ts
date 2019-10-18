@@ -1,6 +1,6 @@
 import Yargs = require('yargs/yargs');
 import fs from 'fs';
-import { command, builder, handler } from './import';
+import { command, builder, handler, getSchemaList, storedSchemaMapper } from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
@@ -50,6 +50,81 @@ describe('content-type-schema import command', (): void => {
       });
 
       expect(spyDemandCommand).toHaveBeenCalledWith(2);
+    });
+  });
+
+  describe('getSchemaList', () => {
+    it('should return a list of content type schemas', async () => {
+      const schemaBody = { id: 'schema-id' };
+      (getExternalJson as jest.Mock).mockResolvedValueOnce(JSON.stringify(schemaBody));
+      const schemaFileList = ['file-a.json'];
+      const validationLevel = ValidationLevel.CONTENT_TYPE;
+      const result = await getSchemaList(schemaFileList, validationLevel);
+
+      expect(result.length).toEqual(1);
+      expect(result[0]).toEqual(expect.objectContaining({ body: JSON.stringify(schemaBody), validationLevel }));
+    });
+
+    it('should return an empty list when empty schema file list is passed', async () => {
+      const validationLevel = ValidationLevel.CONTENT_TYPE;
+      const result = await getSchemaList([], validationLevel);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should throw and error when getting exteral json fails', async () => {
+      const schemaFileList = ['file-a.json'];
+      const validationLevel = ValidationLevel.CONTENT_TYPE;
+      (getExternalJson as jest.Mock).mockRejectedValueOnce(new Error('Error retrieving external json'));
+
+      await expect(getSchemaList(schemaFileList, validationLevel)).rejects.toThrowErrorMatchingSnapshot();
+    });
+  });
+
+  describe('storedSchemaMapper', () => {
+    it('should map a stored schema to the imported list with matching imported schema', () => {
+      const schemaBody = { id: 'schema-id' };
+      const importedSchema = new ContentTypeSchema({
+        body: JSON.stringify(schemaBody),
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      });
+      const storedContentTypeSchema = new ContentTypeSchema({ schemaId: schemaBody.id, ...importedSchema.toJSON() });
+      const storedSchemaList = [storedContentTypeSchema];
+      const validationLevel = ValidationLevel.CONTENT_TYPE;
+      const result = storedSchemaMapper(importedSchema, storedSchemaList, validationLevel);
+
+      expect(result).toEqual(expect.objectContaining(storedContentTypeSchema.toJSON()));
+      expect(result.schemaId).toBeDefined();
+    });
+
+    it('should return the imported schema when there is no matching stored schema', () => {
+      const schemaBody = { id: 'schema-id' };
+      const importedSchema = new ContentTypeSchema({
+        body: JSON.stringify(schemaBody),
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      });
+      const storedContentTypeSchema = new ContentTypeSchema({
+        schemaId: 'stored-schema-id',
+        ...importedSchema.toJSON()
+      });
+      const storedSchemaList = [storedContentTypeSchema];
+      const validationLevel = ValidationLevel.CONTENT_TYPE;
+      const result = storedSchemaMapper(importedSchema, storedSchemaList, validationLevel);
+
+      expect(result).toEqual(expect.objectContaining(importedSchema.toJSON()));
+      expect(result.schemaId).toBeUndefined();
+    });
+
+    it('should throw an exception if the schema body cannot be parsed', () => {
+      const importedSchema = new ContentTypeSchema({
+        body: 'invalid json',
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      });
+      const storedSchemaList: ContentTypeSchema[] = [];
+      const validationLevel = ValidationLevel.CONTENT_TYPE;
+      expect(() =>
+        storedSchemaMapper(importedSchema, storedSchemaList, validationLevel)
+      ).toThrowErrorMatchingSnapshot();
     });
   });
 

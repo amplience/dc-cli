@@ -57,7 +57,13 @@ export const storedSchemaMapper = (
   storedSchemaList: ContentTypeSchema[],
   validationLevel: ValidationLevel
 ): ContentTypeSchema => {
-  const parsedSchemaBody = JSON.parse(importedSchema.body || '');
+  let parsedSchemaBody: { id?: string } = {};
+  try {
+    parsedSchemaBody = JSON.parse(importedSchema.body || '');
+  } catch (err) {
+    throw new Error('Failed to parse schema body');
+  }
+
   const found = storedSchemaList.find((stored: ContentTypeSchema) => stored.schemaId === parsedSchemaBody.id);
 
   return found ? { ...found.toJSON(), body: importedSchema.body, validationLevel } : importedSchema;
