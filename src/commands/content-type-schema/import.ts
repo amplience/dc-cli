@@ -40,6 +40,29 @@ export const builder = (yargs: Argv): void => {
     .demandCommand(2);
 };
 
+export const getSchemaList = async (
+  schemaFileList: string[],
+  validationLevel: ValidationLevel
+): Promise<ContentTypeSchema[]> => {
+  const schemas: ContentTypeSchema[] = [];
+  for (const schemaFile of schemaFileList) {
+    const schemaBody = await getExternalJson(schemaFile);
+    schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel }));
+  }
+  return schemas;
+};
+
+export const storedSchemaMapper = (
+  importedSchema: ContentTypeSchema,
+  storedSchemaList: ContentTypeSchema[],
+  validationLevel: ValidationLevel
+): ContentTypeSchema => {
+  const parsedSchemaBody = JSON.parse(importedSchema.body || '');
+  const found = storedSchemaList.find((stored: ContentTypeSchema) => stored.schemaId === parsedSchemaBody.id);
+
+  return found ? { ...found.toJSON(), body: importedSchema.body, validationLevel } : importedSchema;
+};
+
 const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
   try {
     const createdSchemaType = await createContentTypeSchema(
@@ -70,32 +93,30 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
   }
 };
 
-export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, remote, validationLevel } = argv;
-  const remoteSchemaUrls = remote ? getRemoteFileList(remote).map((file: RemoteFile) => file.uri) : [];
-  const schemaFileList = dir ? listDirectory(dir) : [];
-  const schemas: ContentTypeSchema[] = [];
-  for (const schemaFile of [...schemaFileList, ...remoteSchemaUrls]) {
-    const schemaBody = await getExternalJson(schemaFile);
-    schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel }));
-  }
-  const client = dynamicContentClientFactory(argv);
-  const hub = await client.hubs.get(argv.hubId);
-  const storedSchemaList = await paginator(hub.related.contentTypeSchema.list);
-
+export const processSchemas = async (
+  schemasToProcess: ContentTypeSchema[],
+  client: DynamicContent,
+  hub: Hub
+): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+
   tableStream.write([chalk.bold('id'), chalk.bold('schemaId'), chalk.bold('method'), chalk.bold('status')]);
-
-  const schemasToProcess: ContentTypeSchema[] = schemas.map(importedSchema => {
-    const parsedSchemaBody = JSON.parse(importedSchema.body || '');
-    const found = storedSchemaList.find(stored => stored.schemaId === parsedSchemaBody.id);
-    return found ? { ...found.toJSON(), body: importedSchema.body, validationLevel } : importedSchema;
-  });
-
   for (const schema of schemasToProcess) {
     const result = schema.id ? doUpdate(client, schema) : doCreate(hub, schema);
     tableStream.write(await result);
   }
-
   process.stdout.write('\n');
+};
+
+export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
+  const { dir, remote, validationLevel } = argv;
+  const client = dynamicContentClientFactory(argv);
+  const hub = await client.hubs.get(argv.hubId);
+  const remoteSchemaUrls = remote ? getRemoteFileList(remote).map((file: RemoteFile) => file.uri) : [];
+  const schemaFileList = dir ? listDirectory(dir) : [];
+  const schemas = await getSchemaList([...schemaFileList, ...remoteSchemaUrls], validationLevel);
+  const storedSchemaList = await paginator(hub.related.contentTypeSchema.list);
+  const schemasToProcess = schemas.map(imported => storedSchemaMapper(imported, storedSchemaList, validationLevel));
+
+  await processSchemas(schemasToProcess, client, hub);
 };
