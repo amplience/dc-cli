@@ -14,6 +14,5 @@ export async function getExternalJson(path: string): Promise<string> {
   }
 
   const localPath = path.match(/file:\/\//) ? new URL(path) : path;
-  const schemaBody = fs.readFileSync(localPath, 'utf-8');
-  return schemaBody;
+  return fs.readFileSync(localPath, 'utf-8');
 }
