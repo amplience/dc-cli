@@ -5,11 +5,6 @@ export const updateContentTypeSchema = async (
   schemaBody: string,
   validationLevel: ValidationLevel
 ): Promise<ContentTypeSchema> => {
-  const schemaJson = JSON.parse(schemaBody);
-  if (!schemaJson.id) {
-    throw new Error('Missing id from schema');
-  }
-
   const updatedSchema = new ContentTypeSchema();
   updatedSchema.body = schemaBody;
   updatedSchema.validationLevel = validationLevel;

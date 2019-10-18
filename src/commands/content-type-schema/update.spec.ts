@@ -1,14 +1,16 @@
-import { builder, BuilderOptions, command, desc, handler } from './update';
+import { builder, command, desc, handler } from './update';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import axios from 'axios';
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
 import Yargs from 'yargs/yargs';
 import { singleItemTableOptions } from '../../common/table/table.consts';
+import { getExternalJson } from '../../common/import/external-json';
+import { updateContentTypeSchema } from './update.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('axios');
 jest.mock('../../view/data-presenter');
+jest.mock('./update.service');
+jest.mock('../../common/import/external-json');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
@@ -68,124 +70,49 @@ describe('content type schema update command', function() {
     };
 
     const mockGet = jest.fn();
-    const mockUpdate = jest.fn();
-    const contentItemSchema = {
+    const schemaBody = {
       id: 'content-type-schema-id',
-      related: {
-        update: mockUpdate
-      }
+      title: 'original'
     };
+    const contentItemSchema = new ContentTypeSchema({ body: schemaBody });
     mockGet.mockResolvedValue(contentItemSchema);
 
+    const mutatedSchemaBody = {
+      id: 'content-type-schema-id',
+      title: 'mutated'
+    };
+    (getExternalJson as jest.Mock).mockResolvedValue(JSON.stringify(mutatedSchemaBody));
+    (updateContentTypeSchema as jest.Mock).mockResolvedValue(new ContentTypeSchema({ body: mutatedSchemaBody }));
+
     (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-      contentTypeSchema: {
-        related: {
-          update: mockUpdate
-        }
-      },
       contentTypeSchemas: {
         get: mockGet
       }
     });
-    const plainListContentTypeSchema = {
-      id: 'id'
-    };
-    mockUpdate.mockResolvedValue(new ContentTypeSchema(plainListContentTypeSchema));
 
-    async function successfulHandlerInvocation(
-      input: BuilderOptions,
-      beforeInvocation: Function = (): void => {},
-      afterInvocation: Function = (): void => {}
-    ): Promise<void> {
-      const argv = { ...yargArgs, ...config, ...input };
-
-      beforeInvocation();
-      await handler(argv);
-      afterInvocation();
-
-      expect(mockGet).toHaveBeenCalledWith(input.id);
-      expect(mockUpdate).toHaveBeenCalled();
-      expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchema);
-      expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
-        json: argv.json,
-        tableUserConfig: singleItemTableOptions
-      });
-    }
-
-    it('should update a schema from a local file (relative path)', async function() {
-      const input = {
+    it('should update a schema', async function() {
+      const argv = {
+        ...yargArgs,
+        ...config,
         id: 'id',
         schema: __dirname + '/__fixtures/schema.json',
         validationLevel: ValidationLevel.CONTENT_TYPE
       };
-      await successfulHandlerInvocation(input);
-    });
 
-    it('should update a schema from a local file (with file url)', async function() {
-      const input = {
-        id: 'id',
-        schema: 'file://' + __dirname + '/__fixtures/schema.json',
-        validationLevel: ValidationLevel.CONTENT_TYPE
-      };
-      await successfulHandlerInvocation(input);
-    });
+      await handler(argv);
 
-    async function successfulHandlerAxiosInvocation(input: BuilderOptions): Promise<void> {
-      const mockAxiosGet = (axios.get as jest.Mock).mockReturnValueOnce({
-        data: {
-          $schema: 'test',
-          id: 'test'
-        }
-      });
-      await successfulHandlerInvocation(
-        input,
-        () => {
-          mockAxiosGet.mockResolvedValue({
-            data: {
-              $schema: 'test',
-              id: 'test'
-            }
-          });
-        },
-        () => {
-          expect(mockAxiosGet).toHaveBeenCalled();
-        }
+      expect(mockGet).toHaveBeenCalledWith(argv.id);
+      expect(getExternalJson).toHaveBeenCalledWith(argv.schema);
+      expect(updateContentTypeSchema).toHaveBeenCalledWith(
+        contentItemSchema,
+        JSON.stringify(mutatedSchemaBody),
+        argv.validationLevel
       );
-    }
-
-    it('should update a schema from a url (http)', async function() {
-      const input = {
-        id: 'id',
-        schema: 'http://example.com/schema.json',
-        validationLevel: ValidationLevel.CONTENT_TYPE
-      };
-
-      await successfulHandlerAxiosInvocation(input);
-    });
-
-    it('should update a schema from a url (https)', async function() {
-      const input = {
-        id: 'id',
-        schema: 'https://example.com/schema.json',
-        validationLevel: ValidationLevel.CONTENT_TYPE
-      };
-
-      await successfulHandlerAxiosInvocation(input);
-    });
-
-    async function unSuccessfulHandlerInvocation(input: BuilderOptions, expectedError: string): Promise<void> {
-      const argv = { ...yargArgs, ...config, ...input };
-      await expect(handler(argv)).rejects.toThrowError(expectedError);
-    }
-
-    it('should failed to load schema with missing id', async function() {
-      const input = {
-        id: 'id',
-        schema: 'file://' + __dirname + '/__fixtures/invalid_schema.json',
-        validationLevel: ValidationLevel.CONTENT_TYPE
-      };
-
-      await unSuccessfulHandlerInvocation(input, 'Missing id from schema');
+      expect(mockDataPresenter).toHaveBeenCalledWith({ body: mutatedSchemaBody });
+      expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
+        json: argv.json,
+        tableUserConfig: singleItemTableOptions
+      });
     });
   });
 });

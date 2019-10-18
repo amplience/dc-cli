@@ -37,22 +37,19 @@ export const builder = (yargs: Argv): void => {
 export interface BuilderOptions {
   id: string;
   schema: string;
-  validationLevel: string;
+  validationLevel: ValidationLevel;
 }
 
 export const handler = async (
   argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
+  const { id, schema, validationLevel } = argv;
   const client = dynamicContentClientFactory(argv);
-  const schemaBody = await getExternalJson(argv.schema);
-  const contentTypeSchema = await client.contentTypeSchemas.get(argv.id);
-  const contentTypeSchemaResult = await updateContentTypeSchema(
-    contentTypeSchema,
-    schemaBody,
-    ValidationLevel.CONTENT_TYPE
-  );
+  const schemaBody = await getExternalJson(schema);
+  const contentTypeSchema = await client.contentTypeSchemas.get(id);
+  const contentTypeSchemaResult = await updateContentTypeSchema(contentTypeSchema, schemaBody, validationLevel);
 
-  new DataPresenter(contentTypeSchemaResult.toJson()).render({
+  new DataPresenter(contentTypeSchemaResult.toJSON()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });

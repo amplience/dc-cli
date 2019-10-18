@@ -7,7 +7,6 @@ import { getExternalJson } from '../../common/import/external-json';
 import { createContentTypeSchema } from './create.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('axios');
 jest.mock('../../view/data-presenter');
 jest.mock('../../common/import/external-json');
 jest.mock('./create.service');
