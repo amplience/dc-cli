@@ -5,7 +5,12 @@ export const createContentTypeSchema = async (
   validationLevel: ValidationLevel,
   hub: Hub
 ): Promise<ContentTypeSchema> => {
-  const schemaJson = JSON.parse(schemaBody);
+  let schemaJson;
+  try {
+    schemaJson = JSON.parse(schemaBody);
+  } catch (err) {
+    throw new Error('Unable to parse schema body');
+  }
   if (!schemaJson.id) {
     throw new Error('Missing id from schema');
   }

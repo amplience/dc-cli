@@ -25,5 +25,11 @@ describe('create.service', () => {
         createContentTypeSchema(JSON.stringify({}), ValidationLevel.CONTENT_TYPE, new Hub())
       ).rejects.toThrowErrorMatchingSnapshot();
     });
+
+    it('should throw an error if the schema body is invalid JSON', async () => {
+      await expect(
+        createContentTypeSchema('invalid json', ValidationLevel.CONTENT_TYPE, new Hub())
+      ).rejects.toThrowErrorMatchingSnapshot();
+    });
   });
 });

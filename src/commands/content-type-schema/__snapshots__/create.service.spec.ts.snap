@@ -1,3 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`create.service createContentTypeSchema should throw an error if the schema body is invalid JSON 1`] = `"Unable to parse schema body"`;
+
 exports[`create.service createContentTypeSchema should throw and error when schemaId is missing from the schemaBody 1`] = `"Missing id from schema"`;
