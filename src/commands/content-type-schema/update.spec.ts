@@ -4,13 +4,13 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
 import Yargs from 'yargs/yargs';
 import { singleItemTableOptions } from '../../common/table/table.consts';
-import { getExternalJson } from '../../common/import/external-json';
+import { getJsonByPath } from '../../common/import/json-by-path';
 import { updateContentTypeSchema } from './update.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 jest.mock('./update.service');
-jest.mock('../../common/import/external-json');
+jest.mock('../../common/import/json-by-path');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
@@ -81,7 +81,7 @@ describe('content type schema update command', function() {
       id: 'content-type-schema-id',
       title: 'mutated'
     };
-    (getExternalJson as jest.Mock).mockResolvedValue(JSON.stringify(mutatedSchemaBody));
+    (getJsonByPath as jest.Mock).mockResolvedValue(JSON.stringify(mutatedSchemaBody));
     (updateContentTypeSchema as jest.Mock).mockResolvedValue(new ContentTypeSchema({ body: mutatedSchemaBody }));
 
     (dynamicContentClientFactory as jest.Mock).mockReturnValue({
@@ -102,7 +102,7 @@ describe('content type schema update command', function() {
       await handler(argv);
 
       expect(mockGet).toHaveBeenCalledWith(argv.id);
-      expect(getExternalJson).toHaveBeenCalledWith(argv.schema);
+      expect(getJsonByPath).toHaveBeenCalledWith(argv.schema);
       expect(updateContentTypeSchema).toHaveBeenCalledWith(
         contentItemSchema,
         JSON.stringify(mutatedSchemaBody),

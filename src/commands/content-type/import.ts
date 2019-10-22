@@ -9,7 +9,6 @@ import chalk from 'chalk';
 import { extractImportObjects } from '../../services/import.service';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
-import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 
 export const command = 'import [dir]';
 
@@ -22,6 +21,10 @@ export const builder = (yargs: Argv): void => {
     demandOption: true
   });
 };
+
+export interface ImportBuilderOptions {
+  dir: string;
+}
 
 const doCreate = async (hub: Hub, contentType: ContentType): Promise<string[]> => {
   try {

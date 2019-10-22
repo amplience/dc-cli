@@ -2,7 +2,7 @@ import axios from 'axios';
 import { URL } from 'url';
 import * as fs from 'fs';
 
-export async function getExternalJson(path: string): Promise<string> {
+export async function getJsonByPath(path: string): Promise<string> {
   if (path.match(/^(http|https):\/\//)) {
     const result = await axios.get(path);
 

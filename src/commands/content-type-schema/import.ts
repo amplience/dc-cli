@@ -9,45 +9,39 @@ import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import chalk from 'chalk';
 import { isEqual } from 'lodash';
-import { listDirectory } from '../../common/import/list-directory';
-import { getRemoteFileList, RemoteFile } from '../../common/import/list-remote-files';
-import { getExternalJson } from '../../common/import/external-json';
+import { getImportFileList, ImportFile } from '../../common/import/import-file-list';
+import { getJsonByPath } from '../../common/import/json-by-path';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 
-export const command = 'import';
+export const command = 'import <manifest>';
 
 export const desc = 'Import Content Type Schemas';
 
+export interface SchemaOptions {
+  validation: ValidationLevel;
+}
+
 export const builder = (yargs: Argv): void => {
-  yargs
-    .options({
-      dir: {
-        describe: 'Path to Content Type Schema definitions',
-        type: 'string'
-      },
-      remote: {
-        describe: 'Path to file referencing remote Content Type Schema definitions',
-        type: 'string'
-      },
-      validationLevel: {
-        type: 'string',
-        choices: Object.values(ValidationLevel),
-        demandOption: true,
-        description: 'content-type-schema Validation Level'
-      }
-    })
-    .demandCommand(2);
+  yargs.positional('manifest', {
+    describe: 'Path to file referencing Content Type Schema definitions to be imported',
+    type: 'string'
+  });
 };
 
-export const getSchemaList = async (
-  schemaFileList: string[],
-  validationLevel: ValidationLevel
-): Promise<ContentTypeSchema[]> => {
+function isSchemaImportFile(schemaFile: ImportFile<SchemaOptions>): schemaFile is ImportFile<SchemaOptions> {
+  return Boolean(schemaFile.uri && schemaFile.options && schemaFile.options.validation);
+}
+
+export const getSchemaList = async (schemaFileList: ImportFile<SchemaOptions>[]): Promise<ContentTypeSchema[]> => {
   const schemas: ContentTypeSchema[] = [];
   for (const schemaFile of schemaFileList) {
-    const schemaBody = await getExternalJson(schemaFile);
-    schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel }));
+    if (!isSchemaImportFile(schemaFile)) {
+      throw Error('Manifest contains invalid syntax');
+    } else {
+      const schemaBody = await getJsonByPath(schemaFile.uri);
+      schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel: schemaFile.options.validation }));
+    }
   }
   return schemas;
 };
@@ -116,14 +110,15 @@ export const processSchemas = async (
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, remote, validationLevel } = argv;
+  const { manifest } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const remoteSchemaUrls = remote ? getRemoteFileList(remote).map((file: RemoteFile) => file.uri) : [];
-  const schemaFileList = dir ? listDirectory(dir) : [];
-  const schemas = await getSchemaList([...schemaFileList, ...remoteSchemaUrls], validationLevel);
+  const schemaImportFiles = manifest ? getImportFileList<SchemaOptions>(manifest) : [];
+  const schemas = await getSchemaList([...schemaImportFiles]);
   const storedSchemaList = await paginator(hub.related.contentTypeSchema.list);
-  const schemasToProcess = schemas.map(imported => storedSchemaMapper(imported, storedSchemaList, validationLevel));
+  const schemasToProcess = schemas.map(imported =>
+    storedSchemaMapper(imported, storedSchemaList, imported.validationLevel || ValidationLevel.CONTENT_TYPE)
+  );
 
   await processSchemas(schemasToProcess, client, hub);
 };

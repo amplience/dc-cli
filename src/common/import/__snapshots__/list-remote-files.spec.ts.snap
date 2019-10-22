@@ -1,5 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`list-remote-files getRemoteFileList should throw an error when remote file list file contains invalid json 1`] = `"Unable to read remote file list: ./remote-file-list.json"`;
-
-exports[`list-remote-files getRemoteFileList should throw an error when remote file list file does not exist 1`] = `"Unable to read remote file list: ./remote-file-list.json"`;

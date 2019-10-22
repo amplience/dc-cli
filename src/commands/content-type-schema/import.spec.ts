@@ -9,25 +9,24 @@ import {
   storedSchemaMapper,
   processSchemas,
   doCreate,
-  doUpdate
+  doUpdate,
+  SchemaOptions
 } from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
 import { createStream } from 'table';
 import chalk from 'chalk';
-import { getRemoteFileList } from '../../common/import/list-remote-files';
-import { getExternalJson } from '../../common/import/external-json';
+import { getImportFileList, ImportFile } from '../../common/import/import-file-list';
+import { getJsonByPath } from '../../common/import/json-by-path';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
-import { listDirectory } from '../../common/import/list-directory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 
 jest.mock('fs');
 jest.mock('table');
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../../common/import/list-remote-files');
-jest.mock('../../common/import/list-directory');
-jest.mock('../../common/import/external-json');
+jest.mock('../../common/import/import-file-list');
+jest.mock('../../common/import/json-by-path');
 jest.mock('../../common/dc-management-sdk-js/paginator');
 jest.mock('./create.service');
 jest.mock('./update.service');
@@ -38,63 +37,51 @@ describe('content-type-schema import command', (): void => {
   });
 
   it('should implement an import command', () => {
-    expect(command).toEqual('import');
+    expect(command).toEqual('import <manifest>');
   });
 
   describe('builder tests', () => {
     it('should configure yargs', () => {
       const argv = Yargs(process.argv.slice(2));
-      const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
-      const spyDemandCommand = jest.spyOn(argv, 'demandCommand').mockReturnThis();
-
+      const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       builder(argv);
 
-      expect(spyOptions).toHaveBeenCalledWith({
-        dir: {
-          describe: 'Path to Content Type Schema definitions',
-          type: 'string'
-        },
-        remote: {
-          describe: 'Path to file referencing remote Content Type Schema definitions',
-          type: 'string'
-        },
-        validationLevel: {
-          type: 'string',
-          choices: Object.values(ValidationLevel),
-          demandOption: true,
-          description: 'content-type-schema Validation Level'
-        }
+      expect(spyPositional).toHaveBeenCalledWith('manifest', {
+        describe: 'Path to file referencing Content Type Schema definitions to be imported',
+        type: 'string'
       });
-
-      expect(spyDemandCommand).toHaveBeenCalledWith(2);
     });
   });
 
   describe('getSchemaList', () => {
     it('should return a list of content type schemas', async () => {
       const schemaBody = { id: 'schema-id' };
-      (getExternalJson as jest.Mock).mockResolvedValueOnce(JSON.stringify(schemaBody));
-      const schemaFileList = ['file-a.json'];
+      (getJsonByPath as jest.Mock).mockResolvedValueOnce(JSON.stringify(schemaBody));
+      const schemaFileList = [{ uri: 'file-a.json', options: { validation: ValidationLevel.CONTENT_TYPE } }];
       const validationLevel = ValidationLevel.CONTENT_TYPE;
-      const result = await getSchemaList(schemaFileList, validationLevel);
+      const result = await getSchemaList(schemaFileList);
 
       expect(result.length).toEqual(1);
       expect(result[0]).toEqual(expect.objectContaining({ body: JSON.stringify(schemaBody), validationLevel }));
     });
 
     it('should return an empty list when empty schema file list is passed', async () => {
-      const validationLevel = ValidationLevel.CONTENT_TYPE;
-      const result = await getSchemaList([], validationLevel);
+      const result = await getSchemaList([]);
 
       expect(result).toEqual([]);
     });
 
-    it('should throw and error when getting exteral json fails', async () => {
-      const schemaFileList = ['file-a.json'];
-      const validationLevel = ValidationLevel.CONTENT_TYPE;
-      (getExternalJson as jest.Mock).mockRejectedValueOnce(new Error('Error retrieving external json'));
+    it('should throw and error when getting json fails', async () => {
+      const schemaFileList = [{ uri: 'file-a.json', options: { validation: ValidationLevel.CONTENT_TYPE } }];
+      (getJsonByPath as jest.Mock).mockRejectedValueOnce(new Error('Error retrieving json'));
 
-      await expect(getSchemaList(schemaFileList, validationLevel)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(getSchemaList(schemaFileList)).rejects.toThrowErrorMatchingSnapshot();
+    });
+
+    it('should throw an error when the manifest file does not contain valid details', async () => {
+      const schemaFileList = [{ uri: 'file-a.json', options: {} }] as ImportFile<SchemaOptions>[];
+
+      await expect(getSchemaList(schemaFileList)).rejects.toThrowErrorMatchingSnapshot();
     });
   });
 
@@ -320,13 +307,11 @@ describe('content-type-schema import command', (): void => {
       });
     });
 
-    it('should process schemas from a remote file list and local directory', async (): Promise<void> => {
+    it('should process schemas from a remote and local locations', async (): Promise<void> => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'my-dir',
-        remote: 'my-remote-list',
-        validationLevel: ValidationLevel.SLOT
+        manifest: 'my-schema-list'
       };
       const remoteContentTypeSchema = {
         body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
@@ -338,8 +323,10 @@ describe('content-type-schema import command', (): void => {
       };
 
       mockGetHub.mockResolvedValue(new Hub());
-      (getRemoteFileList as jest.Mock).mockReturnValueOnce([{ uri: 'https://example.com/test-schema-uri' }]);
-      (listDirectory as jest.Mock).mockReturnValueOnce(['file-a.json']);
+      (getImportFileList as jest.Mock).mockReturnValueOnce([
+        { uri: 'https://example.com/test-schema-uri', options: { validation: ValidationLevel.CONTENT_TYPE } },
+        { uri: 'file://example_schema.json', options: { validation: ValidationLevel.CONTENT_TYPE } }
+      ]);
 
       jest
         .spyOn(importModule, 'getSchemaList')
@@ -355,12 +342,11 @@ describe('content-type-schema import command', (): void => {
         .mockImplementation(async (): Promise<void> => {});
 
       await handler(argv);
-      expect(getRemoteFileList).toHaveBeenCalledWith('my-remote-list');
-      expect(listDirectory).toHaveBeenCalledWith('my-dir');
-      expect(getSchemaList).toHaveBeenCalledWith(
-        ['file-a.json', 'https://example.com/test-schema-uri'],
-        ValidationLevel.SLOT
-      );
+      expect(getImportFileList).toHaveBeenCalledWith('my-schema-list');
+      expect(getSchemaList).toHaveBeenCalledWith([
+        { uri: 'https://example.com/test-schema-uri', options: { validation: ValidationLevel.CONTENT_TYPE } },
+        { uri: 'file://example_schema.json', options: { validation: ValidationLevel.CONTENT_TYPE } }
+      ]);
       expect(paginator).toHaveBeenCalledWith(expect.any(Function));
 
       expect(processSchemasSpy).toHaveBeenCalledWith(

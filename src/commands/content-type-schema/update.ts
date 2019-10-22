@@ -3,7 +3,7 @@ import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
 import { ValidationLevel } from 'dc-management-sdk-js';
-import { getExternalJson } from '../../common/import/external-json';
+import { getJsonByPath } from '../../common/import/json-by-path';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { updateContentTypeSchema } from './update.service';
 
@@ -45,7 +45,7 @@ export const handler = async (
 ): Promise<void> => {
   const { id, schema, validationLevel } = argv;
   const client = dynamicContentClientFactory(argv);
-  const schemaBody = await getExternalJson(schema);
+  const schemaBody = await getJsonByPath(schema);
   const contentTypeSchema = await client.contentTypeSchemas.get(id);
   const contentTypeSchemaResult = await updateContentTypeSchema(contentTypeSchema, schemaBody, validationLevel);
 
