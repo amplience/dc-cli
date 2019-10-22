@@ -69,7 +69,7 @@ export const storedSchemaMapper = (
   return found ? { ...found.toJSON(), body: importedSchema.body, validationLevel } : importedSchema;
 };
 
-const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
+export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
   try {
     const createdSchemaType = await createContentTypeSchema(
       schema.body || '',
@@ -82,7 +82,7 @@ const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> 
   }
 };
 
-const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Promise<string[]> => {
+export const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Promise<string[]> => {
   try {
     const retrievedSchema = await client.contentTypeSchemas.get(schema.id || '');
     if (isEqual(retrievedSchema.toJSON(), schema)) {
@@ -93,6 +93,7 @@ const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Prom
       schema.body || '',
       schema.validationLevel || ValidationLevel.CONTENT_TYPE
     );
+
     return [updatedSchema.id || '', schema.schemaId || '', 'UPDATE', 'SUCCESS'];
   } catch (err) {
     throw new Error(`Error updating content type schema ${schema.schemaId || '<unknown>'}: ${err.message}`);

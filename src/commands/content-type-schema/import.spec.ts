@@ -1,19 +1,36 @@
 import Yargs = require('yargs/yargs');
-import fs from 'fs';
-import { command, builder, handler, getSchemaList, storedSchemaMapper } from './import';
+
+import * as importModule from './import';
+import {
+  command,
+  builder,
+  handler,
+  getSchemaList,
+  storedSchemaMapper,
+  processSchemas,
+  doCreate,
+  doUpdate
+} from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import MockPage from '../../common/dc-management-sdk-js/mock-page';
-import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
+import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
 import { createStream } from 'table';
 import chalk from 'chalk';
 import { getRemoteFileList } from '../../common/import/list-remote-files';
 import { getExternalJson } from '../../common/import/external-json';
+import { createContentTypeSchema } from './create.service';
+import { updateContentTypeSchema } from './update.service';
+import { listDirectory } from '../../common/import/list-directory';
+import paginator from '../../common/dc-management-sdk-js/paginator';
 
 jest.mock('fs');
 jest.mock('table');
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/import/list-remote-files');
+jest.mock('../../common/import/list-directory');
 jest.mock('../../common/import/external-json');
+jest.mock('../../common/dc-management-sdk-js/paginator');
+jest.mock('./create.service');
+jest.mock('./update.service');
 
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {
@@ -128,6 +145,160 @@ describe('content-type-schema import command', (): void => {
     });
   });
 
+  describe('doCreate', () => {
+    it('should create a content type schema and report the results', async () => {
+      const hub = new Hub();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const contentTypeSchema = {
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      (createContentTypeSchema as jest.Mock).mockResolvedValueOnce({ ...contentTypeSchema, id: 'create-id', schemaId });
+      const result = await doCreate(hub, contentTypeSchema);
+
+      expect(createContentTypeSchema).toHaveBeenCalledWith(
+        contentTypeSchema.body,
+        contentTypeSchema.validationLevel,
+        hub
+      );
+      expect(result).toEqual(['create-id', 'https://schema.localhost.com/test-1.json', 'CREATE', 'SUCCESS']);
+    });
+
+    it('should throw an error when content type schema fails to create', async () => {
+      const hub = new Hub();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const contentTypeSchema = {
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      (createContentTypeSchema as jest.Mock).mockImplementation(() => {
+        throw new Error('Error creating content type schema');
+      });
+
+      await expect(doCreate(hub, contentTypeSchema)).rejects.toThrowErrorMatchingSnapshot();
+    });
+  });
+
+  describe('doUpdate', () => {
+    const mockGetContentTypeSchema = jest.fn();
+
+    beforeEach(() => {
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        contentTypeSchemas: {
+          get: mockGetContentTypeSchema
+        }
+      });
+    });
+    it('should update a content type schema and report the results', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const storedContentTypeSchema = {
+        id: 'stored-id',
+        schemaId,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      const mutatedContentTypeSchema = {
+        ...storedContentTypeSchema,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1 - updated",\n\t"description": "Test Schema 1- updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`
+      } as ContentTypeSchema;
+      mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
+      (updateContentTypeSchema as jest.Mock).mockResolvedValueOnce({
+        ...mutatedContentTypeSchema,
+        id: 'stored-id',
+        schemaId
+      });
+      const result = await doUpdate(client, mutatedContentTypeSchema);
+
+      expect(updateContentTypeSchema).toHaveBeenCalledWith(
+        expect.objectContaining(storedContentTypeSchema),
+        mutatedContentTypeSchema.body,
+        mutatedContentTypeSchema.validationLevel
+      );
+      expect(result).toEqual(['stored-id', 'https://schema.localhost.com/test-1.json', 'UPDATE', 'SUCCESS']);
+    });
+
+    it('should update a content type schema and report the results', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const storedContentTypeSchema = {
+        id: 'stored-id',
+        schemaId,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      const mutatedContentTypeSchema = {
+        ...storedContentTypeSchema,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`
+      } as ContentTypeSchema;
+      mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
+
+      const result = await doUpdate(client, mutatedContentTypeSchema);
+
+      expect(updateContentTypeSchema).toHaveBeenCalledTimes(0);
+      expect(result).toEqual(['stored-id', 'https://schema.localhost.com/test-1.json', 'UPDATE', 'SKIPPED']);
+    });
+
+    it('should throw an error when content type schema fails to create', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const contentTypeSchema = {
+        id: 'stored-id',
+        schemaId,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      mockGetContentTypeSchema.mockImplementationOnce(() => {
+        throw new Error('Error getting content type schema');
+      });
+      await expect(doUpdate(client, contentTypeSchema)).rejects.toThrowErrorMatchingSnapshot();
+    });
+  });
+
+  describe('processSchemas', () => {
+    const mockStreamWrite = jest.fn();
+    const mockGetContentTypeSchema = jest.fn();
+
+    beforeEach(() => {
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        contentTypeSchemas: {
+          get: mockGetContentTypeSchema
+        }
+      });
+      (createStream as jest.Mock).mockReturnValue({
+        write: mockStreamWrite
+      });
+    });
+
+    it('should successfully create and update a schema', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const hub = new Hub();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const contentTypeSchemaToCreate = {
+        schemaId,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      const contentTypeSchemaToUpdate = { ...contentTypeSchemaToCreate, id: 'stored-id' } as ContentTypeSchema;
+      const schemasToProcess = [contentTypeSchemaToCreate, contentTypeSchemaToUpdate];
+
+      jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(['stored-id', schemaId, 'CREATE', 'SUCCESS']);
+      jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(['stored-id', schemaId, 'UPDATE', 'SUCCESS']);
+
+      await processSchemas(schemasToProcess, client, hub);
+
+      expect(mockStreamWrite).toHaveBeenCalledTimes(3);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
+        chalk.bold('id'),
+        chalk.bold('schemaId'),
+        chalk.bold('method'),
+        chalk.bold('status')
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['stored-id', schemaId, 'CREATE', 'SUCCESS']);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['stored-id', schemaId, 'UPDATE', 'SUCCESS']);
+    });
+  });
+
   describe('handler tests', () => {
     const yargArgs = {
       $0: 'test',
@@ -139,56 +310,17 @@ describe('content-type-schema import command', (): void => {
       clientSecret: 'client-id',
       hubId: 'hub-id'
     };
-
-    const mockFileReadDir = fs.readdirSync as jest.Mock;
     const mockGetHub = jest.fn();
-    const mockList = jest.fn();
-    const mockGetContentTypeSchema = jest.fn();
-    const mockCreate = jest.fn();
-    const mockUpdate = jest.fn();
-    const mockStreamWrite = jest.fn();
-
-    const storedContentTypeSchema = {
-      validationLevel: 'CONTENT_TYPE',
-      body:
-        '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/test-1.json",\n\n\t"title": "Test Schema",\n\t"description": "Test Schema",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}',
-      schemaId: 'https://schema.localhost.com/test-1.json',
-      id: 'stored-id'
-    };
 
     beforeEach(() => {
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         hubs: {
           get: mockGetHub
-        },
-        contentTypeSchemas: {
-          get: mockGetContentTypeSchema
         }
-      });
-
-      mockGetHub.mockResolvedValue({
-        related: {
-          contentTypeSchema: {
-            create: mockCreate,
-            update: mockUpdate,
-            list: mockList
-          }
-        }
-      });
-      const storedContentTypeSchemas = [storedContentTypeSchema];
-      const contentTypeSchemasResponse: ContentTypeSchema[] = storedContentTypeSchemas.map(
-        v => new ContentTypeSchema(v)
-      );
-      const listResponse = new MockPage(ContentTypeSchema, contentTypeSchemasResponse);
-
-      mockList.mockResolvedValue(listResponse);
-
-      (createStream as jest.Mock).mockReturnValue({
-        write: mockStreamWrite
       });
     });
 
-    it('should create a content schema and update a content schema from a directory', async () => {
+    it('should process schemas from a remote file list and local directory', async (): Promise<void> => {
       const argv = {
         ...yargArgs,
         ...config,
@@ -196,168 +328,46 @@ describe('content-type-schema import command', (): void => {
         remote: 'my-remote-list',
         validationLevel: ValidationLevel.SLOT
       };
-      const mockFileNames: string[] = ['a.json'];
-
-      const schemaToUpdate = new ContentTypeSchema({
-        ...storedContentTypeSchema,
-        body:
-          '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
-      });
-      const schemaToCreate = {
-        ...storedContentTypeSchema,
-        schemaId: 'https://schema.localhost.com/new-test-1.json',
-        body:
-          '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/new-test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
+      const remoteContentTypeSchema = {
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
       };
-      delete schemaToCreate.id;
+      const localContentTypeSchema = {
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/local-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      };
 
-      mockFileReadDir.mockReturnValue(mockFileNames);
-      (getRemoteFileList as jest.Mock).mockReturnValue([{ uri: 'https://example.com/a.json' }]);
-      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToUpdate.body).mockReturnValueOnce(schemaToCreate.body);
+      mockGetHub.mockResolvedValue(new Hub());
+      (getRemoteFileList as jest.Mock).mockReturnValueOnce([{ uri: 'https://example.com/test-schema-uri' }]);
+      (listDirectory as jest.Mock).mockReturnValueOnce(['file-a.json']);
 
-      const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
+      jest
+        .spyOn(importModule, 'getSchemaList')
+        .mockResolvedValue([
+          new ContentTypeSchema(remoteContentTypeSchema),
+          new ContentTypeSchema(localContentTypeSchema)
+        ]);
 
-      mockUpdate.mockResolvedValue(schemaToUpdate);
-      storedSchema.related.update = mockUpdate;
-      mockGetContentTypeSchema.mockResolvedValue(storedSchema);
-      mockCreate.mockResolvedValue(new ContentTypeSchema(schemaToCreate));
+      (paginator as jest.Mock).mockResolvedValue([]);
+
+      const processSchemasSpy = jest
+        .spyOn(importModule, 'processSchemas')
+        .mockImplementation(async (): Promise<void> => {});
 
       await handler(argv);
-
-      expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ ...schemaToCreate, validationLevel: ValidationLevel.SLOT })
+      expect(getRemoteFileList).toHaveBeenCalledWith('my-remote-list');
+      expect(listDirectory).toHaveBeenCalledWith('my-dir');
+      expect(getSchemaList).toHaveBeenCalledWith(
+        ['file-a.json', 'https://example.com/test-schema-uri'],
+        ValidationLevel.SLOT
       );
-      expect(mockGetContentTypeSchema).toHaveBeenCalledTimes(1);
-      expect(mockGetContentTypeSchema).toHaveBeenCalledWith('stored-id');
-      expect(mockUpdate).toHaveBeenCalledTimes(1);
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ body: schemaToUpdate.body, validationLevel: ValidationLevel.SLOT })
+      expect(paginator).toHaveBeenCalledWith(expect.any(Function));
+
+      expect(processSchemasSpy).toHaveBeenCalledWith(
+        [expect.objectContaining(remoteContentTypeSchema), expect.objectContaining(localContentTypeSchema)],
+        expect.any(Object),
+        expect.any(Object)
       );
-      expect(mockStreamWrite).toHaveBeenCalledTimes(3);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('id'),
-        chalk.bold('schemaId'),
-        chalk.bold('method'),
-        chalk.bold('status')
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
-        'stored-id',
-        'https://schema.localhost.com/test-1.json',
-        'UPDATE',
-        'SUCCESS'
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
-        '',
-        'https://schema.localhost.com/new-test-1.json',
-        'CREATE',
-        'SUCCESS'
-      ]);
-    });
-
-    it('should abort on first failure when create content type schema (from directory) throws an error', async (): Promise<
-      void
-    > => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', validationLevel: ValidationLevel.CONTENT_TYPE };
-      const mockFileNames: string[] = ['a.json'];
-
-      mockFileReadDir.mockReturnValue(mockFileNames);
-      mockCreate.mockRejectedValueOnce(new Error('Failed to create'));
-
-      const schemaToCreate = {
-        ...storedContentTypeSchema,
-        schemaId: 'https://schema.localhost.com/new-test-1.json',
-        body:
-          '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/new-test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
-      };
-      delete schemaToCreate.id;
-
-      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToCreate.body);
-
-      await expect(handler(argv)).rejects.toThrowError(/Error registering content type schema with body/);
-      expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(schemaToCreate));
-      expect(mockCreate).toBeCalledTimes(1);
-      expect(mockUpdate).toBeCalledTimes(0);
-      expect(mockStreamWrite).toHaveBeenCalledTimes(1);
-    });
-
-    it('should abort on first failure when update content type schema (from directory) throws an error', async (): Promise<
-      void
-    > => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', validationLevel: ValidationLevel.CONTENT_TYPE };
-      const mockFileNames: string[] = ['a.json'];
-
-      mockFileReadDir.mockReturnValue(mockFileNames);
-
-      const schemaToUpdate = new ContentTypeSchema({
-        ...storedContentTypeSchema,
-        body:
-          '{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/test-1.json",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}'
-      });
-
-      const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
-      mockUpdate.mockRejectedValueOnce(new Error('Failed to update'));
-      storedSchema.related.update = mockUpdate;
-      mockGetContentTypeSchema.mockResolvedValue(storedSchema);
-
-      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToUpdate.body);
-
-      await expect(handler(argv)).rejects.toThrowError(
-        'Error updating content type schema https://schema.localhost.com/test-1.json: Failed to update'
-      );
-      expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledTimes(1);
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ body: schemaToUpdate.body, validationLevel: schemaToUpdate.validationLevel })
-      );
-      expect(mockUpdate).toBeCalledTimes(1);
-      expect(mockCreate).toBeCalledTimes(0);
-      expect(mockStreamWrite).toHaveBeenCalledTimes(1);
-    });
-
-    it('should output status as update skipped when content type schema (from directory) has no differences', async (): Promise<
-      void
-    > => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', validationLevel: ValidationLevel.CONTENT_TYPE };
-      const mockFileNames: string[] = ['a.json'];
-
-      mockFileReadDir.mockReturnValue(mockFileNames);
-
-      const schemaToUpdate = new ContentTypeSchema(storedContentTypeSchema);
-
-      (getExternalJson as jest.Mock).mockReturnValueOnce(schemaToUpdate.body);
-
-      const storedSchema = new ContentTypeSchema(storedContentTypeSchema);
-
-      mockUpdate.mockResolvedValue(schemaToUpdate.body);
-      storedSchema.related.update = mockUpdate;
-      mockGetContentTypeSchema.mockResolvedValue(storedSchema);
-
-      await handler(argv);
-
-      expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledTimes(1);
-      expect(mockCreate).toHaveBeenCalledTimes(0);
-      expect(mockGetContentTypeSchema).toHaveBeenCalledTimes(1);
-      expect(mockGetContentTypeSchema).toHaveBeenCalledWith('stored-id');
-      expect(mockUpdate).toHaveBeenCalledTimes(0);
-      expect(mockStreamWrite).toHaveBeenCalledTimes(2);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('id'),
-        chalk.bold('schemaId'),
-        chalk.bold('method'),
-        chalk.bold('status')
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
-        'stored-id',
-        'https://schema.localhost.com/test-1.json',
-        'UPDATE',
-        'SKIPPED'
-      ]);
     });
   });
 });
