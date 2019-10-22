@@ -1,8 +1,8 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, Hub } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import fs from 'fs';
-import { builder, command, handler } from './import';
+import { builder, command, handler, storedContentTypeMapper, doCreate } from './import';
 import Yargs from 'yargs/yargs';
 import { createStream } from 'table';
 import chalk from 'chalk';
@@ -33,6 +33,72 @@ describe('content-type import command', (): void => {
         type: 'string'
       });
     });
+  });
+
+  describe('storedContentTypeMapper', () => {
+    it('it should map to a stored content type', () => {
+      const importedContentType = new ContentType({
+        contentTypeUri: 'matched-uri',
+        settings: { label: 'mutated-label' }
+      });
+      const storedContentType = [
+        new ContentType({ id: 'stored-id', contentTypeUri: 'matched-uri', settings: { label: 'label' } })
+      ];
+      const result = storedContentTypeMapper(importedContentType, storedContentType);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: 'stored-id',
+          contentTypeUri: 'matched-uri',
+          settings: { label: 'mutated-label' }
+        })
+      );
+    });
+
+    it('should not map to a stored content type', () => {
+      const importedContentType = new ContentType({
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      });
+      const storedContentType = [
+        new ContentType({ id: 'stored-id', contentTypeUri: 'matched-uri', settings: { label: 'label' } })
+      ];
+      const result = storedContentTypeMapper(importedContentType, storedContentType);
+
+      expect(result).toEqual(
+        expect.objectContaining({ contentTypeUri: 'not-matched-uri', settings: { label: 'mutated-label' } })
+      );
+    });
+  });
+
+  describe('doCreate', () => {
+    it('should create a content type and return report', async () => {
+      const mockHub = new Hub();
+      const mockRegister = jest.fn().mockResolvedValue({ id: 'created-id' });
+      mockHub.related.contentTypes.register = mockRegister;
+      const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
+      const result = await doCreate(mockHub, contentType as ContentType);
+
+      expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentType));
+      expect(result).toEqual(['created-id', 'content-type-uri', 'CREATE', 'SUCCESS']);
+    });
+
+    it('should throw an error when content type create fails', async () => {
+      const mockHub = new Hub();
+      const mockRegister = jest.fn().mockImplementation(() => {
+        throw new Error('Error creating content type');
+      });
+      mockHub.related.contentTypes.register = mockRegister;
+      const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
+
+      await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
+    });
+  });
+
+  describe('doUpdate', () => {
+    it('should update a content type and return report', () => {});
+
+    it('should throw and error when content type update fails', () => {});
   });
 
   describe('handler tests', () => {
