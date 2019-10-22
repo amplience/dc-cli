@@ -114,7 +114,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const schemaImportFiles = manifest ? getImportFileList<SchemaOptions>(manifest) : [];
-  const schemas = await getSchemaList([...schemaImportFiles]);
+  const schemas = await getSchemaList(schemaImportFiles);
   const storedSchemaList = await paginator(hub.related.contentTypeSchema.list);
   const schemasToProcess = schemas.map(imported =>
     storedSchemaMapper(imported, storedSchemaList, imported.validationLevel || ValidationLevel.CONTENT_TYPE)

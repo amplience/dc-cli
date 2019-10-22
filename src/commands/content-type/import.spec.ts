@@ -18,7 +18,7 @@ describe('content-type import command', (): void => {
   });
 
   it('should implement an import command', () => {
-    expect(command).toEqual('import [dir]');
+    expect(command).toEqual('import <dir>');
   });
 
   describe('builder tests', () => {
@@ -29,7 +29,6 @@ describe('content-type import command', (): void => {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('dir', {
-        demandOption: true,
         describe: 'Path to Content Type definitions',
         type: 'string'
       });
