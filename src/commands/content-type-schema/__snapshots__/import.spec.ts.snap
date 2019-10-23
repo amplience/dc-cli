@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`content-type-schema import command doCreate should throw an error when content type schema fails to create 1`] = `
+"Error registering content type schema with body: {
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}
+
+Error creating content type schema"
+`;
+
+exports[`content-type-schema import command doUpdate should throw an error when content type schema fails to create 1`] = `"Error updating content type schema https://schema.localhost.com/test-1.json: Error getting content type schema"`;
+
+exports[`content-type-schema import command getSchemaList should throw an error when the manifest file does not contain valid details 1`] = `"Manifest contains invalid syntax"`;
+
+exports[`content-type-schema import command getSchemaList should throw and error when getting json fails 1`] = `"Error retrieving json"`;
+
+exports[`content-type-schema import command storedSchemaMapper should throw an exception if the schema body cannot be parsed 1`] = `"Failed to parse schema body"`;

@@ -26,8 +26,12 @@ export const handler = async (argv: Arguments<ConfigurationParameters & Renderin
   const hub = await client.hubs.get(argv.hubId);
   const contentTypeSchemaList = await paginator(hub.related.contentTypeSchema.list);
 
-  new DataPresenter(contentTypeSchemaList.map(value => value.toJson())).render({
-    json: argv.json,
-    itemMapFn: itemMapFn
-  });
+  if (contentTypeSchemaList.length > 0) {
+    new DataPresenter(contentTypeSchemaList.map(value => value.toJson())).render({
+      json: argv.json,
+      itemMapFn: itemMapFn
+    });
+  } else {
+    console.log('There are no content type schemas defined.');
+  }
 };

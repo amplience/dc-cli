@@ -1,11 +1,12 @@
 import { CommandOptions } from '../../interfaces/command-options.interface';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import { Arguments } from 'yargs';
-import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
-import { getSchemaBody } from './helper/content-type-schema.helper';
+import { ValidationLevel } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
+import { createContentTypeSchema } from './create.service';
+import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { getJsonByPath } from '../../common/import/json-by-path';
 
 export const command = 'create';
 
@@ -34,22 +35,16 @@ export interface BuilderOptions {
 export const handler = async (
   argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
-  const schemaBody = await getSchemaBody(argv.schema);
-  const schemaJson = JSON.parse(schemaBody);
-  if (schemaJson.id == undefined) {
-    throw new Error('Missing id from schema');
-  }
-
-  const contentTypeSchema = new ContentTypeSchema();
-  contentTypeSchema.body = schemaBody;
-  contentTypeSchema.schemaId = schemaJson.id;
-  contentTypeSchema.validationLevel = argv.validationLevel as ValidationLevel;
-
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const contentTypeSchemaResult = await hub.related.contentTypeSchema.create(contentTypeSchema);
+  const schemaBody = await getJsonByPath(argv.schema);
+  const contentTypeSchemaResult = await createContentTypeSchema(
+    schemaBody,
+    argv.validationLevel as ValidationLevel,
+    hub
+  );
 
-  return new DataPresenter(contentTypeSchemaResult.toJson()).render({
+  return new DataPresenter(contentTypeSchemaResult.toJSON()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });
