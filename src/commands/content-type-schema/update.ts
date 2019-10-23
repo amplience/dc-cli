@@ -7,7 +7,7 @@ import { getJsonByPath } from '../../common/import/json-by-path';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { updateContentTypeSchema } from './update.service';
 
-export const command = 'update [id]';
+export const command = 'update <id>';
 
 export const desc = 'Update Content Type Schema';
 
@@ -15,8 +15,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Type Schema ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options({
       schema: {

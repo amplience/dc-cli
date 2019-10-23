@@ -1,12 +1,38 @@
-import { Arguments } from 'yargs';
 import Yargs from 'yargs/yargs';
 import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-options';
 import { configureCommandOptions, readConfigFile } from './commands/configure';
+import { Arguments, Argv } from 'yargs';
+import errorHandler from './error-handler';
 
-export default (yargInstance = Yargs(process.argv.slice(2))): Arguments => {
-  return yargInstance
-    .options(configureCommandOptions)
-    .config('config', readConfigFile)
-    .commandDir('./commands', YargsCommandBuilderOptions)
-    .demandCommand(1, 'Please specify at least one command').argv;
+const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
+  return new Promise(
+    async (resolve): Promise<void> => {
+      let failInvoked = false;
+      const failFn = (msg: string, err?: Error | string): void => {
+        // fail should only be invoked once
+        if (failInvoked) {
+          return;
+        }
+        failInvoked = true;
+        if (msg && !err) {
+          yargInstance.showHelp('error');
+        }
+        errorHandler(err || msg);
+      };
+      const argv = await yargInstance
+        .options(configureCommandOptions)
+        .config('config', readConfigFile)
+        .commandDir('./commands', YargsCommandBuilderOptions)
+        .strict()
+        .demandCommand(1, 'Please specify at least one command')
+        .exitProcess(false)
+        .showHelpOnFail(false)
+        .fail(failFn).argv;
+      resolve(argv);
+    }
+  );
+};
+
+export default async (yargInstance = Yargs(process.argv.slice(2))): Promise<Arguments | void> => {
+  return await configureYargs(yargInstance);
 };

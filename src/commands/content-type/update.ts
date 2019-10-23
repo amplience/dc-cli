@@ -7,7 +7,7 @@ import { ContentType, ContentTypeVisualization, ContentTypeIcon, ContentTypeCard
 import { transformYargObjectToArray, YargObject } from '../../common/yargs/yargs-object-transformer';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'update [id]';
+export const command = 'update <id>';
 
 export const desc = 'Update a Content Type';
 
@@ -15,7 +15,6 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       type: 'string',
-      demandOption: true,
       describe: 'content-type ID'
     })
     .options({
