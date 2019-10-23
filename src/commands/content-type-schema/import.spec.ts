@@ -15,7 +15,6 @@ import {
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
 import { createStream } from 'table';
-import chalk from 'chalk';
 import { getImportFileList, ImportFile } from '../../common/import/import-file-list';
 import { getJsonByPath } from '../../common/import/json-by-path';
 import { createContentTypeSchema } from './create.service';
@@ -244,14 +243,8 @@ describe('content-type-schema import command', (): void => {
 
   describe('processSchemas', () => {
     const mockStreamWrite = jest.fn();
-    const mockGetContentTypeSchema = jest.fn();
 
     beforeEach(() => {
-      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        contentTypeSchemas: {
-          get: mockGetContentTypeSchema
-        }
-      });
       (createStream as jest.Mock).mockReturnValue({
         write: mockStreamWrite
       });
@@ -274,13 +267,9 @@ describe('content-type-schema import command', (): void => {
 
       await processSchemas(schemasToProcess, client, hub);
 
+      expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypeSchemaToCreate);
+      expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypeSchemaToUpdate);
       expect(mockStreamWrite).toHaveBeenCalledTimes(3);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('id'),
-        chalk.bold('schemaId'),
-        chalk.bold('method'),
-        chalk.bold('status')
-      ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['stored-id', schemaId, 'CREATE', 'SUCCESS']);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['stored-id', schemaId, 'UPDATE', 'SUCCESS']);
     });
@@ -289,8 +278,7 @@ describe('content-type-schema import command', (): void => {
   describe('handler tests', () => {
     const yargArgs = {
       $0: 'test',
-      _: ['test'],
-      json: true
+      _: ['test']
     };
     const config = {
       clientId: 'client-id',

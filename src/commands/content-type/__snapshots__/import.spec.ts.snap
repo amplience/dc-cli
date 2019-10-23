@@ -1,3 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`content-type import command doCreate should throw an error when content type create fails 1`] = `"Error registering content type content-type-uri: Error creating content type"`;
+
+exports[`content-type import command doUpdate should throw and error when content type update fails 1`] = `"Error updating content type matched-uri: Error retrieving content type"`;
