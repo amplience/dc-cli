@@ -27,9 +27,7 @@ describe('content-type-schema list command', (): void => {
       hubId: 'hub-id'
     };
 
-    it('should pass the sort data into the service', async (): Promise<void> => {
-      const pagingOptions = { sort: 'createdDate,desc' };
-
+    it('should pass the list data into the service', async (): Promise<void> => {
       const plainListContentTypeSchemas = [
         {
           id: '1',
@@ -63,11 +61,11 @@ describe('content-type-schema list command', (): void => {
         }
       });
 
-      const argv = { ...yargArgs, ...config, ...pagingOptions };
+      const argv = { ...yargArgs, ...config };
       await handler(argv);
 
       expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE, ...pagingOptions });
+      expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE });
 
       expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchemas);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ itemMapFn, json: argv.json });

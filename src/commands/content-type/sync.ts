@@ -6,7 +6,7 @@ import { ConfigurationParameters } from '../configure';
 import BuilderOptions from '../../interfaces/builder-options';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'sync [id]';
+export const command = 'sync <id>';
 
 export const desc = 'Sync Content Type with the schema';
 
@@ -14,8 +14,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Type ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options(RenderingOptions);
 };

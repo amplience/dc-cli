@@ -6,7 +6,7 @@ import { ConfigurationParameters } from '../configure';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import BuilderOptions from '../../interfaces/builder-options';
 
-export const command = 'get [id]';
+export const command = 'get <id>';
 
 export const desc = 'Get Content Type';
 
@@ -14,8 +14,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Type ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options(RenderingOptions);
 };

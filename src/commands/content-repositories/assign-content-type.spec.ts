@@ -1,32 +1,22 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { builder, command, handler } from './sync';
+import { builder, command, handler } from './assign-content-type';
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
-import { ContentTypeCachedSchema } from 'dc-management-sdk-js';
+import { ContentRepository, ContentType } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import Yargs from 'yargs/yargs';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 
-describe('ContentType.sync', () => {
+describe('content-repository assign-content-type command', () => {
   const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
-
-  const yargArgs = {
-    $0: 'test',
-    _: ['test'],
-    json: true
-  };
-  const config = {
-    clientId: 'client-id',
-    clientSecret: 'client-id',
-    hubId: 'hub-id'
-  };
 
   afterEach((): void => {
     jest.restoreAllMocks();
   });
-  it('should command should defined', function() {
-    expect(command).toEqual('sync <id>');
+
+  it('should have a command defined', function() {
+    expect(command).toEqual('assign-content-type [id]');
   });
 
   describe('builder tests', function() {
@@ -35,45 +25,64 @@ describe('ContentType.sync', () => {
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
 
+      const options = {
+        contentTypeId: {
+          type: 'string',
+          demandOption: true,
+          description: 'content-type ID to assign'
+        },
+        ...RenderingOptions
+      };
+
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        describe: 'Content Type ID',
+        demandOption: true,
+        describe: 'Content Repository ID',
         type: 'string'
       });
-      expect(spyOptions).toHaveBeenCalledWith(RenderingOptions);
+      expect(spyOptions).toHaveBeenCalledWith(options);
     });
   });
 
   describe('handler tests', function() {
-    it('should sync a content type with the schema', async () => {
+    const yargArgs = {
+      $0: 'test',
+      _: ['test'],
+      json: true,
+      contentTypeId: 'content-type-id'
+    };
+    const config = {
+      clientId: 'client-id',
+      clientSecret: 'client-id',
+      hubId: 'hub-id'
+    };
+
+    it('should return a content repository', async () => {
       const mockGet = jest.fn();
-      const mockUpdate = jest.fn();
+      const mockAssign = jest.fn();
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        contentTypes: {
+        contentRepositories: {
           get: mockGet
         }
       });
-
-      const contentType = {
+      mockGet.mockResolvedValue({
         related: {
-          contentTypeSchema: {
-            update: mockUpdate
+          contentTypes: {
+            assign: mockAssign
           }
         }
-      };
+      });
 
-      const plainContentTypeCachedSchema = {
-        id: 'content-type-cached-schema-id'
-      };
-
-      mockGet.mockResolvedValue(contentType);
-      mockUpdate.mockResolvedValue(new ContentTypeCachedSchema(plainContentTypeCachedSchema));
+      const contentRepository = new ContentRepository({
+        contentTypes: [new ContentType({ id: 'content-typeid' })]
+      });
+      mockAssign.mockResolvedValue(contentRepository);
 
       const argv = { ...yargArgs, id: 'content-type-id', ...config };
       await handler(argv);
 
-      expect(mockDataPresenter).toHaveBeenCalledWith(plainContentTypeCachedSchema);
+      expect(mockDataPresenter).toHaveBeenCalledWith(contentRepository.toJSON());
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
         json: argv.json,
         tableUserConfig: singleItemTableOptions

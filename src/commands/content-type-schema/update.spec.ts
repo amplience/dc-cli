@@ -15,7 +15,7 @@ const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 describe('content type schema update command', function() {
   describe('command tests', function() {
     it('should have a command', function() {
-      expect(command).toEqual('update [id]');
+      expect(command).toEqual('update <id>');
     });
   });
 
@@ -34,7 +34,6 @@ describe('content type schema update command', function() {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        demandOption: true,
         describe: 'Content Type Schema ID',
         type: 'string'
       });

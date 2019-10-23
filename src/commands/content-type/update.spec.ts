@@ -9,7 +9,7 @@ jest.mock('../../view/data-presenter');
 
 describe('content-type register update', () => {
   it('should implement a register command', () => {
-    expect(command).toEqual('update [id]');
+    expect(command).toEqual('update <id>');
   });
 
   describe('builder tests', function() {
@@ -21,7 +21,6 @@ describe('content-type register update', () => {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        demandOption: true,
         describe: 'content-type ID',
         type: 'string'
       });
