@@ -73,3 +73,24 @@ This will then allow the CLI to be used as if it was an executable like so:
 ```bash
 dc-cli COMMAND --param1 foo -- param2 bar
 ```
+
+## Required permissions
+Outlined below are the permissions required to run each command of the CLI. To request any permissions please contact Amplience support.
+
+| Command              	| Action                	      | Required ACL                            	    | Required Functional Permission(s)                                                                                      	          |
+|----------------------	|-----------------------------	|---------------------------------------------	|---------------------------------------------------------------------------------------------------------------------------------	|
+| content-repositories 	| get {{id}}            	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:REPOSITORY:READ                                                                                   	          |
+|                      	| list                  	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:REPOSITORY:READ                                                                                   	          |
+|                      	| assign-content-type {{id}}   	| * ContentRepository - EDIT <br/>* Hub - READ 	| * CONTENT:FUNCTIONAL:REPOSITORY:EDIT                                                                                   	          |
+|                      	| unassign-content-type {{id}} 	| * ContentRepository - EDIT <br/>* Hub - READ 	| * CONTENT:FUNCTIONAL:REPOSITORY:EDIT                                                                                   	          |
+| content-type         	| get {{id}}            	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                 	          |
+|                      	| list                  	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                 	          |
+|                      	| register              	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                               	          |
+|                      	| sync {{id}}           	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                 	          |
+|                      	| update {{id}}         	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                 	          |
+|                      	| import {{dir}}        	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ <br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE <br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT 	|
+| content-type-schema  	| create                	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                               	          |
+|                      	| get {{id}}            	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                 	          |
+|                      	| list                  	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                 	          |
+|                      	| update {{id}}         	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                 	          |
+|                      	| import {{dir}}        	      | * Hub - READ                            	    | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ <br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE <br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT 	|
