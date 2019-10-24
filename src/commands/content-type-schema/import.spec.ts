@@ -1,32 +1,20 @@
 import Yargs = require('yargs/yargs');
 
 import * as importModule from './import';
-import {
-  command,
-  builder,
-  handler,
-  getSchemaList,
-  storedSchemaMapper,
-  processSchemas,
-  doCreate,
-  doUpdate,
-  SchemaOptions
-} from './import';
+import { command, builder, handler, storedSchemaMapper, processSchemas, doCreate, doUpdate } from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
 import { createStream } from 'table';
-import { getImportFileList, ImportFile } from '../../common/import/import-file-list';
-import { getJsonByPath } from '../../common/import/json-by-path';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
+import { loadJsonFromDirectory } from '../../services/import.service';
 
 jest.mock('fs');
 jest.mock('table');
-jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../../common/import/import-file-list');
-jest.mock('../../common/import/json-by-path');
 jest.mock('../../common/dc-management-sdk-js/paginator');
+jest.mock('../../services/dynamic-content-client-factory');
+jest.mock('../../services/import.service');
 jest.mock('./create.service');
 jest.mock('./update.service');
 
@@ -36,7 +24,7 @@ describe('content-type-schema import command', (): void => {
   });
 
   it('should implement an import command', () => {
-    expect(command).toEqual('import <manifest>');
+    expect(command).toEqual('import <dir>');
   });
 
   describe('builder tests', () => {
@@ -45,42 +33,10 @@ describe('content-type-schema import command', (): void => {
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       builder(argv);
 
-      expect(spyPositional).toHaveBeenCalledWith('manifest', {
-        describe: 'Path to file referencing Content Type Schema definitions to be imported',
+      expect(spyPositional).toHaveBeenCalledWith('dir', {
+        describe: 'Directory containing Content Type Schema definitions',
         type: 'string'
       });
-    });
-  });
-
-  describe('getSchemaList', () => {
-    it('should return a list of content type schemas', async () => {
-      const schemaBody = { id: 'schema-id' };
-      (getJsonByPath as jest.Mock).mockResolvedValueOnce(JSON.stringify(schemaBody));
-      const schemaFileList = [{ uri: 'file-a.json', options: { validation: ValidationLevel.CONTENT_TYPE } }];
-      const validationLevel = ValidationLevel.CONTENT_TYPE;
-      const result = await getSchemaList(schemaFileList);
-
-      expect(result.length).toEqual(1);
-      expect(result[0]).toEqual(expect.objectContaining({ body: JSON.stringify(schemaBody), validationLevel }));
-    });
-
-    it('should return an empty list when empty schema file list is passed', async () => {
-      const result = await getSchemaList([]);
-
-      expect(result).toEqual([]);
-    });
-
-    it('should throw and error when getting json fails', async () => {
-      const schemaFileList = [{ uri: 'file-a.json', options: { validation: ValidationLevel.CONTENT_TYPE } }];
-      (getJsonByPath as jest.Mock).mockRejectedValueOnce(new Error('Error retrieving json'));
-
-      await expect(getSchemaList(schemaFileList)).rejects.toThrowErrorMatchingSnapshot();
-    });
-
-    it('should throw an error when the manifest file does not contain valid details', async () => {
-      const schemaFileList = [{ uri: 'file-a.json', options: {} }] as ImportFile<SchemaOptions>[];
-
-      await expect(getSchemaList(schemaFileList)).rejects.toThrowErrorMatchingSnapshot();
     });
   });
 
@@ -89,45 +45,37 @@ describe('content-type-schema import command', (): void => {
       const schemaBody = { id: 'schema-id' };
       const importedSchema = new ContentTypeSchema({
         body: JSON.stringify(schemaBody),
-        validationLevel: ValidationLevel.CONTENT_TYPE
+        validationLevel: ValidationLevel.CONTENT_TYPE,
+        schemaId: schemaBody.id
       });
-      const storedContentTypeSchema = new ContentTypeSchema({ schemaId: schemaBody.id, ...importedSchema.toJSON() });
+      const storedContentTypeSchema = new ContentTypeSchema({
+        id: 'stored-id',
+        schemaId: schemaBody.id,
+        ...importedSchema.toJSON()
+      });
       const storedSchemaList = [storedContentTypeSchema];
-      const validationLevel = ValidationLevel.CONTENT_TYPE;
-      const result = storedSchemaMapper(importedSchema, storedSchemaList, validationLevel);
+      const result = storedSchemaMapper(importedSchema, storedSchemaList);
 
       expect(result).toEqual(expect.objectContaining(storedContentTypeSchema.toJSON()));
-      expect(result.schemaId).toBeDefined();
+      expect(result.id).toBeDefined();
     });
 
     it('should return the imported schema when there is no matching stored schema', () => {
       const schemaBody = { id: 'schema-id' };
       const importedSchema = new ContentTypeSchema({
         body: JSON.stringify(schemaBody),
-        validationLevel: ValidationLevel.CONTENT_TYPE
+        validationLevel: ValidationLevel.CONTENT_TYPE,
+        schemaId: schemaBody.id
       });
       const storedContentTypeSchema = new ContentTypeSchema({
         schemaId: 'stored-schema-id',
         ...importedSchema.toJSON()
       });
       const storedSchemaList = [storedContentTypeSchema];
-      const validationLevel = ValidationLevel.CONTENT_TYPE;
-      const result = storedSchemaMapper(importedSchema, storedSchemaList, validationLevel);
+      const result = storedSchemaMapper(importedSchema, storedSchemaList);
 
       expect(result).toEqual(expect.objectContaining(importedSchema.toJSON()));
-      expect(result.schemaId).toBeUndefined();
-    });
-
-    it('should throw an exception if the schema body cannot be parsed', () => {
-      const importedSchema = new ContentTypeSchema({
-        body: 'invalid json',
-        validationLevel: ValidationLevel.CONTENT_TYPE
-      });
-      const storedSchemaList: ContentTypeSchema[] = [];
-      const validationLevel = ValidationLevel.CONTENT_TYPE;
-      expect(() =>
-        storedSchemaMapper(importedSchema, storedSchemaList, validationLevel)
-      ).toThrowErrorMatchingSnapshot();
+      expect(result.id).toBeUndefined();
     });
   });
 
@@ -295,50 +243,37 @@ describe('content-type-schema import command', (): void => {
       });
     });
 
-    it('should process schemas from a remote and local locations', async (): Promise<void> => {
+    it('should process schemas from a local directory', async (): Promise<void> => {
       const argv = {
         ...yargArgs,
         ...config,
-        manifest: 'my-schema-list'
+        dir: 'my-dir'
       };
-      const remoteContentTypeSchema = {
+      const schemaToCreate = {
         body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
-        validationLevel: ValidationLevel.CONTENT_TYPE
+        validationLevel: ValidationLevel.CONTENT_TYPE,
+        schemaId: 'create-schema-id'
       };
-      const localContentTypeSchema = {
+      const schemaToUpdate = {
         body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/local-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
-        validationLevel: ValidationLevel.CONTENT_TYPE
+        validationLevel: ValidationLevel.CONTENT_TYPE,
+        schemaId: 'update-schema-id'
       };
 
       mockGetHub.mockResolvedValue(new Hub());
-      (getImportFileList as jest.Mock).mockReturnValueOnce([
-        { uri: 'https://example.com/test-schema-uri', options: { validation: ValidationLevel.CONTENT_TYPE } },
-        { uri: 'file://example_schema.json', options: { validation: ValidationLevel.CONTENT_TYPE } }
-      ]);
-
-      jest
-        .spyOn(importModule, 'getSchemaList')
-        .mockResolvedValue([
-          new ContentTypeSchema(remoteContentTypeSchema),
-          new ContentTypeSchema(localContentTypeSchema)
-        ]);
-
-      (paginator as jest.Mock).mockResolvedValue([]);
+      (loadJsonFromDirectory as jest.Mock).mockReturnValueOnce([schemaToCreate, schemaToUpdate]);
+      (paginator as jest.Mock).mockResolvedValue([{ ...schemaToUpdate, id: 'stored-id' }]);
 
       const processSchemasSpy = jest
         .spyOn(importModule, 'processSchemas')
         .mockImplementation(async (): Promise<void> => {});
 
       await handler(argv);
-      expect(getImportFileList).toHaveBeenCalledWith('my-schema-list');
-      expect(getSchemaList).toHaveBeenCalledWith([
-        { uri: 'https://example.com/test-schema-uri', options: { validation: ValidationLevel.CONTENT_TYPE } },
-        { uri: 'file://example_schema.json', options: { validation: ValidationLevel.CONTENT_TYPE } }
-      ]);
-      expect(paginator).toHaveBeenCalledWith(expect.any(Function));
 
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
+      expect(paginator).toHaveBeenCalledWith(expect.any(Function));
       expect(processSchemasSpy).toHaveBeenCalledWith(
-        [expect.objectContaining(remoteContentTypeSchema), expect.objectContaining(localContentTypeSchema)],
+        [expect.objectContaining(schemaToCreate), expect.objectContaining({ ...schemaToUpdate, id: 'stored-id' })],
         expect.any(Object),
         expect.any(Object)
       );

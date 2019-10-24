@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { extractImportObjects } from './import.service';
+import { loadJsonFromDirectory } from './import.service';
 
 interface ImportObject {
   id: string;
@@ -8,7 +8,7 @@ interface ImportObject {
 
 jest.mock('fs');
 
-describe('extractImportObjects tests', () => {
+describe('loadJsonFromDirectory tests', () => {
   afterEach((): void => {
     jest.resetAllMocks();
   });
@@ -22,7 +22,7 @@ describe('extractImportObjects tests', () => {
     };
     mockReadFile.mockReturnValue(JSON.stringify(objectToImport));
     const dirName = 'my-dir';
-    const importObjects: ImportObject[] = extractImportObjects<ImportObject>(dirName);
+    const importObjects: ImportObject[] = loadJsonFromDirectory<ImportObject>(dirName);
     expect(importObjects).toEqual([objectToImport]);
     expect(mockFileReadDir).toHaveBeenCalledWith(dirName);
     expect(mockReadFile).toHaveBeenCalledTimes(1);
@@ -37,7 +37,7 @@ describe('extractImportObjects tests', () => {
     const mockContentType = 'invalid json';
     mockReadFile.mockReturnValue(mockContentType);
     const dirName = 'my-dir';
-    expect(() => extractImportObjects<ImportObject>(dirName)).toThrowError(
+    expect(() => loadJsonFromDirectory<ImportObject>(dirName)).toThrowError(
       'Non-JSON file found: a.json, aborting import'
     );
     expect(mockFileReadDir).toHaveBeenCalledWith(dirName);

@@ -9,12 +9,11 @@ import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import chalk from 'chalk';
 import { isEqual } from 'lodash';
-import { getImportFileList, ImportFile } from '../../common/import/import-file-list';
-import { getJsonByPath } from '../../common/import/json-by-path';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
+import { loadJsonFromDirectory } from '../../services/import.service';
 
-export const command = 'import <manifest>';
+export const command = 'import <dir>';
 
 export const desc = 'Import Content Type Schemas';
 
@@ -23,44 +22,20 @@ export interface SchemaOptions {
 }
 
 export const builder = (yargs: Argv): void => {
-  yargs.positional('manifest', {
-    describe: 'Path to file referencing Content Type Schema definitions to be imported',
+  yargs.positional('dir', {
+    describe: 'Directory containing Content Type Schema definitions',
     type: 'string'
   });
 };
 
-function isSchemaImportFile(schemaFile: ImportFile<SchemaOptions>): schemaFile is ImportFile<SchemaOptions> {
-  return Boolean(schemaFile.uri && schemaFile.options && schemaFile.options.validation);
-}
-
-export const getSchemaList = async (schemaFileList: ImportFile<SchemaOptions>[]): Promise<ContentTypeSchema[]> => {
-  const schemas: ContentTypeSchema[] = [];
-  for (const schemaFile of schemaFileList) {
-    if (!isSchemaImportFile(schemaFile)) {
-      throw Error('Manifest contains invalid syntax');
-    } else {
-      const schemaBody = await getJsonByPath(schemaFile.uri);
-      schemas.push(new ContentTypeSchema({ body: schemaBody, validationLevel: schemaFile.options.validation }));
-    }
-  }
-  return schemas;
-};
-
 export const storedSchemaMapper = (
-  importedSchema: ContentTypeSchema,
-  storedSchemaList: ContentTypeSchema[],
-  validationLevel: ValidationLevel
+  schema: ContentTypeSchema,
+  storedSchemas: ContentTypeSchema[]
 ): ContentTypeSchema => {
-  let parsedSchemaBody: { id?: string } = {};
-  try {
-    parsedSchemaBody = JSON.parse(importedSchema.body || '');
-  } catch (err) {
-    throw new Error('Failed to parse schema body');
-  }
+  const found = storedSchemas.find((stored: ContentTypeSchema) => stored.schemaId === schema.schemaId);
+  const mutatedSchema = found ? { ...schema, id: found.id } : schema;
 
-  const found = storedSchemaList.find((stored: ContentTypeSchema) => stored.schemaId === parsedSchemaBody.id);
-
-  return found ? { ...found.toJSON(), body: importedSchema.body, validationLevel } : importedSchema;
+  return new ContentTypeSchema(mutatedSchema);
 };
 
 export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
@@ -110,15 +85,12 @@ export const processSchemas = async (
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { manifest } = argv;
+  const { dir } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const schemaImportFiles = manifest ? getImportFileList<SchemaOptions>(manifest) : [];
-  const schemas = await getSchemaList(schemaImportFiles);
-  const storedSchemaList = await paginator(hub.related.contentTypeSchema.list);
-  const schemasToProcess = schemas.map(imported =>
-    storedSchemaMapper(imported, storedSchemaList, imported.validationLevel || ValidationLevel.CONTENT_TYPE)
-  );
+  const schemas = loadJsonFromDirectory<ContentTypeSchema>(dir);
+  const storedSchemas = await paginator(hub.related.contentTypeSchema.list);
+  const schemasToProcess = schemas.map(schemas => storedSchemaMapper(schemas, storedSchemas));
 
   await processSchemas(schemasToProcess, client, hub);
 };

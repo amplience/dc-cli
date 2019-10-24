@@ -1,3 +1,3 @@
 export interface ImportBuilderOptions {
-  manifest: string;
+  dir: string;
 }

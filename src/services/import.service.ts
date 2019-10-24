@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-export const extractImportObjects = <T>(dir: string): T[] => {
+export const loadJsonFromDirectory = <T>(dir: string): T[] => {
   const files = fs.readdirSync(dir);
   return files.map(fileName => {
     const file = fs.readFileSync(path.join(dir, fileName), 'utf-8');

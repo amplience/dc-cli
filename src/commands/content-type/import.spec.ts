@@ -4,7 +4,7 @@ import { builder, command, handler, storedContentTypeMapper, doCreate, doUpdate,
 import Yargs from 'yargs/yargs';
 import { createStream } from 'table';
 import * as importModule from './import';
-import { extractImportObjects } from '../../services/import.service';
+import { loadJsonFromDirectory } from '../../services/import.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 
 jest.mock('../../services/dynamic-content-client-factory');
@@ -228,7 +228,7 @@ describe('content-type import command', (): void => {
         { id: 'content-type-id', contentTypeUri: 'type-uri', settings: { label: 'updated' } }
       ];
 
-      (extractImportObjects as jest.Mock).mockReturnValue(contentTypesToImport);
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(contentTypesToImport);
       mockGetHub.mockResolvedValue(new Hub({ id: 'hub-id' }));
       (paginator as jest.Mock).mockResolvedValue([]);
       jest
@@ -239,7 +239,7 @@ describe('content-type import command', (): void => {
 
       await handler(argv);
 
-      expect(extractImportObjects).toHaveBeenCalledWith('my-dir');
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(paginator).toHaveBeenCalledWith(expect.any(Function));
       expect(processContentTypes).toHaveBeenCalledWith(contentTypesToImport, expect.any(Object), expect.any(Object));

@@ -6,9 +6,10 @@ import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
-import { extractImportObjects } from '../../services/import.service';
+import { loadJsonFromDirectory } from '../../services/import.service';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
+import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 
 export const command = 'import <dir>';
 
@@ -20,10 +21,6 @@ export const builder = (yargs: Argv): void => {
     type: 'string'
   });
 };
-
-export interface ImportBuilderOptions {
-  dir: string;
-}
 
 export const storedContentTypeMapper = (imported: ContentType, storedContentTypes: ContentType[]): ContentType => {
   const found = storedContentTypes.find(
@@ -71,7 +68,7 @@ export const processContentTypes = async (
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
-  const importedContentTypes = extractImportObjects<ContentType>(dir);
+  const importedContentTypes = loadJsonFromDirectory<ContentType>(dir);
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
