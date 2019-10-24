@@ -22,12 +22,13 @@ export const builder = (yargs: Argv): void => {
   });
 };
 
-export const storedContentTypeMapper = (imported: ContentType, storedContentTypes: ContentType[]): ContentType => {
+export const storedContentTypeMapper = (contentType: ContentType, storedContentTypes: ContentType[]): ContentType => {
   const found = storedContentTypes.find(
-    storedContentTypes => storedContentTypes.contentTypeUri === imported.contentTypeUri
+    storedContentTypes => storedContentTypes.contentTypeUri === contentType.contentTypeUri
   );
+  const mutatedContentType = found ? { ...contentType, id: found.id } : contentType;
 
-  return found ? { ...found.toJSON(), ...imported } : imported;
+  return new ContentType(mutatedContentType);
 };
 
 export const doCreate = async (hub: Hub, contentType: ContentType): Promise<string[]> => {
@@ -64,6 +65,7 @@ export const processContentTypes = async (
     const result = contentType.id ? doUpdate(client, contentType) : doCreate(hub, contentType);
     tableStream.write(await result);
   }
+  process.stdout.write('\n');
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
@@ -72,12 +74,9 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-
   const contentTypesToProcess: ContentType[] = importedContentTypes.map(imported =>
     storedContentTypeMapper(imported, storedContentTypes)
   );
 
   await processContentTypes(contentTypesToProcess, client, hub);
-
-  process.stdout.write('\n');
 };

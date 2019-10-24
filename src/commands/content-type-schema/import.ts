@@ -32,7 +32,7 @@ export const storedSchemaMapper = (
   schema: ContentTypeSchema,
   storedSchemas: ContentTypeSchema[]
 ): ContentTypeSchema => {
-  const found = storedSchemas.find((stored: ContentTypeSchema) => stored.schemaId === schema.schemaId);
+  const found = storedSchemas.find(stored => stored.schemaId === schema.schemaId);
   const mutatedSchema = found ? { ...schema, id: found.id } : schema;
 
   return new ContentTypeSchema(mutatedSchema);
