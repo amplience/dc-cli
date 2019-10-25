@@ -1,5 +1,5 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, Hub } from 'dc-management-sdk-js';
+import { ContentRepository, ContentType, Hub } from 'dc-management-sdk-js';
 import {
   builder,
   command,
@@ -8,13 +8,15 @@ import {
   doCreate,
   doUpdate,
   processContentTypes,
-  ContentTypeWithRepositoryAssignments
+  ContentTypeWithRepositoryAssignments,
+  getContentRepositoryAssignments
 } from './import';
 import Yargs from 'yargs/yargs';
 import { createStream } from 'table';
 import * as importModule from './import';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
+import MockPage from '../../common/dc-management-sdk-js/mock-page';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
@@ -197,13 +199,68 @@ describe('content-type import command', (): void => {
       jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(['content-type-id', 'type-uri', 'CREATE', 'SUCCESS']);
       jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(['content-type-id', 'type-uri', 'UPDATE', 'SUCCESS']);
 
-      await processContentTypes(contentTypesToProcess, client, hub);
+      await processContentTypes(contentTypesToProcess, new Map<string, string[]>(), client, hub);
 
       expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0]);
       expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypesToProcess[1]);
       expect(mockStreamWrite).toHaveBeenCalledTimes(3);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['content-type-id', 'type-uri', 'CREATE', 'SUCCESS']);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['content-type-id', 'type-uri', 'UPDATE', 'SUCCESS']);
+    });
+  });
+
+  describe('getContentRepositoryAssignments', () => {
+    it('should create a map of content repository names -> assigned content type ids', async () => {
+      const hub = new Hub();
+
+      const plainListContentRepository = [
+        {
+          id: '1',
+          contentTypes: [
+            {
+              hubContentTypeId: 'id1',
+              contentTypeUri: 'http://example.com/schema1.json'
+            }
+          ],
+          features: [],
+          itemLocales: ['en', 'fr'],
+          label: 'Content',
+          name: 'content-name',
+          status: 'ACTIVE',
+          type: 'CONTENT'
+        },
+        {
+          id: '2',
+          contentTypes: [
+            {
+              hubContentTypeId: 'id2',
+              contentTypeUri: 'http://example.com/schema2.json'
+            }
+          ],
+          features: ['slots'],
+          itemLocales: ['en', 'fr'],
+          label: 'Slots',
+          name: 'slots-name',
+          status: 'ACTIVE',
+          type: 'SLOTS'
+        }
+      ];
+      const listResponse = new MockPage(
+        ContentRepository,
+        plainListContentRepository.map(v => new ContentRepository(v))
+      );
+      const mockList = jest.fn().mockResolvedValue(listResponse);
+      (paginator as jest.Mock).mockResolvedValue(plainListContentRepository);
+
+      hub.related.contentRepositories.list = mockList;
+      const assignments = await getContentRepositoryAssignments(hub);
+
+      expect(paginator).toHaveBeenCalled();
+      expect(assignments.size).toEqual(2);
+      expect(assignments.has('slots-name')).toEqual(true);
+      expect(assignments.get('slots-name')).toEqual(['id2']);
+      expect(assignments.has('content-name')).toEqual(true);
+      expect(assignments.get('content-name')).toEqual(['id1']);
     });
   });
 
@@ -257,7 +314,12 @@ describe('content-type import command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(paginator).toHaveBeenCalledWith(expect.any(Function));
-      expect(processContentTypes).toHaveBeenCalledWith(contentTypesToImport, expect.any(Object), expect.any(Object));
+      expect(processContentTypes).toHaveBeenCalledWith(
+        contentTypesToImport,
+        expect.any(Object),
+        expect.any(Object),
+        expect.any(Object)
+      );
     });
   });
 });

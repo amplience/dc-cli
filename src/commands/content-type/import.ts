@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
+import { ContentRepository, ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
@@ -65,6 +65,7 @@ export const doUpdate = async (
 
 export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
+  storedContentRepositoryAssignments: ContentRepositoryAssignments,
   client: DynamicContent,
   hub: Hub
 ): Promise<void> => {
@@ -78,6 +79,23 @@ export const processContentTypes = async (
   process.stdout.write('\n');
 };
 
+type RepositoryName = string;
+type ContentTypeId = string;
+
+export type ContentRepositoryAssignments = Map<RepositoryName, ContentTypeId[]>;
+
+export const getContentRepositoryAssignments = async (hub: Hub): Promise<ContentRepositoryAssignments> => {
+  const assignments = new Map<string, string[]>();
+  const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
+  for (const contentRepository of contentRepositoryList) {
+    assignments.set(
+      contentRepository.name || '',
+      (contentRepository.contentTypes || []).map(c => c.hubContentTypeId || '')
+    );
+  }
+  return assignments;
+};
+
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(dir);
@@ -87,6 +105,6 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const contentTypesToProcess = importedContentTypes.map(imported =>
     storedContentTypeMapper(imported, storedContentTypes)
   );
-
-  await processContentTypes(contentTypesToProcess, client, hub);
+  const contentRepositoryAssignments = await getContentRepositoryAssignments(hub);
+  await processContentTypes(contentTypesToProcess, contentRepositoryAssignments, client, hub);
 };
