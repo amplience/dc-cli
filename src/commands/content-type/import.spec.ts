@@ -1,6 +1,15 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentType, Hub } from 'dc-management-sdk-js';
-import { builder, command, handler, storedContentTypeMapper, doCreate, doUpdate, processContentTypes } from './import';
+import {
+  builder,
+  command,
+  handler,
+  storedContentTypeMapper,
+  doCreate,
+  doUpdate,
+  processContentTypes,
+  ContentTypeWithRepositoryAssignments
+} from './import';
 import Yargs from 'yargs/yargs';
 import { createStream } from 'table';
 import * as importModule from './import';
@@ -123,18 +132,23 @@ describe('content-type import command', (): void => {
       storedContentType.related.update = mockUpdate;
       mockGet.mockResolvedValue(storedContentType);
       const client = mockDynamicContentClientFactory();
-      const result = await doUpdate(client, mutatedContentType);
+      const mutatedContentTypeWithRepoAssignments = {
+        ...mutatedContentType,
+        repositories: ['Slots']
+      } as ContentTypeWithRepositoryAssignments;
+      const result = await doUpdate(client, mutatedContentTypeWithRepoAssignments);
 
       expect(result).toEqual(['stored-id', 'not-matched-uri', 'UPDATE', 'SUCCESS']);
-      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
+      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentTypeWithRepoAssignments);
     });
 
     it('should skip update when no change to content-type and return report', async () => {
-      const mutatedContentType = {
+      const mutatedContentType = new ContentTypeWithRepositoryAssignments({
         id: 'stored-id',
         contentTypeUri: 'matched-uri',
-        settings: { label: 'label' }
-      } as ContentType;
+        settings: { label: 'label' },
+        repositories: ['Slots']
+      });
       const storedContentType = new ContentType({
         id: 'stored-id',
         contentTypeUri: 'matched-uri',
@@ -151,8 +165,9 @@ describe('content-type import command', (): void => {
       const mutatedContentType = {
         id: 'stored-id',
         contentTypeUri: 'matched-uri',
-        settings: { label: 'label' }
-      } as ContentType;
+        settings: { label: 'label' },
+        repositories: ['Slots']
+      } as ContentTypeWithRepositoryAssignments;
       mockGet.mockImplementation(() => {
         throw new Error('Error retrieving content type');
       });
@@ -176,8 +191,8 @@ describe('content-type import command', (): void => {
       const hub = new Hub();
       const contentTypesToProcess = [
         { contentTypeUri: 'type-uri', settings: { label: 'created' } },
-        { id: 'content-type-id', contentTypeUri: 'type-uri', settings: { label: 'updated' } }
-      ] as ContentType[];
+        { id: 'content-type-id', contentTypeUri: 'type-uri', settings: { label: 'updated' }, repositories: ['Slots'] }
+      ] as ContentTypeWithRepositoryAssignments[];
 
       jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(['content-type-id', 'type-uri', 'CREATE', 'SUCCESS']);
       jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(['content-type-id', 'type-uri', 'UPDATE', 'SUCCESS']);
@@ -225,7 +240,7 @@ describe('content-type import command', (): void => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
       const contentTypesToImport = [
         { contentTypeUri: 'type-uri', settings: { label: 'created' } },
-        { id: 'content-type-id', contentTypeUri: 'type-uri', settings: { label: 'updated' } }
+        { id: 'content-type-id', contentTypeUri: 'type-uri', settings: { label: 'updated' }, repositories: ['Slots'] }
       ];
 
       (loadJsonFromDirectory as jest.Mock).mockReturnValue(contentTypesToImport);
@@ -233,8 +248,8 @@ describe('content-type import command', (): void => {
       (paginator as jest.Mock).mockResolvedValue([]);
       jest
         .spyOn(importModule, 'storedContentTypeMapper')
-        .mockReturnValueOnce(contentTypesToImport[0] as ContentType)
-        .mockReturnValueOnce(contentTypesToImport[1] as ContentType);
+        .mockReturnValueOnce(contentTypesToImport[0] as ContentTypeWithRepositoryAssignments)
+        .mockReturnValueOnce(contentTypesToImport[1] as ContentTypeWithRepositoryAssignments);
       jest.spyOn(importModule, 'processContentTypes').mockResolvedValueOnce();
 
       await handler(argv);

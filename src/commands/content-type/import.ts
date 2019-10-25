@@ -22,9 +22,13 @@ export const builder = (yargs: Argv): void => {
   });
 };
 
+export class ContentTypeWithRepositoryAssignments extends ContentType {
+  repositories?: string[];
+}
+
 export const storedContentTypeMapper = (contentType: ContentType, storedContentTypes: ContentType[]): ContentType => {
   const found = storedContentTypes.find(
-    storedContentTypes => storedContentTypes.contentTypeUri === contentType.contentTypeUri
+    storedContentType => storedContentType.contentTypeUri === contentType.contentTypeUri
   );
   const mutatedContentType = found ? { ...contentType, id: found.id } : contentType;
 
@@ -40,10 +44,16 @@ export const doCreate = async (hub: Hub, contentType: ContentType): Promise<stri
   }
 };
 
-export const doUpdate = async (client: DynamicContent, contentType: ContentType): Promise<string[]> => {
+const equals = (a: ContentType, b: ContentType): boolean =>
+  a.id === b.id && a.contentTypeUri === b.contentTypeUri && isEqual(a.settings, b.settings);
+
+export const doUpdate = async (
+  client: DynamicContent,
+  contentType: ContentTypeWithRepositoryAssignments
+): Promise<string[]> => {
   try {
     const retrievedContentType = await client.contentTypes.get(contentType.id || '');
-    if (isEqual(retrievedContentType.toJSON(), contentType)) {
+    if (equals(retrievedContentType.toJSON(), contentType)) {
       return [contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED'];
     }
     const updatedContentType = await retrievedContentType.related.update(contentType);
@@ -54,7 +64,7 @@ export const doUpdate = async (client: DynamicContent, contentType: ContentType)
 };
 
 export const processContentTypes = async (
-  contentTypes: ContentType[],
+  contentTypes: ContentTypeWithRepositoryAssignments[],
   client: DynamicContent,
   hub: Hub
 ): Promise<void> => {
@@ -70,11 +80,11 @@ export const processContentTypes = async (
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
-  const importedContentTypes = loadJsonFromDirectory<ContentType>(dir);
+  const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(dir);
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-  const contentTypesToProcess: ContentType[] = importedContentTypes.map(imported =>
+  const contentTypesToProcess = importedContentTypes.map(imported =>
     storedContentTypeMapper(imported, storedContentTypes)
   );
 
