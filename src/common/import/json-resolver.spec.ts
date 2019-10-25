@@ -89,8 +89,14 @@ describe('content type schema helper', function() {
       expect(response).toEqual(json);
     });
 
+    it('should fail to load invalid JSON and fall out at the end (null passed in)', async function() {
+      mockFileRead.mockRejectedValue(new Error('ENOTFOUND'));
+
+      expect(jsonResolver('null')).rejects.toThrowError(new Error('ENOTFOUND'));
+      expect(mockFileRead).toHaveBeenCalledTimes(1);
+    });
+
     it('should fail to load invalid JSON and fall out at the end', async function() {
-      mockAxiosGet.mockRejectedValue(new Error('Unresolved location'));
       mockFileRead.mockRejectedValue(new Error('ENOTFOUND'));
 
       expect(jsonResolver('this is just a string')).rejects.toThrowError(new Error('ENOTFOUND'));

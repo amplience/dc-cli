@@ -4,9 +4,9 @@ import * as fs from 'fs';
 
 export async function jsonResolver(jsonToResolve: string): Promise<string> {
   try {
-    const resolvedValue = JSON.parse(jsonToResolve);
-    if (typeof resolvedValue === 'object' || Array.isArray(resolvedValue)) {
-      return resolvedValue;
+    const resolvedJson = JSON.parse(jsonToResolve);
+    if (resolvedJson && (Array.isArray(resolvedJson) || typeof resolvedJson === 'object')) {
+      return resolvedJson;
     }
   } catch {}
 
