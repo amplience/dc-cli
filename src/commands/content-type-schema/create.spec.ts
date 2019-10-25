@@ -3,12 +3,12 @@ import { ContentTypeSchema, Hub, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import DataPresenter from '../../view/data-presenter';
 import { singleItemTableOptions } from '../../common/table/table.consts';
-import { getJsonByPath } from '../../common/import/json-by-path';
+import { jsonResolver } from '../../common/import/json-resolver';
 import { createContentTypeSchema } from './create.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
-jest.mock('../../common/import/json-by-path');
+jest.mock('../../common/import/json-resolver');
 jest.mock('./create.service');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
@@ -66,7 +66,7 @@ describe('content type schema create command', function() {
     };
     const contentTypeSchema = { id: 'test' };
 
-    (getJsonByPath as jest.Mock).mockResolvedValue(JSON.stringify(contentTypeSchema));
+    (jsonResolver as jest.Mock).mockResolvedValue(JSON.stringify(contentTypeSchema));
     (createContentTypeSchema as jest.Mock).mockResolvedValue(new ContentTypeSchema(contentTypeSchema));
 
     const argv = { ...yargArgs, ...config, ...input };
@@ -74,7 +74,7 @@ describe('content type schema create command', function() {
     await handler(argv);
 
     expect(mockGetHub).toHaveBeenCalledWith(config.hubId);
-    expect(getJsonByPath).toHaveBeenCalledWith(input.schema);
+    expect(jsonResolver).toHaveBeenCalledWith(input.schema);
     expect(createContentTypeSchema).toHaveBeenCalledWith(
       JSON.stringify(contentTypeSchema),
       input.validationLevel as ValidationLevel,
