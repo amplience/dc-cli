@@ -58,4 +58,22 @@ describe('transformYargObjectToArray', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('should throw an error when the index of the object is not sequential', () => {
+    const yargsObject = {
+      0: {
+        propertyZero: 'property-zero-value'
+      },
+      1: {
+        propertyOne: 'property-one-value'
+      },
+      3: {
+        propertyThree: 'property-three-value'
+      }
+    };
+
+    expect(() => transformYargObjectToArray(yargsObject)).toThrowError(
+      new Error('Targeted array indexes are unsupported, please provide a full array index starting at 0')
+    );
+  });
 });
