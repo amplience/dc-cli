@@ -130,7 +130,7 @@ describe('content-type import command', (): void => {
         contentTypeUri: 'matched-uri',
         settings: { label: 'label' }
       });
-      const mockUpdate = jest.fn().mockResolvedValue(new ContentType({ ...mutatedContentType, id: 'stored-id' }));
+      const mockUpdate = jest.fn().mockResolvedValue(new ContentType(mutatedContentType));
       storedContentType.related.update = mockUpdate;
       mockGet.mockResolvedValue(storedContentType);
       const client = mockDynamicContentClientFactory();
@@ -163,7 +163,7 @@ describe('content-type import command', (): void => {
       expect(result).toEqual(['stored-id', 'matched-uri', 'UPDATE', 'SKIPPED']);
     });
 
-    it('should throw and error when content type update fails', async () => {
+    it('should throw an error when unable to get content type during update', async () => {
       const mutatedContentType = {
         id: 'stored-id',
         contentTypeUri: 'matched-uri',
@@ -176,6 +176,25 @@ describe('content-type import command', (): void => {
       const client = mockDynamicContentClientFactory();
 
       await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+    });
+
+    it('should throw an error when unable to update content type during update', async () => {
+      const mutatedContentType = {
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      } as ContentType;
+      const storedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'matched-uri',
+        settings: { label: 'label' }
+      });
+      const mockUpdate = jest.fn().mockRejectedValue(new Error('Error saving content type'));
+      storedContentType.related.update = mockUpdate;
+      mockGet.mockResolvedValue(storedContentType);
+      const client = mockDynamicContentClientFactory();
+      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
     });
   });
 

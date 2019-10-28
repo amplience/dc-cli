@@ -51,16 +51,45 @@ export const doUpdate = async (
   client: DynamicContent,
   contentType: ContentTypeWithRepositoryAssignments
 ): Promise<string[]> => {
+  let retrievedContentType: ContentType;
   try {
-    const retrievedContentType = await client.contentTypes.get(contentType.id || '');
-    if (equals(retrievedContentType.toJSON(), contentType)) {
-      return [contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED'];
-    }
-    const updatedContentType = await retrievedContentType.related.update(contentType);
-    return [updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS'];
+    // Get the existing content type
+    retrievedContentType = await client.contentTypes.get(contentType.id || '');
   } catch (err) {
-    throw new Error(`Error updating content type ${contentType.contentTypeUri || '<unknown>'}: ${err.message}`);
+    throw new Error(`Error unable to get content type ${contentType.id}: ${err.message}`);
   }
+
+  // Check if an update is required
+  if (equals(retrievedContentType.toJSON(), contentType)) {
+    return [contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED'];
+  }
+
+  let updatedContentType: ContentType;
+  try {
+    // Update the content-type
+    updatedContentType = await retrievedContentType.related.update(contentType);
+  } catch (err) {
+    throw new Error(`Error updating content type ${contentType.id}: ${err.message}`);
+  }
+
+  return [updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS'];
+};
+
+type RepositoryName = string;
+type ContentTypeId = string;
+
+type ContentRepositoryAssignments = Map<RepositoryName, ContentTypeId[]>;
+
+export const getContentRepositoryAssignments = async (hub: Hub): Promise<ContentRepositoryAssignments> => {
+  const assignments = new Map<string, string[]>();
+  const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
+  for (const contentRepository of contentRepositoryList) {
+    assignments.set(
+      contentRepository.name || '',
+      (contentRepository.contentTypes || []).map(c => c.hubContentTypeId || '')
+    );
+  }
+  return assignments;
 };
 
 export const processContentTypes = async (
@@ -73,27 +102,10 @@ export const processContentTypes = async (
 
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('method'), chalk.bold('status')]);
   for (const contentType of contentTypes) {
-    const result = contentType.id ? doUpdate(client, contentType) : doCreate(hub, contentType);
-    tableStream.write(await result);
+    const result = contentType.id ? await doUpdate(client, contentType) : await doCreate(hub, contentType);
+    tableStream.write(result);
   }
   process.stdout.write('\n');
-};
-
-type RepositoryName = string;
-type ContentTypeId = string;
-
-export type ContentRepositoryAssignments = Map<RepositoryName, ContentTypeId[]>;
-
-export const getContentRepositoryAssignments = async (hub: Hub): Promise<ContentRepositoryAssignments> => {
-  const assignments = new Map<string, string[]>();
-  const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
-  for (const contentRepository of contentRepositoryList) {
-    assignments.set(
-      contentRepository.name || '',
-      (contentRepository.contentTypes || []).map(c => c.hubContentTypeId || '')
-    );
-  }
-  return assignments;
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
