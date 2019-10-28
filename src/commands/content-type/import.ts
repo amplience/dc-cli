@@ -23,7 +23,7 @@ export const builder = (yargs: Argv): void => {
 };
 
 export class ContentTypeWithRepositoryAssignments extends ContentType {
-  repositories: string[] = [];
+  repositories?: string[];
 }
 
 export const storedContentTypeMapper = (
@@ -89,34 +89,64 @@ export const doUpdate = async (
   return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
 };
 
-type RepositoryName = string;
-type ContentTypeId = string;
+export const synchronizeContentTypeRepositories = async (
+  contentType: ContentTypeWithRepositoryAssignments,
+  contentRepositories: ContentRepository[]
+): Promise<void> => {
+  const assignedRepositories = new Map<string, ContentRepository>();
+  const unassignedRepositories = new Map<string, ContentRepository>();
+  for (const contentRepository of contentRepositories) {
+    if (!contentRepository.name) {
+      continue;
+    }
 
-type ContentRepositoryAssignments = Map<RepositoryName, ContentTypeId[]>;
+    const contentRepositoryContentTypes = contentRepository.contentTypes || [];
+    if (contentRepositoryContentTypes.length === 0) {
+      unassignedRepositories.set(contentRepository.name, contentRepository);
+      continue;
+    }
 
-export const getContentRepositoryAssignments = async (hub: Hub): Promise<ContentRepositoryAssignments> => {
-  const assignments = new Map<string, string[]>();
-  const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
-  for (const contentRepository of contentRepositoryList) {
-    assignments.set(
-      contentRepository.name || '',
-      (contentRepository.contentTypes || []).map(c => c.hubContentTypeId || '')
-    );
+    for (const assignedContentTypes of contentRepositoryContentTypes) {
+      if (assignedContentTypes.hubContentTypeId === contentType.id) {
+        assignedRepositories.set(contentRepository.name, contentRepository);
+      } else {
+        unassignedRepositories.set(contentRepository.name, contentRepository);
+      }
+    }
   }
-  return assignments;
-};
 
-const synchroniseContentTypeRepositories = (): void => {};
+  const contentTypeId = contentType.id || '';
+
+  const definedContentRepository = (contentType.repositories || []).filter(
+    (value, index, array) => array.indexOf(value) === index
+  );
+  for (const repo of definedContentRepository) {
+    if (!assignedRepositories.has(repo)) {
+      const contentRepository = unassignedRepositories.get(repo);
+      if (!contentRepository) {
+        throw new Error(`Unable to find a Content Repository named: ${repo}`);
+      }
+      await contentRepository.related.contentTypes.assign(contentTypeId);
+    } else {
+      assignedRepositories.delete(repo);
+    }
+  }
+
+  for (const assignedRepository of assignedRepositories.values()) {
+    await assignedRepository.related.contentTypes.unassign(contentTypeId);
+  }
+};
 
 type ImportResult = 'CREATED' | 'UPDATED' | 'UP-TO DATE';
 
 export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
-  storedContentRepositoryAssignments: ContentRepositoryAssignments,
   client: DynamicContent,
   hub: Hub
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+
+  const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
 
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
   for (const contentType of contentTypes) {
@@ -132,7 +162,9 @@ export const processContentTypes = async (
       status = 'CREATED';
     }
 
-    synchroniseContentTypeRepositories();
+    if (contentType.repositories) {
+      await synchronizeContentTypeRepositories(contentType, contentRepositoryList);
+    }
 
     tableStream.write([contentTypeId, contentType.contentTypeUri || '', status]);
   }
@@ -148,6 +180,5 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const contentTypesToProcess = importedContentTypes.map(imported =>
     storedContentTypeMapper(imported, storedContentTypes)
   );
-  const contentRepositoryAssignments = await getContentRepositoryAssignments(hub);
-  await processContentTypes(contentTypesToProcess, contentRepositoryAssignments, client, hub);
+  await processContentTypes(contentTypesToProcess, client, hub);
 };
