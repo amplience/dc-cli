@@ -1,5 +1,5 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentRepository, ContentType, Hub } from 'dc-management-sdk-js';
+import { ContentRepository, ContentType, ContentTypeCachedSchema, Hub } from 'dc-management-sdk-js';
 import {
   builder,
   command,
@@ -130,9 +130,13 @@ describe('content-type import command', (): void => {
         contentTypeUri: 'matched-uri',
         settings: { label: 'label' }
       });
-      const mockUpdate = jest.fn().mockResolvedValue(new ContentType(mutatedContentType));
-      storedContentType.related.update = mockUpdate;
       mockGet.mockResolvedValue(storedContentType);
+
+      const updatedContentType = new ContentType(mutatedContentType);
+      const mockUpdate = jest.fn().mockResolvedValue(updatedContentType);
+      storedContentType.related.update = mockUpdate;
+      const mockContentTypeSchemaUpdate = jest.fn().mockResolvedValue(new ContentTypeCachedSchema());
+      updatedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
       const client = mockDynamicContentClientFactory();
       const mutatedContentTypeWithRepoAssignments = {
         ...mutatedContentType,
@@ -142,6 +146,7 @@ describe('content-type import command', (): void => {
 
       expect(result).toEqual(['stored-id', 'not-matched-uri', 'UPDATE', 'SUCCESS']);
       expect(mockUpdate).toHaveBeenCalledWith(mutatedContentTypeWithRepoAssignments);
+      expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
     });
 
     it('should skip update when no change to content-type and return report', async () => {
@@ -195,6 +200,31 @@ describe('content-type import command', (): void => {
       const client = mockDynamicContentClientFactory();
       await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
       expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
+    });
+
+    it("should throw an error when unable to update a content type's content type schema during update", async () => {
+      const mutatedContentType = {
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      } as ContentType;
+      const storedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'matched-uri',
+        settings: { label: 'label' }
+      });
+      mockGet.mockResolvedValue(storedContentType);
+      const updatedContentType = new ContentType(mutatedContentType);
+      const mockUpdate = jest.fn().mockResolvedValue(updatedContentType);
+      storedContentType.related.update = mockUpdate;
+      const mockContentTypeSchemaUpdate = jest
+        .fn()
+        .mockRejectedValue(new Error('Unable to update content type schema'));
+      updatedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
+      const client = mockDynamicContentClientFactory();
+      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
+      expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
     });
   });
 

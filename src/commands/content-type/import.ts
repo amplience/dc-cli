@@ -72,6 +72,13 @@ export const doUpdate = async (
     throw new Error(`Error updating content type ${contentType.id}: ${err.message}`);
   }
 
+  try {
+    // Update the ContentTypeSchema of the updated ContentType
+    await updatedContentType.related.contentTypeSchema.update();
+  } catch (err) {
+    throw new Error(`Error updating the content type schema of the content type ${contentType.id}: ${err.message}`);
+  }
+
   return [updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS'];
 };
 

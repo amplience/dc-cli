@@ -4,6 +4,6 @@ exports[`content-type import command doCreate should throw an error when content
 
 exports[`content-type import command doUpdate should throw an error when unable to get content type during update 1`] = `"Error unable to get content type stored-id: Error retrieving content type"`;
 
-exports[`content-type import command doUpdate should throw an error when unable to update content type during update 1`] = `"Error updating content type stored-id: Error saving content type"`;
+exports[`content-type import command doUpdate should throw an error when unable to update a content type's content type schema during update 1`] = `"Error updating the content type schema of the content type stored-id: Unable to update content type schema"`;
 
-exports[`content-type import command doUpdate should throw and error when content type update fails 1`] = `"Error unable to get content type stored-id: Error retrieving content type"`;
+exports[`content-type import command doUpdate should throw an error when unable to update content type during update 1`] = `"Error updating content type stored-id: Error saving content type"`;
