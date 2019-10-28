@@ -23,22 +23,24 @@ export const builder = (yargs: Argv): void => {
 };
 
 export class ContentTypeWithRepositoryAssignments extends ContentType {
-  repositories?: string[];
+  repositories: string[] = [];
 }
 
-export const storedContentTypeMapper = (contentType: ContentType, storedContentTypes: ContentType[]): ContentType => {
+export const storedContentTypeMapper = (
+  contentType: ContentTypeWithRepositoryAssignments,
+  storedContentTypes: ContentType[]
+): ContentTypeWithRepositoryAssignments => {
   const found = storedContentTypes.find(
     storedContentType => storedContentType.contentTypeUri === contentType.contentTypeUri
   );
   const mutatedContentType = found ? { ...contentType, id: found.id } : contentType;
 
-  return new ContentType(mutatedContentType);
+  return new ContentTypeWithRepositoryAssignments(mutatedContentType);
 };
 
-export const doCreate = async (hub: Hub, contentType: ContentType): Promise<string[]> => {
+export const doCreate = async (hub: Hub, contentType: ContentType): Promise<ContentType> => {
   try {
-    const createdContentType = await hub.related.contentTypes.register(new ContentType(contentType));
-    return [createdContentType.id || '', contentType.contentTypeUri || '', 'CREATE', 'SUCCESS'];
+    return await hub.related.contentTypes.register(new ContentType(contentType));
   } catch (err) {
     throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message}`);
   }
@@ -47,10 +49,15 @@ export const doCreate = async (hub: Hub, contentType: ContentType): Promise<stri
 const equals = (a: ContentType, b: ContentType): boolean =>
   a.id === b.id && a.contentTypeUri === b.contentTypeUri && isEqual(a.settings, b.settings);
 
+export enum UpdateStatus {
+  SKIPPED = 'SKIPPED',
+  UPDATED = 'UPDATED'
+}
+
 export const doUpdate = async (
   client: DynamicContent,
   contentType: ContentTypeWithRepositoryAssignments
-): Promise<string[]> => {
+): Promise<{ contentType: ContentType; updateStatus: UpdateStatus }> => {
   let retrievedContentType: ContentType;
   try {
     // Get the existing content type
@@ -61,7 +68,7 @@ export const doUpdate = async (
 
   // Check if an update is required
   if (equals(retrievedContentType.toJSON(), contentType)) {
-    return [contentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SKIPPED'];
+    return { contentType: retrievedContentType, updateStatus: UpdateStatus.SKIPPED };
   }
 
   let updatedContentType: ContentType;
@@ -79,7 +86,7 @@ export const doUpdate = async (
     throw new Error(`Error updating the content type schema of the content type ${contentType.id}: ${err.message}`);
   }
 
-  return [updatedContentType.id || '', contentType.contentTypeUri || '', 'UPDATE', 'SUCCESS'];
+  return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
 };
 
 type RepositoryName = string;
@@ -99,6 +106,10 @@ export const getContentRepositoryAssignments = async (hub: Hub): Promise<Content
   return assignments;
 };
 
+const synchroniseContentTypeRepositories = (): void => {};
+
+type ImportResult = 'CREATED' | 'UPDATED' | 'UP-TO DATE';
+
 export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
   storedContentRepositoryAssignments: ContentRepositoryAssignments,
@@ -107,10 +118,23 @@ export const processContentTypes = async (
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
 
-  tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('method'), chalk.bold('status')]);
+  tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
   for (const contentType of contentTypes) {
-    const result = contentType.id ? await doUpdate(client, contentType) : await doCreate(hub, contentType);
-    tableStream.write(result);
+    let contentTypeId = contentType.id;
+    let status: ImportResult;
+
+    if (contentTypeId) {
+      const result = await doUpdate(client, contentType);
+      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO DATE' : 'UPDATED';
+    } else {
+      const result = await doCreate(hub, contentType);
+      contentTypeId = result.id || 'UNKNOWN';
+      status = 'CREATED';
+    }
+
+    synchroniseContentTypeRepositories();
+
+    tableStream.write([contentTypeId, contentType.contentTypeUri || '', status]);
   }
   process.stdout.write('\n');
 };
