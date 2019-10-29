@@ -39,6 +39,60 @@ describe('transformYargObjectToArray', () => {
     ]);
   });
 
+  it('should convert and have more than 10 items', () => {
+    const yargsObject = {
+      1: {
+        propertyTwo: 'property-two-value'
+      },
+      3: {
+        propertyFour: 'property-four-value'
+      },
+      0: {
+        propertyOne: 'property-one-value'
+      },
+      2: {
+        propertyThree: 'property-three-value'
+      },
+      4: {
+        propertyFive: 'property-five-value'
+      },
+      5: {
+        propertySix: 'property-six-value'
+      },
+      6: {
+        propertySeven: 'property-seven-value'
+      },
+      7: {
+        propertyEight: 'property-eight-value'
+      },
+      8: {
+        propertyNine: 'property-nine-value'
+      },
+      9: {
+        propertyTen: 'property-ten-value'
+      },
+      10: {
+        propertyEleven: 'property-eleven-value'
+      }
+    };
+
+    const result = transformYargObjectToArray(yargsObject);
+
+    expect(result).toEqual([
+      { propertyOne: 'property-one-value' },
+      { propertyTwo: 'property-two-value' },
+      { propertyThree: 'property-three-value' },
+      { propertyFour: 'property-four-value' },
+      { propertyFive: 'property-five-value' },
+      { propertySix: 'property-six-value' },
+      { propertySeven: 'property-seven-value' },
+      { propertyEight: 'property-eight-value' },
+      { propertyNine: 'property-nine-value' },
+      { propertyTen: 'property-ten-value' },
+      { propertyEleven: 'property-eleven-value' }
+    ]);
+  });
+
   it('should throw an error when the index of the object does not start at 0', () => {
     const yargsObject = {
       1: {

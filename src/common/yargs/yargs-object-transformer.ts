@@ -9,7 +9,7 @@ const validateArrayIndex = <T>(yargObject: YargObject<T> | boolean): void => {
   }
 
   const isIndexSequential = index
-    .sort()
+    .sort((a: string, b: string) => (parseInt(a) > parseInt(b) ? 1 : -1))
     .every((suppliedIndex: string, actualIndex: number) => parseInt(suppliedIndex) == actualIndex);
 
   if (!isIndexSequential) {
