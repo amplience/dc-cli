@@ -8,6 +8,7 @@ import {
   doCreate,
   doUpdate,
   handler,
+  MappedContentRepositories,
   processContentTypes,
   storedContentTypeMapper,
   synchronizeContentTypeRepositories,
@@ -27,6 +28,15 @@ jest.mock('fs');
 jest.mock('table');
 
 describe('content-type import command', (): void => {
+  /**
+   * Helper method to create a content repositories map from a list
+   *
+   * @param contentRepositories ContentRepository[]
+   * @return Map<string, ContentRepository>
+   */
+  const createContentRepositoriesMap = (contentRepositories: ContentRepository[]): MappedContentRepositories =>
+    new Map<string, ContentRepository>(contentRepositories.map(value => [value.name || '', value]));
+
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -248,7 +258,7 @@ describe('content-type import command', (): void => {
         { id: 'up-to-date-id', contentTypeUri: 'type-uri', settings: { label: 'up-to date' }, repositories: ['Slots'] }
       ] as ContentTypeWithRepositoryAssignments[];
 
-      const contentRepositories = [new ContentRepository()];
+      const contentRepositories = [new ContentRepository({ id: 'repo-id', name: 'repo-name' })];
       (paginator as jest.Mock).mockResolvedValue(contentRepositories);
       jest.spyOn(importModule, 'synchronizeContentTypeRepositories').mockResolvedValue(undefined);
       jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(new ContentType({ id: 'created-id' }));
@@ -267,15 +277,16 @@ describe('content-type import command', (): void => {
       expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0]);
       expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypesToProcess[1]);
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(2);
+      const mappedReposByName = createContentRepositoriesMap(contentRepositories);
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         1,
         contentTypesToProcess[1],
-        contentRepositories
+        mappedReposByName
       );
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         2,
         contentTypesToProcess[2],
-        contentRepositories
+        mappedReposByName
       );
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
@@ -307,7 +318,7 @@ describe('content-type import command', (): void => {
           contentTypeUri: 'http://example.com/content-type.json',
           repositories: []
         }),
-        []
+        new Map([])
       );
       expect(mockGet).not.toHaveBeenCalled();
     });
@@ -319,7 +330,7 @@ describe('content-type import command', (): void => {
           contentTypeUri: 'http://example.com/content-type.json',
           repositories: []
         }),
-        [
+        createContentRepositoriesMap([
           new ContentRepository({
             id: 'repo-id1',
             name: 'repo-name1',
@@ -348,7 +359,7 @@ describe('content-type import command', (): void => {
               }
             ]
           })
-        ]
+        ])
       );
       expect(mockGet).not.toHaveBeenCalled();
     });
@@ -367,7 +378,7 @@ describe('content-type import command', (): void => {
       });
       contentRepository.related.contentTypes.assign = jest.fn().mockResolvedValue(contentRepository);
 
-      await synchronizeContentTypeRepositories(contentType, [contentRepository]);
+      await synchronizeContentTypeRepositories(contentType, createContentRepositoriesMap([contentRepository]));
       expect(contentRepository.related.contentTypes.assign).toHaveBeenCalledWith(contentType.id);
     });
 
@@ -392,7 +403,10 @@ describe('content-type import command', (): void => {
       });
       contentRepository2.related.contentTypes.assign = jest.fn().mockResolvedValue(contentRepository2);
 
-      await synchronizeContentTypeRepositories(contentType, [contentRepository1, contentRepository2]);
+      await synchronizeContentTypeRepositories(
+        contentType,
+        createContentRepositoriesMap([contentRepository1, contentRepository2])
+      );
       expect(contentRepository1.related.contentTypes.assign).toHaveBeenCalledWith(contentType.id);
       expect(contentRepository2.related.contentTypes.assign).not.toHaveBeenCalled();
     });
@@ -411,7 +425,7 @@ describe('content-type import command', (): void => {
       });
       contentRepository.related.contentTypes.assign = jest.fn().mockResolvedValue(contentRepository);
 
-      await synchronizeContentTypeRepositories(contentType, [contentRepository]);
+      await synchronizeContentTypeRepositories(contentType, createContentRepositoriesMap([contentRepository]));
       expect(contentRepository.related.contentTypes.assign).toHaveBeenCalledTimes(1);
       expect(contentRepository.related.contentTypes.assign).toHaveBeenCalledWith(contentType.id);
     });
@@ -430,7 +444,7 @@ describe('content-type import command', (): void => {
       });
 
       await expect(
-        synchronizeContentTypeRepositories(contentType, [contentRepository])
+        synchronizeContentTypeRepositories(contentType, createContentRepositoriesMap([contentRepository]))
       ).rejects.toThrowErrorMatchingSnapshot();
     });
 
@@ -453,7 +467,7 @@ describe('content-type import command', (): void => {
       });
       contentRepository.related.contentTypes.assign = jest.fn().mockResolvedValue(contentRepository);
 
-      await synchronizeContentTypeRepositories(contentType, [contentRepository]);
+      await synchronizeContentTypeRepositories(contentType, createContentRepositoriesMap([contentRepository]));
       expect(contentRepository.related.contentTypes.assign).not.toHaveBeenCalled();
     });
 
@@ -495,11 +509,10 @@ describe('content-type import command', (): void => {
       });
       contentRepository3.related.contentTypes.unassign = jest.fn();
 
-      await synchronizeContentTypeRepositories(contentType, [
-        contentRepository1,
-        contentRepository2,
-        contentRepository3
-      ]);
+      await synchronizeContentTypeRepositories(
+        contentType,
+        createContentRepositoriesMap([contentRepository1, contentRepository2, contentRepository3])
+      );
 
       expect(contentRepository1.related.contentTypes.assign).not.toHaveBeenCalled();
       expect(contentRepository2.related.contentTypes.assign).toHaveBeenCalledWith(contentType.id);
@@ -526,7 +539,7 @@ describe('content-type import command', (): void => {
 
       contentRepository.related.contentTypes.unassign = jest.fn().mockResolvedValue(contentRepository);
 
-      await synchronizeContentTypeRepositories(contentType, [contentRepository]);
+      await synchronizeContentTypeRepositories(contentType, createContentRepositoriesMap([contentRepository]));
       expect(contentRepository.related.contentTypes.unassign).toHaveBeenCalledWith(contentType.id);
     });
   });

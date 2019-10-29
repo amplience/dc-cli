@@ -89,31 +89,21 @@ export const doUpdate = async (
   return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
 };
 
+export type MappedContentRepositories = Map<string, ContentRepository>;
+
 export const synchronizeContentTypeRepositories = async (
   contentType: ContentTypeWithRepositoryAssignments,
-  contentRepositories: ContentRepository[]
+  namedRepositories: MappedContentRepositories
 ): Promise<void> => {
-  const assignedRepositories = new Map<string, ContentRepository>();
-  const unassignedRepositories = new Map<string, ContentRepository>();
-  for (const contentRepository of contentRepositories) {
-    if (!contentRepository.name) {
-      continue;
-    }
-
+  const assignedRepositories: MappedContentRepositories = new Map<string, ContentRepository>();
+  namedRepositories.forEach(contentRepository => {
     const contentRepositoryContentTypes = contentRepository.contentTypes || [];
-    if (contentRepositoryContentTypes.length === 0) {
-      unassignedRepositories.set(contentRepository.name, contentRepository);
-      continue;
-    }
-
-    for (const assignedContentTypes of contentRepositoryContentTypes) {
+    contentRepositoryContentTypes.forEach(assignedContentTypes => {
       if (assignedContentTypes.hubContentTypeId === contentType.id) {
-        assignedRepositories.set(contentRepository.name, contentRepository);
-      } else {
-        unassignedRepositories.set(contentRepository.name, contentRepository);
+        assignedRepositories.set(contentRepository.name || '', contentRepository);
       }
-    }
-  }
+    });
+  });
 
   const contentTypeId = contentType.id || '';
 
@@ -122,7 +112,7 @@ export const synchronizeContentTypeRepositories = async (
   );
   for (const repo of definedContentRepository) {
     if (!assignedRepositories.has(repo)) {
-      const contentRepository = unassignedRepositories.get(repo);
+      const contentRepository = namedRepositories.get(repo);
       if (!contentRepository) {
         throw new Error(`Unable to find a Content Repository named: ${repo}`);
       }
@@ -147,6 +137,9 @@ export const processContentTypes = async (
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
 
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
+  const namedRepositories: MappedContentRepositories = new Map<string, ContentRepository>(
+    contentRepositoryList.map(value => [value.name || '', value])
+  );
 
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
   for (const contentType of contentTypes) {
@@ -163,7 +156,7 @@ export const processContentTypes = async (
     }
 
     if (contentType.repositories) {
-      await synchronizeContentTypeRepositories(contentType, contentRepositoryList);
+      await synchronizeContentTypeRepositories(contentType, namedRepositories);
     }
 
     tableStream.write([contentTypeId, contentType.contentTypeUri || '', status]);
