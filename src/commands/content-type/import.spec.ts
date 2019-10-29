@@ -10,12 +10,11 @@ import {
   handler,
   processContentTypes,
   storedContentTypeMapper,
-  synchronizeContentTypeRepositories,
-  UpdateStatus
+  synchronizeContentTypeRepositories
 } from './import';
 import Yargs from 'yargs/yargs';
 import { createStream } from 'table';
-import { loadJsonFromDirectory } from '../../services/import.service';
+import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import chalk from 'chalk';
 

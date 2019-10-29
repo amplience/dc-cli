@@ -6,7 +6,7 @@ import { ContentRepository, ContentType, DynamicContent, Hub } from 'dc-manageme
 import { isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
-import { loadJsonFromDirectory } from '../../services/import.service';
+import { loadJsonFromDirectory, UpdateStatus, ImportResult } from '../../services/import.service';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
@@ -48,11 +48,6 @@ export const doCreate = async (hub: Hub, contentType: ContentType): Promise<Cont
 
 const equals = (a: ContentType, b: ContentType): boolean =>
   a.id === b.id && a.contentTypeUri === b.contentTypeUri && isEqual(a.settings, b.settings);
-
-export enum UpdateStatus {
-  SKIPPED = 'SKIPPED',
-  UPDATED = 'UPDATED'
-}
 
 export const doUpdate = async (
   client: DynamicContent,
@@ -136,8 +131,6 @@ export const synchronizeContentTypeRepositories = async (
     await assignedRepository.related.contentTypes.unassign(contentTypeId);
   }
 };
-
-type ImportResult = 'CREATED' | 'UPDATED' | 'UP-TO DATE';
 
 export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],

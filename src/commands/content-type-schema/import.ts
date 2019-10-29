@@ -11,7 +11,7 @@ import chalk from 'chalk';
 import { isEqual } from 'lodash';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
-import { loadJsonFromDirectory } from '../../services/import.service';
+import { loadJsonFromDirectory, ImportResult, UpdateStatus } from '../../services/import.service';
 
 export const command = 'import <dir>';
 
@@ -38,24 +38,28 @@ export const storedSchemaMapper = (
   return new ContentTypeSchema(mutatedSchema);
 };
 
-export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<string[]> => {
+export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<ContentTypeSchema> => {
   try {
     const createdSchemaType = await createContentTypeSchema(
       schema.body || '',
       schema.validationLevel || ValidationLevel.CONTENT_TYPE,
       hub
     );
-    return [createdSchemaType.id || '', createdSchemaType.schemaId || '', 'CREATE', 'SUCCESS'];
+
+    return createdSchemaType;
   } catch (err) {
     throw new Error(`Error registering content type schema with body: ${schema.body}\n\n${err.message}`);
   }
 };
 
-export const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema): Promise<string[]> => {
+export const doUpdate = async (
+  client: DynamicContent,
+  schema: ContentTypeSchema
+): Promise<{ contentTypeSchema: ContentTypeSchema; updateStatus: UpdateStatus }> => {
   try {
     const retrievedSchema = await client.contentTypeSchemas.get(schema.id || '');
     if (isEqual(retrievedSchema.toJSON(), schema)) {
-      return [schema.id || '', schema.schemaId || '', 'UPDATE', 'SKIPPED'];
+      return { contentTypeSchema: retrievedSchema, updateStatus: UpdateStatus.SKIPPED };
     }
     const updatedSchema = await updateContentTypeSchema(
       retrievedSchema,
@@ -63,7 +67,7 @@ export const doUpdate = async (client: DynamicContent, schema: ContentTypeSchema
       schema.validationLevel || ValidationLevel.CONTENT_TYPE
     );
 
-    return [updatedSchema.id || '', schema.schemaId || '', 'UPDATE', 'SUCCESS'];
+    return { contentTypeSchema: updatedSchema, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
     throw new Error(`Error updating content type schema ${schema.schemaId || '<unknown>'}: ${err.message}`);
   }
@@ -78,8 +82,17 @@ export const processSchemas = async (
 
   tableStream.write([chalk.bold('id'), chalk.bold('schemaId'), chalk.bold('method'), chalk.bold('status')]);
   for (const schema of schemasToProcess) {
-    const result = schema.id ? doUpdate(client, schema) : doCreate(hub, schema);
-    tableStream.write(await result);
+    let schemaId = schema.id;
+    let status: ImportResult;
+    if (schema.id) {
+      const result = await doUpdate(client, schema);
+      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO DATE' : 'UPDATED';
+    } else {
+      const result = await doCreate(hub, schema);
+      schemaId = result.id || 'UNKNOWN';
+      status = 'CREATED';
+    }
+    tableStream.write([schemaId || '', schema.schemaId || '', status]);
   }
   process.stdout.write('\n');
 };

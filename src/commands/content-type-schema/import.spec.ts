@@ -8,7 +8,7 @@ import { createStream } from 'table';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { loadJsonFromDirectory } from '../../services/import.service';
+import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 
 jest.mock('fs');
 jest.mock('table');
@@ -95,7 +95,7 @@ describe('content-type-schema import command', (): void => {
         contentTypeSchema.validationLevel,
         hub
       );
-      expect(result).toEqual(['create-id', 'https://schema.localhost.com/test-1.json', 'CREATE', 'SUCCESS']);
+      expect(result).toEqual({ ...contentTypeSchema, id: 'create-id', schemaId });
     });
 
     it('should throw an error when content type schema fails to create', async () => {
@@ -149,10 +149,10 @@ describe('content-type-schema import command', (): void => {
         mutatedContentTypeSchema.body,
         mutatedContentTypeSchema.validationLevel
       );
-      expect(result).toEqual(['stored-id', 'https://schema.localhost.com/test-1.json', 'UPDATE', 'SUCCESS']);
+      expect(result).toEqual({ contentTypeSchema: mutatedContentTypeSchema, updateStatus: UpdateStatus.UPDATED });
     });
 
-    it('should update a content type schema and report the results', async () => {
+    it('should skip updating a content type schema when no changes detected and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
       const schemaId = 'https://schema.localhost.com/test-1.json';
       const storedContentTypeSchema = {
@@ -170,7 +170,7 @@ describe('content-type-schema import command', (): void => {
       const result = await doUpdate(client, mutatedContentTypeSchema);
 
       expect(updateContentTypeSchema).toHaveBeenCalledTimes(0);
-      expect(result).toEqual(['stored-id', 'https://schema.localhost.com/test-1.json', 'UPDATE', 'SKIPPED']);
+      expect(result).toEqual(expect.objectContaining({ updateStatus: UpdateStatus.SKIPPED }));
     });
 
     it('should throw an error when content type schema fails to create', async () => {
@@ -210,16 +210,20 @@ describe('content-type-schema import command', (): void => {
       const contentTypeSchemaToUpdate = { ...contentTypeSchemaToCreate, id: 'stored-id' } as ContentTypeSchema;
       const schemasToProcess = [contentTypeSchemaToCreate, contentTypeSchemaToUpdate];
 
-      jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(['stored-id', schemaId, 'CREATE', 'SUCCESS']);
-      jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(['stored-id', schemaId, 'UPDATE', 'SUCCESS']);
+      jest
+        .spyOn(importModule, 'doCreate')
+        .mockResolvedValueOnce({ ...contentTypeSchemaToCreate, id: 'new-id' } as ContentTypeSchema);
+      jest
+        .spyOn(importModule, 'doUpdate')
+        .mockResolvedValueOnce({ contentTypeSchema: contentTypeSchemaToUpdate, updateStatus: UpdateStatus.UPDATED });
 
       await processSchemas(schemasToProcess, client, hub);
 
       expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypeSchemaToCreate);
       expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypeSchemaToUpdate);
       expect(mockStreamWrite).toHaveBeenCalledTimes(3);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['stored-id', schemaId, 'CREATE', 'SUCCESS']);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['stored-id', schemaId, 'UPDATE', 'SUCCESS']);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['new-id', schemaId, 'CREATED']);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['stored-id', schemaId, 'UPDATED']);
     });
   });
 
