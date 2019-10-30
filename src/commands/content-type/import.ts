@@ -89,7 +89,7 @@ export type MappedContentRepositories = Map<string, ContentRepository>;
 export const synchronizeContentTypeRepositories = async (
   contentType: ContentTypeWithRepositoryAssignments,
   namedRepositories: MappedContentRepositories
-): Promise<void> => {
+): Promise<boolean> => {
   const assignedRepositories: MappedContentRepositories = new Map<string, ContentRepository>();
   namedRepositories.forEach(contentRepository => {
     const contentRepositoryContentTypes = contentRepository.contentTypes || [];
@@ -105,6 +105,8 @@ export const synchronizeContentTypeRepositories = async (
   const definedContentRepository = (contentType.repositories || []).filter(
     (value, index, array) => array.indexOf(value) === index
   );
+
+  let changedAssignment = false;
   for (const repo of definedContentRepository) {
     if (!assignedRepositories.has(repo)) {
       const contentRepository = namedRepositories.get(repo);
@@ -112,6 +114,7 @@ export const synchronizeContentTypeRepositories = async (
         throw new Error(`Unable to find a Content Repository named: ${repo}`);
       }
       await contentRepository.related.contentTypes.assign(contentTypeId);
+      changedAssignment = true;
     } else {
       assignedRepositories.delete(repo);
     }
@@ -119,7 +122,10 @@ export const synchronizeContentTypeRepositories = async (
 
   for (const assignedRepository of assignedRepositories.values()) {
     await assignedRepository.related.contentTypes.unassign(contentTypeId);
+    changedAssignment = true;
   }
+
+  return changedAssignment;
 };
 
 export const processContentTypes = async (
@@ -148,8 +154,8 @@ export const processContentTypes = async (
       status = 'CREATED';
     }
 
-    if (contentType.repositories) {
-      await synchronizeContentTypeRepositories(contentType, namedRepositories);
+    if (contentType.repositories && (await synchronizeContentTypeRepositories(contentType, namedRepositories))) {
+      status = 'UPDATED';
     }
 
     tableStream.write([contentTypeId, contentType.contentTypeUri || '', status]);
