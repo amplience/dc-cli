@@ -17,7 +17,7 @@ export async function getJsonByPath(filename: string, relativeDir: string = __di
   let resolvedFilename: string | URL = filename;
   if (filename.match(/file:\/\//)) {
     resolvedFilename = new URL(filename);
-  } else if (filename.split(path.sep)[0].match(/^(\.|\.\.)$/)) {
+  } else if (filename.split(path.sep)[0].match(/^\.{1,2}$/)) {
     resolvedFilename = path.resolve(relativeDir, filename);
   }
 

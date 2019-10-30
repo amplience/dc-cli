@@ -75,6 +75,12 @@ describe('content type schema helper', function() {
     expect(mockPathResolve).not.toHaveBeenCalled();
   });
 
+  it('should load a schema from a local file (with absolute path)', async function() {
+    const mockPathResolve = path.resolve as jest.Mock;
+    await successfulLocalFileInvocation('/content-type-schema/schema.json');
+    expect(mockPathResolve).not.toHaveBeenCalled();
+  });
+
   it('should throw an error when file not found', async () => {
     const mockPathResolve = path.resolve as jest.Mock;
     const mockFileRead = fs.readFileSync as jest.Mock;
