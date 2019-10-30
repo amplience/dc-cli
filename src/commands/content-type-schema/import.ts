@@ -8,10 +8,10 @@ import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import chalk from 'chalk';
-import { isEqual } from 'lodash';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
-import { loadJsonFromDirectory, ImportResult, UpdateStatus } from '../../services/import.service';
+import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
+import { getJsonByPath } from '../../common/import/json-by-path';
 
 export const command = 'import <dir>';
 
@@ -52,13 +52,16 @@ export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<Con
   }
 };
 
+const equals = (a: ContentTypeSchema, b: ContentTypeSchema): boolean =>
+  a.id === b.id && a.schemaId === b.schemaId && a.body === b.body;
+
 export const doUpdate = async (
   client: DynamicContent,
   schema: ContentTypeSchema
 ): Promise<{ contentTypeSchema: ContentTypeSchema; updateStatus: UpdateStatus }> => {
   try {
     const retrievedSchema = await client.contentTypeSchemas.get(schema.id || '');
-    if (isEqual(retrievedSchema.toJSON(), schema)) {
+    if (equals(retrievedSchema, schema)) {
       return { contentTypeSchema: retrievedSchema, updateStatus: UpdateStatus.SKIPPED };
     }
     const updatedSchema = await updateContentTypeSchema(
@@ -80,13 +83,13 @@ export const processSchemas = async (
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
 
-  tableStream.write([chalk.bold('id'), chalk.bold('schemaId'), chalk.bold('method'), chalk.bold('status')]);
+  tableStream.write([chalk.bold('id'), chalk.bold('schemaId'), chalk.bold('result')]);
   for (const schema of schemasToProcess) {
     let schemaId = schema.id;
     let status: ImportResult;
     if (schema.id) {
       const result = await doUpdate(client, schema);
-      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO DATE' : 'UPDATED';
+      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
       const result = await doCreate(hub, schema);
       schemaId = result.id || 'UNKNOWN';
@@ -97,11 +100,27 @@ export const processSchemas = async (
   process.stdout.write('\n');
 };
 
+export const resolveSchemaBody = async (schemas: ContentTypeSchema[], dir: string): Promise<ContentTypeSchema[]> => {
+  for (const schema of schemas) {
+    if (schema.body) {
+      let body;
+      try {
+        body = JSON.parse(schema.body);
+      } catch (e) {
+        body = await getJsonByPath(schema.body, dir);
+      }
+      schema.body = body;
+    }
+  }
+  return schemas;
+};
+
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const schemas = loadJsonFromDirectory<ContentTypeSchema>(dir);
+  await resolveSchemaBody(schemas, dir);
   const storedSchemas = await paginator(hub.related.contentTypeSchema.list);
   const schemasToProcess = schemas.map(schemas => storedSchemaMapper(schemas, storedSchemas));
 

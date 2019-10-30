@@ -6,7 +6,7 @@ import { ContentRepository, ContentType, DynamicContent, Hub } from 'dc-manageme
 import { isEqual } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
-import { loadJsonFromDirectory, UpdateStatus, ImportResult } from '../../services/import.service';
+import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
@@ -62,7 +62,7 @@ export const doUpdate = async (
   }
 
   // Check if an update is required
-  if (equals(retrievedContentType.toJSON(), contentType)) {
+  if (equals(retrievedContentType, contentType)) {
     return { contentType: retrievedContentType, updateStatus: UpdateStatus.SKIPPED };
   }
 
@@ -141,7 +141,7 @@ export const processContentTypes = async (
 
     if (contentTypeId) {
       const result = await doUpdate(client, contentType);
-      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO DATE' : 'UPDATED';
+      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
       const result = await doCreate(hub, contentType);
       contentTypeId = result.id || 'UNKNOWN';

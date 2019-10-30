@@ -10,15 +10,15 @@ export const streamTableOptions = {
   columnDefault: {
     width: 50
   },
-  columnCount: 4,
+  columnCount: 3,
   columns: {
     0: {
-      width: 36
+      width: 24
+    },
+    1: {
+      width: 100
     },
     2: {
-      width: 10
-    },
-    3: {
       width: 10
     }
   }

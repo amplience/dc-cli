@@ -295,7 +295,7 @@ describe('content-type import command', (): void => {
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['created-id', 'type-uri', 'CREATED']);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['updated-id', 'type-uri', 'UPDATED']);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(4, ['up-to-date-id', 'type-uri', 'UP-TO DATE']);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(4, ['up-to-date-id', 'type-uri', 'UP-TO-DATE']);
     });
   });
 

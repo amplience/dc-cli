@@ -1,7 +1,16 @@
 import Yargs = require('yargs/yargs');
 
 import * as importModule from './import';
-import { command, builder, handler, storedSchemaMapper, processSchemas, doCreate, doUpdate } from './import';
+import {
+  command,
+  builder,
+  handler,
+  storedSchemaMapper,
+  processSchemas,
+  doCreate,
+  doUpdate,
+  resolveSchemaBody
+} from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
 import { createStream } from 'table';
@@ -9,6 +18,7 @@ import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
+import { getJsonByPath } from '../../common/import/json-by-path';
 
 jest.mock('fs');
 jest.mock('table');
@@ -17,6 +27,7 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/import.service');
 jest.mock('./create.service');
 jest.mock('./update.service');
+jest.mock('../../common/import/json-by-path');
 
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {
@@ -224,6 +235,27 @@ describe('content-type-schema import command', (): void => {
       expect(mockStreamWrite).toHaveBeenCalledTimes(3);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['new-id', schemaId, 'CREATED']);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['stored-id', schemaId, 'UPDATED']);
+    });
+  });
+
+  describe('resolveSchemaBody', () => {
+    it('should allow undefined body', async () => {
+      const result = await resolveSchemaBody([new ContentTypeSchema()], __dirname);
+      expect(result).toHaveLength(1);
+      expect(result[0].body).toBe(undefined);
+    });
+    it('should allow JSON string body', async () => {
+      const result = await resolveSchemaBody([new ContentTypeSchema({ body: '{"prop": 123}' })], __dirname);
+      expect(result).toHaveLength(1);
+      expect(result[0].body).toEqual({ prop: 123 });
+    });
+    it('should allow pass a file to getJsonByPath() using the supplied dir', async () => {
+      const mockGetJsonByPath = getJsonByPath as jest.Mock;
+      mockGetJsonByPath.mockResolvedValueOnce({ resolved: true });
+      const result = await resolveSchemaBody([new ContentTypeSchema({ body: 'file' })], 'dir');
+      expect(result).toHaveLength(1);
+      expect(result[0].body).toEqual({ resolved: true });
+      expect(mockGetJsonByPath).toHaveBeenCalledWith('file', 'dir');
     });
   });
 
