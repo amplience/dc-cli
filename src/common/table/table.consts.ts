@@ -1,4 +1,11 @@
+import { getBorderCharacters } from 'table';
+
+export const baseTableConfig = {
+  border: getBorderCharacters('ramac')
+};
+
 export const singleItemTableOptions = {
+  ...baseTableConfig,
   columns: {
     1: {
       width: 100
@@ -7,6 +14,7 @@ export const singleItemTableOptions = {
 };
 
 export const streamTableOptions = {
+  ...baseTableConfig,
   columnDefault: {
     width: 50
   },
