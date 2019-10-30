@@ -30,6 +30,11 @@ describe('error handler tests', function() {
       expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
     });
 
+    it('should display sdk http 400 error', async () => {
+      errorHandler(new HttpError('Message', undefined, { status: 400, data: {} }));
+      expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
+    });
+
     it('should display sdk http 401 error', async () => {
       errorHandler(new HttpError('Message', undefined, { status: 401, data: {} }));
       expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
