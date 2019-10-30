@@ -139,7 +139,30 @@ describe('content-type import command', (): void => {
       const storedContentType = new ContentType({
         id: 'stored-id',
         contentTypeUri: 'matched-uri',
-        settings: { label: 'label' }
+        settings: {
+          label: 'label',
+          visualizations: [
+            {
+              label: 'Localhost',
+              templatedUri: 'http://localhost:3000/visualization.html?vse={{vse.domain}}&content={{content.sys.id}}',
+              default: true
+            }
+          ]
+        }
+      });
+      const expectedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: {
+          label: 'mutated-label',
+          visualizations: [
+            {
+              label: 'Localhost',
+              templatedUri: 'http://localhost:3000/visualization.html?vse={{vse.domain}}&content={{content.sys.id}}',
+              default: true
+            }
+          ]
+        }
       });
       mockGet.mockResolvedValue(storedContentType);
 
@@ -149,14 +172,16 @@ describe('content-type import command', (): void => {
       const mockContentTypeSchemaUpdate = jest.fn().mockResolvedValue(new ContentTypeCachedSchema());
       updatedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
       const client = mockDynamicContentClientFactory();
-      const mutatedContentTypeWithRepoAssignments = {
+      const result = await doUpdate(client, {
         ...mutatedContentType,
         repositories: ['Slots']
-      } as ContentTypeWithRepositoryAssignments;
-      const result = await doUpdate(client, mutatedContentTypeWithRepoAssignments);
+      } as ContentTypeWithRepositoryAssignments);
 
       expect(result).toEqual({ contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED });
-      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentTypeWithRepoAssignments);
+      expect(mockUpdate).toHaveBeenCalledWith({
+        ...expectedContentType.toJSON(),
+        repositories: ['Slots']
+      } as ContentTypeWithRepositoryAssignments);
       expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
     });
 

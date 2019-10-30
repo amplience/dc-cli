@@ -62,6 +62,7 @@ export const doUpdate = async (
   }
 
   // Check if an update is required
+  contentType.settings = { ...retrievedContentType.settings, ...contentType.settings };
   if (equals(retrievedContentType, contentType)) {
     return { contentType: retrievedContentType, updateStatus: UpdateStatus.SKIPPED };
   }
