@@ -143,23 +143,23 @@ export const processContentTypes = async (
 
   tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
   for (const contentType of contentTypes) {
-    let contentTypeId = contentType.id;
     let status: ImportResult;
+    let contentTypeResult: ContentType;
 
-    if (contentTypeId) {
+    if (contentType.id) {
       const result = await doUpdate(client, contentType);
+      contentTypeResult = result.contentType;
       status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
-      const result = await doCreate(hub, contentType);
-      contentTypeId = result.id || 'UNKNOWN';
+      contentTypeResult = await doCreate(hub, contentType);
       status = 'CREATED';
     }
 
-    if (contentType.repositories && (await synchronizeContentTypeRepositories(contentType, namedRepositories))) {
-      status = 'UPDATED';
+    if (contentType.repositories && (await synchronizeContentTypeRepositories(contentTypeResult, namedRepositories))) {
+      status = contentType.id ? 'UPDATED' : 'CREATED';
     }
 
-    tableStream.write([contentTypeId, contentType.contentTypeUri || '', status]);
+    tableStream.write([contentTypeResult.id || 'UNKNOWN', contentType.contentTypeUri || '', status]);
   }
   process.stdout.write('\n');
 };

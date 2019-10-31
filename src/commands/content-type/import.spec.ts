@@ -277,7 +277,7 @@ describe('content-type import command', (): void => {
       const client = (dynamicContentClientFactory as jest.Mock)();
       const hub = new Hub();
       const contentTypesToProcess = [
-        { contentTypeUri: 'type-uri', settings: { label: 'created' } },
+        { contentTypeUri: 'type-uri', settings: { label: 'created' }, repositories: ['Slots'] },
         { id: 'updated-id', contentTypeUri: 'type-uri', settings: { label: 'updated' }, repositories: ['Slots'] },
         { id: 'up-to-date-id', contentTypeUri: 'type-uri', settings: { label: 'up-to date' }, repositories: ['Slots'] }
       ] as ContentTypeWithRepositoryAssignments[];
@@ -287,32 +287,41 @@ describe('content-type import command', (): void => {
       jest
         .spyOn(importModule, 'synchronizeContentTypeRepositories')
         .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(false);
-      jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(new ContentType({ id: 'created-id' }));
-      jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce({
-        contentType: new ContentType({ id: 'updated-id' }),
+      const createdContentType = new ContentType({ id: 'created-id', contentTypeUri: 'type-uri' });
+      jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(createdContentType);
+      const doUpdateResult1 = {
+        contentType: new ContentType(contentTypesToProcess[1]),
         updateStatus: UpdateStatus.UPDATED
-      });
-      jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce({
-        contentType: new ContentType({ id: 'up-to-date-id' }),
+      };
+      jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(doUpdateResult1);
+      const doUpdateResult2 = {
+        contentType: new ContentType(contentTypesToProcess[2]),
         updateStatus: UpdateStatus.SKIPPED
-      });
+      };
+      jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(doUpdateResult2);
 
       await processContentTypes(contentTypesToProcess, client, hub);
 
       expect(paginator).toHaveBeenCalledTimes(1);
       expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0]);
       expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypesToProcess[1]);
-      expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(2);
+      expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(3);
       const mappedReposByName = createContentRepositoriesMap(contentRepositories);
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         1,
-        contentTypesToProcess[1],
+        createdContentType,
         mappedReposByName
       );
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         2,
-        contentTypesToProcess[2],
+        doUpdateResult1.contentType,
+        mappedReposByName
+      );
+      expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
+        3,
+        doUpdateResult2.contentType,
         mappedReposByName
       );
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
@@ -321,9 +330,21 @@ describe('content-type import command', (): void => {
         chalk.bold('contentTypeUri'),
         chalk.bold('result')
       ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['created-id', 'type-uri', 'CREATED']);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['updated-id', 'type-uri', 'UPDATED']);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(4, ['up-to-date-id', 'type-uri', 'UP-TO-DATE']);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
+        createdContentType.id,
+        createdContentType.contentTypeUri,
+        'CREATED'
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
+        doUpdateResult1.contentType.id,
+        doUpdateResult1.contentType.contentTypeUri,
+        'UPDATED'
+      ]);
+      expect(mockStreamWrite).toHaveBeenNthCalledWith(4, [
+        doUpdateResult2.contentType.id,
+        doUpdateResult2.contentType.contentTypeUri,
+        'UP-TO-DATE'
+      ]);
     });
   });
 

@@ -48,7 +48,7 @@ export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<Con
 
     return createdSchemaType;
   } catch (err) {
-    throw new Error(`Error registering content type schema with body: ${schema.body}\n\n${err.message}`);
+    throw new Error(`Error registering content type schema with body: ${schema.body}\n\n${err}`);
   }
 };
 
