@@ -8,7 +8,7 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 
 export const command = 'list';
 
-export const desc = "List Content Type Schema's";
+export const desc = 'List Content Type Schemas';
 
 export const builder: CommandOptions = {
   ...RenderingOptions
