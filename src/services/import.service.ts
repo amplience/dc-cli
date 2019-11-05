@@ -12,7 +12,7 @@ export const loadJsonFromDirectory = <T>(dir: string): T[] => {
   const files = fs
     .readdirSync(dir)
     .map(file => path.join(dir, file))
-    .filter(file => fs.lstatSync(file).isFile());
+    .filter(file => fs.lstatSync(file).isFile() && path.extname(file) === '.json');
   return files.map(file => {
     try {
       return JSON.parse(fs.readFileSync(file, 'utf-8'));
