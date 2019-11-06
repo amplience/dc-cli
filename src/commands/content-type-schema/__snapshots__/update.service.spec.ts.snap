@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`update.service updateContentTypeSchema should throw an error when schemaBody is not valid JSON 1`] = `"Invalid schema body"`;
