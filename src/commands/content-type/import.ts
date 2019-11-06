@@ -155,7 +155,13 @@ export const processContentTypes = async (
       status = 'CREATED';
     }
 
-    if (contentType.repositories && (await synchronizeContentTypeRepositories(contentTypeResult, namedRepositories))) {
+    if (
+      contentType.repositories &&
+      (await synchronizeContentTypeRepositories(
+        new ContentTypeWithRepositoryAssignments({ ...contentType, ...contentTypeResult }),
+        namedRepositories
+      ))
+    ) {
       status = contentType.id ? 'UPDATED' : 'CREATED';
     }
 
