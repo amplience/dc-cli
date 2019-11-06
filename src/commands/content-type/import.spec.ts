@@ -219,6 +219,27 @@ describe('content-type import command', (): void => {
       await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
     });
 
+    it('should throw an error when unable to update content type during update if a string error is returned by sdk', async () => {
+      const mutatedContentType = new ContentTypeWithRepositoryAssignments({
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      });
+      const storedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'matched-uri',
+        settings: { label: 'label' }
+      });
+      const mockUpdate = jest
+        .fn()
+        .mockRejectedValue('The update action is not available, ensure you have permission to perform this action.');
+      storedContentType.related.update = mockUpdate;
+      mockGet.mockResolvedValue(storedContentType);
+      const client = mockDynamicContentClientFactory();
+      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
+    });
+
     it('should throw an error when unable to update content type during update', async () => {
       const mutatedContentType = new ContentTypeWithRepositoryAssignments({
         id: 'stored-id',

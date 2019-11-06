@@ -72,7 +72,7 @@ export const doUpdate = async (
     // Update the content-type
     updatedContentType = await retrievedContentType.related.update(contentType);
   } catch (err) {
-    throw new Error(`Error updating content type ${contentType.id}: ${err.message}`);
+    throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
   }
 
   try {
