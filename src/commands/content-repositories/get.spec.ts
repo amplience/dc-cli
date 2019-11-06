@@ -15,7 +15,7 @@ describe('content-repostories get command', () => {
     jest.restoreAllMocks();
   });
   it('should have a get command defined', () => {
-    expect(command).toEqual('get [id]');
+    expect(command).toEqual('get <id>');
   });
 
   describe('builder tests', () => {
@@ -27,7 +27,6 @@ describe('content-repostories get command', () => {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        demandOption: true,
         describe: 'Content Repository ID',
         type: 'string'
       });

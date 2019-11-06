@@ -5,7 +5,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentRepository } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'get [id]';
+export const command = 'get <id>';
 
 export const desc = 'Get Content Repository';
 
@@ -13,8 +13,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Repository ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options(RenderingOptions);
 };
