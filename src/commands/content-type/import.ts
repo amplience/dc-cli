@@ -42,7 +42,7 @@ export const doCreate = async (hub: Hub, contentType: ContentType): Promise<Cont
   try {
     return await hub.related.contentTypes.register(new ContentType(contentType));
   } catch (err) {
-    throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message}`);
+    throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message || err}`);
   }
 };
 

@@ -117,6 +117,19 @@ describe('content-type import command', (): void => {
 
       await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
     });
+
+    it('should throw an error when content type create fails if a string error is returned by the sdk', async () => {
+      const mockHub = new Hub();
+      const mockRegister = jest
+        .fn()
+        .mockRejectedValue(
+          'The register-content-type action is not available, ensure you have permission to perform this action.'
+        );
+      mockHub.related.contentTypes.register = mockRegister;
+      const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
+
+      await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
+    });
   });
 
   describe('doUpdate', () => {
