@@ -696,5 +696,13 @@ describe('content-type import command', (): void => {
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(processContentTypes).toHaveBeenCalledWith(contentTypesToImport, expect.any(Object), expect.any(Object));
     });
+
+    it('should throw an error when no content found in import directory', async (): Promise<void> => {
+      const argv = { ...yargArgs, ...config, dir: 'my-empty-dir' };
+
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
+
+      await expect(handler(argv)).rejects.toThrowErrorMatchingSnapshot();
+    });
   });
 });

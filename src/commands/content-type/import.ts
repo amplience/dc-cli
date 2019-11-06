@@ -135,7 +135,6 @@ export const processContentTypes = async (
   hub: Hub
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
   const namedRepositories: MappedContentRepositories = new Map<string, ContentRepository>(
     contentRepositoryList.map(value => [value.name || '', value])
@@ -167,11 +166,15 @@ export const processContentTypes = async (
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(dir);
+  if (importedContentTypes.length === 0) {
+    throw new Error(`No content types found in ${dir}`);
+  }
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
   const contentTypesToProcess = importedContentTypes.map(imported =>
     storedContentTypeMapper(imported, storedContentTypes)
   );
+
   await processContentTypes(contentTypesToProcess, client, hub);
 };
