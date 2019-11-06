@@ -4,7 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ConfigurationParameters } from '../configure';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'assign-content-type [id]';
+export const command = 'assign-content-type <id>';
 
 export const desc = 'Assign Content Type';
 
@@ -12,8 +12,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Repository ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options({
       contentTypeId: {
