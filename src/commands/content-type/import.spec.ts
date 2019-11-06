@@ -323,7 +323,11 @@ describe('content-type import command', (): void => {
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(false);
-      const createdContentType = new ContentType({ id: 'created-id', contentTypeUri: 'type-uri' });
+
+      const createdContentType = new ContentType({
+        id: 'created-id',
+        ...contentTypesToProcess[0]
+      });
       jest.spyOn(importModule, 'doCreate').mockResolvedValueOnce(createdContentType);
       const doUpdateResult1 = {
         contentType: new ContentType(contentTypesToProcess[1]),
@@ -343,19 +347,24 @@ describe('content-type import command', (): void => {
       expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypesToProcess[1]);
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(3);
       const mappedReposByName = createContentRepositoriesMap(contentRepositories);
+      expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(3);
+
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         1,
-        createdContentType,
+        expect.objectContaining({
+          ...createdContentType.toJSON(),
+          repositories: ['Slots']
+        }),
         mappedReposByName
       );
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         2,
-        doUpdateResult1.contentType,
+        expect.objectContaining({ ...contentTypesToProcess[1], repositories: ['Slots'] }),
         mappedReposByName
       );
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenNthCalledWith(
         3,
-        doUpdateResult2.contentType,
+        expect.objectContaining({ ...contentTypesToProcess[2], repositories: ['Slots'] }),
         mappedReposByName
       );
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
