@@ -26,5 +26,17 @@ describe('update.service', () => {
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentTypeSchema));
       expect(result).toEqual(expect.objectContaining(mutatedContentTypeSchema));
     });
+
+    it('should throw an error when schemaBody is not valid JSON', async () => {
+      const schemaBody = { id: 'http://example.com/schema.json', title: 'original' };
+      const schemaToUpdate = new ContentTypeSchema({
+        body: JSON.stringify(schemaBody),
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      });
+
+      await expect(
+        updateContentTypeSchema(schemaToUpdate, 'invalid json', ValidationLevel.CONTENT_TYPE)
+      ).rejects.toThrowErrorMatchingSnapshot();
+    });
   });
 });
