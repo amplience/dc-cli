@@ -1,6 +1,6 @@
 {
   "name": "dc-cli",
-  "version": "1.0.0-0",
+  "version": "0.0.0",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
   "man": "./dist/dc-cli.1",
