@@ -185,9 +185,9 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-  const contentTypesToProcess = importedContentTypes.map(imported =>
-    storedContentTypeMapper(imported, storedContentTypes)
-  );
-
+  const contentTypesToProcess = importedContentTypes.map(importedFileAndContentType => {
+    const importedContentType = importedFileAndContentType[1];
+    return storedContentTypeMapper(importedContentType, storedContentTypes);
+  });
   await processContentTypes(contentTypesToProcess, client, hub);
 };
