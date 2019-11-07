@@ -2,6 +2,7 @@ import { Arguments } from 'yargs';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import fs from 'fs';
 import { join, dirname } from 'path';
+import { isEqual } from 'lodash';
 
 export const command = 'configure';
 
@@ -44,5 +45,12 @@ export const readConfigFile = (configFile: string): object =>
 
 export const handler = (argv: Arguments<ConfigurationParameters>): void => {
   const { clientId, clientSecret, hubId } = argv;
+  const storedConfig = readConfigFile(CONFIG_FILENAME());
+
+  if (isEqual(storedConfig, { clientId, clientSecret, hubId })) {
+    console.log('Config file up-to-date.  Please use `--help` for command usage.');
+    return;
+  }
   writeConfigFile(CONFIG_FILENAME(), { clientId, clientSecret, hubId });
+  console.log('Config file updated.');
 };
