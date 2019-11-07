@@ -29,7 +29,8 @@ describe('content-repository assign-content-type command', () => {
         contentTypeId: {
           type: 'string',
           demandOption: true,
-          description: 'content-type ID to unassign'
+          description: 'content-type ID to unassign',
+          requiresArg: true
         },
         ...RenderingOptions
       };

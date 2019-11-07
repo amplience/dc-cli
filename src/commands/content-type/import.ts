@@ -42,7 +42,7 @@ export const doCreate = async (hub: Hub, contentType: ContentType): Promise<Cont
   try {
     return await hub.related.contentTypes.register(new ContentType(contentType));
   } catch (err) {
-    throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message}`);
+    throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message || err}`);
   }
 };
 
@@ -72,7 +72,7 @@ export const doUpdate = async (
     // Update the content-type
     updatedContentType = await retrievedContentType.related.update(contentType);
   } catch (err) {
-    throw new Error(`Error updating content type ${contentType.id}: ${err.message}`);
+    throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
   }
 
   try {
@@ -135,7 +135,6 @@ export const processContentTypes = async (
   hub: Hub
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
   const namedRepositories: MappedContentRepositories = new Map<string, ContentRepository>(
     contentRepositoryList.map(value => [value.name || '', value])
@@ -167,11 +166,15 @@ export const processContentTypes = async (
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(dir);
+  if (importedContentTypes.length === 0) {
+    throw new Error(`No content types found in ${dir}`);
+  }
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
   const contentTypesToProcess = importedContentTypes.map(imported =>
     storedContentTypeMapper(imported, storedContentTypes)
   );
+
   await processContentTypes(contentTypesToProcess, client, hub);
 };

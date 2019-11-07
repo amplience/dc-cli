@@ -4,9 +4,9 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ConfigurationParameters } from '../configure';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'assign-content-type <id>';
+export const command = 'unassign-content-type <id>';
 
-export const desc = 'Assign Content Type';
+export const desc = 'Unassign Content Type';
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -18,7 +18,8 @@ export const builder = (yargs: Argv): void => {
       contentTypeId: {
         type: 'string',
         demandOption: true,
-        description: 'content-type ID to assign'
+        description: 'content-type ID to unassign',
+        requiresArg: true
       },
       ...RenderingOptions
     });
@@ -35,9 +36,10 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
 
   const contentRepository = await client.contentRepositories.get(argv.id);
-  const contentTypeAssignResult = await contentRepository.related.contentTypes.assign(argv.contentTypeId);
+  await contentRepository.related.contentTypes.unassign(argv.contentTypeId);
+  const contentRepositoryUpdated = await client.contentRepositories.get(argv.id);
 
-  return new DataPresenter(contentTypeAssignResult.toJSON()).render({
+  return new DataPresenter(contentRepositoryUpdated.toJSON()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });

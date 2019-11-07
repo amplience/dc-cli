@@ -117,6 +117,19 @@ describe('content-type import command', (): void => {
 
       await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
     });
+
+    it('should throw an error when content type create fails if a string error is returned by the sdk', async () => {
+      const mockHub = new Hub();
+      const mockRegister = jest
+        .fn()
+        .mockRejectedValue(
+          'The register-content-type action is not available, ensure you have permission to perform this action.'
+        );
+      mockHub.related.contentTypes.register = mockRegister;
+      const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
+
+      await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
+    });
   });
 
   describe('doUpdate', () => {
@@ -217,6 +230,27 @@ describe('content-type import command', (): void => {
       const client = mockDynamicContentClientFactory();
 
       await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+    });
+
+    it('should throw an error when unable to update content type during update if a string error is returned by sdk', async () => {
+      const mutatedContentType = new ContentTypeWithRepositoryAssignments({
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      });
+      const storedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'matched-uri',
+        settings: { label: 'label' }
+      });
+      const mockUpdate = jest
+        .fn()
+        .mockRejectedValue('The update action is not available, ensure you have permission to perform this action.');
+      storedContentType.related.update = mockUpdate;
+      mockGet.mockResolvedValue(storedContentType);
+      const client = mockDynamicContentClientFactory();
+      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
     });
 
     it('should throw an error when unable to update content type during update', async () => {
@@ -661,6 +695,14 @@ describe('content-type import command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(processContentTypes).toHaveBeenCalledWith(contentTypesToImport, expect.any(Object), expect.any(Object));
+    });
+
+    it('should throw an error when no content found in import directory', async (): Promise<void> => {
+      const argv = { ...yargArgs, ...config, dir: 'my-empty-dir' };
+
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
+
+      await expect(handler(argv)).rejects.toThrowErrorMatchingSnapshot();
     });
   });
 });

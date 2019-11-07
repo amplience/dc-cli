@@ -2,10 +2,16 @@
 
 exports[`content-type import command doCreate should throw an error when content type create fails 1`] = `"Error registering content type content-type-uri: Error creating content type"`;
 
+exports[`content-type import command doCreate should throw an error when content type create fails if a string error is returned by the sdk 1`] = `"Error registering content type content-type-uri: The register-content-type action is not available, ensure you have permission to perform this action."`;
+
 exports[`content-type import command doUpdate should throw an error when unable to get content type during update 1`] = `"Error unable to get content type stored-id: Error retrieving content type"`;
 
 exports[`content-type import command doUpdate should throw an error when unable to update a content type's content type schema during update 1`] = `"Error updating the content type schema of the content type stored-id: Unable to update content type schema"`;
 
 exports[`content-type import command doUpdate should throw an error when unable to update content type during update 1`] = `"Error updating content type stored-id: Error saving content type"`;
+
+exports[`content-type import command doUpdate should throw an error when unable to update content type during update if a string error is returned by sdk 1`] = `"Error updating content type stored-id: The update action is not available, ensure you have permission to perform this action."`;
+
+exports[`content-type import command handler tests should throw an error when no content found in import directory 1`] = `"No content types found in my-empty-dir"`;
 
 exports[`content-type import command synchronizeContentTypeRepositories should throw an error if content type has an unknown repository 1`] = `"Unable to find a Content Repository named: not-found"`;

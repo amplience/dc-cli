@@ -15,12 +15,14 @@ export const builder: CommandOptions = {
   schemaId: {
     type: 'string',
     demandOption: true,
-    describe: 'content-type-schema ID'
+    describe: 'content-type-schema ID',
+    requiresArg: true
   },
   label: {
     type: 'string',
     demandOption: true,
-    describe: 'content-type label'
+    describe: 'content-type label',
+    requiresArg: true
   },
   icons: {
     describe: 'content-type icons',
