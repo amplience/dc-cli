@@ -3,7 +3,7 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentRepository, ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
-import { isEqual } from 'lodash';
+import { isEqual, zip } from 'lodash';
 import { createStream } from 'table';
 import chalk from 'chalk';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
@@ -38,9 +38,28 @@ export const storedContentTypeMapper = (
   return new ContentTypeWithRepositoryAssignments(mutatedContentType);
 };
 
-const findUniqueDuplicateUris = (contentTypes: ContentType[]): string[] => {
-  const contentTypeUriList = contentTypes.map(c => c.contentTypeUri || '');
-  return [...new Set(contentTypeUriList.filter((uri, index) => contentTypeUriList.indexOf(uri) != index))];
+const findUniqueDuplicateUris = (filenames: string[], contentTypes: ContentType[]): [string, string[]][] => {
+  const uriToFilenameMap = new Map<string, string[]>(); // map: uri x filenames
+  for (const filenameAndContentType of zip(filenames, contentTypes)) {
+    const [filename, contentType] = filenameAndContentType;
+    if (contentType && contentType.contentTypeUri) {
+      const otherFilenames: string[] = uriToFilenameMap.get(contentType.contentTypeUri) || [];
+      if (filename) {
+        uriToFilenameMap.set(contentType.contentTypeUri, [...otherFilenames, filename]);
+      }
+    }
+  }
+  const uniqueDuplicateUris: [string, string[]][] = [];
+  console.log(uriToFilenameMap);
+  uriToFilenameMap.forEach((filenames, uri) => {
+    console.log('filenames=', filenames);
+    console.log('ur=', uri);
+    if (filenames.length > 1) {
+      uniqueDuplicateUris.push([uri, filenames]);
+    }
+  });
+  console.log(uniqueDuplicateUris);
+  return uniqueDuplicateUris;
 };
 
 export const doCreate = async (hub: Hub, contentType: ContentType): Promise<ContentType> => {
@@ -147,11 +166,11 @@ export const processContentTypes = async (
   client: DynamicContent,
   hub: Hub
 ): Promise<void> => {
-  const duplicateUris = findUniqueDuplicateUris(contentTypes);
+  const duplicateUris: [string, string[]][] = findUniqueDuplicateUris(filenames, contentTypes);
   if (duplicateUris.length > 0) {
     throw new Error(
       `Content Types must have unique uri values. Duplicate values found: [${duplicateUris
-        .map(u => `'${u}'`)
+        .map(([uri, filenames]) => `'${uri}' (${filenames.map(f => `'${f}'`).join(', ')})`)
         .join(', ')}]`
     );
   }
