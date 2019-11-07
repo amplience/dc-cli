@@ -310,10 +310,16 @@ describe('content-type import command', (): void => {
     it('should create and update a content type', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
       const hub = new Hub();
+      const filenames = ['type-file-1', 'type-file-2', 'type-file-3'];
       const contentTypesToProcess = [
         { contentTypeUri: 'type-uri', settings: { label: 'created' }, repositories: ['Slots'] },
-        { id: 'updated-id', contentTypeUri: 'type-uri', settings: { label: 'updated' }, repositories: ['Slots'] },
-        { id: 'up-to-date-id', contentTypeUri: 'type-uri', settings: { label: 'up-to date' }, repositories: ['Slots'] }
+        { id: 'updated-id', contentTypeUri: 'type-uri-2', settings: { label: 'updated' }, repositories: ['Slots'] },
+        {
+          id: 'up-to-date-id',
+          contentTypeUri: 'type-uri-3',
+          settings: { label: 'up-to date' },
+          repositories: ['Slots']
+        }
       ] as ContentTypeWithRepositoryAssignments[];
 
       const contentRepositories = [new ContentRepository({ id: 'repo-id', name: 'repo-name' })];
@@ -340,7 +346,7 @@ describe('content-type import command', (): void => {
       };
       jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(doUpdateResult2);
 
-      await processContentTypes(contentTypesToProcess, client, hub);
+      await processContentTypes(filenames, contentTypesToProcess, client, hub);
 
       expect(paginator).toHaveBeenCalledTimes(1);
       expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0]);
@@ -388,6 +394,39 @@ describe('content-type import command', (): void => {
         doUpdateResult2.contentType.contentTypeUri,
         'UP-TO-DATE'
       ]);
+    });
+
+    it('should not create or update any content types if there are duplicate uris', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const hub = new Hub();
+      const filenames = ['type-file-1', 'type-file-2', 'type-file-3'];
+      const contentTypesToProcess = [
+        { contentTypeUri: 'type-uri-1', settings: { label: 'created' }, repositories: ['Slots'] },
+        {
+          id: 'updated-id',
+          contentTypeUri: 'type-uri-duplicate',
+          settings: { label: 'updated' },
+          repositories: ['Slots']
+        },
+        {
+          id: 'up-to-date-id',
+          contentTypeUri: 'type-uri-duplicate',
+          settings: { label: 'up-to date' },
+          repositories: ['Slots']
+        }
+      ] as ContentTypeWithRepositoryAssignments[];
+
+      jest.spyOn(importModule, 'synchronizeContentTypeRepositories');
+      jest.spyOn(importModule, 'doCreate');
+      jest.spyOn(importModule, 'doUpdate');
+
+      await expect(processContentTypes(filenames, contentTypesToProcess, client, hub)).rejects.toThrowError(
+        "Content Types must have unique uri values. Duplicate values found: ['type-uri-duplicate']"
+      );
+
+      expect(importModule.doCreate).toHaveBeenCalledTimes(0);
+      expect(importModule.doUpdate).toHaveBeenCalledTimes(0);
+      expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -716,24 +755,37 @@ describe('content-type import command', (): void => {
 
     it('should create a content type and update a content type', async (): Promise<void> => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
-      const contentTypesToImport = [
-        { contentTypeUri: 'type-uri', settings: { label: 'created' } },
-        { id: 'content-type-id', contentTypeUri: 'type-uri', settings: { label: 'updated' }, repositories: ['Slots'] }
+      const fileNamesAndcontentTypesToImport = [
+        ['file-1', { contentTypeUri: 'type-uri-1', settings: { label: 'created' } }],
+        [
+          'file-2',
+          {
+            id: 'content-type-id',
+            contentTypeUri: 'type-uri-2',
+            settings: { label: 'updated' },
+            repositories: ['Slots']
+          }
+        ]
       ];
 
-      (loadJsonFromDirectory as jest.Mock).mockReturnValue(contentTypesToImport);
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(fileNamesAndcontentTypesToImport);
       mockGetHub.mockResolvedValue(new Hub({ id: 'hub-id' }));
       jest
         .spyOn(importModule, 'storedContentTypeMapper')
-        .mockReturnValueOnce(contentTypesToImport[0] as ContentTypeWithRepositoryAssignments)
-        .mockReturnValueOnce(contentTypesToImport[1] as ContentTypeWithRepositoryAssignments);
+        .mockReturnValueOnce(fileNamesAndcontentTypesToImport[0][1] as ContentTypeWithRepositoryAssignments)
+        .mockReturnValueOnce(fileNamesAndcontentTypesToImport[1][1] as ContentTypeWithRepositoryAssignments);
       jest.spyOn(importModule, 'processContentTypes').mockResolvedValueOnce();
 
       await handler(argv);
 
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-      expect(processContentTypes).toHaveBeenCalledWith(contentTypesToImport, expect.any(Object), expect.any(Object));
+      expect(processContentTypes).toHaveBeenCalledWith(
+        [fileNamesAndcontentTypesToImport[0][0], fileNamesAndcontentTypesToImport[1][0]],
+        [fileNamesAndcontentTypesToImport[0][1], fileNamesAndcontentTypesToImport[1][1]],
+        expect.any(Object),
+        expect.any(Object)
+      );
     });
 
     it('should throw an error when no content found in import directory', async (): Promise<void> => {
