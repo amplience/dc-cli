@@ -244,18 +244,14 @@ describe('content-type-schema import command', (): void => {
       expect(result).toHaveLength(1);
       expect(result[0].body).toBe(undefined);
     });
-    it('should allow JSON string body', async () => {
-      const result = await resolveSchemaBody([new ContentTypeSchema({ body: '{"prop": 123}' })], __dirname);
-      expect(result).toHaveLength(1);
-      expect(result[0].body).toEqual({ prop: 123 });
-    });
-    it('should allow pass a file to getJsonByPath() using the supplied dir', async () => {
+    it('should resolve body as string', async () => {
+      const strigifiedBody = JSON.stringify('{"prop": 123}');
       const mockJsonResolver = jsonResolver as jest.Mock;
-      mockJsonResolver.mockResolvedValueOnce({ resolved: true });
-      const result = await resolveSchemaBody([new ContentTypeSchema({ body: 'file' })], 'dir');
+      mockJsonResolver.mockResolvedValueOnce(strigifiedBody);
+      const result = await resolveSchemaBody([new ContentTypeSchema({ body: strigifiedBody })], __dirname);
+
       expect(result).toHaveLength(1);
-      expect(result[0].body).toEqual({ resolved: true });
-      expect(mockJsonResolver).toHaveBeenCalledWith('file', 'dir');
+      expect(result[0].body).toEqual(strigifiedBody);
     });
   });
 

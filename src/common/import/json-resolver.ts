@@ -7,7 +7,7 @@ export async function jsonResolver(jsonToResolve: string, relativeDir: string = 
   try {
     const resolvedJson = JSON.parse(jsonToResolve);
     if (resolvedJson && (Array.isArray(resolvedJson) || typeof resolvedJson === 'object')) {
-      return resolvedJson;
+      return jsonToResolve;
     }
   } catch {}
 
