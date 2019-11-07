@@ -103,13 +103,7 @@ export const processSchemas = async (
 export const resolveSchemaBody = async (schemas: ContentTypeSchema[], dir: string): Promise<ContentTypeSchema[]> => {
   for (const schema of schemas) {
     if (schema.body) {
-      let body;
-      try {
-        body = JSON.parse(schema.body);
-      } catch (e) {
-        body = await jsonResolver(schema.body, dir);
-      }
-      schema.body = body;
+      schema.body = await jsonResolver(schema.body, dir);
     }
   }
   return schemas;

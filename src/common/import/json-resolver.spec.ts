@@ -90,12 +90,20 @@ describe('content type schema helper', function() {
       jest.resetAllMocks();
     });
 
-    it('should load valid JSON (Object passed in)', async function() {
+    it('should load valid JSON (Object as string passed in)', async function() {
       const json = { foo: 'bar', bar: 'baz' };
       const response = await jsonResolver(JSON.stringify(json));
       expect(mockAxiosGet).toHaveBeenCalledTimes(0);
       expect(mockFileRead).toHaveBeenCalledTimes(0);
-      expect(response).toEqual(json);
+      expect(response).toEqual(JSON.stringify(json));
+    });
+
+    it('should load valid JSON (Object as escaped string passed in)', async function() {
+      const escapedjson = '{"foo":"bar","bar":"baz"}';
+      const response = await jsonResolver(escapedjson);
+      expect(mockAxiosGet).toHaveBeenCalledTimes(0);
+      expect(mockFileRead).toHaveBeenCalledTimes(0);
+      expect(response).toEqual(escapedjson);
     });
 
     it('should load valid JSON (Array passed in)', async function() {
@@ -103,7 +111,7 @@ describe('content type schema helper', function() {
       const response = await jsonResolver(JSON.stringify(json));
       expect(mockAxiosGet).toHaveBeenCalledTimes(0);
       expect(mockFileRead).toHaveBeenCalledTimes(0);
-      expect(response).toEqual(json);
+      expect(response).toEqual(JSON.stringify(json));
     });
 
     it('should fail to load invalid JSON and fall out at the end (null passed in)', async function() {
