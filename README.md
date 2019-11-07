@@ -8,9 +8,13 @@ Command line interface for Amplience Dynamic Content service.
 Run `dc-cli` to get a list of available commands
 
 ## Configuration
-**dc-cli** requires a valid set of Amplience client credentials (`--client-key` & `--client-secret`) and hub ID (`--hub-id`) to operate. These must be supplied for each command or alternatively they can saved to a user-level configuration file using `dc-cli configure`.
+**dc-cli** requires a valid set of Amplience client credentials (`--client-key` & `--client-secret`) and hub ID (`--hub-id`) to operate. 
+These parameters must be set using the command `dc-cli configure --client-key <KEY> --client-secret <SECRET> --hub-id <ID>` before using the CLI.
 
-By default the configuration file is saved into the directory `<HOME_DIR>/.amplience/`, this can be overridden using the `--config` option.
+Once the tool has been configured the individual parameters can be overwrote by supplying them when running any of the commands, 
+e.g `dc-cli <command> <action> --hub-id <ID>`.
+
+By default the configuration is saved to a file in the directory `<HOME_DIR>/.amplience/`, this can be overridden using the `--config` option.
 
 See `dc-cli configure --help` for more information.
 
