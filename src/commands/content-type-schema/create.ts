@@ -16,13 +16,15 @@ export const builder: CommandOptions = {
   schema: {
     type: 'string',
     demandOption: true,
-    description: 'content-type-schema Source Location'
+    description: 'content-type-schema Source Location',
+    requiresArg: true
   },
   validationLevel: {
     type: 'string',
     choices: Object.values(ValidationLevel),
     demandOption: true,
-    description: 'content-type-schema Validation Level'
+    description: 'content-type-schema Validation Level',
+    requiresArg: true
   },
   ...RenderingOptions
 };

@@ -17,7 +17,7 @@ See `dc-cli configure --help` for more information.
 ## Installation
 Installing the DC CLI from the NPM package manager can be achieved using the following command:
 ```bash
-npm install -g dc-cli
+npm install -g @amplience/dc-cli
 ```
 
 Or you can download the executable for your operating system from our download page [https://amplience.com/dc-cli/downloads](https://amplience.com/dc-cli/downloads)

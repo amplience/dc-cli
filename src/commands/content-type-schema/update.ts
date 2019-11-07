@@ -21,13 +21,15 @@ export const builder = (yargs: Argv): void => {
       schema: {
         type: 'string',
         demandOption: true,
-        description: 'Content Type Schema Source Location'
+        description: 'Content Type Schema Source Location',
+        requiresArg: true
       },
       validationLevel: {
         type: 'string',
         choices: Object.values(ValidationLevel),
         demandOption: true,
-        description: 'Content Type Schema Validation Level'
+        description: 'Content Type Schema Validation Level',
+        requiresArg: true
       },
       ...RenderingOptions
     });
