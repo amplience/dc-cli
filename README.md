@@ -17,7 +17,7 @@ See `dc-cli configure --help` for more information.
 ## Installation
 Installing the DC CLI from the NPM package manager can be achieved using the following command:
 ```bash
-npm install -g dc-cli
+npm install -g @amplience/dc-cli
 ```
 
 Or you can download the executable for your operating system from our download page [https://amplience.com/dc-cli/downloads](https://amplience.com/dc-cli/downloads)
@@ -73,3 +73,25 @@ This will then allow the CLI to be used as if it was an executable like so:
 ```bash
 dc-cli COMMAND --param1 foo -- param2 bar
 ```
+
+## Required permissions
+Outlined below are the permissions required to run each command of the CLI. To request any permissions please contact Amplience support.
+
+| Command                                           | Required ACL(s)                             | Required Functional Permission(s)                                                                                              |
+|-------------------------------------------------- |-------------------------------------------- |--------------------------------------------------------------------------------------------------------------------------------|
+| `configure`                                       | * Hub - READ                                |                                                                                                                                |
+| `content-repositories get <id>`                   | * Hub - READ                                | * CONTENT:FUNCTIONAL:REPOSITORY:READ                                                                                           |
+| `content-repositories list`                       | * Hub - READ                                | * CONTENT:FUNCTIONAL:REPOSITORY:READ                                                                                           |
+| `content-repositories assign-content-type <id>`   | * ContentRepository - EDIT<br/>* Hub - READ | * CONTENT:FUNCTIONAL:REPOSITORY:EDIT                                                                                           |
+| `content-repositories unassign-content-type <id>` | * ContentRepository - EDIT<br/>* Hub - READ | * CONTENT:FUNCTIONAL:REPOSITORY:EDIT                                                                                           |
+| `content-type get <id>`                           | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                         |
+| `content-type list`                               | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                         |
+| `content-type register`                           | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                                       |
+| `content-type sync <id>`                          | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                         |
+| `content-type update <id>`                        | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                         |
+| `content-type import <dir>`                       | * ContentRepository - EDIT<br/>* Hub - READ | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |
+| `content-type-schema create`                      | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                                       |
+| `content-type-schema get <id>`                    | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                         |
+| `content-type-schema list`                        | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                         |
+| `content-type-schema update <id>`                 | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                         |
+| `content-type-schema import <dir>`                | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |

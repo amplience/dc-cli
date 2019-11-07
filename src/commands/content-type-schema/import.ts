@@ -11,7 +11,7 @@ import chalk from 'chalk';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
-import { getJsonByPath } from '../../common/import/json-by-path';
+import { jsonResolver } from '../../common/import/json-resolver';
 
 export const command = 'import <dir>';
 
@@ -107,7 +107,7 @@ export const resolveSchemaBody = async (schemas: ContentTypeSchema[], dir: strin
       try {
         body = JSON.parse(schema.body);
       } catch (e) {
-        body = await getJsonByPath(schema.body, dir);
+        body = await jsonResolver(schema.body, dir);
       }
       schema.body = body;
     }

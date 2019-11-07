@@ -1,7 +1,7 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { builder, command, handler } from './unassign-content-type';
+import { builder, command, handler } from './assign-content-type';
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
-import { ContentRepository } from 'dc-management-sdk-js';
+import { ContentRepository, ContentType } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import Yargs from 'yargs/yargs';
 
@@ -16,7 +16,7 @@ describe('content-repository assign-content-type command', () => {
   });
 
   it('should have a command defined', function() {
-    expect(command).toEqual('unassign-content-type [id]');
+    expect(command).toEqual('assign-content-type <id>');
   });
 
   describe('builder tests', function() {
@@ -29,7 +29,8 @@ describe('content-repository assign-content-type command', () => {
         contentTypeId: {
           type: 'string',
           demandOption: true,
-          description: 'content-type ID to unassign'
+          description: 'content-type ID to assign',
+          requiresArg: true
         },
         ...RenderingOptions
       };
@@ -60,8 +61,7 @@ describe('content-repository assign-content-type command', () => {
 
     it('should return a content repository', async () => {
       const mockGet = jest.fn();
-      const mockUnassign = jest.fn();
-      const mockToJSON = jest.fn();
+      const mockAssign = jest.fn();
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         contentRepositories: {
           get: mockGet
@@ -70,22 +70,19 @@ describe('content-repository assign-content-type command', () => {
       mockGet.mockResolvedValue({
         related: {
           contentTypes: {
-            unassign: mockUnassign
+            assign: mockAssign
           }
-        },
-        toJSON: mockToJSON
+        }
       });
 
       const contentRepository = new ContentRepository({
-        contentTypes: []
+        contentTypes: [new ContentType({ id: 'content-typeid' })]
       });
-      mockUnassign.mockResolvedValue(undefined);
-      mockToJSON.mockReturnValue(contentRepository.toJSON());
+      mockAssign.mockResolvedValue(contentRepository);
 
       const argv = { ...yargArgs, id: 'content-type-id', ...config };
       await handler(argv);
 
-      expect(mockToJSON).toHaveBeenCalled();
       expect(mockDataPresenter).toHaveBeenCalledWith(contentRepository.toJSON());
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
         json: argv.json,

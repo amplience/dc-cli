@@ -18,7 +18,7 @@ import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
-import { getJsonByPath } from '../../common/import/json-by-path';
+import { jsonResolver } from '../../common/import/json-resolver';
 
 jest.mock('fs');
 jest.mock('table');
@@ -27,7 +27,7 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/import.service');
 jest.mock('./create.service');
 jest.mock('./update.service');
-jest.mock('../../common/import/json-by-path');
+jest.mock('../../common/import/json-resolver');
 
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {
@@ -250,12 +250,12 @@ describe('content-type-schema import command', (): void => {
       expect(result[0].body).toEqual({ prop: 123 });
     });
     it('should allow pass a file to getJsonByPath() using the supplied dir', async () => {
-      const mockGetJsonByPath = getJsonByPath as jest.Mock;
-      mockGetJsonByPath.mockResolvedValueOnce({ resolved: true });
+      const mockJsonResolver = jsonResolver as jest.Mock;
+      mockJsonResolver.mockResolvedValueOnce({ resolved: true });
       const result = await resolveSchemaBody([new ContentTypeSchema({ body: 'file' })], 'dir');
       expect(result).toHaveLength(1);
       expect(result[0].body).toEqual({ resolved: true });
-      expect(mockGetJsonByPath).toHaveBeenCalledWith('file', 'dir');
+      expect(mockJsonResolver).toHaveBeenCalledWith('file', 'dir');
     });
   });
 

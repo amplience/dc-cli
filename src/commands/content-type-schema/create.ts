@@ -6,7 +6,7 @@ import { ValidationLevel } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { createContentTypeSchema } from './create.service';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { getJsonByPath } from '../../common/import/json-by-path';
+import { jsonResolver } from '../../common/import/json-resolver';
 
 export const command = 'create';
 
@@ -16,13 +16,15 @@ export const builder: CommandOptions = {
   schema: {
     type: 'string',
     demandOption: true,
-    description: 'content-type-schema Source Location'
+    description: 'content-type-schema Source Location',
+    requiresArg: true
   },
   validationLevel: {
     type: 'string',
     choices: Object.values(ValidationLevel),
     demandOption: true,
-    description: 'content-type-schema Validation Level'
+    description: 'content-type-schema Validation Level',
+    requiresArg: true
   },
   ...RenderingOptions
 };
@@ -37,7 +39,7 @@ export const handler = async (
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const schemaBody = await getJsonByPath(argv.schema);
+  const schemaBody = await jsonResolver(argv.schema);
   const contentTypeSchemaResult = await createContentTypeSchema(
     schemaBody,
     argv.validationLevel as ValidationLevel,

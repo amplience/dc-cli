@@ -9,7 +9,7 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 
 export const command = 'list';
 
-export const desc = "List Content Repositories Schema's";
+export const desc = 'List Content Repositories';
 
 export const builder: CommandOptions = {
   ...SortingOptions,

@@ -4,11 +4,10 @@ exports[`cli should create a yarg instance if one is not supplied 1`] = `
 "<<ENTRYPOINT>> <command>
 
 Commands:
-  <<ENTRYPOINT>> configure             Saves the configuration options to a
-                                        file
-  <<ENTRYPOINT>> content-repositories  Content Repositories
-  <<ENTRYPOINT>> content-type-schema   Content Type Schema
-  <<ENTRYPOINT>> content-type          Content Type
+  <<ENTRYPOINT>> configure            Saves the configuration options to a file
+  <<ENTRYPOINT>> content-repository   Content Repository
+  <<ENTRYPOINT>> content-type-schema  Content Type Schema
+  <<ENTRYPOINT>> content-type         Content Type
 
 Options:
   --help          Show help                                            [boolean]
