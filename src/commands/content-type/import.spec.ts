@@ -421,7 +421,7 @@ describe('content-type import command', (): void => {
       jest.spyOn(importModule, 'doUpdate');
 
       await expect(processContentTypes(filenames, contentTypesToProcess, client, hub)).rejects.toThrowError(
-        "Content Types must have unique uri values. Duplicate values found: ['type-uri-duplicate']"
+        "Content Types must have unique uri values. Duplicate values found: ['type-uri-duplicate' ('type-file-2', 'type-file-3')]"
       );
 
       expect(importModule.doCreate).toHaveBeenCalledTimes(0);
