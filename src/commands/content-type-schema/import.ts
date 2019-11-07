@@ -72,7 +72,6 @@ export const doUpdate = async (
 
     return { contentTypeSchema: updatedSchema, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
-    process.stdout.write('\n');
     throw new Error(`Error updating content type schema ${schema.schemaId || '<unknown>'}: ${err.message}`);
   }
 };
