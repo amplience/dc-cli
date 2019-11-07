@@ -8,13 +8,14 @@ const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
   return new Promise(
     async (resolve): Promise<void> => {
       let failInvoked = false;
+      const isYError = (err?: Error | string): boolean => err instanceof Error && err.name === 'YError';
       const failFn = (msg: string, err?: Error | string): void => {
         // fail should only be invoked once
         if (failInvoked) {
           return;
         }
         failInvoked = true;
-        if (msg && !err) {
+        if ((msg && !err) || isYError(err)) {
           yargInstance.showHelp('error');
         }
         errorHandler(err || msg);

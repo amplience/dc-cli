@@ -4,7 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ConfigurationParameters } from '../configure';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 
-export const command = 'unassign-content-type [id]';
+export const command = 'unassign-content-type <id>';
 
 export const desc = 'Unassign Content Type';
 
@@ -19,7 +19,8 @@ export const builder = (yargs: Argv): void => {
       contentTypeId: {
         type: 'string',
         demandOption: true,
-        description: 'content-type ID to unassign'
+        description: 'content-type ID to unassign',
+        requiresArg: true
       },
       ...RenderingOptions
     });

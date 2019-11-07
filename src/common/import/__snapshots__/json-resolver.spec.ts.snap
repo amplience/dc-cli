@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`content type schema helper Loading JSON from a escaped string should fail to load invalid JSON and fall out at the end (null passed in) 1`] = `"Cannot find JSON file \\"null\\" using relative dir \\"/tmp\\" (resolved path \\"null\\")"`;
+
+exports[`content type schema helper Loading JSON from a escaped string should fail to load invalid JSON and fall out at the end 1`] = `"Cannot find JSON file \\"this is just a string\\" using relative dir \\"/tmp\\" (resolved path \\"this is just a string\\")"`;

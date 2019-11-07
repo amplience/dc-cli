@@ -16,7 +16,7 @@ describe('content-repository assign-content-type command', () => {
   });
 
   it('should have a command defined', function() {
-    expect(command).toEqual('unassign-content-type [id]');
+    expect(command).toEqual('unassign-content-type <id>');
   });
 
   describe('builder tests', function() {
@@ -29,7 +29,8 @@ describe('content-repository assign-content-type command', () => {
         contentTypeId: {
           type: 'string',
           demandOption: true,
-          description: 'content-type ID to unassign'
+          description: 'content-type ID to unassign',
+          requiresArg: true
         },
         ...RenderingOptions
       };

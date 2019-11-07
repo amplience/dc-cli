@@ -1,3 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`content type schema helper should throw an error when file not found 1`] = `"Cannot find JSON file \\"./content-type-schema/schema.json\\" using relative dir \\"/foo\\" (resolved path \\"undefined\\")"`;

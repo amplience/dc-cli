@@ -3,7 +3,7 @@ import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
 import { ValidationLevel } from 'dc-management-sdk-js';
-import { getJsonByPath } from '../../common/import/json-by-path';
+import { jsonResolver } from '../../common/import/json-resolver';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { updateContentTypeSchema } from './update.service';
 
@@ -21,13 +21,15 @@ export const builder = (yargs: Argv): void => {
       schema: {
         type: 'string',
         demandOption: true,
-        description: 'Content Type Schema Source Location'
+        description: 'Content Type Schema Source Location',
+        requiresArg: true
       },
       validationLevel: {
         type: 'string',
         choices: Object.values(ValidationLevel),
         demandOption: true,
-        description: 'Content Type Schema Validation Level'
+        description: 'Content Type Schema Validation Level',
+        requiresArg: true
       },
       ...RenderingOptions
     });
@@ -44,7 +46,7 @@ export const handler = async (
 ): Promise<void> => {
   const { id, schema, validationLevel } = argv;
   const client = dynamicContentClientFactory(argv);
-  const schemaBody = await getJsonByPath(schema);
+  const schemaBody = await jsonResolver(schema);
   const contentTypeSchema = await client.contentTypeSchemas.get(id);
   const contentTypeSchemaResult = await updateContentTypeSchema(contentTypeSchema, schemaBody, validationLevel);
 
