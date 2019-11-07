@@ -8,14 +8,19 @@ export enum UpdateStatus {
   UPDATED = 'UPDATED'
 }
 
-export const loadJsonFromDirectory = <T>(dir: string): [string, T][] => {
+export const loadJsonFromDirectory = <T>(dir: string, withFilename = false): [string, T][] | T[] => {
   const files = fs
     .readdirSync(dir)
     .map(file => path.join(dir, file))
     .filter(file => fs.lstatSync(file).isFile() && path.extname(file) === '.json');
   return files.map(file => {
     try {
-      return [file, JSON.parse(fs.readFileSync(file, 'utf-8'))];
+      const parsedFile = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      if (withFilename) {
+        return [file, parsedFile];
+      } else {
+        return parsedFile;
+      }
     } catch (e) {
       throw new Error(`Non-JSON file found: ${file}, aborting import`);
     }
