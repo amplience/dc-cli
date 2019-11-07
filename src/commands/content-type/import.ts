@@ -38,6 +38,11 @@ export const storedContentTypeMapper = (
   return new ContentTypeWithRepositoryAssignments(mutatedContentType);
 };
 
+const findUniqueDuplicateUris = (contentTypes: ContentType[]): string[] => {
+  const contentTypeUriList = contentTypes.map(c => c.contentTypeUri || '');
+  return [...new Set(contentTypeUriList.filter((uri, index) => contentTypeUriList.indexOf(uri) != index))];
+};
+
 export const doCreate = async (hub: Hub, contentType: ContentType): Promise<ContentType> => {
   try {
     return await hub.related.contentTypes.register(new ContentType(contentType));
@@ -137,10 +142,19 @@ export const synchronizeContentTypeRepositories = async (
 };
 
 export const processContentTypes = async (
+  filenames: string[],
   contentTypes: ContentTypeWithRepositoryAssignments[],
   client: DynamicContent,
   hub: Hub
 ): Promise<void> => {
+  const duplicateUris = findUniqueDuplicateUris(contentTypes);
+  if (duplicateUris.length > 0) {
+    throw new Error(
+      `Content Types must have unique uri values. Duplicate values found: [${duplicateUris
+        .map(u => `'${u}'`)
+        .join(', ')}]`
+    );
+  }
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
   const namedRepositories: MappedContentRepositories = new Map<string, ContentRepository>(
@@ -185,9 +199,11 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
+  const filenames: string[] = [];
   const contentTypesToProcess = importedContentTypes.map(importedFileAndContentType => {
-    const importedContentType = importedFileAndContentType[1];
+    const [filename, importedContentType] = importedFileAndContentType;
+    filenames.push(filename);
     return storedContentTypeMapper(importedContentType, storedContentTypes);
   });
-  await processContentTypes(contentTypesToProcess, client, hub);
+  await processContentTypes(filenames, contentTypesToProcess, client, hub);
 };
