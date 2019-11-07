@@ -6,9 +6,10 @@ interface ImportObject {
 
 describe('loadJsonFromDirectory tests', () => {
   it('should return a list of content types to import', (): void => {
-    const importObjects: [string, ImportObject][] = loadJsonFromDirectory<ImportObject>(
-      __dirname + '/__fixtures__/load-json-from-directory/success/'
-    );
+    const importObjects = loadJsonFromDirectory<ImportObject>(
+      __dirname + '/__fixtures__/load-json-from-directory/success/',
+      true
+    ) as [string, ImportObject][];
     const filename = __dirname + '/__fixtures__/load-json-from-directory/success/valid.json';
     expect(importObjects).toEqual([[filename, JSON.parse(fs.readFileSync(filename, 'utf-8'))]]);
   });

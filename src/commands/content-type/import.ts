@@ -211,7 +211,10 @@ export const processContentTypes = async (
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
-  const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(dir);
+  const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(dir, true) as [
+    string,
+    ContentTypeWithRepositoryAssignments
+  ][];
   if (importedContentTypes.length === 0) {
     throw new Error(`No content types found in ${dir}`);
   }

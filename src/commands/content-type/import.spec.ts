@@ -778,7 +778,7 @@ describe('content-type import command', (): void => {
 
       await handler(argv);
 
-      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', true);
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(processContentTypes).toHaveBeenCalledWith(
         [fileNamesAndcontentTypesToImport[0][0], fileNamesAndcontentTypesToImport[1][0]],
