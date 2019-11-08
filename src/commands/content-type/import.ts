@@ -87,10 +87,17 @@ export const doUpdate = async (
 
 export type MappedContentRepositories = Map<string, ContentRepository>;
 
+const validateRepositories = (repositories: unknown): boolean =>
+  Array.isArray(repositories) && repositories.every(repo => typeof repo === 'string');
+
 export const synchronizeContentTypeRepositories = async (
   contentType: ContentTypeWithRepositoryAssignments,
   namedRepositories: MappedContentRepositories
 ): Promise<boolean> => {
+  if (!validateRepositories(contentType.repositories)) {
+    throw new Error('Invalid format supplied for repositories. Please provide an array of repository names');
+  }
+
   const assignedRepositories: MappedContentRepositories = new Map<string, ContentRepository>();
   namedRepositories.forEach(contentRepository => {
     const contentRepositoryContentTypes = contentRepository.contentTypes || [];
