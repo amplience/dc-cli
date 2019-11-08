@@ -77,8 +77,11 @@ describe('configure command', function() {
     expect(fs.writeFileSync).not.toHaveBeenCalled();
   });
 
-  it('should report an error if its not possible to create write the config file', () => {
-    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+  it('should report an error if its not possible to create/write the config file', () => {
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => {
       throw new Error('Mock Error');
