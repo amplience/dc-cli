@@ -245,13 +245,13 @@ describe('content-type-schema import command', (): void => {
       expect(result[0].body).toBe(undefined);
     });
     it('should resolve body as string', async () => {
-      const strigifiedBody = JSON.stringify('{"prop": 123}');
+      const stringifiedBody = JSON.stringify('{"prop": 123}');
       const mockJsonResolver = jsonResolver as jest.Mock;
-      mockJsonResolver.mockResolvedValueOnce(strigifiedBody);
-      const result = await resolveSchemaBody([new ContentTypeSchema({ body: strigifiedBody })], __dirname);
+      mockJsonResolver.mockResolvedValueOnce(stringifiedBody);
+      const result = await resolveSchemaBody([new ContentTypeSchema({ body: stringifiedBody })], __dirname);
 
       expect(result).toHaveLength(1);
-      expect(result[0].body).toEqual(strigifiedBody);
+      expect(result[0].body).toEqual(stringifiedBody);
     });
   });
 
