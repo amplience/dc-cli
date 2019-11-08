@@ -302,7 +302,7 @@ describe('content-type-schema import command', (): void => {
 
       await handler(argv);
 
-      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir');
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', ContentTypeSchema);
       expect(paginator).toHaveBeenCalledWith(expect.any(Function));
       expect(processSchemasSpy).toHaveBeenCalledWith(
         [expect.objectContaining(schemaToCreate), expect.objectContaining({ ...schemaToUpdate, id: 'stored-id' })],

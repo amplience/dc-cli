@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { HalResource, HalResourceConstructor } from 'dc-management-sdk-js';
 
 export type ImportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
@@ -8,21 +9,21 @@ export enum UpdateStatus {
   UPDATED = 'UPDATED'
 }
 
-export const loadJsonFromDirectory = <T>(dir: string, withFilename = false): [string, T][] | T[] => {
+export const loadJsonFromDirectory = <T extends HalResource>(
+  dir: string,
+  resourceType: HalResourceConstructor<T>
+): { [p: string]: T } => {
   const files = fs
     .readdirSync(dir)
-    .map(file => path.join(dir, file))
+    .map(file => path.resolve(dir, file))
     .filter(file => fs.lstatSync(file).isFile() && path.extname(file) === '.json');
-  return files.map(file => {
+  const loadedFiles: { [filename: string]: T } = {};
+  files.forEach(filename => {
     try {
-      const parsedFile = JSON.parse(fs.readFileSync(file, 'utf-8'));
-      if (withFilename) {
-        return [file, parsedFile];
-      } else {
-        return parsedFile;
-      }
+      loadedFiles[filename] = new resourceType(JSON.parse(fs.readFileSync(filename, 'utf-8')));
     } catch (e) {
-      throw new Error(`Non-JSON file found: ${file}, aborting import`);
+      throw new Error(`Non-JSON file found: ${filename}, aborting import`);
     }
   });
+  return loadedFiles;
 };

@@ -113,7 +113,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const { dir } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const schemas = loadJsonFromDirectory<ContentTypeSchema>(dir) as ContentTypeSchema[];
+  const schemas = Object.values(loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema));
   await resolveSchemaBody(schemas, dir);
   const storedSchemas = await paginator(hub.related.contentTypeSchema.list);
   const schemasToProcess = schemas.map(schemas => storedSchemaMapper(schemas, storedSchemas));
