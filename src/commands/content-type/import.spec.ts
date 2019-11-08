@@ -402,6 +402,36 @@ describe('content-type import command', (): void => {
       });
     });
 
+    it('should throw an error when the repositories field is not an array', async () => {
+      await expect(
+        synchronizeContentTypeRepositories(
+          new ContentTypeWithRepositoryAssignments({
+            id: 'id',
+            contentTypeUri: 'http://example.com/content-type.json',
+            repositories: ''
+          }),
+          new Map([])
+        )
+      ).rejects.toThrowError(
+        new Error('Invalid format supplied for repositories. Please provide an array of repository names')
+      );
+    });
+
+    it('should throw an error when the repositories field is an array, but one of the values is not a string', async () => {
+      await expect(
+        synchronizeContentTypeRepositories(
+          new ContentTypeWithRepositoryAssignments({
+            id: 'id',
+            contentTypeUri: 'http://example.com/content-type.json',
+            repositories: ['repo1', 'repo2', {}, 'repo3']
+          }),
+          new Map([])
+        )
+      ).rejects.toThrowError(
+        new Error('Invalid format supplied for repositories. Please provide an array of repository names')
+      );
+    });
+
     it('should do nothing if no repositories are specified or assigned', async () => {
       await synchronizeContentTypeRepositories(
         new ContentTypeWithRepositoryAssignments({
