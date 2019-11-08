@@ -1,22 +1,22 @@
 import fs from 'fs';
 import { loadJsonFromDirectory } from './import.service';
-interface ImportObject {
-  id: string;
-}
+import { ContentType } from 'dc-management-sdk-js';
 
 describe('loadJsonFromDirectory tests', () => {
   it('should return a list of content types to import', (): void => {
-    const importObjects = loadJsonFromDirectory<ImportObject>(
+    const result = loadJsonFromDirectory<ContentType>(
       __dirname + '/__fixtures__/load-json-from-directory/success/',
-      true
-    ) as [string, ImportObject][];
+      ContentType
+    );
     const filename = __dirname + '/__fixtures__/load-json-from-directory/success/valid.json';
-    expect(importObjects).toEqual([[filename, JSON.parse(fs.readFileSync(filename, 'utf-8'))]]);
+    expect(result[filename]).toBeDefined();
+    expect(result[filename]).toBeInstanceOf(ContentType);
+    expect(result[filename].toJSON()).toEqual(JSON.parse(fs.readFileSync(filename, 'utf-8').toString()));
   });
 
   it('should throw an error if any import file is not json', (): void => {
     expect(() =>
-      loadJsonFromDirectory<ImportObject>(__dirname + '/__fixtures__/load-json-from-directory/bad-json/')
+      loadJsonFromDirectory<ContentType>(__dirname + '/__fixtures__/load-json-from-directory/bad-json/', ContentType)
     ).toThrowError(
       /^Non-JSON file found: .*__fixtures__\/load-json-from-directory\/bad-json\/bad-json\.json, aborting import$/
     );
