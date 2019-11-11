@@ -27,7 +27,7 @@ export const handler = async (argv: Arguments<ConfigurationParameters & Renderin
   const contentTypeSchemaList = await paginator(hub.related.contentTypeSchema.list);
 
   if (contentTypeSchemaList.length > 0) {
-    new DataPresenter(contentTypeSchemaList.map(value => value.toJson())).render({
+    new DataPresenter(contentTypeSchemaList.map(value => value.toJSON())).render({
       json: argv.json,
       itemMapFn: itemMapFn
     });

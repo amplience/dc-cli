@@ -25,5 +25,5 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
 
   const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(argv.id);
-  new DataPresenter(contentTypeSchema.toJson()).render({ json: argv.json, tableUserConfig: singleItemTableOptions });
+  new DataPresenter(contentTypeSchema.toJSON()).render({ json: argv.json, tableUserConfig: singleItemTableOptions });
 };
