@@ -38,7 +38,6 @@ describe('content-repository assign-content-type command', () => {
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
-        demandOption: true,
         describe: 'Content Repository ID',
         type: 'string'
       });

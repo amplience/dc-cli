@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`import-file-list getImportFileList should throw an error when manifest does not exist 1`] = `"Unable to read manifest file list: ./manifest.json"`;
+
+exports[`import-file-list getImportFileList should throw an error when manifest file contains invalid json 1`] = `"Unable to read manifest file list: ./manifest.json"`;

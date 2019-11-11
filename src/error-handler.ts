@@ -30,7 +30,7 @@ const buildMessage = (err: SupportedErrors): string => {
 };
 
 const errorHandler = (err: SupportedErrors): void => {
-  console.error(buildMessage(err));
+  console.error(`\n${buildMessage(err)}`);
 };
 
 export default errorHandler;

@@ -23,7 +23,10 @@ describe('configure command', function() {
   };
 
   it('should write a config file and create the .amplience dir', () => {
-    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -37,8 +40,11 @@ describe('configure command', function() {
     );
   });
 
-  it('should write the config fle and re-used the .amplience dir', () => {
-    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+  it('should write the config file and re-used the .amplience dir', () => {
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -53,7 +59,10 @@ describe('configure command', function() {
   });
 
   it('should report an error if its not possible to create the .amplience dir', () => {
-    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockImplementation(() => {
       throw new Error('Mock error');
     });
@@ -68,8 +77,11 @@ describe('configure command', function() {
     expect(fs.writeFileSync).not.toHaveBeenCalled();
   });
 
-  it('should report an error if its not possible to create write the config file', () => {
-    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+  it('should report an error if its not possible to create/write the config file', () => {
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => {
       throw new Error('Mock Error');
@@ -85,6 +97,16 @@ describe('configure command', function() {
       expect.stringMatching(new RegExp('.amplience/dc-cli-config.json$')),
       JSON.stringify(configFixture)
     );
+  });
+
+  it('should not write the config file if no changes detected', () => {
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValueOnce(JSON.stringify(configFixture));
+    jest.spyOn(fs, 'writeFileSync');
+
+    handler({ ...yargArgs, ...configFixture });
+
+    expect(fs.writeFileSync).not.toHaveBeenCalled();
   });
 
   it('should read config file if its present', () => {

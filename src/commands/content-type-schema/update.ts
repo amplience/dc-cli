@@ -2,9 +2,10 @@ import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/
 import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
-import { getSchemaBody } from './helper/content-type-schema.helper';
+import { ValidationLevel } from 'dc-management-sdk-js';
+import { jsonResolver } from '../../common/import/json-resolver';
 import { singleItemTableOptions } from '../../common/table/table.consts';
+import { updateContentTypeSchema } from './update.service';
 
 export const command = 'update <id>';
 
@@ -37,28 +38,19 @@ export const builder = (yargs: Argv): void => {
 export interface BuilderOptions {
   id: string;
   schema: string;
-  validationLevel: string;
+  validationLevel: ValidationLevel;
 }
 
 export const handler = async (
   argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
 ): Promise<void> => {
-  const schemaBody = await getSchemaBody(argv.schema);
-  const schemaJson = JSON.parse(schemaBody);
-  if (schemaJson.id == undefined) {
-    throw new Error('Missing id from schema');
-  }
-
+  const { id, schema, validationLevel } = argv;
   const client = dynamicContentClientFactory(argv);
+  const schemaBody = await jsonResolver(schema);
+  const contentTypeSchema = await client.contentTypeSchemas.get(id);
+  const contentTypeSchemaResult = await updateContentTypeSchema(contentTypeSchema, schemaBody, validationLevel);
 
-  const updatedSchema = new ContentTypeSchema();
-  updatedSchema.body = schemaBody;
-  updatedSchema.validationLevel = argv.validationLevel as ValidationLevel;
-
-  const contentTypeSchema = await client.contentTypeSchemas.get(argv.id);
-  const contentTypeSchemaResult = await contentTypeSchema.related.update(updatedSchema);
-
-  new DataPresenter(contentTypeSchemaResult.toJson()).render({
+  new DataPresenter(contentTypeSchemaResult.toJSON()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });

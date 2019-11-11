@@ -1,10 +1,7 @@
-import { getBorderCharacters, table, TableUserConfig } from 'table';
+import { table, TableUserConfig } from 'table';
 import chalk from 'chalk';
 import { CommandOptions } from '../interfaces/command-options.interface';
-
-const DEFAULT_TABLE_CONFIG = {
-  border: getBorderCharacters('ramac')
-};
+import { baseTableConfig } from '../common/table/table.consts';
 
 export interface RenderingArguments {
   json?: boolean;
@@ -35,13 +32,13 @@ export default class DataPresenter {
     }
     const rows = json.map(row => Object.values(row));
     const headerRow = Object.keys(json[0]).map(key => chalk.bold(key));
-    return table([headerRow, ...rows], { ...DEFAULT_TABLE_CONFIG, ...(tableUserConfig || {}) });
+    return table([headerRow, ...rows], { ...baseTableConfig, ...(tableUserConfig || {}) });
   }
 
   private generateVerticalTable(json: object, tableUserConfig: TableUserConfig | undefined): string {
     const rows = Object.entries(json).map(value => [value[0], JSON.stringify(value[1])]);
     return table([[chalk.bold('Property'), chalk.bold('Value')], ...rows], {
-      ...DEFAULT_TABLE_CONFIG,
+      ...baseTableConfig,
       ...(tableUserConfig || {})
     });
   }

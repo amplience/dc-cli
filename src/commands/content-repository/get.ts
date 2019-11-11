@@ -13,8 +13,7 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       describe: 'Content Repository ID',
-      type: 'string',
-      demandOption: true
+      type: 'string'
     })
     .options(RenderingOptions);
 };
