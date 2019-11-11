@@ -14,8 +14,10 @@
     "pretest": "npm run lint",
     "test": "FORCE_COLOR=1 jest --silent",
     "fix": "prettier --write '**/*.ts'",
+    "reset": "git clean -dfx && git reset --hard && npm i",
+    "prerelease": "npm run reset",
     "release": "standard-version",
-    "prerelease": "standard-version --prerelease",
+    "prereleaseas": "npm run reset",
     "releaseas": "standard-version --release-as ",
     "clean": "rimraf dist packages",
     "build": "npm run clean && tsc",
@@ -24,9 +26,15 @@
     "build:compress": "npm run build:package && scripts/compress",
     "dev": "ts-node ./src/index.ts"
   },
+  "standard-version": {
+    "scripts": {
+      "prerelease": "npm run build:package",
+      "posttag": "scripts/compress"
+    }
+  },
   "repository": {
     "type": "git",
-    "url": "git@github.com-simonmudd:amplience/dc-cli.git"
+    "url": "git@github.com:amplience/dc-cli.git"
   },
   "keywords": [
     "Dynamic",
