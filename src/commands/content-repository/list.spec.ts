@@ -122,7 +122,7 @@ describe('content-type-schema list command', (): void => {
         status: 'ACTIVE',
         type: 'CONTENT'
       });
-      const result = itemMapFn(contentRepository.toJson());
+      const result = itemMapFn(contentRepository.toJSON());
       expect(result).toEqual({
         contentTypes: 'id2, http://example.com/scheam2.json',
         features: 'slots',

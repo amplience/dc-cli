@@ -28,7 +28,7 @@ export const handler = async (
   const hub = await client.hubs.get(argv.hubId);
   const contentTypeList = await paginator(hub.related.contentTypes.list, extractSortable(argv));
 
-  new DataPresenter(contentTypeList.map(value => value.toJson())).render({
+  new DataPresenter(contentTypeList.map(value => value.toJSON())).render({
     json: argv.json,
     itemMapFn: itemMapFn
   });

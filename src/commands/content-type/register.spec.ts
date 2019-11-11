@@ -165,7 +165,7 @@ describe('content-type register command', () => {
       await handler(argv);
 
       expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(registerResponse.toJson()));
+      expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(registerResponse.toJSON()));
       expect(mockDataPresenter).toHaveBeenCalledWith(plainContentType);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({
         json: argv.json,

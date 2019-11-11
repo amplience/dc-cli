@@ -62,7 +62,7 @@ export const handler = async (
   });
   const registeredContentType = await hub.related.contentTypes.register(contentType);
 
-  new DataPresenter(registeredContentType.toJson()).render({
+  new DataPresenter(registeredContentType.toJSON()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });
