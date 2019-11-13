@@ -65,7 +65,7 @@ export const handler = async (
   });
   const updatedContentType = await contentType.related.update(mutatedContentType);
 
-  new DataPresenter(updatedContentType.toJson()).render({
+  new DataPresenter(updatedContentType.toJSON()).render({
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });

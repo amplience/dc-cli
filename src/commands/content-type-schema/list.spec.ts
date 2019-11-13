@@ -108,7 +108,7 @@ describe('content-type-schema list command', (): void => {
         validationLevel: 'validationLevel',
         body: '{}'
       });
-      const result = itemMapFn(contentTypeSchema.toJson());
+      const result = itemMapFn(contentTypeSchema.toJSON());
       expect(result).toEqual({
         id: 'id',
         schemaId: 'schemaId',

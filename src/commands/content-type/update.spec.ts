@@ -95,8 +95,8 @@ describe('content-type register update', () => {
       await handler(argv);
 
       expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
+      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJSON()));
+      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJSON());
       expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
     });
 
@@ -126,8 +126,8 @@ describe('content-type register update', () => {
       await handler(argv);
 
       expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
+      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJSON()));
+      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJSON());
       expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
     });
 
@@ -152,8 +152,8 @@ describe('content-type register update', () => {
       await handler(argv);
 
       expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
+      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJSON()));
+      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJSON());
       expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
     });
 
@@ -175,8 +175,8 @@ describe('content-type register update', () => {
       await handler(argv);
 
       expect(mockGetContentType).toHaveBeenCalledWith('content-type-id');
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJson()));
-      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJson());
+      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining(mutatedContentType.toJSON()));
+      expect(mockDataPresenter).toHaveBeenCalledWith(mutatedContentType.toJSON());
       expect(mockDataPresenter.prototype.render).toHaveBeenCalled();
     });
   });
