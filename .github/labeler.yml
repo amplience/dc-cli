@@ -1,0 +1,13 @@
+repo:
+  - ./*
+test:
+  - src/**/*.spec.ts
+  - src/**/*.ts.snap
+documentation:
+  - ./**/*.md
+content-repository:
+  - ./src/commands/content-repository/*.ts
+content-type:
+  - ./src/commands/content-type/*.ts
+content-type-schema:
+  - ./src/commands/content-type-schema/*.ts
