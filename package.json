@@ -1,5 +1,5 @@
 {
-  "name": "dc-cli",
+  "name": "@amplience/dc-cli",
   "version": "0.1.0",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
