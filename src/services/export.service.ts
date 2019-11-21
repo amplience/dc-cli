@@ -2,7 +2,7 @@ import fs from 'fs';
 import { HalResource } from 'dc-management-sdk-js';
 import { resolve } from 'path';
 
-export type ExportResult = 'EXPORTED' | 'RE-EXPORTED' | 'ALREADY-EXPORTED';
+export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
 export const uniqueFilename = (dir: string, extension: string): string => {
   return resolve(

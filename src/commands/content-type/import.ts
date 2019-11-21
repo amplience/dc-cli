@@ -42,7 +42,7 @@ type ContentTypeUri = string;
 type ContentTypeFile = string;
 
 export const validateNoDuplicateContentTypeUris = (importedContentTypes: {
-  [filename: string]: ContentTypeWithRepositoryAssignments;
+  [filename: string]: ContentType;
 }): void | never => {
   const uriToFilenameMap = new Map<ContentTypeUri, ContentTypeFile[]>(); // map: uri x filenames
   for (const [filename, contentType] of Object.entries(importedContentTypes)) {

@@ -1,14 +1,18 @@
-import { builder, command, processContentTypes, handler } from './export';
+import { builder, command, processContentTypes, handler, getExportRecordForContentType } from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, Hub } from 'dc-management-sdk-js';
+import { ContentType } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import * as exportModule from './export';
 import * as exportServiceModule from '../../services/export.service';
 import { createStream } from 'table';
 import chalk from 'chalk';
+import { validateNoDuplicateContentTypeUris } from './import';
+import { loadJsonFromDirectory } from '../../services/import.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
+jest.mock('./import');
+jest.mock('../../services/import.service');
 jest.mock('table');
 
 describe('content-type export command', (): void => {
@@ -42,6 +46,100 @@ describe('content-type export command', (): void => {
     });
   });
 
+  describe('getExportRecordForContentType', () => {
+    it('should create export for any newly exported content-type', async () => {
+      const exportedContentTypes = {
+        'export-dir/export-filename-1.json': new ContentType({
+          contentTypeUri: 'content-type-uri-1',
+          settings: {
+            label: 'content type 1'
+          }
+        }),
+        'export-dir/export-filename-2.json': new ContentType({
+          contentTypeUri: 'content-type-uri-2',
+          settings: {
+            label: 'content type 2'
+          }
+        })
+      };
+      const newContentTypeToExport = new ContentType({
+        contentTypeUri: 'content-type-uri-3',
+        settings: {
+          label: 'content type 3'
+        }
+      });
+
+      jest.spyOn(exportServiceModule, 'uniqueFilename').mockReturnValueOnce('export-dir/export-filename-3.json');
+
+      const result = getExportRecordForContentType(newContentTypeToExport, 'export-dir', exportedContentTypes);
+
+      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith('export-dir', 'json');
+      expect(result).toEqual({ filename: 'export-dir/export-filename-3.json', status: 'CREATED' });
+    });
+
+    it('should update export for any content-type with different content', async () => {
+      const exportedContentTypes = {
+        'export-dir/export-filename-1.json': new ContentType({
+          contentTypeUri: 'content-type-uri-1',
+          settings: {
+            label: 'content type 1'
+          }
+        }),
+        'export-dir/export-filename-2.json': new ContentType({
+          contentTypeUri: 'content-type-uri-2',
+          settings: {
+            label: 'content type 2'
+          }
+        })
+      };
+      const updatedContentTypeToExport = new ContentType({
+        id: 'content-type-id-2',
+        contentTypeUri: 'content-type-uri-2',
+        settings: {
+          label: 'content type 2 - mutated label'
+        }
+      });
+
+      jest.spyOn(exportServiceModule, 'uniqueFilename');
+
+      const result = getExportRecordForContentType(updatedContentTypeToExport, 'export-dir', exportedContentTypes);
+
+      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledTimes(0);
+      expect(result).toEqual({ filename: 'export-dir/export-filename-2.json', status: 'UPDATED' });
+    });
+
+    it('should not update export for any content-type with same content', async () => {
+      const exportedContentTypes = {
+        'export-dir/export-filename-1.json': new ContentType({
+          contentTypeUri: 'content-type-uri-1',
+          settings: {
+            label: 'content type 1'
+          }
+        }),
+        'export-dir/export-filename-2.json': new ContentType({
+          contentTypeUri: 'content-type-uri-2',
+          settings: {
+            label: 'content type 2'
+          }
+        })
+      };
+      const updatedContentTypeToExport = new ContentType({
+        id: 'content-type-id-2',
+        contentTypeUri: 'content-type-uri-2',
+        settings: {
+          label: 'content type 2'
+        }
+      });
+
+      jest.spyOn(exportServiceModule, 'uniqueFilename');
+
+      const result = getExportRecordForContentType(updatedContentTypeToExport, 'export-dir', exportedContentTypes);
+
+      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledTimes(0);
+      expect(result).toEqual({ filename: 'export-dir/export-filename-2.json', status: 'UP-TO-DATE' });
+    });
+  });
+
   describe('processContentTypes', () => {
     const mockStreamWrite = jest.fn();
 
@@ -51,7 +149,7 @@ describe('content-type export command', (): void => {
       });
     });
 
-    it('should output export files for all specified content types', async () => {
+    it('should output export files for all specified content types if nothing previously exported', async () => {
       const contentTypesToProcess = [
         new ContentType({
           id: 'content-type-id-1',
@@ -84,19 +182,36 @@ describe('content-type export command', (): void => {
           settings: { label: 'content type 3' }
         }
       ];
-      jest
-        .spyOn(exportServiceModule, 'uniqueFilename')
-        .mockReturnValueOnce('export-dir/export-filename-1.json')
-        .mockReturnValueOnce('export-dir/export-filename-2.json')
-        .mockReturnValueOnce('export-dir/export-filename-3.json');
+
       jest.spyOn(exportServiceModule, 'writeJsonToFile').mockImplementation();
 
-      await processContentTypes('export-dir', contentTypesToProcess);
+      jest
+        .spyOn(exportModule, 'getExportRecordForContentType')
+        .mockReturnValueOnce({ filename: 'export-dir/export-filename-1.json', status: 'CREATED' })
+        .mockReturnValueOnce({ filename: 'export-dir/export-filename-2.json', status: 'CREATED' })
+        .mockReturnValueOnce({ filename: 'export-dir/export-filename-3.json', status: 'CREATED' });
 
-      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledTimes(3);
-      expect(exportServiceModule.uniqueFilename).toHaveBeenNthCalledWith(1, 'export-dir', 'json');
-      expect(exportServiceModule.uniqueFilename).toHaveBeenNthCalledWith(2, 'export-dir', 'json');
-      expect(exportServiceModule.uniqueFilename).toHaveBeenNthCalledWith(3, 'export-dir', 'json');
+      await processContentTypes('export-dir', {}, contentTypesToProcess);
+
+      expect(exportModule.getExportRecordForContentType).toHaveBeenCalledTimes(3);
+      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
+        1,
+        contentTypesToProcess[0],
+        'export-dir',
+        {}
+      );
+      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
+        2,
+        contentTypesToProcess[1],
+        'export-dir',
+        {}
+      );
+      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
+        3,
+        contentTypesToProcess[2],
+        'export-dir',
+        {}
+      );
 
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(3);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenNthCalledWith(
@@ -124,17 +239,17 @@ describe('content-type export command', (): void => {
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
         'export-dir/export-filename-1.json',
         exportedContentTypes[0].contentTypeUri,
-        'EXPORTED'
+        'CREATED'
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
         'export-dir/export-filename-2.json',
         exportedContentTypes[1].contentTypeUri,
-        'EXPORTED'
+        'CREATED'
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(4, [
         'export-dir/export-filename-3.json',
         exportedContentTypes[2].contentTypeUri,
-        'EXPORTED'
+        'CREATED'
       ]);
     });
   });
@@ -184,6 +299,8 @@ describe('content-type export command', (): void => {
           settings: { label: 'content-type-label-2' }
         })
       ];
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
+      (validateNoDuplicateContentTypeUris as jest.Mock).mockImplementation();
 
       const listResponse = new MockPage(ContentType, contentTypesToExport);
       const mockList = jest.fn().mockResolvedValue(listResponse);
@@ -207,7 +324,9 @@ describe('content-type export command', (): void => {
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(mockList).toHaveBeenCalled();
-      expect(exportModule.processContentTypes).toHaveBeenCalledWith(argv.dir, contentTypesToExport);
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
+      expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
+      expect(exportModule.processContentTypes).toHaveBeenCalledWith(argv.dir, [], contentTypesToExport);
     });
   });
 });
