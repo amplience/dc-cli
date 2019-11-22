@@ -2,7 +2,6 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import { ContentType } from 'dc-management-sdk-js';
 import { createStream } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
@@ -12,6 +11,7 @@ import { ExportResult, uniqueFilename, writeJsonToFile } from '../../services/ex
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
+import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 
 export const command = 'export <dir>';
 
@@ -61,6 +61,25 @@ export const getExportRecordForContentType = (
   };
 };
 
+export const filterContentTypesByUri = (listToFilter: ContentType[], contentTypeUriList: string[]): ContentType[] => {
+  let unmatchedContentTypeUriList: string[] = [];
+  let filteredList: ContentType[] = [];
+  if (contentTypeUriList.length > 0) {
+    filteredList = listToFilter.filter(contentType =>
+      contentTypeUriList.some(uri => contentType.contentTypeUri === uri)
+    );
+    unmatchedContentTypeUriList = contentTypeUriList.filter(
+      uri => !listToFilter.some(contentType => contentType.contentTypeUri === uri)
+    );
+    if (unmatchedContentTypeUriList.length > 0) {
+      throw new Error(
+        `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList.map(u => `'${u}'`).join(', ')}].`
+      );
+    }
+  }
+  return filteredList;
+};
+
 export const processContentTypes = async (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
@@ -71,6 +90,7 @@ export const processContentTypes = async (
   for (const contentType of storedContentTypes) {
     const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
     if (exportRecord.status !== 'UP-TO-DATE') {
+      /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line
       const { id, ...exportedContentType } = contentType; // do not export id
       writeJsonToFile(exportRecord.filename, new ContentType(exportedContentType));
     }
@@ -79,13 +99,14 @@ export const processContentTypes = async (
   process.stdout.write('\n');
 };
 
-export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir } = argv;
+export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
+  const { dir, schemaId } = argv;
   const previouslyExportedContentTypes = loadJsonFromDirectory<ContentType>(dir, ContentType);
   validateNoDuplicateContentTypeUris(previouslyExportedContentTypes);
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-  await processContentTypes(dir, previouslyExportedContentTypes, storedContentTypes);
+  const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaId);
+  await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);
 };
