@@ -1,5 +1,12 @@
 import * as exportModule from './export';
-import { builder, command, getExportRecordForContentTypeSchema, handler, processContentTypeSchemas } from './export';
+import {
+  builder,
+  command,
+  filterContentTypeSchemasBySchemaId,
+  getExportRecordForContentTypeSchema,
+  handler,
+  processContentTypeSchemas
+} from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
@@ -187,6 +194,45 @@ describe('content-type-schema export command', (): void => {
     });
   });
 
+  describe('filterContentTypeSchemasBySchemaId', () => {
+    const listToFilter = [
+      new ContentTypeSchema({
+        schemaId: 'content-type-schema-id-1',
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      }),
+      new ContentTypeSchema({
+        schemaId: 'content-type-schema-id-2',
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      }),
+      new ContentTypeSchema({
+        schemaId: 'content-type-schema-id-3',
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      })
+    ];
+
+    it('should return the content types matching the given schemaIds', async () => {
+      const result = filterContentTypeSchemasBySchemaId(listToFilter, [
+        'content-type-schema-id-1',
+        'content-type-schema-id-3'
+      ]);
+      expect(result).toMatchSnapshot();
+    });
+
+    it('should return all the content type schemas if a filter list is not provided', async () => {
+      const result = filterContentTypeSchemasBySchemaId(listToFilter, []);
+      expect(result).toMatchSnapshot();
+    });
+
+    it('should throw an error for schemaIds which do not exist in the list', async () => {
+      expect(() =>
+        filterContentTypeSchemasBySchemaId(listToFilter, ['content-type-schema-id-4'])
+      ).toThrowErrorMatchingSnapshot();
+    });
+  });
+
   describe('handler tests', () => {
     const yargArgs = {
       $0: 'test',
@@ -217,7 +263,7 @@ describe('content-type-schema export command', (): void => {
     });
 
     it('should export all content type schemas for the current hub', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir' };
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: [] };
       const ContentTypeSchemasToExport: ContentTypeSchema[] = [
         new ContentTypeSchema({
           schemaId: 'content-type-schema-id-1',

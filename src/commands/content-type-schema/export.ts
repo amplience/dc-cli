@@ -2,7 +2,6 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import { createStream } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
@@ -10,6 +9,7 @@ import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
 import { ExportResult, uniqueFilename, writeJsonToFile } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
+import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 
 export const command = 'export <dir>';
 
@@ -61,6 +61,24 @@ export const getExportRecordForContentTypeSchema = (
   };
 };
 
+export const filterContentTypeSchemasBySchemaId = (
+  listToFilter: ContentTypeSchema[],
+  listToMatch: string[]
+): ContentTypeSchema[] => {
+  if (!listToMatch.length) {
+    return listToFilter;
+  }
+
+  const unmatchedIdList: string[] = listToMatch.filter(id => !listToFilter.some(schema => schema.schemaId === id));
+  if (unmatchedIdList.length > 0) {
+    throw new Error(
+      `The following schema ID(s) could not be found: [${unmatchedIdList.map(u => `'${u}'`).join(', ')}].`
+    );
+  }
+
+  return listToFilter.filter(schema => listToMatch.some(id => schema.schemaId === id));
+};
+
 export const processContentTypeSchemas = async (
   outputDir: string,
   previouslyExportedContentTypeSchemas: { [filename: string]: ContentTypeSchema },
@@ -83,11 +101,12 @@ export const processContentTypeSchemas = async (
   process.stdout.write('\n');
 };
 
-export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir } = argv;
+export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
+  const { dir, schemaId } = argv;
   const previouslyExportedContentTypeSchemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypeSchemas = await paginator(hub.related.contentTypeSchema.list);
-  await processContentTypeSchemas(dir, previouslyExportedContentTypeSchemas, storedContentTypeSchemas);
+  const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaId);
+  await processContentTypeSchemas(dir, previouslyExportedContentTypeSchemas, filteredContentTypeSchemas);
 };
