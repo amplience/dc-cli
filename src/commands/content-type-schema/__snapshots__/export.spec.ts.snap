@@ -1,0 +1,203 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`content-type-schema export command processContentTypeSchemas should output export files for all specified content types 1`] = `
+Array [
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {},
+  ],
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {},
+  ],
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-3",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {},
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should output export files for all specified content types 2`] = `
+Array [
+  Array [
+    "export-dir/export-filename-1.json",
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+  Array [
+    "export-dir/export-filename-2.json",
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+  Array [
+    "export-dir/export-filename-3.json",
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-3",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should output export files for all specified content types 3`] = `
+Array [
+  Array [
+    Array [
+      "[1mfile[22m",
+      "[1mschemaId[22m",
+      "[1mresult[22m",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-1.json",
+      "content-type-schema-id-1",
+      "CREATED",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-2.json",
+      "content-type-schema-id-2",
+      "CREATED",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-3.json",
+      "content-type-schema-id-3",
+      "CREATED",
+    ],
+  ],
+]
+`;
