@@ -15,11 +15,6 @@ import { ExportBuilderOptions } from '../../interfaces/export-builder-options.in
 import readline from 'readline';
 import DataPresenter from '../../view/data-presenter';
 
-export const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
 export const command = 'export <dir>';
 
 export const desc = 'Export Content Types';
@@ -89,30 +84,41 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
   return filteredList;
 };
 
-const getExports = (
+type ExportsMap = {
+  uri: string;
+  filename: string;
+};
+
+export const getExports = (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
   contentTypesBeingExported: ContentType[]
-): [ExportRecord[], Map<string, string>] => {
+): [ExportRecord[], ExportsMap[]] => {
   const allExports: ExportRecord[] = [];
-  const updatedExportsMap = new Map<string, string>(); // uri x filename
+  const updatedExportsMap: ExportsMap[] = []; // uri x filename
   for (const contentType of contentTypesBeingExported) {
     const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
     if (contentType.contentTypeUri) {
       allExports.push(exportRecord);
       if (exportRecord.status === 'UPDATED') {
-        updatedExportsMap.set(contentType.contentTypeUri, exportRecord.filename);
+        updatedExportsMap.push({ uri: contentType.contentTypeUri, filename: exportRecord.filename });
       }
     }
   }
   return [allExports, updatedExportsMap];
 };
 
-const promptToOverwriteExports = async (updatedExportsMap: Map<string, string>): Promise<boolean> => {
-  process.stdout.write('The following files will be overwritten:');
-  // display updatedExportsMap as a table of uri x filename
-  new DataPresenter(updatedExportsMap).render();
-  return new Promise((resolve, reject) => {
+export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
+  return new Promise((resolve): void => {
+    process.stdout.write('The following files will be overwritten:');
+    // display updatedExportsMap as a table of uri x filename
+    new DataPresenter(updatedExportsMap).render();
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
     rl.question('Do you want to continue (y/n)?: ', answer => {
       rl.close();
       return resolve(answer === 'y');
@@ -125,18 +131,17 @@ export const processContentTypes = async (
   previouslyExportedContentTypes: { [filename: string]: ContentType },
   contentTypesBeingExported: ContentType[]
 ): Promise<void> => {
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('file'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
-
   const [allExports, updatedExportsMap] = getExports(
     outputDir,
     previouslyExportedContentTypes,
     contentTypesBeingExported
   );
-  if (updatedExportsMap.size > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
-    return;
+  if (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
+    process.exit(1);
   }
 
+  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+  tableStream.write([chalk.bold('file'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
   for (const { filename, status, contentType } of allExports) {
     if (status !== 'UP-TO-DATE') {
       /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line

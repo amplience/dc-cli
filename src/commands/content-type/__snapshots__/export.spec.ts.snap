@@ -1,3 +1,306 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`content-type export command filterContentTypesByUri should throw an error for uris which do not exist in the list of content types 1`] = `"The following schema ID(s) could not be found: ['content-type-uri-4']."`;
+
+exports[`content-type export command getExports should return a list of content-types to export and a list of filenames that will be updated 1`] = `
+Array [
+  Array [
+    Object {
+      "contentTypeUri": "content-type-uri-1",
+      "settings": Object {
+        "label": "content type 1",
+      },
+    },
+    "export-dir",
+    Object {
+      "export-dir/export-filename-1.json": Object {
+        "contentTypeUri": "content-type-uri-1",
+        "settings": Object {
+          "label": "content type 1",
+        },
+      },
+      "export-dir/export-filename-2.json": Object {
+        "contentTypeUri": "content-type-uri-2",
+        "settings": Object {
+          "label": "content type 2",
+        },
+      },
+    },
+  ],
+  Array [
+    Object {
+      "contentTypeUri": "content-type-uri-2",
+      "settings": Object {
+        "label": "content type 2",
+      },
+    },
+    "export-dir",
+    Object {
+      "export-dir/export-filename-1.json": Object {
+        "contentTypeUri": "content-type-uri-1",
+        "settings": Object {
+          "label": "content type 1",
+        },
+      },
+      "export-dir/export-filename-2.json": Object {
+        "contentTypeUri": "content-type-uri-2",
+        "settings": Object {
+          "label": "content type 2",
+        },
+      },
+    },
+  ],
+]
+`;
+
+exports[`content-type export command getExports should return a list of content-types to export and a list of filenames that will be updated 2`] = `
+Array [
+  Object {
+    "contentType": Object {
+      "contentTypeUri": "content-type-uri-1",
+      "settings": Object {
+        "label": "content type 1",
+      },
+    },
+    "filename": "export-dir/export-filename-1.json",
+    "status": "CREATED",
+  },
+  Object {
+    "contentType": Object {
+      "contentTypeUri": "content-type-uri-2",
+      "settings": Object {
+        "label": "content type 2",
+      },
+    },
+    "filename": "export-dir/export-filename-2.json",
+    "status": "UPDATED",
+  },
+]
+`;
+
+exports[`content-type export command getExports should return a list of content-types to export and a list of filenames that will be updated 3`] = `
+Array [
+  Object {
+    "filename": "export-dir/export-filename-2.json",
+    "uri": "content-type-uri-2",
+  },
+]
+`;
+
+exports[`content-type export command getExports should return a list of content-types to export and no filenames that will be updated (first export) 1`] = `
+Array [
+  Array [
+    Object {
+      "contentTypeUri": "content-type-uri-1",
+      "settings": Object {
+        "label": "content type 1",
+      },
+    },
+    "export-dir",
+    Object {},
+  ],
+  Array [
+    Object {
+      "contentTypeUri": "content-type-uri-2",
+      "settings": Object {
+        "label": "content type 2",
+      },
+    },
+    "export-dir",
+    Object {},
+  ],
+]
+`;
+
+exports[`content-type export command getExports should return a list of content-types to export and no filenames that will be updated (first export) 2`] = `
+Array [
+  Object {
+    "contentType": Object {
+      "contentTypeUri": "content-type-uri-1",
+      "settings": Object {
+        "label": "content type 1",
+      },
+    },
+    "filename": "export-dir/export-filename-1.json",
+    "status": "CREATED",
+  },
+  Object {
+    "contentType": Object {
+      "contentTypeUri": "content-type-uri-2",
+      "settings": Object {
+        "label": "content type 2",
+      },
+    },
+    "filename": "export-dir/export-filename-2.json",
+    "status": "CREATED",
+  },
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return false when the answer is "n" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return false when the answer is "n" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return false when the answer is "n" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return false when the answer is anything but "y" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return false when the answer is anything but "y" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return false when the answer is anything but "y" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return true when the answer is "y" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return true when the answer is "y" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`content-type export command promptToOverwriteExports Should return true when the answer is "y" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;

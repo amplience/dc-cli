@@ -4,7 +4,9 @@ import {
   processContentTypes,
   handler,
   getExportRecordForContentType,
-  filterContentTypesByUri
+  filterContentTypesByUri,
+  promptToOverwriteExports,
+  getExports
 } from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
@@ -12,7 +14,7 @@ import { ContentType } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import * as exportModule from './export';
 import * as exportServiceModule from '../../services/export.service';
-import { createStream } from 'table';
+import { createStream, table } from 'table';
 import chalk from 'chalk';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { loadJsonFromDirectory } from '../../services/import.service';
@@ -22,11 +24,24 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./import');
 jest.mock('../../services/import.service');
 jest.mock('table');
-//jest.mock('readline');
+
+const mockQuestion = jest.fn();
+const mockClose = jest.fn();
+
+jest.mock('readline', () => ({
+  createInterface: jest.fn(() => ({
+    question: mockQuestion,
+    close: mockClose
+  }))
+}));
 
 describe('content-type export command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    jest.resetModules();
   });
 
   it('should implement an export command', () => {
@@ -52,6 +67,84 @@ describe('content-type export command', (): void => {
         requiresArg: true
       });
       expect(spyArray).toHaveBeenCalledWith('schemaId');
+    });
+  });
+
+  describe('getExports', () => {
+    let getExportRecordForContentTypeSpy: jest.SpyInstance;
+
+    const contentTypesToExport = [
+      new ContentType({
+        contentTypeUri: 'content-type-uri-1',
+        settings: {
+          label: 'content type 1'
+        }
+      }),
+      new ContentType({
+        contentTypeUri: 'content-type-uri-2',
+        settings: {
+          label: 'content type 2'
+        }
+      })
+    ];
+
+    const exportedContentTypes = {
+      'export-dir/export-filename-1.json': contentTypesToExport[0],
+      'export-dir/export-filename-2.json': contentTypesToExport[1]
+    };
+
+    beforeEach(() => {
+      getExportRecordForContentTypeSpy = jest.spyOn(exportModule, 'getExportRecordForContentType');
+    });
+
+    it('should return a list of content-types to export and no filenames that will be updated (first export)', () => {
+      getExportRecordForContentTypeSpy
+        .mockReturnValueOnce({
+          filename: 'export-dir/export-filename-1.json',
+          status: 'CREATED',
+          contentType: contentTypesToExport[0]
+        })
+        .mockReturnValueOnce({
+          filename: 'export-dir/export-filename-2.json',
+          status: 'CREATED',
+          contentType: contentTypesToExport[1]
+        });
+
+      const [allExports, updatedExportsMap] = getExports('export-dir', {}, contentTypesToExport);
+
+      expect(getExportRecordForContentTypeSpy).toHaveBeenCalledTimes(2);
+      expect(getExportRecordForContentTypeSpy.mock.calls).toMatchSnapshot();
+      expect(allExports).toMatchSnapshot();
+      expect(updatedExportsMap).toEqual([]);
+    });
+
+    it('should return a list of content-types to export and a list of filenames that will be updated', () => {
+      getExportRecordForContentTypeSpy
+        .mockReturnValueOnce({
+          filename: 'export-dir/export-filename-1.json',
+          status: 'CREATED',
+          contentType: contentTypesToExport[0]
+        })
+        .mockReturnValueOnce({
+          filename: 'export-dir/export-filename-2.json',
+          status: 'UPDATED',
+          contentType: contentTypesToExport[1]
+        });
+
+      const [allExports, updatedExportsMap] = getExports('export-dir', exportedContentTypes, contentTypesToExport);
+
+      expect(getExportRecordForContentTypeSpy).toHaveBeenCalledTimes(2);
+      expect(getExportRecordForContentTypeSpy.mock.calls).toMatchSnapshot();
+      expect(allExports).toMatchSnapshot();
+      expect(updatedExportsMap).toMatchSnapshot();
+    });
+
+    it('should not return a list of content-types to export or a list of filenames that will be updated', () => {
+      const [allExports, updatedExportsMap] = getExports('export-dir', {}, []);
+
+      expect(getExportRecordForContentTypeSpy).toHaveBeenCalledTimes(0);
+      expect(allExports).toEqual([]);
+      expect(updatedExportsMap).toEqual([]);
     });
   });
 
@@ -262,45 +355,35 @@ describe('content-type export command', (): void => {
     });
 
     it('should output export files for the given content types if nothing previously exported', async () => {
-      jest
-        .spyOn(exportModule, 'getExportRecordForContentType')
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-1.json',
-          status: 'CREATED',
-          contentType: contentTypesToProcess[0]
-        })
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-2.json',
-          status: 'CREATED',
-          contentType: contentTypesToProcess[1]
-        })
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-3.json',
-          status: 'CREATED',
-          contentType: contentTypesToProcess[2]
-        });
+      jest.spyOn(exportModule, 'getExports').mockReturnValueOnce([
+        [
+          {
+            filename: 'export-dir/export-filename-1.json',
+            status: 'CREATED',
+            contentType: contentTypesToProcess[0]
+          },
+          {
+            filename: 'export-dir/export-filename-2.json',
+            status: 'CREATED',
+            contentType: contentTypesToProcess[1]
+          },
+          {
+            filename: 'export-dir/export-filename-3.json',
+            status: 'CREATED',
+            contentType: contentTypesToProcess[2]
+          }
+        ],
+        []
+      ]);
 
       const previouslyExportedContentTypes = {};
       await processContentTypes('export-dir', previouslyExportedContentTypes, contentTypesToProcess);
 
-      expect(exportModule.getExportRecordForContentType).toHaveBeenCalledTimes(3);
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        1,
-        contentTypesToProcess[0],
+      expect(exportModule.getExports).toHaveBeenCalledTimes(1);
+      expect(exportModule.getExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedContentTypes
-      );
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        2,
-        contentTypesToProcess[1],
-        'export-dir',
-        previouslyExportedContentTypes
-      );
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        3,
-        contentTypesToProcess[2],
-        'export-dir',
-        previouslyExportedContentTypes
+        previouslyExportedContentTypes,
+        contentTypesToProcess
       );
 
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(3);
@@ -344,47 +427,37 @@ describe('content-type export command', (): void => {
     });
 
     it('should not output any export files if a previous export exists and the content type is unchanged', async () => {
-      jest
-        .spyOn(exportModule, 'getExportRecordForContentType')
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-1.json',
-          status: 'UP-TO-DATE',
-          contentType: contentTypesToProcess[0]
-        })
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-2.json',
-          status: 'UP-TO-DATE',
-          contentType: contentTypesToProcess[1]
-        })
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-3.json',
-          status: 'UP-TO-DATE',
-          contentType: contentTypesToProcess[2]
-        });
+      jest.spyOn(exportModule, 'getExports').mockReturnValueOnce([
+        [
+          {
+            filename: 'export-dir/export-filename-1.json',
+            status: 'UP-TO-DATE',
+            contentType: contentTypesToProcess[0]
+          },
+          {
+            filename: 'export-dir/export-filename-2.json',
+            status: 'UP-TO-DATE',
+            contentType: contentTypesToProcess[1]
+          },
+          {
+            filename: 'export-dir/export-filename-3.json',
+            status: 'UP-TO-DATE',
+            contentType: contentTypesToProcess[2]
+          }
+        ],
+        []
+      ]);
 
       const previouslyExportedContentTypes = {
         'export-dir/export-filename-2.json': new ContentType(exportedContentTypes[1])
       };
       await processContentTypes('export-dir', previouslyExportedContentTypes, contentTypesToProcess);
 
-      expect(exportModule.getExportRecordForContentType).toHaveBeenCalledTimes(3);
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        1,
-        contentTypesToProcess[0],
+      expect(exportModule.getExports).toHaveBeenCalledTimes(1);
+      expect(exportModule.getExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedContentTypes
-      );
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        2,
-        contentTypesToProcess[1],
-        'export-dir',
-        previouslyExportedContentTypes
-      );
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        3,
-        contentTypesToProcess[2],
-        'export-dir',
-        previouslyExportedContentTypes
+        previouslyExportedContentTypes,
+        contentTypesToProcess
       );
 
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
@@ -412,36 +485,41 @@ describe('content-type export command', (): void => {
       ]);
     });
 
-    xit('should update the existing export file for a changed content type', async () => {
+    it('should update the existing export file for a changed content type', async () => {
       const mutatedContentTypes = [...contentTypesToProcess];
       mutatedContentTypes[1] = new ContentType({
         id: 'content-type-id-2',
         contentTypeUri: 'content-type-uri-2',
         settings: { label: 'content type 2 - mutated label' }
       });
-      jest
-        .spyOn(exportModule, 'getExportRecordForContentType')
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-1.json',
-          status: 'UP-TO-DATE',
-          contentType: mutatedContentTypes[0]
-        })
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-2.json',
-          status: 'UPDATED',
-          contentType: mutatedContentTypes[1]
-        })
-        .mockReturnValueOnce({
-          filename: 'export-dir/export-filename-3.json',
-          status: 'UP-TO-DATE',
-          contentType: mutatedContentTypes[2]
-        });
 
-      jest.mock('readline', () => ({
-        createInterface: jest.fn(() => ({
-          question: jest.fn().mockImplementationOnce((questionText, cb) => cb('y'))
-        }))
-      }));
+      jest.spyOn(exportModule, 'promptToOverwriteExports').mockResolvedValueOnce(true);
+
+      jest.spyOn(exportModule, 'getExports').mockReturnValueOnce([
+        [
+          {
+            filename: 'export-dir/export-filename-1.json',
+            status: 'UP-TO-DATE',
+            contentType: mutatedContentTypes[0]
+          },
+          {
+            filename: 'export-dir/export-filename-2.json',
+            status: 'UPDATED',
+            contentType: mutatedContentTypes[1]
+          },
+          {
+            filename: 'export-dir/export-filename-3.json',
+            status: 'UP-TO-DATE',
+            contentType: mutatedContentTypes[2]
+          }
+        ],
+        [
+          {
+            filename: 'export-dir/export-filename-2.json',
+            uri: mutatedContentTypes[1].contentTypeUri as string
+          }
+        ]
+      ]);
 
       const previouslyExportedContentTypes = {
         'export-dir/export-filename-2.json': new ContentType(exportedContentTypes[1])
@@ -449,24 +527,11 @@ describe('content-type export command', (): void => {
 
       await processContentTypes('export-dir', previouslyExportedContentTypes, mutatedContentTypes);
 
-      expect(exportModule.getExportRecordForContentType).toHaveBeenCalledTimes(3);
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        1,
-        mutatedContentTypes[0],
+      expect(exportModule.getExports).toHaveBeenCalledTimes(1);
+      expect(exportModule.getExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedContentTypes
-      );
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        2,
-        mutatedContentTypes[1],
-        'export-dir',
-        previouslyExportedContentTypes
-      );
-      expect(exportModule.getExportRecordForContentType).toHaveBeenNthCalledWith(
-        3,
-        mutatedContentTypes[2],
-        'export-dir',
-        previouslyExportedContentTypes
+        previouslyExportedContentTypes,
+        mutatedContentTypes
       );
 
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(1);
@@ -492,6 +557,65 @@ describe('content-type export command', (): void => {
         exportedContentTypes[2].contentTypeUri,
         'UP-TO-DATE'
       ]);
+    });
+
+    it('should not update anything if the user says "n" to the overwrite prompt', async () => {
+      const mutatedContentTypes = [...contentTypesToProcess];
+      mutatedContentTypes[1] = new ContentType({
+        id: 'content-type-id-2',
+        contentTypeUri: 'content-type-uri-2',
+        settings: { label: 'content type 2 - mutated label' }
+      });
+
+      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
+      jest.spyOn(process, 'exit').mockImplementation(() => {
+        throw exitError;
+      });
+      jest.spyOn(exportModule, 'promptToOverwriteExports').mockResolvedValueOnce(false);
+      jest.spyOn(exportModule, 'getExports').mockReturnValueOnce([
+        [
+          {
+            filename: 'export-dir/export-filename-1.json',
+            status: 'UP-TO-DATE',
+            contentType: mutatedContentTypes[0]
+          },
+          {
+            filename: 'export-dir/export-filename-2.json',
+            status: 'UPDATED',
+            contentType: mutatedContentTypes[1]
+          },
+          {
+            filename: 'export-dir/export-filename-3.json',
+            status: 'UP-TO-DATE',
+            contentType: mutatedContentTypes[2]
+          }
+        ],
+        [
+          {
+            filename: 'export-dir/export-filename-2.json',
+            uri: mutatedContentTypes[1].contentTypeUri as string
+          }
+        ]
+      ]);
+
+      const previouslyExportedContentTypes = {
+        'export-dir/export-filename-2.json': new ContentType(exportedContentTypes[1])
+      };
+
+      await expect(
+        processContentTypes('export-dir', previouslyExportedContentTypes, mutatedContentTypes)
+      ).rejects.toThrowError(exitError);
+
+      expect(exportModule.getExports).toHaveBeenCalledTimes(1);
+      expect(exportModule.getExports).toHaveBeenCalledWith(
+        'export-dir',
+        previouslyExportedContentTypes,
+        mutatedContentTypes
+      );
+
+      expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenCalledTimes(0);
+      expect(process.exit).toHaveBeenCalled();
     });
   });
 
@@ -579,6 +703,79 @@ describe('content-type export command', (): void => {
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
       expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, schemaIdsToExport);
       expect(exportModule.processContentTypes).toHaveBeenCalledWith(argv.dir, [], filteredContentTypesToExport);
+    });
+  });
+
+  describe('promptToOverwriteExports', () => {
+    let createInterfaceSpy: jest.SpyInstance;
+    let stdoutSpy: jest.SpyInstance;
+    beforeEach(() => {
+      createInterfaceSpy = jest.spyOn(readline, 'createInterface');
+      stdoutSpy = jest.spyOn(process.stdout, 'write');
+      stdoutSpy.mockImplementation();
+    });
+
+    afterEach(() => {
+      createInterfaceSpy.mockClear();
+      mockQuestion.mockClear();
+      stdoutSpy.mockClear();
+      mockClose.mockClear();
+    });
+
+    afterAll(() => {
+      jest.resetAllMocks();
+      jest.restoreAllMocks();
+    });
+
+    it('Should return true when the answer is "y"', async () => {
+      mockQuestion.mockImplementation((question: string, cb: (answer: string) => Promise<boolean>) => {
+        return cb('y');
+      });
+
+      const updatedExportsMap = [{ uri: 'my-content-type-uri', filename: 'my-export-filename' }];
+      const res = await promptToOverwriteExports(updatedExportsMap);
+
+      expect(res).toBeTruthy();
+      expect(createInterfaceSpy).toHaveBeenCalledTimes(1);
+      expect(mockQuestion).toHaveBeenCalledTimes(1);
+      expect(mockQuestion.mock.calls).toMatchSnapshot();
+      expect(stdoutSpy.mock.calls).toMatchSnapshot();
+      expect(mockClose).toHaveBeenCalledTimes(1);
+      expect((table as jest.Mock).mock.calls).toMatchSnapshot();
+    });
+
+    it('Should return false when the answer is "n"', async () => {
+      mockQuestion.mockImplementation((question: string, cb: (answer: string) => Promise<boolean>) => {
+        return cb('n');
+      });
+
+      const updatedExportsMap = [{ uri: 'my-content-type-uri', filename: 'my-export-filename' }];
+      const res = await promptToOverwriteExports(updatedExportsMap);
+
+      expect(res).toBeFalsy();
+      expect(createInterfaceSpy).toHaveBeenCalledTimes(1);
+      expect(mockQuestion).toHaveBeenCalledTimes(1);
+      expect(mockQuestion.mock.calls).toMatchSnapshot();
+      expect(stdoutSpy.mock.calls).toMatchSnapshot();
+      expect(mockClose).toHaveBeenCalledTimes(1);
+      expect((table as jest.Mock).mock.calls).toMatchSnapshot();
+    });
+
+    it('Should return false when the answer is anything but "y"', async () => {
+      mockQuestion.mockImplementation((question: string, cb: (answer: string) => Promise<boolean>) => {
+        return cb('');
+      });
+
+      const updatedExportsMap = [{ uri: 'my-content-type-uri', filename: 'my-export-filename' }];
+      const res = await promptToOverwriteExports(updatedExportsMap);
+
+      expect(res).toBeFalsy();
+      expect(createInterfaceSpy).toHaveBeenCalledTimes(1);
+      expect(mockQuestion).toHaveBeenCalledTimes(1);
+      expect(mockQuestion.mock.calls).toMatchSnapshot();
+      expect(stdoutSpy.mock.calls).toMatchSnapshot();
+      expect(mockClose).toHaveBeenCalledTimes(1);
+      expect((table as jest.Mock).mock.calls).toMatchSnapshot();
     });
   });
 });
