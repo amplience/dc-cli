@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/amplience/dc-cli/compare/v0.1.0...v0.2.0) (2019-11-20)
+
+
+### Features
+
+* **import content types:** supports content-type-schemas, content-types & repository assign/unassign ([7de098f](https://github.com/amplience/dc-cli/commit/7de098f))
+
 ## 0.1.0 (2019-11-07)
 
 
