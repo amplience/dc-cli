@@ -12,6 +12,8 @@ import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
+import readline from 'readline';
+import DataPresenter from '../../view/data-presenter';
 
 export const command = 'export <dir>';
 
@@ -37,6 +39,7 @@ const equals = (a: ContentType, b: ContentType): boolean =>
 interface ExportRecord {
   readonly filename: string;
   readonly status: ExportResult;
+  readonly contentType: ContentType;
 }
 
 export const getExportRecordForContentType = (
@@ -48,16 +51,17 @@ export const getExportRecordForContentType = (
     c => c.contentTypeUri === contentType.contentTypeUri
   );
   if (indexOfExportedContentType < 0) {
-    return { filename: uniqueFilename(outputDir, 'json'), status: 'CREATED' };
+    return { filename: uniqueFilename(outputDir, 'json'), status: 'CREATED', contentType };
   }
   const filename = Object.keys(previouslyExportedContentTypes)[indexOfExportedContentType];
   const previouslyExportedContentType = Object.values(previouslyExportedContentTypes)[indexOfExportedContentType];
   if (equals(previouslyExportedContentType, contentType)) {
-    return { filename, status: 'UP-TO-DATE' };
+    return { filename, status: 'UP-TO-DATE', contentType };
   }
   return {
     filename,
-    status: 'UPDATED'
+    status: 'UPDATED',
+    contentType
   };
 };
 
@@ -80,21 +84,71 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
   return filteredList;
 };
 
+type ExportsMap = {
+  uri: string;
+  filename: string;
+};
+
+export const getExports = (
+  outputDir: string,
+  previouslyExportedContentTypes: { [filename: string]: ContentType },
+  contentTypesBeingExported: ContentType[]
+): [ExportRecord[], ExportsMap[]] => {
+  const allExports: ExportRecord[] = [];
+  const updatedExportsMap: ExportsMap[] = []; // uri x filename
+  for (const contentType of contentTypesBeingExported) {
+    const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
+    if (contentType.contentTypeUri) {
+      allExports.push(exportRecord);
+      if (exportRecord.status === 'UPDATED') {
+        updatedExportsMap.push({ uri: contentType.contentTypeUri, filename: exportRecord.filename });
+      }
+    }
+  }
+  return [allExports, updatedExportsMap];
+};
+
+export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
+  return new Promise((resolve): void => {
+    process.stdout.write('The following files will be overwritten:');
+    // display updatedExportsMap as a table of uri x filename
+    new DataPresenter(updatedExportsMap).render();
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question('Do you want to continue (y/n)?: ', answer => {
+      rl.close();
+      return resolve(answer === 'y');
+    });
+  });
+};
+
 export const processContentTypes = async (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
-  storedContentTypes: ContentType[]
+  contentTypesBeingExported: ContentType[]
 ): Promise<void> => {
+  const [allExports, updatedExportsMap] = getExports(
+    outputDir,
+    previouslyExportedContentTypes,
+    contentTypesBeingExported
+  );
+  if (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
+    process.exit(1);
+  }
+
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   tableStream.write([chalk.bold('file'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
-  for (const contentType of storedContentTypes) {
-    const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
-    if (exportRecord.status !== 'UP-TO-DATE') {
+  for (const { filename, status, contentType } of allExports) {
+    if (status !== 'UP-TO-DATE') {
       /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line
       const { id, ...exportedContentType } = contentType; // do not export id
-      writeJsonToFile(exportRecord.filename, new ContentType(exportedContentType));
+      writeJsonToFile(filename, new ContentType(exportedContentType));
     }
-    tableStream.write([exportRecord.filename, contentType.contentTypeUri || '', exportRecord.status]);
+    tableStream.write([filename, contentType.contentTypeUri || '', status]);
   }
   process.stdout.write('\n');
 };
