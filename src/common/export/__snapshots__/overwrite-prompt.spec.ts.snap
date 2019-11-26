@@ -1,0 +1,169 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`promptToOverwriteExports Should return false when the answer is "n" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return false when the answer is "n" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return false when the answer is "n" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return false when the answer is anything but "y" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return false when the answer is anything but "y" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return false when the answer is anything but "y" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return true when the answer is "y" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return true when the answer is "y" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`promptToOverwriteExports Should return true when the answer is "y" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1muri[22m",
+        "[1mfilename[22m",
+      ],
+      Array [
+        "my-content-type-uri",
+        "my-export-filename",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;

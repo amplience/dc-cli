@@ -10,6 +10,7 @@ import chalk from 'chalk';
 import { ExportResult, uniqueFilename, writeJsonToFile } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
+import { promptToOverwriteExports } from '../../common/export/overwrite-prompt';
 
 export const command = 'export <dir>';
 
@@ -35,7 +36,13 @@ const equals = (a: ContentTypeSchema, b: ContentTypeSchema): boolean =>
 interface ExportRecord {
   readonly filename: string;
   readonly status: ExportResult;
+  readonly contentTypeSchema: ContentTypeSchema;
 }
+
+type ExportsMap = {
+  schemaId: string;
+  filename: string;
+};
 
 export const getExportRecordForContentTypeSchema = (
   contentTypeSchema: ContentTypeSchema,
@@ -46,18 +53,19 @@ export const getExportRecordForContentTypeSchema = (
     c => c.schemaId === contentTypeSchema.schemaId
   );
   if (indexOfExportedContentTypeSchema < 0) {
-    return { filename: uniqueFilename(outputDir, 'json'), status: 'CREATED' };
+    return { filename: uniqueFilename(outputDir, 'json'), status: 'CREATED', contentTypeSchema };
   }
   const filename = Object.keys(previouslyExportedContentTypeSchemas)[indexOfExportedContentTypeSchema];
   const previouslyExportedContentTypeSchema = Object.values(previouslyExportedContentTypeSchemas)[
     indexOfExportedContentTypeSchema
   ];
   if (equals(previouslyExportedContentTypeSchema, contentTypeSchema)) {
-    return { filename, status: 'UP-TO-DATE' };
+    return { filename, status: 'UP-TO-DATE', contentTypeSchema };
   }
   return {
     filename,
-    status: 'UPDATED'
+    status: 'UPDATED',
+    contentTypeSchema
   };
 };
 
@@ -79,24 +87,51 @@ export const filterContentTypeSchemasBySchemaId = (
   return listToFilter.filter(schema => listToMatch.some(id => schema.schemaId === id));
 };
 
-export const processContentTypeSchemas = async (
+export const getContentTypeSchemaExports = (
   outputDir: string,
   previouslyExportedContentTypeSchemas: { [filename: string]: ContentTypeSchema },
-  storedContentTypeSchemas: ContentTypeSchema[]
-): Promise<void> => {
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('file'), chalk.bold('schemaId'), chalk.bold('result')]);
-  for (const contentTypeSchema of storedContentTypeSchemas) {
+  contentTypeSchemasBeingExported: ContentTypeSchema[]
+): [ExportRecord[], ExportsMap[]] => {
+  const allExports: ExportRecord[] = [];
+  const updatedExportsMap: ExportsMap[] = []; // uri x filename
+  for (const contentTypeSchema of contentTypeSchemasBeingExported) {
     const exportRecord = getExportRecordForContentTypeSchema(
       contentTypeSchema,
       outputDir,
       previouslyExportedContentTypeSchemas
     );
-    if (exportRecord.status !== 'UP-TO-DATE') {
-      delete contentTypeSchema.id; // do not export id
-      writeJsonToFile(exportRecord.filename, new ContentTypeSchema(contentTypeSchema));
+    if (contentTypeSchema.schemaId) {
+      allExports.push(exportRecord);
+      if (exportRecord.status === 'UPDATED') {
+        updatedExportsMap.push({ schemaId: contentTypeSchema.schemaId, filename: exportRecord.filename });
+      }
     }
-    tableStream.write([exportRecord.filename, contentTypeSchema.schemaId || '', exportRecord.status]);
+  }
+  return [allExports, updatedExportsMap];
+};
+
+export const processContentTypeSchemas = async (
+  outputDir: string,
+  previouslyExportedContentTypeSchemas: { [filename: string]: ContentTypeSchema },
+  storedContentTypeSchemas: ContentTypeSchema[]
+): Promise<void> => {
+  const [allExports, updatedExportsMap] = getContentTypeSchemaExports(
+    outputDir,
+    previouslyExportedContentTypeSchemas,
+    storedContentTypeSchemas
+  );
+  if (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
+    process.exit(1);
+  }
+
+  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+  tableStream.write([chalk.bold('file'), chalk.bold('schemaId'), chalk.bold('result')]);
+  for (const { filename, status, contentTypeSchema } of allExports) {
+    if (status !== 'UP-TO-DATE') {
+      delete contentTypeSchema.id; // do not export id
+      writeJsonToFile(filename, new ContentTypeSchema(contentTypeSchema));
+    }
+    tableStream.write([filename, contentTypeSchema.schemaId || '', status]);
   }
   process.stdout.write('\n');
 };
