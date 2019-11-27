@@ -15,7 +15,6 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import * as exportServiceModule from '../../services/export.service';
 import { createStream } from 'table';
 import { loadJsonFromDirectory } from '../../services/import.service';
-import * as overwritePrompt from '../../common/export/overwrite-prompt';
 
 jest.mock('../../services/import.service');
 jest.mock('../../services/dynamic-content-client-factory');
@@ -82,7 +81,7 @@ describe('content-type-schema export command', (): void => {
     ];
 
     beforeEach(() => {
-      mockOverwritePrompt = jest.spyOn(overwritePrompt, 'promptToOverwriteExports');
+      mockOverwritePrompt = jest.spyOn(exportServiceModule, 'promptToOverwriteExports');
       mockGetContentTypeSchemaExports = jest.spyOn(exportModule, 'getContentTypeSchemaExports');
       mockWriteJsonToFile = jest.spyOn(exportServiceModule, 'writeJsonToFile');
       (createStream as jest.Mock).mockReturnValue({
@@ -367,6 +366,7 @@ describe('content-type-schema export command', (): void => {
   });
 
   describe('getExportRecordForContentTypeSchema', () => {
+    let uniqueFilenameSpy: jest.SpyInstance;
     const exportedContentTypeSchemas = {
       'export-dir/export-filename-1.json': new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
@@ -380,6 +380,10 @@ describe('content-type-schema export command', (): void => {
       })
     };
 
+    beforeEach(() => {
+      uniqueFilenameSpy = jest.spyOn(exportServiceModule, 'uniqueFilename');
+    });
+
     it('should not find any existing files for the exported schemas', async () => {
       const newContentTypeSchemaToExport = new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
@@ -387,11 +391,11 @@ describe('content-type-schema export command', (): void => {
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
-      jest.spyOn(exportServiceModule, 'uniqueFilename').mockReturnValueOnce('export-dir/export-filename-1.json');
+      uniqueFilenameSpy.mockReturnValueOnce('export-dir/export-filename-1.json');
 
       const result = getExportRecordForContentTypeSchema(newContentTypeSchemaToExport, 'export-dir', {});
 
-      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith('export-dir', 'json');
+      expect(uniqueFilenameSpy.mock.calls).toMatchSnapshot();
       expect(result).toEqual({
         filename: 'export-dir/export-filename-1.json',
         status: 'CREATED',
@@ -406,7 +410,7 @@ describe('content-type-schema export command', (): void => {
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
-      jest.spyOn(exportServiceModule, 'uniqueFilename').mockReturnValueOnce('export-dir/export-filename-3.json');
+      uniqueFilenameSpy.mockReturnValueOnce('export-dir/export-filename-3.json');
 
       const result = getExportRecordForContentTypeSchema(
         newContentTypeSchemaToExport,
@@ -414,7 +418,7 @@ describe('content-type-schema export command', (): void => {
         exportedContentTypeSchemas
       );
 
-      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith('export-dir', 'json');
+      expect(uniqueFilenameSpy.mock.calls).toMatchSnapshot();
       expect(result).toEqual({
         filename: 'export-dir/export-filename-3.json',
         status: 'CREATED',
@@ -429,15 +433,13 @@ describe('content-type-schema export command', (): void => {
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
-      jest.spyOn(exportServiceModule, 'uniqueFilename');
-
       const result = getExportRecordForContentTypeSchema(
         newContentTypeSchemaToExport,
         'export-dir',
         exportedContentTypeSchemas
       );
 
-      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledTimes(0);
+      expect(uniqueFilenameSpy).toHaveBeenCalledTimes(0);
       expect(result).toEqual({
         filename: 'export-dir/export-filename-2.json',
         status: 'UPDATED',
@@ -452,15 +454,13 @@ describe('content-type-schema export command', (): void => {
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
-      jest.spyOn(exportServiceModule, 'uniqueFilename');
-
       const result = getExportRecordForContentTypeSchema(
         newContentTypeSchemaToExport,
         'export-dir',
         exportedContentTypeSchemas
       );
 
-      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledTimes(0);
+      expect(uniqueFilenameSpy).toHaveBeenCalledTimes(0);
       expect(result).toEqual({
         filename: 'export-dir/export-filename-2.json',
         status: 'UP-TO-DATE',

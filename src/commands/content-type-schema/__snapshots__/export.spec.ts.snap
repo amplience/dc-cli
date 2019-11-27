@@ -540,6 +540,31 @@ Array [
 ]
 `;
 
+exports[`content-type-schema export command getExportRecordForContentTypeSchema should create a new file for any missing schemas 1`] = `
+Array [
+  Array [
+    "export-dir",
+    "content-type-schema-id-3",
+    "json",
+    Array [
+      "export-dir/export-filename-1.json",
+      "export-dir/export-filename-2.json",
+    ],
+  ],
+]
+`;
+
+exports[`content-type-schema export command getExportRecordForContentTypeSchema should not find any existing files for the exported schemas 1`] = `
+Array [
+  Array [
+    "export-dir",
+    "content-type-schema-id-1",
+    "json",
+    Array [],
+  ],
+]
+`;
+
 exports[`content-type-schema export command processContentTypeSchemas should not output any export files if a previous export exists and the content type is unchanged 1`] = `
 Array [
   Array [

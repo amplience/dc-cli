@@ -7,10 +7,9 @@ import { createStream } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
-import { ExportResult, uniqueFilename, writeJsonToFile } from '../../services/export.service';
+import { ExportResult, promptToOverwriteExports, uniqueFilename, writeJsonToFile } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
-import { promptToOverwriteExports } from '../../common/export/overwrite-prompt';
 
 export const command = 'export <dir>';
 
@@ -53,7 +52,16 @@ export const getExportRecordForContentTypeSchema = (
     c => c.schemaId === contentTypeSchema.schemaId
   );
   if (indexOfExportedContentTypeSchema < 0) {
-    return { filename: uniqueFilename(outputDir, 'json'), status: 'CREATED', contentTypeSchema };
+    return {
+      filename: uniqueFilename(
+        outputDir,
+        contentTypeSchema.schemaId,
+        'json',
+        Object.keys(previouslyExportedContentTypeSchemas)
+      ),
+      status: 'CREATED',
+      contentTypeSchema
+    };
   }
   const filename = Object.keys(previouslyExportedContentTypeSchemas)[indexOfExportedContentTypeSchema];
   const previouslyExportedContentTypeSchema = Object.values(previouslyExportedContentTypeSchemas)[

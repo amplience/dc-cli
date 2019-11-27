@@ -7,12 +7,11 @@ import { createStream } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
-import { ExportResult, uniqueFilename, writeJsonToFile } from '../../services/export.service';
+import { ExportResult, promptToOverwriteExports, uniqueFilename, writeJsonToFile } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
-import { promptToOverwriteExports } from '../../common/export/overwrite-prompt';
 
 export const command = 'export <dir>';
 
@@ -72,7 +71,7 @@ export const getExportRecordForContentType = (
     return {
       filename: uniqueFilename(
         outputDir,
-        contentType.contentTypeUri || '',
+        contentType.contentTypeUri,
         'json',
         Object.keys(previouslyExportedContentTypes)
       ),

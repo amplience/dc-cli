@@ -2,10 +2,12 @@ import fs from 'fs';
 import { HalResource } from 'dc-management-sdk-js';
 import * as path from 'path';
 import { URL } from 'url';
+import DataPresenter from '../view/data-presenter';
+import readline from 'readline';
 
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
-export const uniqueFilename = (dir: string, uri: string, extension: string, exportFilenames: string[]): string => {
+export const uniqueFilename = (dir: string, uri = '', extension: string, exportFilenames: string[]): string => {
   const url = new URL(uri);
   const file = path.basename(url.pathname, '.' + extension) || url.hostname.replace('.', '_');
   let counter = 0;
@@ -27,4 +29,22 @@ export const writeJsonToFile = <T extends HalResource>(filename: string, resourc
   } catch (e) {
     throw new Error(`Unable to write file: ${filename}, aborting export`);
   }
+};
+
+export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
+  return new Promise((resolve): void => {
+    process.stdout.write('The following files will be overwritten:');
+    // display updatedExportsMap as a table of uri x filename
+    new DataPresenter(updatedExportsMap).render();
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question('Do you want to continue (y/n)?: ', answer => {
+      rl.close();
+      return resolve(answer === 'y');
+    });
+  });
 };

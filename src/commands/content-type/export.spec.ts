@@ -17,7 +17,6 @@ import { createStream } from 'table';
 import chalk from 'chalk';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { loadJsonFromDirectory } from '../../services/import.service';
-import * as overwritePrompt from '../../common/export/overwrite-prompt';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./import');
@@ -491,7 +490,7 @@ describe('content-type export command', (): void => {
         settings: { label: 'content type 2 - mutated label' }
       });
 
-      jest.spyOn(overwritePrompt, 'promptToOverwriteExports').mockResolvedValueOnce(true);
+      jest.spyOn(exportServiceModule, 'promptToOverwriteExports').mockResolvedValueOnce(true);
 
       jest.spyOn(exportModule, 'getContentTypeExports').mockReturnValueOnce([
         [
@@ -569,7 +568,7 @@ describe('content-type export command', (): void => {
       jest.spyOn(process, 'exit').mockImplementation(() => {
         throw exitError;
       });
-      jest.spyOn(overwritePrompt, 'promptToOverwriteExports').mockResolvedValueOnce(false);
+      jest.spyOn(exportServiceModule, 'promptToOverwriteExports').mockResolvedValueOnce(false);
       jest.spyOn(exportModule, 'getContentTypeExports').mockReturnValueOnce([
         [
           {
