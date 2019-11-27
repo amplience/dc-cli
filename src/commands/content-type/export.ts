@@ -41,6 +41,25 @@ interface ExportRecord {
   readonly contentType: ContentType;
 }
 
+export const filterContentTypesByUri = (listToFilter: ContentType[], contentTypeUriList: string[]): ContentType[] => {
+  let unmatchedContentTypeUriList: string[] = [];
+  let filteredList: ContentType[] = listToFilter;
+  if (contentTypeUriList.length > 0) {
+    filteredList = listToFilter.filter(contentType =>
+      contentTypeUriList.some(uri => contentType.contentTypeUri === uri)
+    );
+    unmatchedContentTypeUriList = contentTypeUriList.filter(
+      uri => !listToFilter.some(contentType => contentType.contentTypeUri === uri)
+    );
+    if (unmatchedContentTypeUriList.length > 0) {
+      throw new Error(
+        `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList.map(u => `'${u}'`).join(', ')}].`
+      );
+    }
+  }
+  return filteredList;
+};
+
 export const getExportRecordForContentType = (
   contentType: ContentType,
   outputDir: string,
@@ -62,25 +81,6 @@ export const getExportRecordForContentType = (
     status: 'UPDATED',
     contentType
   };
-};
-
-export const filterContentTypesByUri = (listToFilter: ContentType[], contentTypeUriList: string[]): ContentType[] => {
-  let unmatchedContentTypeUriList: string[] = [];
-  let filteredList: ContentType[] = [];
-  if (contentTypeUriList.length > 0) {
-    filteredList = listToFilter.filter(contentType =>
-      contentTypeUriList.some(uri => contentType.contentTypeUri === uri)
-    );
-    unmatchedContentTypeUriList = contentTypeUriList.filter(
-      uri => !listToFilter.some(contentType => contentType.contentTypeUri === uri)
-    );
-    if (unmatchedContentTypeUriList.length > 0) {
-      throw new Error(
-        `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList.map(u => `'${u}'`).join(', ')}].`
-      );
-    }
-  }
-  return filteredList;
 };
 
 type ExportsMap = {
@@ -142,6 +142,6 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-  const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaId);
+  const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaId || []);
   await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);
 };

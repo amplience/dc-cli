@@ -665,7 +665,7 @@ describe('content-type export command', (): void => {
     });
 
     it('should export all content types for the current hub if no schemaIds specified', async (): Promise<void> => {
-      const schemaIdsToExport: string[] = [];
+      const schemaIdsToExport: string[] | undefined = undefined;
       const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport };
 
       const filteredContentTypesToExport = [...contentTypesToExport];
@@ -677,12 +677,12 @@ describe('content-type export command', (): void => {
       expect(mockList).toHaveBeenCalled();
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
-      expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, schemaIdsToExport);
+      expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);
       expect(exportModule.processContentTypes).toHaveBeenCalledWith(argv.dir, [], filteredContentTypesToExport);
     });
 
     it('should export only selected content types if schemaIds specified', async (): Promise<void> => {
-      const schemaIdsToExport: string[] = ['content-type-uri-2'];
+      const schemaIdsToExport: string[] | undefined = ['content-type-uri-2'];
       const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport };
 
       const filteredContentTypesToExport = [contentTypesToExport[1]];
