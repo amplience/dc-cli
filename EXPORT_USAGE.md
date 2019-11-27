@@ -22,13 +22,13 @@ The output from this command will create a set of files in the `export/content-t
 
 ```commandline
 export/content-types
-├── 0longqgig.json
-├── 71cp2filc.json
-├── 9x2iedmyn.json
-├── evw68tl08.json
-├── ik8nr7yt0.json
-├── pokkm8631.json
-└── x5ebuhn1n.json
+├── my-content-type-1.json
+├── my-content-type-2.json
+├── my-content-type-3.json
+├── my-content-type-4.json
+├── my-content-type-5.json
+├── my-content-type-6.json
+└── my-content-type-7.json
 
 ```
 
@@ -41,60 +41,18 @@ Note that if the output directory contains a set of files from a previous export
 It is possible to specify the content types to be exported from a hub rather than just exporting all of them using the `--schemaId` option:
 
 ```commandline
-dc-cli content-type export export/content-types --schemaId "https://raw.githubusercontent.com/amplience/dc-static-blog-nextjs/master/schemas/text.json"
+dc-cli content-type export export/content-types --schemaId "https://my-content-type-schema.com/schemas/my-content-type-1.json"
 
 ```
-This will export the content type matching for the `text.json` schemaId.
+This will export just the content type for the `my-content-type-1.json` schema.
 
-Specifying multiple schemaId's at the same time is also possible, for example:
+Specifying multiple content types at the same time is also possible, for example:
 
 ```commandline
-dc-cli content-type export export/content-types --schemaId "https://raw.githubusercontent.com/amplience/dc-static-blog-nextjs/master/schemas/blog-slot.json" --schemaId "http://my-content-type-schema.com"
+dc-cli content-type export export/content-types --schemaId "https://my-content-type-schema.com/schemas/my-content-type-1.json" --schemaId "https://my-content-type-schema.com/schemas/my-content-type-2.json"
 
 ```
 
 ## Content Type Schemas
 
-### Export all content type schemas from a hub
-
-To export all of the content type schemas from a hub into a given output directory:
-
-```commandline
-mkdir export/content-type-schemas
-dc-cli content-type-schema export export/content-type-schemas
-
-```
-The output from this command will create a set of files in the `export/content-type-schemas` directory that looks something like this:
-
-```commandline
-export/content-type-schemas
-├── 0longqgig.json
-├── 71cp2filc.json
-├── 9x2iedmyn.json
-├── evw68tl08.json
-├── ik8nr7yt0.json
-├── pokkm8631.json
-└── x5ebuhn1n.json
-
-```
-
-Each `.json` file contains a single content type schema and these files can be used as the input to `content-type-schema import` command.  This allows you to `export` content type schemas from one hub and then `import` these into a different hub.
-
-Note that if the output directory contains a set of files from a previous export then only the files for the changed content type schema will be updated when running the command.
-
-### Export specified content type schemas from a hub
-
-It is possible to specify the content type schemas to be exported from a hub rather than just exporting all of them using the `--schemaId` option:
-
-```commandline
-dc-cli content-type-schema export export/content-type-schemas --schemaId "https://raw.githubusercontent.com/amplience/dc-static-blog-nextjs/master/schemas/text.json"
-
-```
-This will export the matching content type schema for the `text.json` schemaId.
-
-Specifying multiple schemaId's at the same time is also possible, for example:
-
-```commandline
-dc-cli content-type-schema export export/content-type-schemas --schemaId "https://raw.githubusercontent.com/amplience/dc-static-blog-nextjs/master/schemas/blog-slot.json" --schemaId "http://my-content-type-schema.com"
-
-```
+\< TODO \>

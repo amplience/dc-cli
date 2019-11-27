@@ -97,7 +97,20 @@ Array [
       },
     },
     "export-dir",
-    Object {},
+    Object {
+      "export-dir/export-filename-1.json": Object {
+        "contentTypeUri": "content-type-uri-1",
+        "settings": Object {
+          "label": "content type 1",
+        },
+      },
+      "export-dir/export-filename-2.json": Object {
+        "contentTypeUri": "content-type-uri-2",
+        "settings": Object {
+          "label": "content type 2",
+        },
+      },
+    },
   ],
   Array [
     Object {
@@ -107,7 +120,20 @@ Array [
       },
     },
     "export-dir",
-    Object {},
+    Object {
+      "export-dir/export-filename-1.json": Object {
+        "contentTypeUri": "content-type-uri-1",
+        "settings": Object {
+          "label": "content type 1",
+        },
+      },
+      "export-dir/export-filename-2.json": Object {
+        "contentTypeUri": "content-type-uri-2",
+        "settings": Object {
+          "label": "content type 2",
+        },
+      },
+    },
   ],
 ]
 `;

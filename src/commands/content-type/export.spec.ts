@@ -168,7 +168,12 @@ describe('content-type export command', (): void => {
 
       const result = getExportRecordForContentType(newContentTypeToExport, 'export-dir', exportedContentTypes);
 
-      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith('export-dir', 'json');
+      expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith(
+        'export-dir',
+        newContentTypeToExport.contentTypeUri,
+        'json',
+        Object.keys(exportedContentTypes)
+      );
       expect(result).toEqual({
         filename: 'export-dir/export-filename-3.json',
         status: 'CREATED',

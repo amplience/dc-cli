@@ -69,7 +69,16 @@ export const getExportRecordForContentType = (
     c => c.contentTypeUri === contentType.contentTypeUri
   );
   if (indexOfExportedContentType < 0) {
-    return { filename: uniqueFilename(outputDir, 'json'), status: 'CREATED', contentType };
+    return {
+      filename: uniqueFilename(
+        outputDir,
+        contentType.contentTypeUri || '',
+        'json',
+        Object.keys(previouslyExportedContentTypes)
+      ),
+      status: 'CREATED',
+      contentType
+    };
   }
   const filename = Object.keys(previouslyExportedContentTypes)[indexOfExportedContentType];
   const previouslyExportedContentType = Object.values(previouslyExportedContentTypes)[indexOfExportedContentType];
@@ -97,6 +106,7 @@ export const getContentTypeExports = (
   const updatedExportsMap: ExportsMap[] = []; // uri x filename
   for (const contentType of contentTypesBeingExported) {
     const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
+    previouslyExportedContentTypes[exportRecord.filename] = exportRecord.contentType;
     if (contentType.contentTypeUri) {
       allExports.push(exportRecord);
       if (exportRecord.status === 'UPDATED') {
