@@ -71,7 +71,7 @@ export const getExportRecordForContentTypeSchema = (
 
 export const filterContentTypeSchemasBySchemaId = (
   listToFilter: ContentTypeSchema[],
-  listToMatch: string[]
+  listToMatch: string[] = []
 ): ContentTypeSchema[] => {
   if (!listToMatch.length) {
     return listToFilter;

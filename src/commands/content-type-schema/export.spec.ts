@@ -501,6 +501,11 @@ describe('content-type-schema export command', (): void => {
       expect(result).toMatchSnapshot();
     });
 
+    it('should return all the content type schemas if a filter list is set to undefined', async () => {
+      const result = filterContentTypeSchemasBySchemaId(listToFilter);
+      expect(result).toMatchSnapshot();
+    });
+
     it('should throw an error for schemaIds which do not exist in the list', async () => {
       expect(() =>
         filterContentTypeSchemasBySchemaId(listToFilter, ['content-type-schema-id-4'])
@@ -518,71 +523,95 @@ describe('content-type-schema export command', (): void => {
       clientSecret: 'client-id',
       hubId: 'hub-id'
     };
-
+    const contentTypeSchemasToExport: ContentTypeSchema[] = [
+      new ContentTypeSchema({
+        schemaId: 'content-type-schema-id-1',
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      }),
+      new ContentTypeSchema({
+        schemaId: 'content-type-schema-id-2',
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      }),
+      new ContentTypeSchema({
+        schemaId: 'content-type-schema-id-3',
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      })
+    ];
+    const listResponse = new MockPage(ContentTypeSchema, contentTypeSchemasToExport);
+    const mockList = jest.fn();
     const mockGetHub = jest.fn();
+    let filterContentTypeSchemasBySchemaIdSpy: jest.SpyInstance;
+    let processContentTypeSchemasSpy: jest.SpyInstance;
 
     beforeEach(() => {
-      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        hubs: {
-          get: mockGetHub
-        }
-      });
-
+      filterContentTypeSchemasBySchemaIdSpy = jest.spyOn(exportModule, 'filterContentTypeSchemasBySchemaId');
+      processContentTypeSchemasSpy = jest.spyOn(exportModule, 'processContentTypeSchemas');
+      processContentTypeSchemasSpy.mockImplementation();
+      mockList.mockResolvedValue(listResponse);
       mockGetHub.mockResolvedValue({
-        related: {
-          ContentTypeSchemas: {
-            list: jest.fn()
-          }
-        }
-      });
-    });
-
-    it('should export all content type schemas for the current hub', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: [] };
-      const ContentTypeSchemasToExport: ContentTypeSchema[] = [
-        new ContentTypeSchema({
-          schemaId: 'content-type-schema-id-1',
-          body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
-          validationLevel: ValidationLevel.CONTENT_TYPE
-        }),
-        new ContentTypeSchema({
-          schemaId: 'content-type-schema-id-2',
-          body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
-          validationLevel: ValidationLevel.CONTENT_TYPE
-        }),
-        new ContentTypeSchema({
-          schemaId: 'content-type-schema-id-3',
-          body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
-          validationLevel: ValidationLevel.CONTENT_TYPE
-        })
-      ];
-
-      (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
-
-      const listResponse = new MockPage(ContentTypeSchema, ContentTypeSchemasToExport);
-      const mockList = jest.fn().mockResolvedValue(listResponse);
-
-      const mockGetHub = jest.fn().mockResolvedValue({
         related: {
           contentTypeSchema: {
             list: mockList
           }
         }
       });
-
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         hubs: {
           get: mockGetHub
         }
       });
-      jest.spyOn(exportModule, 'processContentTypeSchemas').mockResolvedValueOnce();
+    });
 
+    afterEach(() => {
+      // processContentTypeSchemasSpy.mockClear();
+    });
+
+    it('should export all content type schemas for the current hub', async (): Promise<void> => {
+      filterContentTypeSchemasBySchemaIdSpy.mockReturnValue(contentTypeSchemasToExport);
+
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: [] };
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(mockList).toHaveBeenCalled();
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
-      expect(exportModule.processContentTypeSchemas).toHaveBeenCalledWith(argv.dir, [], ContentTypeSchemasToExport);
+      expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
+      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, [], contentTypeSchemasToExport);
+    });
+
+    it('should export all content type schemas for the current hub if schemaId is not supplied', async (): Promise<
+      void
+    > => {
+      filterContentTypeSchemasBySchemaIdSpy.mockReturnValue(contentTypeSchemasToExport);
+
+      const argv = { ...yargArgs, ...config, dir: 'my-dir' };
+      await handler(argv);
+
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalled();
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
+      expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, undefined);
+      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, [], contentTypeSchemasToExport);
+    });
+
+    it('should export only the specified content type schema when schemaId is provided', async (): Promise<void> => {
+      const filteredContentTypeSchemas = contentTypeSchemasToExport.slice(0, 1);
+      filterContentTypeSchemasBySchemaIdSpy.mockReturnValue(filteredContentTypeSchemas);
+
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: ['content-type-schema-id-1'] };
+      await handler(argv);
+
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalled();
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
+      expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, [
+        'content-type-schema-id-1'
+      ]);
+      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, [], filteredContentTypeSchemas);
     });
   });
 });
