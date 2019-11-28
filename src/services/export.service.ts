@@ -33,7 +33,7 @@ export const writeJsonToFile = <T extends HalResource>(filename: string, resourc
 
 export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
   return new Promise((resolve): void => {
-    process.stdout.write('The following files will be overwritten:');
+    process.stdout.write('The following files will be overwritten:\n');
     // display updatedExportsMap as a table of uri x filename
     new DataPresenter(updatedExportsMap).render();
 
@@ -50,7 +50,6 @@ export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: str
 };
 
 export const nothingExportedExit = (): void => {
-  console.trace('fucksticks');
   process.stdout.write('Nothing was exported, exiting.\n');
   process.exit(1);
 };

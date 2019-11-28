@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { promptToOverwriteExports, writeJsonToFile } from './export.service';
+import { nothingExportedExit, promptToOverwriteExports, writeJsonToFile } from './export.service';
 import { uniqueFilename } from './export.service';
 import { ContentType } from 'dc-management-sdk-js';
 import * as readline from 'readline';
@@ -130,6 +130,22 @@ describe('export service tests', () => {
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockClose).toHaveBeenCalledTimes(1);
       expect((table as jest.Mock).mock.calls).toMatchSnapshot();
+    });
+  });
+
+  describe('nothingExportedExit', () => {
+    it('should exit with an export message', () => {
+      const writeSpy = jest.spyOn(process.stdout, 'write');
+      const exitSpy = jest.spyOn(process, 'exit');
+      const exitError = new Error('PROCESS EXIT INVOKED FOR TEST');
+
+      writeSpy.mockImplementation();
+      exitSpy.mockImplementation(() => {
+        throw exitError;
+      });
+
+      expect(nothingExportedExit).toThrowError(exitError);
+      expect(writeSpy.mock.calls).toMatchSnapshot();
     });
   });
 });

@@ -1,5 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`export service tests nothingExportedExit should exit with an export message 1`] = `
+Array [
+  Array [
+    "Nothing was exported, exiting.
+",
+  ],
+]
+`;
+
 exports[`export service tests promptToOverwriteExports Should return false when the answer is "n" 1`] = `
 Array [
   Array [
@@ -12,7 +21,8 @@ Array [
 exports[`export service tests promptToOverwriteExports Should return false when the answer is "n" 2`] = `
 Array [
   Array [
-    "The following files will be overwritten:",
+    "The following files will be overwritten:
+",
   ],
   Array [
     "undefined
@@ -68,7 +78,8 @@ Array [
 exports[`export service tests promptToOverwriteExports Should return false when the answer is anything but "y" 2`] = `
 Array [
   Array [
-    "The following files will be overwritten:",
+    "The following files will be overwritten:
+",
   ],
   Array [
     "undefined
@@ -139,7 +150,8 @@ Array [
 exports[`export service tests promptToOverwriteExports Should return true when the answer is "y" 2`] = `
 Array [
   Array [
-    "The following files will be overwritten:",
+    "The following files will be overwritten:
+",
   ],
   Array [
     "undefined

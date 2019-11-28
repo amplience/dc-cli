@@ -148,9 +148,8 @@ export const processContentTypes = async (
   tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentType } of allExports) {
     if (status !== 'UP-TO-DATE') {
-      /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line
-      const { id, ...exportedContentType } = contentType; // do not export id
-      writeJsonToFile(filename, new ContentType(exportedContentType));
+      delete contentType.id; // do not export id
+      writeJsonToFile(filename, contentType);
     }
     tableStream.write([filename, contentType.contentTypeUri || '', status]);
   }
