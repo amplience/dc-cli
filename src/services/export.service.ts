@@ -48,3 +48,9 @@ export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: str
     });
   });
 };
+
+export const nothingExportedExit = (): void => {
+  console.trace('fucksticks');
+  process.stdout.write('Nothing was exported, exiting.\n');
+  process.exit(1);
+};

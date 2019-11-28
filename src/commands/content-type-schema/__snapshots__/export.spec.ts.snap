@@ -199,7 +199,10 @@ Array [
 ]
 `;
 
-exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should throw an error for schemaIds which do not exist in the list 1`] = `"The following schema ID(s) could not be found: ['content-type-schema-id-4']."`;
+exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should throw an error for schemaIds which do not exist in the list 1`] = `
+"The following schema ID(s) could not be found: ['content-type-schema-id-4'].
+Nothing was exported, exiting."
+`;
 
 exports[`content-type-schema export command getContentTypeSchemaExports should return a list of content-type-schemas to export and a list of filenames that will be updated 1`] = `
 Array [
@@ -594,6 +597,15 @@ Array [
       "content-type-schema-id-3",
       "UP-TO-DATE",
     ],
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should not update anything if the user says "n" to the overwrite prompt 1`] = `
+Array [
+  Array [
+    "Nothing was exported, exiting.
+",
   ],
 ]
 `;

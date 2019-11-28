@@ -237,6 +237,9 @@ describe('content-type-schema export command', (): void => {
       jest.spyOn(process, 'exit').mockImplementation(() => {
         throw exitError;
       });
+      const stdoutSpy = jest.spyOn(process.stdout, 'write');
+      stdoutSpy.mockImplementation();
+
       mockOverwritePrompt.mockResolvedValueOnce(false);
       mockGetContentTypeSchemaExports.mockReturnValueOnce([
         [
@@ -272,6 +275,7 @@ describe('content-type-schema export command', (): void => {
         processContentTypeSchemas('export-dir', previouslyExportedContentTypeSchemas, mutatedContentTypeSchemas)
       ).rejects.toThrowError(exitError);
 
+      expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledWith(
         'export-dir',

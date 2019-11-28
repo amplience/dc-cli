@@ -429,12 +429,18 @@ describe('content-type export command', (): void => {
     it('should output a message if no content types to export from hub', async () => {
       jest.spyOn(exportModule, 'getContentTypeExports').mockReturnValueOnce([[], []]);
 
+      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
+      jest.spyOn(process, 'exit').mockImplementation(() => {
+        throw exitError;
+      });
+
       const previouslyExportedContentTypes = {};
-      await processContentTypes('export-dir', previouslyExportedContentTypes, []);
 
-      expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(1);
-      expect(exportModule.getContentTypeExports).toHaveBeenCalledWith('export-dir', previouslyExportedContentTypes, []);
+      await expect(processContentTypes('export-dir', previouslyExportedContentTypes, [])).rejects.toThrowError(
+        exitError
+      );
 
+      expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(0);
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenCalledTimes(0);

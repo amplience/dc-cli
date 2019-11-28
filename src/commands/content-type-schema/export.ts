@@ -7,7 +7,13 @@ import { createStream } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
-import { ExportResult, promptToOverwriteExports, uniqueFilename, writeJsonToFile } from '../../services/export.service';
+import {
+  ExportResult,
+  nothingExportedExit,
+  promptToOverwriteExports,
+  uniqueFilename,
+  writeJsonToFile
+} from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 
@@ -81,14 +87,16 @@ export const filterContentTypeSchemasBySchemaId = (
   listToFilter: ContentTypeSchema[],
   listToMatch: string[] = []
 ): ContentTypeSchema[] => {
-  if (!listToMatch.length) {
+  if (listToMatch.length === 0) {
     return listToFilter;
   }
 
   const unmatchedIdList: string[] = listToMatch.filter(id => !listToFilter.some(schema => schema.schemaId === id));
   if (unmatchedIdList.length > 0) {
     throw new Error(
-      `The following schema ID(s) could not be found: [${unmatchedIdList.map(u => `'${u}'`).join(', ')}].`
+      `The following schema ID(s) could not be found: [${unmatchedIdList
+        .map(u => `'${u}'`)
+        .join(', ')}].\nNothing was exported, exiting.`
     );
   }
 
@@ -103,16 +111,18 @@ export const getContentTypeSchemaExports = (
   const allExports: ExportRecord[] = [];
   const updatedExportsMap: ExportsMap[] = []; // uri x filename
   for (const contentTypeSchema of contentTypeSchemasBeingExported) {
+    if (!contentTypeSchema.schemaId) {
+      continue;
+    }
+
     const exportRecord = getExportRecordForContentTypeSchema(
       contentTypeSchema,
       outputDir,
       previouslyExportedContentTypeSchemas
     );
-    if (contentTypeSchema.schemaId) {
-      allExports.push(exportRecord);
-      if (exportRecord.status === 'UPDATED') {
-        updatedExportsMap.push({ schemaId: contentTypeSchema.schemaId, filename: exportRecord.filename });
-      }
+    allExports.push(exportRecord);
+    if (exportRecord.status === 'UPDATED') {
+      updatedExportsMap.push({ schemaId: contentTypeSchema.schemaId, filename: exportRecord.filename });
     }
   }
   return [allExports, updatedExportsMap];
@@ -123,13 +133,20 @@ export const processContentTypeSchemas = async (
   previouslyExportedContentTypeSchemas: { [filename: string]: ContentTypeSchema },
   storedContentTypeSchemas: ContentTypeSchema[]
 ): Promise<void> => {
+  if (storedContentTypeSchemas.length === 0) {
+    nothingExportedExit();
+  }
+
   const [allExports, updatedExportsMap] = getContentTypeSchemaExports(
     outputDir,
     previouslyExportedContentTypeSchemas,
     storedContentTypeSchemas
   );
-  if (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
-    process.exit(1);
+  if (
+    allExports.length === 0 ||
+    (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap)))
+  ) {
+    nothingExportedExit();
   }
 
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
