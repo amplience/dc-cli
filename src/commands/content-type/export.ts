@@ -52,7 +52,9 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
     );
     if (unmatchedContentTypeUriList.length > 0) {
       throw new Error(
-        `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList.map(u => `'${u}'`).join(', ')}].`
+        `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList
+          .map(u => `'${u}'`)
+          .join(', ')}].\nNothing was exported, exiting.`
       );
     }
   }
@@ -127,20 +129,25 @@ export const processContentTypes = async (
     contentTypesBeingExported
   );
   if (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
+    process.stdout.write('Nothing was exported, exiting.\n');
     process.exit(1);
   }
 
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('file'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
-  for (const { filename, status, contentType } of allExports) {
-    if (status !== 'UP-TO-DATE') {
-      /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line
-      const { id, ...exportedContentType } = contentType; // do not export id
-      writeJsonToFile(filename, new ContentType(exportedContentType));
+  if (allExports.length > 0) {
+    const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+    tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+    for (const { filename, status, contentType } of allExports) {
+      if (status !== 'UP-TO-DATE') {
+        /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line
+        const { id, ...exportedContentType } = contentType; // do not export id
+        writeJsonToFile(filename, new ContentType(exportedContentType));
+      }
+      tableStream.write([filename, contentType.contentTypeUri || '', status]);
     }
-    tableStream.write([filename, contentType.contentTypeUri || '', status]);
+    process.stdout.write('\n');
+  } else {
+    process.stdout.write('Nothing was exported, exiting.\n');
   }
-  process.stdout.write('\n');
 };
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {

@@ -309,6 +309,7 @@ describe('content-type export command', (): void => {
 
   describe('processContentTypes', () => {
     let mockStreamWrite: jest.Mock;
+    let stdoutSpy: jest.SpyInstance;
 
     const contentTypesToProcess = [
       new ContentType({
@@ -349,6 +350,8 @@ describe('content-type export command', (): void => {
         write: mockStreamWrite
       });
       jest.spyOn(exportServiceModule, 'writeJsonToFile').mockImplementation();
+      stdoutSpy = jest.spyOn(process.stdout, 'write');
+      stdoutSpy.mockImplementation();
     });
 
     it('should output export files for the given content types if nothing previously exported', async () => {
@@ -402,9 +405,9 @@ describe('content-type export command', (): void => {
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('file'),
-        chalk.bold('contentTypeUri'),
-        chalk.bold('result')
+        chalk.bold('File'),
+        chalk.bold('Schema ID'),
+        chalk.bold('Result')
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
         'export-dir/export-filename-1.json',
@@ -421,6 +424,20 @@ describe('content-type export command', (): void => {
         exportedContentTypes[2].contentTypeUri,
         'CREATED'
       ]);
+    });
+
+    it('should output a message if no content types to export from hub', async () => {
+      jest.spyOn(exportModule, 'getContentTypeExports').mockReturnValueOnce([[], []]);
+
+      const previouslyExportedContentTypes = {};
+      await processContentTypes('export-dir', previouslyExportedContentTypes, []);
+
+      expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(1);
+      expect(exportModule.getContentTypeExports).toHaveBeenCalledWith('export-dir', previouslyExportedContentTypes, []);
+
+      expect(stdoutSpy.mock.calls).toMatchSnapshot();
+      expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenCalledTimes(0);
     });
 
     it('should not output any export files if a previous export exists and the content type is unchanged', async () => {
@@ -461,9 +478,9 @@ describe('content-type export command', (): void => {
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('file'),
-        chalk.bold('contentTypeUri'),
-        chalk.bold('result')
+        chalk.bold('File'),
+        chalk.bold('Schema ID'),
+        chalk.bold('Result')
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
         'export-dir/export-filename-1.json',
@@ -535,9 +552,9 @@ describe('content-type export command', (): void => {
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('file'),
-        chalk.bold('contentTypeUri'),
-        chalk.bold('result')
+        chalk.bold('File'),
+        chalk.bold('Schema ID'),
+        chalk.bold('Result')
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
         'export-dir/export-filename-1.json',

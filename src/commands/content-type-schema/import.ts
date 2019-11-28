@@ -83,7 +83,7 @@ export const processSchemas = async (
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
 
-  tableStream.write([chalk.bold('id'), chalk.bold('schemaId'), chalk.bold('result')]);
+  tableStream.write([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const schema of schemasToProcess) {
     let schemaId = schema.id;
     let status: ImportResult;

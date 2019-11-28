@@ -178,7 +178,7 @@ export const processContentTypes = async (
     contentRepositoryList.map(value => [value.name || '', value])
   );
 
-  tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
+  tableStream.write([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const contentType of contentTypes) {
     let status: ImportResult;
     let contentTypeResult: ContentType;
