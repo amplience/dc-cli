@@ -169,7 +169,7 @@ Array [
 exports[`content-type export command processContentTypes should output a message if no content types to export from hub 1`] = `
 Array [
   Array [
-    "Nothing was exported, exiting.
+    "No content types to export from this hub, exiting.
 ",
   ],
 ]
@@ -202,8 +202,8 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mSchema ID[22m",
+        "[1mFile[22m",
       ],
       Array [
         "my-content-type-uri",
@@ -217,8 +217,8 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mSchema ID[22m",
+        "[1mFile[22m",
       ],
       Array [
         "my-content-type-uri",
@@ -259,8 +259,8 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mSchema ID[22m",
+        "[1mFile[22m",
       ],
       Array [
         "my-content-type-uri",
@@ -274,8 +274,8 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mSchema ID[22m",
+        "[1mFile[22m",
       ],
       Array [
         "my-content-type-uri",
@@ -289,8 +289,8 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mSchema ID[22m",
+        "[1mFile[22m",
       ],
       Array [
         "my-content-type-uri",
@@ -331,8 +331,8 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mSchema ID[22m",
+        "[1mFile[22m",
       ],
       Array [
         "my-content-type-uri",
