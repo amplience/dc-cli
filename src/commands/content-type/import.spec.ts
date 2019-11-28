@@ -384,9 +384,9 @@ describe('content-type import command', (): void => {
       );
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('id'),
-        chalk.bold('contentTypeUri'),
-        chalk.bold('result')
+        chalk.bold('ID'),
+        chalk.bold('Schema ID'),
+        chalk.bold('Result')
       ]);
       expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
         createdContentType.id,

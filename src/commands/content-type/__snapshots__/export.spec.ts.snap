@@ -1,6 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`content-type export command filterContentTypesByUri should throw an error for uris which do not exist in the list of content types 1`] = `"The following schema ID(s) could not be found: ['content-type-uri-4']."`;
+exports[`content-type export command filterContentTypesByUri should throw an error for uris which do not exist in the list of content types 1`] = `
+"The following schema ID(s) could not be found: ['content-type-uri-4'].
+Nothing was exported, exiting."
+`;
 
 exports[`content-type export command getExports should return a list of content-types to export and a list of filenames that will be updated 1`] = `
 Array [
@@ -163,6 +166,15 @@ Array [
 ]
 `;
 
+exports[`content-type export command processContentTypes should output a message if no content types to export from hub 1`] = `
+Array [
+  Array [
+    "Nothing was exported, exiting.
+",
+  ],
+]
+`;
+
 exports[`content-type export command promptToOverwriteExports Should return false when the answer is "n" 1`] = `
 Array [
   Array [
@@ -175,7 +187,8 @@ Array [
 exports[`content-type export command promptToOverwriteExports Should return false when the answer is "n" 2`] = `
 Array [
   Array [
-    "The following files will be overwritten:",
+    "The following files will be overwritten:
+",
   ],
   Array [
     "undefined
@@ -231,7 +244,8 @@ Array [
 exports[`content-type export command promptToOverwriteExports Should return false when the answer is anything but "y" 2`] = `
 Array [
   Array [
-    "The following files will be overwritten:",
+    "The following files will be overwritten:
+",
   ],
   Array [
     "undefined
@@ -302,7 +316,8 @@ Array [
 exports[`content-type export command promptToOverwriteExports Should return true when the answer is "y" 2`] = `
 Array [
   Array [
-    "The following files will be overwritten:",
+    "The following files will be overwritten:
+",
   ],
   Array [
     "undefined
