@@ -568,6 +568,15 @@ Array [
 ]
 `;
 
+exports[`content-type-schema export command processContentTypeSchemas should not do anything if the list of schemas to export is empty 1`] = `
+Array [
+  Array [
+    "Nothing was exported, exiting.
+",
+  ],
+]
+`;
+
 exports[`content-type-schema export command processContentTypeSchemas should not output any export files if a previous export exists and the content type is unchanged 1`] = `
 Array [
   Array [

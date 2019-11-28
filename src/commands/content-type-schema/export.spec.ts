@@ -287,6 +287,24 @@ describe('content-type-schema export command', (): void => {
       expect(mockStreamWrite).toHaveBeenCalledTimes(0);
       expect(process.exit).toHaveBeenCalled();
     });
+
+    it('should not do anything if the list of schemas to export is empty', async () => {
+      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
+      jest.spyOn(process, 'exit').mockImplementation(() => {
+        throw exitError;
+      });
+      const stdoutSpy = jest.spyOn(process.stdout, 'write');
+      stdoutSpy.mockImplementation();
+
+      await expect(processContentTypeSchemas('export-dir', {}, [])).rejects.toThrowError(exitError);
+
+      expect(stdoutSpy.mock.calls).toMatchSnapshot();
+      expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(0);
+
+      expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
+      expect(mockStreamWrite).toHaveBeenCalledTimes(0);
+      expect(process.exit).toHaveBeenCalled();
+    });
   });
 
   describe('getContentTypeSchemaExports', () => {
@@ -362,6 +380,18 @@ describe('content-type-schema export command', (): void => {
 
     it('should not return a list of content-types to export or a list of filenames that will be updated', () => {
       const [allExports, updatedExportsMap] = getContentTypeSchemaExports('export-dir', {}, []);
+
+      expect(getExportRecordForContentTypeSchemaSpy).toHaveBeenCalledTimes(0);
+      expect(allExports).toEqual([]);
+      expect(updatedExportsMap).toEqual([]);
+    });
+
+    it('should skip any that do not have a schemaId', () => {
+      const skippedSchema = new ContentTypeSchema({
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      });
+      const [allExports, updatedExportsMap] = getContentTypeSchemaExports('export-dir', {}, [skippedSchema]);
 
       expect(getExportRecordForContentTypeSchemaSpy).toHaveBeenCalledTimes(0);
       expect(allExports).toEqual([]);

@@ -18,6 +18,10 @@ jest.mock('readline', () => ({
 }));
 
 describe('export service tests', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('uniqueFilename tests', () => {
     it('should produce unique number-suffixed filenames if there are uris with the same base path', (): void => {
       const filenames: string[] = ['my-dir/text.json'];
