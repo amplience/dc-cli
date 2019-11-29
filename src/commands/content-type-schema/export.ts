@@ -29,7 +29,7 @@ export const builder = (yargs: Argv): void => {
     })
     .option('schemaId', {
       type: 'string',
-      describe: 'content-type-schema ID(s) to export',
+      describe: 'The Schema ID of a Content Type Schema(s) to be exported.',
       requiresArg: true
     })
     .array<string>('schemaId');
