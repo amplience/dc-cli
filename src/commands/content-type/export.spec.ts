@@ -41,7 +41,6 @@ describe('content-type export command', (): void => {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
-      const spyArray = jest.spyOn(argv, 'array').mockReturnThis();
 
       builder(argv);
 
@@ -51,10 +50,10 @@ describe('content-type export command', (): void => {
       });
       expect(spyOption).toHaveBeenCalledWith('schemaId', {
         type: 'string',
-        describe: 'content-type-schema ID(s) of Content Type(s) to export',
+        describe:
+          'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
         requiresArg: true
       });
-      expect(spyArray).toHaveBeenCalledWith('schemaId');
     });
   });
 

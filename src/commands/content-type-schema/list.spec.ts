@@ -110,10 +110,10 @@ describe('content-type-schema list command', (): void => {
       });
       const result = itemMapFn(contentTypeSchema.toJSON());
       expect(result).toEqual({
-        id: 'id',
-        schemaId: 'schemaId',
-        validationLevel: 'validationLevel',
-        version: 'version'
+        ID: 'id',
+        'Schema ID': 'schemaId',
+        'Validation Level': 'validationLevel',
+        Version: 'version'
       });
     });
   });

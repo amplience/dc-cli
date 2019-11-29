@@ -31,10 +31,10 @@ export const builder = (yargs: Argv): void => {
     })
     .option('schemaId', {
       type: 'string',
-      describe: 'content-type-schema ID(s) of Content Type(s) to export',
+      describe:
+        'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
       requiresArg: true
-    })
-    .array<string>('schemaId');
+    });
 };
 
 const equals = (a: ContentType, b: ContentType): boolean =>
@@ -129,7 +129,7 @@ export const processContentTypes = async (
   contentTypesBeingExported: ContentType[]
 ): Promise<void> => {
   if (contentTypesBeingExported.length === 0) {
-    nothingExportedExit();
+    nothingExportedExit('No content types to export from this hub, exiting.\n');
   }
 
   const [allExports, updatedExportsMap] = getContentTypeExports(
@@ -164,6 +164,7 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list);
-  const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaId || []);
+  const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
+  const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
   await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);
 };

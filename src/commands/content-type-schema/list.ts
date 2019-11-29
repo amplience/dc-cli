@@ -15,10 +15,10 @@ export const builder: CommandOptions = {
 };
 
 export const itemMapFn = ({ id, schemaId, version, validationLevel }: ContentTypeSchema): object => ({
-  id,
-  schemaId,
-  version,
-  validationLevel
+  ID: id,
+  'Schema ID': schemaId,
+  Version: version,
+  'Validation Level': validationLevel
 });
 
 export const handler = async (argv: Arguments<ConfigurationParameters & RenderingArguments>): Promise<void> => {

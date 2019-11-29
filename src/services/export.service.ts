@@ -49,7 +49,7 @@ export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: str
   });
 };
 
-export const nothingExportedExit = (): void => {
-  process.stdout.write('Nothing was exported, exiting.\n');
+export const nothingExportedExit = (msg = 'Nothing was exported, exiting.\n'): void => {
+  process.stdout.write(msg);
   process.exit(1);
 };
