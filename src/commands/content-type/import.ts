@@ -42,7 +42,7 @@ type ContentTypeUri = string;
 type ContentTypeFile = string;
 
 export const validateNoDuplicateContentTypeUris = (importedContentTypes: {
-  [filename: string]: ContentTypeWithRepositoryAssignments;
+  [filename: string]: ContentType;
 }): void | never => {
   const uriToFilenameMap = new Map<ContentTypeUri, ContentTypeFile[]>(); // map: uri x filenames
   for (const [filename, contentType] of Object.entries(importedContentTypes)) {
@@ -178,7 +178,7 @@ export const processContentTypes = async (
     contentRepositoryList.map(value => [value.name || '', value])
   );
 
-  tableStream.write([chalk.bold('id'), chalk.bold('contentTypeUri'), chalk.bold('result')]);
+  tableStream.write([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const contentType of contentTypes) {
     let status: ImportResult;
     let contentTypeResult: ContentType;
