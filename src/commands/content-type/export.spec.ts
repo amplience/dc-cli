@@ -63,7 +63,7 @@ describe('content-type export command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('schemaId', {
         type: 'string',
         describe:
-          'content-type-schema ID of a Content Type to export.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
+          'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
         requiresArg: true
       });
     });
