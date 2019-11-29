@@ -44,7 +44,7 @@ describe('content-type-schema export command', (): void => {
       });
       expect(spyOption).toHaveBeenCalledWith('schemaId', {
         type: 'string',
-        describe: 'content-type-schema ID(s) to export',
+        describe: 'The Schema ID of a Content Type Schema(s) to be exported.',
         requiresArg: true
       });
       expect(spyArray).toHaveBeenCalledWith('schemaId');

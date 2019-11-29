@@ -134,7 +134,7 @@ export const processContentTypeSchemas = async (
   storedContentTypeSchemas: ContentTypeSchema[]
 ): Promise<void> => {
   if (storedContentTypeSchemas.length === 0) {
-    nothingExportedExit();
+    nothingExportedExit('No content type schemas to export from this hub, exiting.\n');
   }
 
   const [allExports, updatedExportsMap] = getContentTypeSchemaExports(

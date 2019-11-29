@@ -571,7 +571,7 @@ Array [
 exports[`content-type-schema export command processContentTypeSchemas should not do anything if the list of schemas to export is empty 1`] = `
 Array [
   Array [
-    "Nothing was exported, exiting.
+    "No content type schemas to export from this hub, exiting.
 ",
   ],
 ]
