@@ -15,6 +15,7 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import * as exportServiceModule from '../../services/export.service';
 import { createStream } from 'table';
 import { loadJsonFromDirectory } from '../../services/import.service';
+import * as resolveJsonService from '../../common/json-resolver/json-resolver';
 
 jest.mock('../../services/import.service');
 jest.mock('../../services/dynamic-content-client-factory');

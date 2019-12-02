@@ -3,7 +3,7 @@ import { URL } from 'url';
 import * as fs from 'fs';
 import * as path from 'path';
 
-export async function jsonResolver(jsonToResolve: string, relativeDir: string = __dirname): Promise<string> {
+export async function jsonResolver(jsonToResolve = '', relativeDir: string = __dirname): Promise<string> {
   try {
     const resolvedJson = JSON.parse(jsonToResolve);
     if (resolvedJson && (Array.isArray(resolvedJson) || typeof resolvedJson === 'object')) {

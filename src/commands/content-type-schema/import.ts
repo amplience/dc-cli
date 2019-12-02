@@ -11,7 +11,7 @@ import chalk from 'chalk';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
 
 export const command = 'import <dir>';
 

@@ -18,7 +18,7 @@ import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
 
 jest.mock('fs');
 jest.mock('table');
@@ -27,7 +27,7 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/import.service');
 jest.mock('./create.service');
 jest.mock('./update.service');
-jest.mock('../../common/import/json-resolver');
+jest.mock('../../common/json-resolver/json-resolver');
 
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {

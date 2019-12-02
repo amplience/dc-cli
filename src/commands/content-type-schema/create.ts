@@ -6,7 +6,7 @@ import { ValidationLevel } from 'dc-management-sdk-js';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { createContentTypeSchema } from './create.service';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
 
 export const command = 'create';
 

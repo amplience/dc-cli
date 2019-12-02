@@ -3,12 +3,12 @@ import { ContentTypeSchema, Hub, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import DataPresenter from '../../view/data-presenter';
 import { singleItemTableOptions } from '../../common/table/table.consts';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
 import { createContentTypeSchema } from './create.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
-jest.mock('../../common/import/json-resolver');
+jest.mock('../../common/json-resolver/json-resolver');
 jest.mock('./create.service');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
