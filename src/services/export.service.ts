@@ -8,6 +8,10 @@ import readline from 'readline';
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
 export const uniqueFilename = (dir: string, uri = '', extension: string, exportFilenames: string[]): string => {
+  if (dir.substr(-1) === path.sep) {
+    dir = dir.slice(0, -1);
+  }
+
   const url = new URL(uri);
   const file = path.basename(url.pathname, '.' + extension) || url.hostname.replace('.', '_');
   let counter = 0;

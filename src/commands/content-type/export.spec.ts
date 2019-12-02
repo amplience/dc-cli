@@ -137,6 +137,20 @@ describe('content-type export command', (): void => {
       expect(allExports).toEqual([]);
       expect(updatedExportsMap).toEqual([]);
     });
+
+    it('should skip any that are missing a contetTypeUri', () => {
+      const [allExports, updatedExportsMap] = getContentTypeExports('export-dir', {}, [
+        new ContentType({
+          settings: {
+            label: 'content type 1'
+          }
+        })
+      ]);
+
+      expect(getExportRecordForContentTypeSpy).toHaveBeenCalledTimes(0);
+      expect(allExports).toEqual([]);
+      expect(updatedExportsMap).toEqual([]);
+    });
   });
 
   describe('getExportRecordForContentType', () => {
@@ -251,55 +265,38 @@ describe('content-type export command', (): void => {
   });
 
   describe('filterContentTypesByUri', () => {
+    const listToFilter = [
+      new ContentType({
+        contentTypeUri: 'content-type-uri-1',
+        settings: {
+          label: 'content type 1'
+        }
+      }),
+      new ContentType({
+        contentTypeUri: 'content-type-uri-2',
+        settings: {
+          label: 'content type 2'
+        }
+      }),
+      new ContentType({
+        contentTypeUri: 'content-type-uri-3',
+        settings: {
+          label: 'content type 3'
+        }
+      })
+    ];
+
     it('should return the content types matching the given uris', async () => {
-      const listToFilter = [
-        new ContentType({
-          contentTypeUri: 'content-type-uri-1',
-          settings: {
-            label: 'content type 1'
-          }
-        }),
-        new ContentType({
-          contentTypeUri: 'content-type-uri-2',
-          settings: {
-            label: 'content type 2'
-          }
-        }),
-        new ContentType({
-          contentTypeUri: 'content-type-uri-3',
-          settings: {
-            label: 'content type 3'
-          }
-        })
-      ];
-
       const result = filterContentTypesByUri(listToFilter, ['content-type-uri-1', 'content-type-uri-3']);
-
       expect(result).toEqual(expect.arrayContaining([listToFilter[0], listToFilter[2]]));
     });
 
-    it('should throw an error for uris which do not exist in the list of content types', async () => {
-      const listToFilter = [
-        new ContentType({
-          contentTypeUri: 'content-type-uri-1',
-          settings: {
-            label: 'content type 1'
-          }
-        }),
-        new ContentType({
-          contentTypeUri: 'content-type-uri-2',
-          settings: {
-            label: 'content type 2'
-          }
-        }),
-        new ContentType({
-          contentTypeUri: 'content-type-uri-3',
-          settings: {
-            label: 'content type 3'
-          }
-        })
-      ];
+    it('should return all the content types because there are no URIs to filter', async () => {
+      const result = filterContentTypesByUri(listToFilter, []);
+      expect(result).toEqual(listToFilter);
+    });
 
+    it('should throw an error for uris which do not exist in the list of content types', async () => {
       expect(() =>
         filterContentTypesByUri(listToFilter, ['content-type-uri-1', 'content-type-uri-4', 'content-type-uri-3'])
       ).toThrowErrorMatchingSnapshot();

@@ -16,6 +16,9 @@ import {
 } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
+import * as path from 'path';
+import * as fs from 'fs';
 
 export const command = 'export <dir>';
 
@@ -29,10 +32,10 @@ export const builder = (yargs: Argv): void => {
     })
     .option('schemaId', {
       type: 'string',
-      describe: 'The Schema ID of a Content Type Schema(s) to be exported.',
+      describe:
+        'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
       requiresArg: true
-    })
-    .array<string>('schemaId');
+    });
 };
 
 const equals = (a: ContentTypeSchema, b: ContentTypeSchema): boolean =>
@@ -47,6 +50,34 @@ interface ExportRecord {
 type ExportsMap = {
   schemaId: string;
   filename: string;
+};
+
+export const generateSchemaPath = (filepath: string): string => {
+  const pathParts = filepath.split(path.sep);
+  pathParts.splice(-1, 0, 'schemas');
+  return pathParts.join(path.sep);
+};
+
+export const resolveSchemaBodies = async (
+  schemas: { [p: string]: ContentTypeSchema },
+  dir: string
+): Promise<{ [p: string]: ContentTypeSchema }> => {
+  Object.values(schemas).forEach(async schema => {
+    schema.body = await jsonResolver(schema.body, `${dir}${path.sep}schemas`);
+  });
+  return schemas;
+};
+
+export const writeSchemaBody = (filename: string, body?: string): void => {
+  if (!body) {
+    return;
+  }
+
+  try {
+    fs.writeFileSync(filename, body);
+  } catch {
+    throw new Error(`Unable to write file: ${filename}, aborting export`);
+  }
 };
 
 export const getExportRecordForContentTypeSchema = (
@@ -73,6 +104,7 @@ export const getExportRecordForContentTypeSchema = (
   const previouslyExportedContentTypeSchema = Object.values(previouslyExportedContentTypeSchemas)[
     indexOfExportedContentTypeSchema
   ];
+
   if (equals(previouslyExportedContentTypeSchema, contentTypeSchema)) {
     return { filename, status: 'UP-TO-DATE', contentTypeSchema };
   }
@@ -154,7 +186,11 @@ export const processContentTypeSchemas = async (
   for (const { filename, status, contentTypeSchema } of allExports) {
     if (status !== 'UP-TO-DATE') {
       delete contentTypeSchema.id; // do not export id
+      const schemaBody = contentTypeSchema.body;
+      const schemaBodyFilename = generateSchemaPath(filename);
+      contentTypeSchema.body = schemaBodyFilename;
       writeJsonToFile(filename, new ContentTypeSchema(contentTypeSchema));
+      writeSchemaBody(schemaBodyFilename, schemaBody);
     }
     tableStream.write([filename, contentTypeSchema.schemaId || '', status]);
   }
@@ -163,10 +199,12 @@ export const processContentTypeSchemas = async (
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, schemaId } = argv;
-  const previouslyExportedContentTypeSchemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
+  let previouslyExportedContentTypeSchemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
+  previouslyExportedContentTypeSchemas = await resolveSchemaBodies(previouslyExportedContentTypeSchemas, dir);
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypeSchemas = await paginator(hub.related.contentTypeSchema.list);
-  const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaId);
+  const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
+  const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaIdArray);
   await processContentTypeSchemas(dir, previouslyExportedContentTypeSchemas, filteredContentTypeSchemas);
 };

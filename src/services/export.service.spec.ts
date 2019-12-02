@@ -42,6 +42,10 @@ describe('export service tests', () => {
         }
       }
     });
+    it('should produce unique file names handling trailing slashes on the dir', (): void => {
+      const filename = uniqueFilename('my-dir/', 'https://mydomain/schemas/new/text.json', 'json', []);
+      expect(filename).toEqual('my-dir/text.json');
+    });
   });
 
   describe('writeJsonToFile tests', () => {
