@@ -90,9 +90,9 @@ describe('content-type list command', (): void => {
         })
       );
       expect(result).toEqual({
-        id: 'id',
-        label: 'label',
-        contentTypeUri: 'contentTypeUri'
+        ID: 'id',
+        Label: 'label',
+        'Schema ID': 'contentTypeUri'
       });
     });
 
@@ -104,9 +104,9 @@ describe('content-type list command', (): void => {
         })
       );
       expect(result).toEqual({
-        id: 'id',
-        label: '',
-        contentTypeUri: 'contentTypeUri'
+        ID: 'id',
+        Label: '',
+        'Schema ID': 'contentTypeUri'
       });
     });
   });
