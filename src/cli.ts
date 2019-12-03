@@ -21,6 +21,7 @@ const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
         errorHandler(err || msg);
       };
       const argv = await yargInstance
+        .scriptName('dc-cli')
         .options(configureCommandOptions)
         .config('config', readConfigFile)
         .commandDir('./commands', YargsCommandBuilderOptions)
