@@ -29,7 +29,7 @@ export const uniqueFilename = (dir: string, uri = '', extension: string, exportF
 
 export const writeJsonToFile = <T extends HalResource>(filename: string, resource: T): void => {
   try {
-    fs.writeFileSync(filename, JSON.stringify(resource));
+    fs.writeFileSync(filename, JSON.stringify(resource, null, 2));
   } catch (e) {
     throw new Error(`Unable to write file: ${filename}, aborting export`);
   }

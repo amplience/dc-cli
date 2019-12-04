@@ -624,7 +624,7 @@ Array [
   Array [
     "export-dir/export-filename-1.json",
     Object {
-      "body": "export-dir/schemas/export-filename-1.json",
+      "body": "./schemas/export-filename-1-schema.json",
       "schemaId": "content-type-schema-id-1",
       "validationLevel": "CONTENT_TYPE",
     },
@@ -632,7 +632,7 @@ Array [
   Array [
     "export-dir/export-filename-2.json",
     Object {
-      "body": "export-dir/schemas/export-filename-2.json",
+      "body": "./schemas/export-filename-2-schema.json",
       "schemaId": "content-type-schema-id-2",
       "validationLevel": "CONTENT_TYPE",
     },
@@ -640,7 +640,7 @@ Array [
   Array [
     "export-dir/export-filename-3.json",
     Object {
-      "body": "export-dir/schemas/export-filename-3.json",
+      "body": "./schemas/export-filename-3-schema.json",
       "schemaId": "content-type-schema-id-3",
       "validationLevel": "CONTENT_TYPE",
     },
@@ -651,7 +651,7 @@ Array [
 exports[`content-type-schema export command processContentTypeSchemas should output export files for content types schemas if there is nothing previously exported 2`] = `
 Array [
   Array [
-    "export-dir/schemas/export-filename-1.json",
+    "export-dir/schemas/export-filename-1-schema.json",
     "{
 	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
 	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
@@ -673,7 +673,7 @@ Array [
 }",
   ],
   Array [
-    "export-dir/schemas/export-filename-2.json",
+    "export-dir/schemas/export-filename-2-schema.json",
     "{
 	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
 	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
@@ -695,7 +695,7 @@ Array [
 }",
   ],
   Array [
-    "export-dir/schemas/export-filename-3.json",
+    "export-dir/schemas/export-filename-3-schema.json",
     "{
 	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
 	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
@@ -757,7 +757,7 @@ Array [
   Array [
     "export-dir/export-filename-3.json",
     Object {
-      "body": "export-dir/schemas/export-filename-3.json",
+      "body": "./schemas/export-filename-3-schema.json",
       "schemaId": "content-type-schema-id-3",
       "validationLevel": "CONTENT_TYPE",
     },
@@ -768,7 +768,7 @@ Array [
 exports[`content-type-schema export command processContentTypeSchemas should update the existing export file for a changed content type 2`] = `
 Array [
   Array [
-    "export-dir/schemas/export-filename-3.json",
+    "export-dir/schemas/export-filename-3-schema.json",
     "{
 	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
 	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
@@ -825,40 +825,32 @@ Array [
 ]
 `;
 
-exports[`content-type-schema export command resolveSchemaBodies should resolve the schema body 1`] = `
-Object {
-  "export-dir/export-filename-1.json": Object {
-    "body": "export-dir/schemas/export-filename-1.json",
-    "schemaId": "content-type-schema-id-1",
-    "validationLevel": "CONTENT_TYPE",
-  },
-}
-`;
+exports[`content-type-schema export command writeSchemaBody should not write a body if schema dir is not a dir 1`] = `"Unable to write schema to \\"schemas/export-filename-1.json\\" as \\"schemas\\" is not a directory."`;
 
-exports[`content-type-schema export command resolveSchemaBodies should resolve the schema body 2`] = `
-Array [
-  Array [
-    "export-dir/schemas/export-filename-1.json",
-    "./export-dir/schemas",
-  ],
-]
-`;
-
-exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 1`] = `"Unable to write file: export-dir/export-filename-1.json, aborting export"`;
+exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 1`] = `"Unable to write file: schemas/export-filename-1.json, aborting export"`;
 
 exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 2`] = `
 Array [
   Array [
-    "export-dir/export-filename-1.json",
+    "schemas/export-filename-1.json",
     "{}",
   ],
 ]
 `;
 
-exports[`content-type-schema export command writeSchemaBody should write a body to file 1`] = `
+exports[`content-type-schema export command writeSchemaBody should write a body to file and create schemas directory if it doesnt exist 1`] = `
 Array [
   Array [
-    "export-dir/export-filename-1.json",
+    "schemas/export-filename-1.json",
+    "{}",
+  ],
+]
+`;
+
+exports[`content-type-schema export command writeSchemaBody should write a body to file and use the schema dir if it does exist 1`] = `
+Array [
+  Array [
+    "schemas/export-filename-1.json",
     "{}",
   ],
 ]

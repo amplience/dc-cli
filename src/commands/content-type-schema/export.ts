@@ -16,9 +16,9 @@ import {
 } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
-import { jsonResolver } from '../../common/json-resolver/json-resolver';
 import * as path from 'path';
 import * as fs from 'fs';
+import { resolveSchemaBody } from '../../services/resolve-schema-body';
 
 export const command = 'export <dir>';
 
@@ -52,25 +52,24 @@ type ExportsMap = {
   filename: string;
 };
 
-export const generateSchemaPath = (filepath: string): string => {
-  const pathParts = filepath.split(path.sep);
-  pathParts.splice(-1, 0, 'schemas');
-  return pathParts.join(path.sep);
-};
+const SCHEMA_DIR = 'schemas';
 
-export const resolveSchemaBodies = async (
-  schemas: { [p: string]: ContentTypeSchema },
-  dir: string
-): Promise<{ [p: string]: ContentTypeSchema }> => {
-  Object.values(schemas).forEach(async schema => {
-    schema.body = await jsonResolver(schema.body, `${dir}${path.sep}schemas`);
-  });
-  return schemas;
-};
+export const generateSchemaPath = (filepath: string): string =>
+  SCHEMA_DIR + path.sep + path.basename(filepath).replace('.json', '-schema.json');
 
 export const writeSchemaBody = (filename: string, body?: string): void => {
   if (!body) {
     return;
+  }
+
+  const dir = path.dirname(filename);
+  if (fs.existsSync(dir)) {
+    const dirStat = fs.lstatSync(dir);
+    if (!dirStat || !dirStat.isDirectory()) {
+      throw new Error(`Unable to write schema to "${filename}" as "${dir}" is not a directory.`);
+    }
+  } else {
+    fs.mkdirSync(dir);
   }
 
   try {
@@ -188,9 +187,9 @@ export const processContentTypeSchemas = async (
       delete contentTypeSchema.id; // do not export id
       const schemaBody = contentTypeSchema.body;
       const schemaBodyFilename = generateSchemaPath(filename);
-      contentTypeSchema.body = schemaBodyFilename;
+      contentTypeSchema.body = './' + schemaBodyFilename;
+      writeSchemaBody(outputDir + path.sep + schemaBodyFilename, schemaBody);
       writeJsonToFile(filename, new ContentTypeSchema(contentTypeSchema));
-      writeSchemaBody(schemaBodyFilename, schemaBody);
     }
     tableStream.write([filename, contentTypeSchema.schemaId || '', status]);
   }
@@ -199,12 +198,14 @@ export const processContentTypeSchemas = async (
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, schemaId } = argv;
-  let previouslyExportedContentTypeSchemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
-  previouslyExportedContentTypeSchemas = await resolveSchemaBodies(previouslyExportedContentTypeSchemas, dir);
+  const [contentTypeSchemas] = await resolveSchemaBody(
+    loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema),
+    dir
+  );
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypeSchemas = await paginator(hub.related.contentTypeSchema.list);
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaIdArray);
-  await processContentTypeSchemas(dir, previouslyExportedContentTypeSchemas, filteredContentTypeSchemas);
+  await processContentTypeSchemas(dir, contentTypeSchemas, filteredContentTypeSchemas);
 };
