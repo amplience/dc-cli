@@ -29,7 +29,7 @@ export const uniqueFilename = (dir: string, uri = '', extension: string, exportF
 
 export const writeJsonToFile = <T extends HalResource>(filename: string, resource: T): void => {
   try {
-    fs.writeFileSync(filename, JSON.stringify(resource));
+    fs.writeFileSync(filename, JSON.stringify(resource, null, 2));
   } catch (e) {
     throw new Error(`Unable to write file: ${filename}, aborting export`);
   }
@@ -39,7 +39,11 @@ export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: str
   return new Promise((resolve): void => {
     process.stdout.write('The following files will be overwritten:\n');
     // display updatedExportsMap as a table of uri x filename
-    new DataPresenter(updatedExportsMap).render();
+    const itemMapFn = ({ filename, schemaId }: { filename: string; schemaId: string }): object => ({
+      File: filename,
+      'Schema ID': schemaId
+    });
+    new DataPresenter(updatedExportsMap).render({ itemMapFn });
 
     const rl = readline.createInterface({
       input: process.stdin,

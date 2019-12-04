@@ -25,3 +25,8 @@ Error: Error creating content type schema"
 `;
 
 exports[`content-type-schema import command doUpdate should throw an error when content type schema fails to create 1`] = `"Error updating content type schema https://schema.localhost.com/test-1.json: Error getting content type schema"`;
+
+exports[`content-type-schema import command handler tests should report all resolve schema body errors 1`] = `
+"Unable to resolve the body for the following files:
+* filename.json -> Error: Unable to resolve filename.json"
+`;
