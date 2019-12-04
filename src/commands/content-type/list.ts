@@ -18,7 +18,7 @@ export const builder: CommandOptions = {
 
 export const itemMapFn = ({ id, settings, contentTypeUri }: ContentType): object => {
   const label = settings ? settings.label : '';
-  return { id, label, contentTypeUri: contentTypeUri };
+  return { ID: id, Label: label, 'Schema ID': contentTypeUri };
 };
 
 export const handler = async (

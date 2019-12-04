@@ -94,6 +94,7 @@ Outlined below are the permissions required to run each command of the CLI. To r
 | `content-type sync <id>`                          | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                         |
 | `content-type update <id>`                        | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                         |
 | `content-type import <dir>`                       | * ContentRepository - EDIT<br/>* Hub - READ | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>* CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |
+| `content-type export <dir>`                       | * Hub - READ | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ |
 | `content-type-schema create`                      | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                                       |
 | `content-type-schema get <id>`                    | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                         |
 | `content-type-schema list`                        | * Hub - READ                                | * CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                         |

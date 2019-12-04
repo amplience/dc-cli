@@ -18,7 +18,7 @@ describe('loadJsonFromDirectory tests', () => {
     expect(() =>
       loadJsonFromDirectory<ContentType>(__dirname + '/__fixtures__/load-json-from-directory/bad-json/', ContentType)
     ).toThrowError(
-      /^Non-JSON file found: .*__fixtures__\/load-json-from-directory\/bad-json\/bad-json\.json, aborting import$/
+      /^Non-JSON file found: .*__fixtures__\/load-json-from-directory\/bad-json\/bad-json\.json, aborting...$/
     );
   });
 });
