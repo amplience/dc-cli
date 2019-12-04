@@ -9,14 +9,22 @@ export const resolveSchemaBody = async (
   dir: string
 ): Promise<[ContentTypeSchemaFiles, ResolveSchemaBodyErrors]> => {
   const errors: ResolveSchemaBodyErrors = {};
-  for (const [key, schema] of Object.entries(schemas)) {
-    if (schema.body) {
+  const resolved: ContentTypeSchemaFiles = {};
+  for (const [filename, contentTypeSchema] of Object.entries(schemas)) {
+    if (contentTypeSchema.body) {
       try {
-        schema.body = await jsonResolver(schema.body, dir);
+        contentTypeSchema.body = await jsonResolver(contentTypeSchema.body, dir);
+        if (!contentTypeSchema.schemaId) {
+          const parsedBody = JSON.parse(contentTypeSchema.body);
+          if (parsedBody.id) {
+            contentTypeSchema.schemaId = parsedBody.id;
+          }
+        }
       } catch (err) {
-        errors[key] = err;
+        errors[filename] = err;
       }
     }
+    resolved[filename] = contentTypeSchema;
   }
-  return [schemas, errors];
+  return [resolved, errors];
 };
