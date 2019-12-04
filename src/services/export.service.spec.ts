@@ -55,7 +55,7 @@ describe('export service tests', () => {
         contentTypeUri: 'content-type-uri-1'
       });
       writeJsonToFile<ContentType>('my-filename', contentType);
-      expect(fs.writeFileSync).toHaveBeenCalledWith('my-filename', JSON.stringify(contentType));
+      expect(fs.writeFileSync).toHaveBeenCalledWith('my-filename', JSON.stringify(contentType, null, 2));
     });
 
     it('should throw an error if it cannot write to the file', (): void => {
