@@ -581,9 +581,9 @@ exports[`content-type-schema export command processContentTypeSchemas should not
 Array [
   Array [
     Array [
-      "[1mfile[22m",
-      "[1mschemaId[22m",
-      "[1mresult[22m",
+      "[1mFile[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
     ],
   ],
   Array [
@@ -723,9 +723,9 @@ exports[`content-type-schema export command processContentTypeSchemas should out
 Array [
   Array [
     Array [
-      "[1mfile[22m",
-      "[1mschemaId[22m",
-      "[1mresult[22m",
+      "[1mFile[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
     ],
   ],
   Array [
@@ -796,9 +796,9 @@ exports[`content-type-schema export command processContentTypeSchemas should upd
 Array [
   Array [
     Array [
-      "[1mfile[22m",
-      "[1mschemaId[22m",
-      "[1mresult[22m",
+      "[1mFile[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
     ],
   ],
   Array [

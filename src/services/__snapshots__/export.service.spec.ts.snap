@@ -36,12 +36,12 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
       ],
       Array [
-        "my-content-type-uri",
         "my-export-filename",
+        "my-content-type-uri",
       ],
     ],
     Object {
@@ -51,12 +51,12 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
       ],
       Array [
-        "my-content-type-uri",
         "my-export-filename",
+        "my-content-type-uri",
       ],
     ],
     Object {
@@ -93,12 +93,12 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
       ],
       Array [
-        "my-content-type-uri",
         "my-export-filename",
+        "my-content-type-uri",
       ],
     ],
     Object {
@@ -108,12 +108,12 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
       ],
       Array [
-        "my-content-type-uri",
         "my-export-filename",
+        "my-content-type-uri",
       ],
     ],
     Object {
@@ -123,12 +123,12 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
       ],
       Array [
-        "my-content-type-uri",
         "my-export-filename",
+        "my-content-type-uri",
       ],
     ],
     Object {
@@ -165,12 +165,12 @@ Array [
   Array [
     Array [
       Array [
-        "[1muri[22m",
-        "[1mfilename[22m",
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
       ],
       Array [
-        "my-content-type-uri",
         "my-export-filename",
+        "my-content-type-uri",
       ],
     ],
     Object {
