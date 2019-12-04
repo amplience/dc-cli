@@ -2,7 +2,6 @@ import * as cli from './cli';
 import Yargs from 'yargs/yargs';
 import { configureCommandOptions } from './commands/configure';
 import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-options';
-import { basename } from 'path';
 
 jest.mock('./commands/configure');
 
@@ -16,7 +15,7 @@ describe('cli', (): void => {
     jest.spyOn(console, 'error').mockImplementation((output: string) => (buffer = `${buffer}${output}`));
     await methodToWrap();
     // replace config file and script entry point
-    return buffer.replace(new RegExp(basename(process.argv[1]), 'g'), '<<ENTRYPOINT>>');
+    return buffer;
   };
 
   it('should configure yarg instance', async (): Promise<void> => {
