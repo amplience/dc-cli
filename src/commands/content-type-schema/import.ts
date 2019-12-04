@@ -53,7 +53,7 @@ export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<Con
 };
 
 const equals = (a: ContentTypeSchema, b: ContentTypeSchema): boolean =>
-  a.id === b.id && a.schemaId === b.schemaId && a.body === b.body;
+  a.id === b.id && a.schemaId === b.schemaId && a.body === b.body && a.validationLevel === b.validationLevel;
 
 export const doUpdate = async (
   client: DynamicContent,

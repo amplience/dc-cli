@@ -154,6 +154,35 @@ describe('content-type-schema import command', (): void => {
       expect(result).toEqual({ contentTypeSchema: mutatedContentTypeSchema, updateStatus: UpdateStatus.UPDATED });
     });
 
+    it('should update a content type when only the validationLevel has been updated', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const storedContentTypeSchema = {
+        id: 'stored-id',
+        schemaId,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      const mutatedContentTypeSchema = {
+        ...storedContentTypeSchema,
+        validationLevel: ValidationLevel.SLOT
+      } as ContentTypeSchema;
+      mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
+      (updateContentTypeSchema as jest.Mock).mockResolvedValueOnce({
+        ...mutatedContentTypeSchema,
+        id: 'stored-id',
+        schemaId
+      });
+      const result = await doUpdate(client, mutatedContentTypeSchema);
+
+      expect(updateContentTypeSchema).toHaveBeenCalledWith(
+        expect.objectContaining(storedContentTypeSchema),
+        mutatedContentTypeSchema.body,
+        mutatedContentTypeSchema.validationLevel
+      );
+      expect(result).toEqual({ contentTypeSchema: mutatedContentTypeSchema, updateStatus: UpdateStatus.UPDATED });
+    });
+
     it('should skip updating a content type schema when no changes detected and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
       const schemaId = 'https://schema.localhost.com/test-1.json';
