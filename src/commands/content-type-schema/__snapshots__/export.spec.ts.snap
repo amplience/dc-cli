@@ -581,9 +581,9 @@ exports[`content-type-schema export command processContentTypeSchemas should not
 Array [
   Array [
     Array [
-      "[1mfile[22m",
-      "[1mschemaId[22m",
-      "[1mresult[22m",
+      "[1mFile[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
     ],
   ],
   Array [
@@ -723,9 +723,9 @@ exports[`content-type-schema export command processContentTypeSchemas should out
 Array [
   Array [
     Array [
-      "[1mfile[22m",
-      "[1mschemaId[22m",
-      "[1mresult[22m",
+      "[1mFile[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
     ],
   ],
   Array [
@@ -796,9 +796,9 @@ exports[`content-type-schema export command processContentTypeSchemas should upd
 Array [
   Array [
     Array [
-      "[1mfile[22m",
-      "[1mschemaId[22m",
-      "[1mresult[22m",
+      "[1mFile[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
     ],
   ],
   Array [
@@ -828,25 +828,7 @@ Array [
 exports[`content-type-schema export command resolveSchemaBodies should resolve the schema body 1`] = `
 Object {
   "export-dir/export-filename-1.json": Object {
-    "body": "{
-	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
-	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
-
-	\\"title\\": \\"Test Schema 1\\",
-	\\"description\\": \\"Test Schema 1\\",
-
-	\\"allOf\\": [
-		{
-			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
-		}
-	],
-	
-	\\"type\\": \\"object\\",
-	\\"properties\\": {
-		
-	},
-	\\"propertyOrder\\": []
-}",
+    "body": "export-dir/schemas/export-filename-1.json",
     "schemaId": "content-type-schema-id-1",
     "validationLevel": "CONTENT_TYPE",
   },

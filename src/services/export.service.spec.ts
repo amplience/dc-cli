@@ -94,7 +94,7 @@ describe('export service tests', () => {
         return cb('y');
       });
 
-      const updatedExportsMap = [{ uri: 'my-content-type-uri', filename: 'my-export-filename' }];
+      const updatedExportsMap = [{ filename: 'my-export-filename', schemaId: 'my-content-type-uri' }];
       const res = await promptToOverwriteExports(updatedExportsMap);
 
       expect(res).toBeTruthy();
@@ -111,7 +111,7 @@ describe('export service tests', () => {
         return cb('n');
       });
 
-      const updatedExportsMap = [{ uri: 'my-content-type-uri', filename: 'my-export-filename' }];
+      const updatedExportsMap = [{ filename: 'my-export-filename', schemaId: 'my-content-type-uri' }];
       const res = await promptToOverwriteExports(updatedExportsMap);
 
       expect(res).toBeFalsy();
@@ -128,7 +128,7 @@ describe('export service tests', () => {
         return cb('');
       });
 
-      const updatedExportsMap = [{ uri: 'my-content-type-uri', filename: 'my-export-filename' }];
+      const updatedExportsMap = [{ filename: 'my-export-filename', schemaId: 'my-content-type-uri' }];
       const res = await promptToOverwriteExports(updatedExportsMap);
 
       expect(res).toBeFalsy();

@@ -182,7 +182,7 @@ export const processContentTypeSchemas = async (
   }
 
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('file'), chalk.bold('schemaId'), chalk.bold('result')]);
+  tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentTypeSchema } of allExports) {
     if (status !== 'UP-TO-DATE') {
       delete contentTypeSchema.id; // do not export id
