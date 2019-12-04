@@ -106,16 +106,19 @@ describe('content-type-schema export command', (): void => {
       mockGetContentTypeSchemaExports.mockReturnValueOnce([
         [
           {
+            id: '1',
             filename: 'export-dir/export-filename-1.json',
             status: 'CREATED',
             contentTypeSchema: contentTypeSchemasToProcess[0]
           },
           {
+            id: '2',
             filename: 'export-dir/export-filename-2.json',
             status: 'CREATED',
             contentTypeSchema: contentTypeSchemasToProcess[1]
           },
           {
+            id: '3',
             filename: 'export-dir/export-filename-3.json',
             status: 'CREATED',
             contentTypeSchema: contentTypeSchemasToProcess[2]
