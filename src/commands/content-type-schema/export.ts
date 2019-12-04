@@ -62,9 +62,13 @@ export const resolveSchemaBodies = async (
   schemas: { [p: string]: ContentTypeSchema },
   dir: string
 ): Promise<{ [p: string]: ContentTypeSchema }> => {
-  Object.values(schemas).forEach(async schema => {
-    schema.body = await jsonResolver(schema.body, `${dir}${path.sep}schemas`);
-  });
+  const schemaValues = Object.values(schemas);
+
+  for (const schema of schemaValues) {
+    try {
+      schema.body = await jsonResolver(schema.body, `${dir}${path.sep}schemas`);
+    } catch {}
+  }
   return schemas;
 };
 

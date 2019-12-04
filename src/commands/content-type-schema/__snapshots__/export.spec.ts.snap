@@ -825,6 +825,25 @@ Array [
 ]
 `;
 
+exports[`content-type-schema export command resolveSchemaBodies should pass through the schema if schema body is not found 1`] = `
+Object {
+  "export-dir/export-filename-1.json": Object {
+    "body": "export-dir/schemas/export-filename-1.json",
+    "schemaId": "content-type-schema-id-1",
+    "validationLevel": "CONTENT_TYPE",
+  },
+}
+`;
+
+exports[`content-type-schema export command resolveSchemaBodies should pass through the schema if schema body is not found 2`] = `
+Array [
+  Array [
+    "export-dir/schemas/export-filename-1.json",
+    "./export-dir/schemas",
+  ],
+]
+`;
+
 exports[`content-type-schema export command resolveSchemaBodies should resolve the schema body 1`] = `
 Object {
   "export-dir/export-filename-1.json": Object {
