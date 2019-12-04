@@ -189,7 +189,14 @@ export const processContentTypeSchemas = async (
       const schemaBodyFilename = generateSchemaPath(filename);
       contentTypeSchema.body = './' + schemaBodyFilename;
       writeSchemaBody(outputDir + path.sep + schemaBodyFilename, schemaBody);
-      writeJsonToFile(filename, new ContentTypeSchema(contentTypeSchema));
+      writeJsonToFile(
+        filename,
+        new ContentTypeSchema({
+          body: contentTypeSchema.body,
+          schemaId: contentTypeSchema.schemaId,
+          validationLevel: contentTypeSchema.validationLevel
+        })
+      );
     }
     tableStream.write([filename, contentTypeSchema.schemaId || '', status]);
   }
