@@ -698,7 +698,6 @@ describe('content-type-schema export command', (): void => {
 
     beforeEach(() => {
       jsonResolverSpy = jest.spyOn(resolveJsonService, 'jsonResolver');
-      jsonResolverSpy.mockResolvedValue(resolvedJson);
     });
 
     afterEach(() => {
@@ -713,7 +712,21 @@ describe('content-type-schema export command', (): void => {
           validationLevel: ValidationLevel.CONTENT_TYPE
         })
       };
+      jsonResolverSpy.mockResolvedValueOnce(resolvedJson);
+      const res = await resolveSchemaBodies(exportedContentTypeSchemas, './export-dir');
+      expect(res).toMatchSnapshot();
+      expect(jsonResolverSpy.mock.calls).toMatchSnapshot();
+    });
 
+    it('should pass through the schema if schema body is not found', async () => {
+      const exportedContentTypeSchemas = {
+        'export-dir/export-filename-1.json': new ContentTypeSchema({
+          schemaId: 'content-type-schema-id-1',
+          body: `export-dir/schemas/export-filename-1.json`,
+          validationLevel: ValidationLevel.CONTENT_TYPE
+        })
+      };
+      jsonResolverSpy.mockRejectedValueOnce(new Error('File not found'));
       const res = await resolveSchemaBodies(exportedContentTypeSchemas, './export-dir');
       expect(res).toMatchSnapshot();
       expect(jsonResolverSpy.mock.calls).toMatchSnapshot();
