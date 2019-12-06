@@ -69,13 +69,17 @@ export const writeSchemaBody = (filename: string, body?: string): void => {
       throw new Error(`Unable to write schema to "${filename}" as "${dir}" is not a directory.`);
     }
   } else {
-    fs.mkdirSync(dir);
+    try {
+      fs.mkdirSync(dir);
+    } catch {
+      throw new Error(`Unable to create directory: "${dir}".`);
+    }
   }
 
   try {
     fs.writeFileSync(filename, body);
   } catch {
-    throw new Error(`Unable to write file: ${filename}, aborting export`);
+    throw new Error(`Unable to write file: "${filename}".`);
   }
 };
 

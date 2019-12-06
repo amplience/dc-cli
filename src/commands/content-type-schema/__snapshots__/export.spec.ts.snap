@@ -827,7 +827,9 @@ Array [
 
 exports[`content-type-schema export command writeSchemaBody should not write a body if schema dir is not a dir 1`] = `"Unable to write schema to \\"schemas/export-filename-1.json\\" as \\"schemas\\" is not a directory."`;
 
-exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 1`] = `"Unable to write file: schemas/export-filename-1.json, aborting export"`;
+exports[`content-type-schema export command writeSchemaBody should report and error when its not possible to create the directory if it doesnt exist 1`] = `"Unable to create directory: \\"schemas\\"."`;
+
+exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 1`] = `"Unable to write file: \\"schemas/export-filename-1.json\\"."`;
 
 exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 2`] = `
 Array [

@@ -737,6 +737,19 @@ describe('content-type-schema export command', (): void => {
       expect(mkdirSyncMock).toHaveBeenCalledWith('schemas');
     });
 
+    it('should report and error when its not possible to create the directory if it doesnt exist', async () => {
+      existsSyncMock.mockReturnValue(false);
+      mkdirSyncMock.mockImplementation(() => {
+        throw new Error('Unable to create dir');
+      });
+
+      expect(() => writeSchemaBody('schemas/export-filename-1.json', '{}')).toThrowErrorMatchingSnapshot();
+
+      expect(writeFileSyncMock).not.toHaveBeenCalled();
+      expect(existsSyncMock).toHaveBeenCalledWith('schemas');
+      expect(mkdirSyncMock).toHaveBeenCalledWith('schemas');
+    });
+
     it('should write a body to file and use the schema dir if it does exist', async () => {
       existsSyncMock.mockReturnValue(true);
       lstatSyncMock.mockReturnValue({ isDirectory: () => true });
