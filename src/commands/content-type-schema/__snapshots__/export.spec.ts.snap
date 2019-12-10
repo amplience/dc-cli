@@ -582,6 +582,7 @@ Array [
   Array [
     Array [
       "[1mFile[22m",
+      "[1mSchema file[22m",
       "[1mSchema ID[22m",
       "[1mResult[22m",
     ],
@@ -589,6 +590,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-1.json",
+      "",
       "content-type-schema-id-1",
       "UP-TO-DATE",
     ],
@@ -596,6 +598,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-2.json",
+      "",
       "content-type-schema-id-2",
       "UP-TO-DATE",
     ],
@@ -603,6 +606,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-3.json",
+      "",
       "content-type-schema-id-3",
       "UP-TO-DATE",
     ],
@@ -724,6 +728,7 @@ Array [
   Array [
     Array [
       "[1mFile[22m",
+      "[1mSchema file[22m",
       "[1mSchema ID[22m",
       "[1mResult[22m",
     ],
@@ -731,6 +736,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-1.json",
+      "export-dir/schemas/export-filename-1-schema.json",
       "content-type-schema-id-1",
       "CREATED",
     ],
@@ -738,6 +744,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-2.json",
+      "export-dir/schemas/export-filename-2-schema.json",
       "content-type-schema-id-2",
       "CREATED",
     ],
@@ -745,6 +752,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-3.json",
+      "export-dir/schemas/export-filename-3-schema.json",
       "content-type-schema-id-3",
       "CREATED",
     ],
@@ -797,6 +805,7 @@ Array [
   Array [
     Array [
       "[1mFile[22m",
+      "[1mSchema file[22m",
       "[1mSchema ID[22m",
       "[1mResult[22m",
     ],
@@ -804,6 +813,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-1.json",
+      "",
       "content-type-schema-id-1",
       "UP-TO-DATE",
     ],
@@ -811,6 +821,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-2.json",
+      "",
       "content-type-schema-id-2",
       "UP-TO-DATE",
     ],
@@ -818,6 +829,7 @@ Array [
   Array [
     Array [
       "export-dir/export-filename-3.json",
+      "export-dir/schemas/export-filename-3-schema.json",
       "content-type-schema-id-3",
       "UPDATED",
     ],
