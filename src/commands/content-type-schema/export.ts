@@ -4,7 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import { createStream } from 'table';
-import { streamTableOptions } from '../../common/table/table.consts';
+import { baseTableConfig } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
 import {
@@ -19,6 +19,28 @@ import { ExportBuilderOptions } from '../../interfaces/export-builder-options.in
 import * as path from 'path';
 import * as fs from 'fs';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
+
+export const streamTableOptions = {
+  ...baseTableConfig,
+  columnDefault: {
+    width: 50
+  },
+  columnCount: 4,
+  columns: {
+    0: {
+      width: 30
+    },
+    1: {
+      width: 30
+    },
+    2: {
+      width: 100
+    },
+    3: {
+      width: 10
+    }
+  }
+};
 
 export const command = 'export <dir>';
 
@@ -185,14 +207,16 @@ export const processContentTypeSchemas = async (
   }
 
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  tableStream.write([chalk.bold('File'), chalk.bold('Schema file'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentTypeSchema } of allExports) {
+    let schemaFilename = '';
     if (status !== 'UP-TO-DATE') {
       delete contentTypeSchema.id; // do not export id
       const schemaBody = contentTypeSchema.body;
       const schemaBodyFilename = generateSchemaPath(filename);
       contentTypeSchema.body = '.' + path.sep + schemaBodyFilename;
-      writeSchemaBody(outputDir + path.sep + schemaBodyFilename, schemaBody);
+      schemaFilename = outputDir + path.sep + schemaBodyFilename;
+      writeSchemaBody(schemaFilename, schemaBody);
       writeJsonToFile(
         filename,
         new ContentTypeSchema({
@@ -202,7 +226,7 @@ export const processContentTypeSchemas = async (
         })
       );
     }
-    tableStream.write([filename, contentTypeSchema.schemaId || '', status]);
+    tableStream.write([filename, schemaFilename, contentTypeSchema.schemaId || '', status]);
   }
   process.stdout.write('\n');
 };
