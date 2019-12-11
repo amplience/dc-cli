@@ -214,7 +214,7 @@ export const processContentTypeSchemas = async (
       delete contentTypeSchema.id; // do not export id
       const schemaBody = contentTypeSchema.body;
       const schemaBodyFilename = generateSchemaPath(filename);
-      contentTypeSchema.body = './' + schemaBodyFilename;
+      contentTypeSchema.body = '.' + path.sep + schemaBodyFilename;
       schemaFilename = outputDir + path.sep + schemaBodyFilename;
       writeSchemaBody(schemaFilename, schemaBody);
       writeJsonToFile(
