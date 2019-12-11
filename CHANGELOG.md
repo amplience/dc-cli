@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/amplience/dc-cli/compare/v0.2.0...v0.3.0) (2019-12-11)
+
+
+### Bug Fixes
+
+* **cli script name:** the script name is defined as dc-cli on windows ([48da1df](https://github.com/amplience/dc-cli/commit/48da1df))
+* **content-type-schema import:** the import results table now displays what is returned from the api ([9cac69d](https://github.com/amplience/dc-cli/commit/9cac69d))
+
+
+### Features
+
+* **content type schemas:** export command ([#37](https://github.com/amplience/dc-cli/issues/37)) ([3b7db6b](https://github.com/amplience/dc-cli/commit/3b7db6b))
+* **content types:** export command ([#36](https://github.com/amplience/dc-cli/issues/36)) ([e4e1f7a](https://github.com/amplience/dc-cli/commit/e4e1f7a))
+
 ## [0.2.0](https://github.com/amplience/dc-cli/compare/v0.1.0...v0.2.0) (2019-11-20)
 
 
