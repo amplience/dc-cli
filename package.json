@@ -12,7 +12,7 @@
     "commit": "npx git-cz",
     "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
     "pretest": "npm run lint",
-    "test": "FORCE_COLOR=1 jest --silent",
+    "test": "FORCE_COLOR=1 jest --silent --coverage",
     "fix": "prettier --write '**/*.ts'",
     "reset": "git clean -dfx && git reset --hard && npm i",
     "prerelease": "npm run reset",
