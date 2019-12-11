@@ -1,0 +1,181 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`export service tests nothingExportedExit should exit with an export message 1`] = `
+Array [
+  Array [
+    "Nothing was exported, exiting.
+",
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return false when the answer is "n" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return false when the answer is "n" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:
+",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return false when the answer is "n" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
+      ],
+      Array [
+        "my-export-filename",
+        "my-content-type-uri",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
+      ],
+      Array [
+        "my-export-filename",
+        "my-content-type-uri",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return false when the answer is anything but "y" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return false when the answer is anything but "y" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:
+",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return false when the answer is anything but "y" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
+      ],
+      Array [
+        "my-export-filename",
+        "my-content-type-uri",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
+      ],
+      Array [
+        "my-export-filename",
+        "my-content-type-uri",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+  Array [
+    Array [
+      Array [
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
+      ],
+      Array [
+        "my-export-filename",
+        "my-content-type-uri",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return true when the answer is "y" 1`] = `
+Array [
+  Array [
+    "Do you want to continue (y/n)?: ",
+    [Function],
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return true when the answer is "y" 2`] = `
+Array [
+  Array [
+    "The following files will be overwritten:
+",
+  ],
+  Array [
+    "undefined
+",
+  ],
+]
+`;
+
+exports[`export service tests promptToOverwriteExports Should return true when the answer is "y" 3`] = `
+Array [
+  Array [
+    Array [
+      Array [
+        "[1mFile[22m",
+        "[1mSchema ID[22m",
+      ],
+      Array [
+        "my-export-filename",
+        "my-content-type-uri",
+      ],
+    ],
+    Object {
+      "border": undefined,
+    },
+  ],
+]
+`;

@@ -2,10 +2,16 @@ import fs from 'fs';
 import { HalResource } from 'dc-management-sdk-js';
 import * as path from 'path';
 import { URL } from 'url';
+import DataPresenter from '../view/data-presenter';
+import readline from 'readline';
 
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
-export const uniqueFilename = (dir: string, uri: string, extension: string, exportFilenames: string[]): string => {
+export const uniqueFilename = (dir: string, uri = '', extension: string, exportFilenames: string[]): string => {
+  if (dir.substr(-1) === path.sep) {
+    dir = dir.slice(0, -1);
+  }
+
   const url = new URL(uri);
   const file = path.basename(url.pathname, '.' + extension) || url.hostname.replace('.', '_');
   let counter = 0;
@@ -23,8 +29,35 @@ export const uniqueFilename = (dir: string, uri: string, extension: string, expo
 
 export const writeJsonToFile = <T extends HalResource>(filename: string, resource: T): void => {
   try {
-    fs.writeFileSync(filename, JSON.stringify(resource));
+    fs.writeFileSync(filename, JSON.stringify(resource, null, 2));
   } catch (e) {
     throw new Error(`Unable to write file: ${filename}, aborting export`);
   }
+};
+
+export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
+  return new Promise((resolve): void => {
+    process.stdout.write('The following files will be overwritten:\n');
+    // display updatedExportsMap as a table of uri x filename
+    const itemMapFn = ({ filename, schemaId }: { filename: string; schemaId: string }): object => ({
+      File: filename,
+      'Schema ID': schemaId
+    });
+    new DataPresenter(updatedExportsMap).render({ itemMapFn });
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question('Do you want to continue (y/n)?: ', answer => {
+      rl.close();
+      return resolve(answer === 'y');
+    });
+  });
+};
+
+export const nothingExportedExit = (msg = 'Nothing was exported, exiting.\n'): void => {
+  process.stdout.write(msg);
+  process.exit(1);
 };

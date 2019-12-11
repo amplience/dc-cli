@@ -4,13 +4,13 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import DataPresenter, { RenderingOptions } from '../../view/data-presenter';
 import Yargs from 'yargs/yargs';
 import { singleItemTableOptions } from '../../common/table/table.consts';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
 import { updateContentTypeSchema } from './update.service';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
 jest.mock('./update.service');
-jest.mock('../../common/import/json-resolver');
+jest.mock('../../common/json-resolver/json-resolver');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 

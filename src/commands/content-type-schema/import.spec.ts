@@ -1,16 +1,7 @@
 import Yargs = require('yargs/yargs');
 
 import * as importModule from './import';
-import {
-  command,
-  builder,
-  handler,
-  storedSchemaMapper,
-  processSchemas,
-  doCreate,
-  doUpdate,
-  resolveSchemaBody
-} from './import';
+import { command, builder, handler, storedSchemaMapper, processSchemas, doCreate, doUpdate } from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
 import { createStream } from 'table';
@@ -18,16 +9,16 @@ import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { resolveSchemaBody } from '../../services/resolve-schema-body';
 
 jest.mock('fs');
 jest.mock('table');
 jest.mock('../../common/dc-management-sdk-js/paginator');
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/import.service');
+jest.mock('../../services/resolve-schema-body');
 jest.mock('./create.service');
 jest.mock('./update.service');
-jest.mock('../../common/import/json-resolver');
 
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {
@@ -163,6 +154,35 @@ describe('content-type-schema import command', (): void => {
       expect(result).toEqual({ contentTypeSchema: mutatedContentTypeSchema, updateStatus: UpdateStatus.UPDATED });
     });
 
+    it('should update a content type when only the validationLevel has been updated', async () => {
+      const client = (dynamicContentClientFactory as jest.Mock)();
+      const schemaId = 'https://schema.localhost.com/test-1.json';
+      const storedContentTypeSchema = {
+        id: 'stored-id',
+        schemaId,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        validationLevel: ValidationLevel.CONTENT_TYPE
+      } as ContentTypeSchema;
+      const mutatedContentTypeSchema = {
+        ...storedContentTypeSchema,
+        validationLevel: ValidationLevel.SLOT
+      } as ContentTypeSchema;
+      mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
+      (updateContentTypeSchema as jest.Mock).mockResolvedValueOnce({
+        ...mutatedContentTypeSchema,
+        id: 'stored-id',
+        schemaId
+      });
+      const result = await doUpdate(client, mutatedContentTypeSchema);
+
+      expect(updateContentTypeSchema).toHaveBeenCalledWith(
+        expect.objectContaining(storedContentTypeSchema),
+        mutatedContentTypeSchema.body,
+        mutatedContentTypeSchema.validationLevel
+      );
+      expect(result).toEqual({ contentTypeSchema: mutatedContentTypeSchema, updateStatus: UpdateStatus.UPDATED });
+    });
+
     it('should skip updating a content type schema when no changes detected and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
       const schemaId = 'https://schema.localhost.com/test-1.json';
@@ -238,23 +258,6 @@ describe('content-type-schema import command', (): void => {
     });
   });
 
-  describe('resolveSchemaBody', () => {
-    it('should allow undefined body', async () => {
-      const result = await resolveSchemaBody([new ContentTypeSchema()], __dirname);
-      expect(result).toHaveLength(1);
-      expect(result[0].body).toBe(undefined);
-    });
-    it('should resolve body as string', async () => {
-      const stringifiedBody = JSON.stringify('{"prop": 123}');
-      const mockJsonResolver = jsonResolver as jest.Mock;
-      mockJsonResolver.mockResolvedValueOnce(stringifiedBody);
-      const result = await resolveSchemaBody([new ContentTypeSchema({ body: stringifiedBody })], __dirname);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].body).toEqual(stringifiedBody);
-    });
-  });
-
   describe('handler tests', () => {
     const yargArgs = {
       $0: 'test',
@@ -266,6 +269,11 @@ describe('content-type-schema import command', (): void => {
       hubId: 'hub-id'
     };
     const mockGetHub = jest.fn();
+    const argv = {
+      ...yargArgs,
+      ...config,
+      dir: 'my-dir'
+    };
 
     beforeEach(() => {
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
@@ -276,11 +284,6 @@ describe('content-type-schema import command', (): void => {
     });
 
     it('should process schemas from a local directory', async (): Promise<void> => {
-      const argv = {
-        ...yargArgs,
-        ...config,
-        dir: 'my-dir'
-      };
       const schemaToCreate = {
         body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
         validationLevel: ValidationLevel.CONTENT_TYPE,
@@ -293,7 +296,9 @@ describe('content-type-schema import command', (): void => {
       };
 
       mockGetHub.mockResolvedValue(new Hub());
-      (loadJsonFromDirectory as jest.Mock).mockReturnValueOnce([schemaToCreate, schemaToUpdate]);
+      const loadJsonFromDirectoryResult = { 'dir/create.json': schemaToCreate, 'dir/update.json': schemaToUpdate };
+      (loadJsonFromDirectory as jest.Mock).mockReturnValueOnce(loadJsonFromDirectoryResult);
+      (resolveSchemaBody as jest.Mock).mockImplementation(args => [args, {}]);
       (paginator as jest.Mock).mockResolvedValue([{ ...schemaToUpdate, id: 'stored-id' }]);
 
       const processSchemasSpy = jest
@@ -302,6 +307,7 @@ describe('content-type-schema import command', (): void => {
 
       await handler(argv);
 
+      expect(resolveSchemaBody as jest.Mock).toHaveBeenCalledWith(loadJsonFromDirectoryResult, argv.dir);
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', ContentTypeSchema);
       expect(paginator).toHaveBeenCalledWith(expect.any(Function));
       expect(processSchemasSpy).toHaveBeenCalledWith(
@@ -309,6 +315,16 @@ describe('content-type-schema import command', (): void => {
         expect.any(Object),
         expect.any(Object)
       );
+    });
+
+    it('should report all resolve schema body errors', async () => {
+      mockGetHub.mockResolvedValue(new Hub());
+      (loadJsonFromDirectory as jest.Mock).mockReturnValueOnce({});
+      (resolveSchemaBody as jest.Mock).mockResolvedValue([
+        {},
+        { 'filename.json': new Error('Unable to resolve filename.json') }
+      ]);
+      await expect(handler(argv)).rejects.toThrowErrorMatchingSnapshot();
     });
   });
 });

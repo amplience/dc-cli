@@ -127,5 +127,12 @@ describe('content type schema helper', function() {
       await expect(jsonResolver('this is just a string', '/tmp')).rejects.toThrowErrorMatchingSnapshot();
       expect(mockFileRead).not.toHaveBeenCalled();
     });
+
+    it('should fail to load invalid JSON and fall out at the end (undefined passing in)', async function() {
+      mockExistsSync.mockReturnValue(false);
+
+      await expect(jsonResolver(undefined, '/tmp')).rejects.toThrowErrorMatchingSnapshot();
+      expect(mockFileRead).not.toHaveBeenCalled();
+    });
   });
 });

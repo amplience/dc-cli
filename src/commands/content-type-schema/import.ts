@@ -11,7 +11,7 @@ import chalk from 'chalk';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { resolveSchemaBody } from '../../services/resolve-schema-body';
 
 export const command = 'import <dir>';
 
@@ -53,7 +53,7 @@ export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<Con
 };
 
 const equals = (a: ContentTypeSchema, b: ContentTypeSchema): boolean =>
-  a.id === b.id && a.schemaId === b.schemaId && a.body === b.body;
+  a.id === b.id && a.schemaId === b.schemaId && a.body === b.body && a.validationLevel === b.validationLevel;
 
 export const doUpdate = async (
   client: DynamicContent,
@@ -100,23 +100,25 @@ export const processSchemas = async (
   process.stdout.write('\n');
 };
 
-export const resolveSchemaBody = async (schemas: ContentTypeSchema[], dir: string): Promise<ContentTypeSchema[]> => {
-  for (const schema of schemas) {
-    if (schema.body) {
-      schema.body = await jsonResolver(schema.body, dir);
-    }
-  }
-  return schemas;
-};
-
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const schemas = Object.values(loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema));
-  await resolveSchemaBody(schemas, dir);
+  const schemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
+  const [resolvedSchemas, resolveSchemaErrors] = await resolveSchemaBody(schemas, dir);
+  if (Object.keys(resolveSchemaErrors).length > 0) {
+    const errors = Object.entries(resolveSchemaErrors)
+      .map(value => {
+        const [filename, error] = value;
+        return `* ${filename} -> ${error}`;
+      })
+      .join('\n');
+    throw new Error(`Unable to resolve the body for the following files:\n${errors}`);
+  }
   const storedSchemas = await paginator(hub.related.contentTypeSchema.list);
-  const schemasToProcess = schemas.map(schemas => storedSchemaMapper(schemas, storedSchemas));
+  const schemasToProcess = Object.values(resolvedSchemas).map(resolvedSchema =>
+    storedSchemaMapper(resolvedSchema, storedSchemas)
+  );
 
   await processSchemas(schemasToProcess, client, hub);
 };

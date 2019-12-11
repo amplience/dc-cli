@@ -3,7 +3,7 @@ import { Arguments, Argv } from 'yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../configure';
 import { ValidationLevel } from 'dc-management-sdk-js';
-import { jsonResolver } from '../../common/import/json-resolver';
+import { jsonResolver } from '../../common/json-resolver/json-resolver';
 import { singleItemTableOptions } from '../../common/table/table.consts';
 import { updateContentTypeSchema } from './update.service';
 

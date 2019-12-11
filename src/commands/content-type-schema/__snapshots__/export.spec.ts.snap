@@ -1,0 +1,871 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should return all the content type schemas if a filter list is not provided 1`] = `
+Array [
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-1",
+    "validationLevel": "CONTENT_TYPE",
+  },
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-2",
+    "validationLevel": "CONTENT_TYPE",
+  },
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-3",
+    "validationLevel": "CONTENT_TYPE",
+  },
+]
+`;
+
+exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should return all the content type schemas if a filter list is set to undefined 1`] = `
+Array [
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-1",
+    "validationLevel": "CONTENT_TYPE",
+  },
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-2",
+    "validationLevel": "CONTENT_TYPE",
+  },
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-3",
+    "validationLevel": "CONTENT_TYPE",
+  },
+]
+`;
+
+exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should return the content types matching the given schemaIds 1`] = `
+Array [
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-1",
+    "validationLevel": "CONTENT_TYPE",
+  },
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-3",
+    "validationLevel": "CONTENT_TYPE",
+  },
+]
+`;
+
+exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should throw an error for schemaIds which do not exist in the list 1`] = `
+"The following schema ID(s) could not be found: ['content-type-schema-id-4'].
+Nothing was exported, exiting."
+`;
+
+exports[`content-type-schema export command getContentTypeSchemaExports should return a list of content-type-schemas to export and a list of filenames that will be updated 1`] = `
+Array [
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {
+      "export-dir/export-filename-1.json": Object {
+        "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+        "schemaId": "content-type-schema-id-1",
+        "validationLevel": "CONTENT_TYPE",
+      },
+      "export-dir/export-filename-2.json": Object {
+        "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+        "schemaId": "content-type-schema-id-2",
+        "validationLevel": "CONTENT_TYPE",
+      },
+    },
+  ],
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {
+      "export-dir/export-filename-1.json": Object {
+        "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+        "schemaId": "content-type-schema-id-1",
+        "validationLevel": "CONTENT_TYPE",
+      },
+      "export-dir/export-filename-2.json": Object {
+        "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+        "schemaId": "content-type-schema-id-2",
+        "validationLevel": "CONTENT_TYPE",
+      },
+    },
+  ],
+]
+`;
+
+exports[`content-type-schema export command getContentTypeSchemaExports should return a list of content-type-schemas to export and a list of filenames that will be updated 2`] = `
+Array [
+  Object {
+    "contentType": Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "filename": "export-dir/export-filename-1.json",
+    "status": "CREATED",
+  },
+  Object {
+    "contentType": Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "filename": "export-dir/export-filename-2.json",
+    "status": "UPDATED",
+  },
+]
+`;
+
+exports[`content-type-schema export command getContentTypeSchemaExports should return a list of content-type-schemas to export and a list of filenames that will be updated 3`] = `
+Array [
+  Object {
+    "filename": "export-dir/export-filename-2.json",
+    "schemaId": "content-type-schema-id-2",
+  },
+]
+`;
+
+exports[`content-type-schema export command getContentTypeSchemaExports should return a list of content-type-schemas to export and no filenames that will be updated (first export) 1`] = `
+Array [
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {},
+  ],
+  Array [
+    Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "export-dir",
+    Object {},
+  ],
+]
+`;
+
+exports[`content-type-schema export command getContentTypeSchemaExports should return a list of content-type-schemas to export and no filenames that will be updated (first export) 2`] = `
+Array [
+  Object {
+    "contentType": Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "filename": "export-dir/export-filename-1.json",
+    "status": "CREATED",
+  },
+  Object {
+    "contentType": Object {
+      "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+    "filename": "export-dir/export-filename-2.json",
+    "status": "CREATED",
+  },
+]
+`;
+
+exports[`content-type-schema export command getExportRecordForContentTypeSchema should create a new file for any missing schemas 1`] = `
+Array [
+  Array [
+    "export-dir",
+    "content-type-schema-id-3",
+    "json",
+    Array [
+      "export-dir/export-filename-1.json",
+      "export-dir/export-filename-2.json",
+    ],
+  ],
+]
+`;
+
+exports[`content-type-schema export command getExportRecordForContentTypeSchema should not find any existing files for the exported schemas 1`] = `
+Array [
+  Array [
+    "export-dir",
+    "content-type-schema-id-1",
+    "json",
+    Array [],
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should not do anything if the list of schemas to export is empty 1`] = `
+Array [
+  Array [
+    "No content type schemas to export from this hub, exiting.
+",
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should not output any export files if a previous export exists and the content type is unchanged 1`] = `
+Array [
+  Array [
+    Array [
+      "[1mFile[22m",
+      "[1mSchema file[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-1.json",
+      "",
+      "content-type-schema-id-1",
+      "UP-TO-DATE",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-2.json",
+      "",
+      "content-type-schema-id-2",
+      "UP-TO-DATE",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-3.json",
+      "",
+      "content-type-schema-id-3",
+      "UP-TO-DATE",
+    ],
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should not update anything if the user says "n" to the overwrite prompt 1`] = `
+Array [
+  Array [
+    "Nothing was exported, exiting.
+",
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should output export files for content types schemas if there is nothing previously exported 1`] = `
+Array [
+  Array [
+    "export-dir/export-filename-1.json",
+    Object {
+      "body": "./schemas/export-filename-1-schema.json",
+      "schemaId": "content-type-schema-id-1",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+  Array [
+    "export-dir/export-filename-2.json",
+    Object {
+      "body": "./schemas/export-filename-2-schema.json",
+      "schemaId": "content-type-schema-id-2",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+  Array [
+    "export-dir/export-filename-3.json",
+    Object {
+      "body": "./schemas/export-filename-3-schema.json",
+      "schemaId": "content-type-schema-id-3",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should output export files for content types schemas if there is nothing previously exported 2`] = `
+Array [
+  Array [
+    "export-dir/schemas/export-filename-1-schema.json",
+    "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-1.json\\",
+
+	\\"title\\": \\"Test Schema 1\\",
+	\\"description\\": \\"Test Schema 1\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+  ],
+  Array [
+    "export-dir/schemas/export-filename-2-schema.json",
+    "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+  ],
+  Array [
+    "export-dir/schemas/export-filename-3-schema.json",
+    "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should output export files for content types schemas if there is nothing previously exported 3`] = `
+Array [
+  Array [
+    Array [
+      "[1mFile[22m",
+      "[1mSchema file[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-1.json",
+      "export-dir/schemas/export-filename-1-schema.json",
+      "content-type-schema-id-1",
+      "CREATED",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-2.json",
+      "export-dir/schemas/export-filename-2-schema.json",
+      "content-type-schema-id-2",
+      "CREATED",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-3.json",
+      "export-dir/schemas/export-filename-3-schema.json",
+      "content-type-schema-id-3",
+      "CREATED",
+    ],
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should update the existing export file for a changed content type 1`] = `
+Array [
+  Array [
+    "export-dir/export-filename-3.json",
+    Object {
+      "body": "./schemas/export-filename-3-schema.json",
+      "schemaId": "content-type-schema-id-3",
+      "validationLevel": "CONTENT_TYPE",
+    },
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should update the existing export file for a changed content type 2`] = `
+Array [
+  Array [
+    "export-dir/schemas/export-filename-3-schema.json",
+    "{
+	\\"$schema\\": \\"http://json-schema.org/draft-04/schema#\\",
+	\\"id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+  ],
+]
+`;
+
+exports[`content-type-schema export command processContentTypeSchemas should update the existing export file for a changed content type 3`] = `
+Array [
+  Array [
+    Array [
+      "[1mFile[22m",
+      "[1mSchema file[22m",
+      "[1mSchema ID[22m",
+      "[1mResult[22m",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-1.json",
+      "",
+      "content-type-schema-id-1",
+      "UP-TO-DATE",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-2.json",
+      "",
+      "content-type-schema-id-2",
+      "UP-TO-DATE",
+    ],
+  ],
+  Array [
+    Array [
+      "export-dir/export-filename-3.json",
+      "export-dir/schemas/export-filename-3-schema.json",
+      "content-type-schema-id-3",
+      "UPDATED",
+    ],
+  ],
+]
+`;
+
+exports[`content-type-schema export command writeSchemaBody should not write a body if schema dir is not a dir 1`] = `"Unable to write schema to \\"schemas/export-filename-1.json\\" as \\"schemas\\" is not a directory."`;
+
+exports[`content-type-schema export command writeSchemaBody should report and error when its not possible to create the directory if it doesnt exist 1`] = `"Unable to create directory: \\"schemas\\"."`;
+
+exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 1`] = `"Unable to write file: \\"schemas/export-filename-1.json\\"."`;
+
+exports[`content-type-schema export command writeSchemaBody should throw an error if the file could not be wrote 2`] = `
+Array [
+  Array [
+    "schemas/export-filename-1.json",
+    "{}",
+  ],
+]
+`;
+
+exports[`content-type-schema export command writeSchemaBody should write a body to file and create schemas directory if it doesnt exist 1`] = `
+Array [
+  Array [
+    "schemas/export-filename-1.json",
+    "{}",
+  ],
+]
+`;
+
+exports[`content-type-schema export command writeSchemaBody should write a body to file and use the schema dir if it does exist 1`] = `
+Array [
+  Array [
+    "schemas/export-filename-1.json",
+    "{}",
+  ],
+]
+`;

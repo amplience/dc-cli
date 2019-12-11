@@ -7,13 +7,17 @@ import { createStream } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
-import { ExportResult, uniqueFilename, writeJsonToFile } from '../../services/export.service';
+import {
+  ExportResult,
+  nothingExportedExit,
+  promptToOverwriteExports,
+  uniqueFilename,
+  writeJsonToFile
+} from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
-import readline from 'readline';
-import DataPresenter from '../../view/data-presenter';
 
 export const command = 'export <dir>';
 
@@ -43,24 +47,22 @@ interface ExportRecord {
 }
 
 export const filterContentTypesByUri = (listToFilter: ContentType[], contentTypeUriList: string[]): ContentType[] => {
-  let unmatchedContentTypeUriList: string[] = [];
-  let filteredList: ContentType[] = listToFilter;
-  if (contentTypeUriList.length > 0) {
-    filteredList = listToFilter.filter(contentType =>
-      contentTypeUriList.some(uri => contentType.contentTypeUri === uri)
-    );
-    unmatchedContentTypeUriList = contentTypeUriList.filter(
-      uri => !listToFilter.some(contentType => contentType.contentTypeUri === uri)
-    );
-    if (unmatchedContentTypeUriList.length > 0) {
-      throw new Error(
-        `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList
-          .map(u => `'${u}'`)
-          .join(', ')}].\nNothing was exported, exiting.`
-      );
-    }
+  if (contentTypeUriList.length === 0) {
+    return listToFilter;
   }
-  return filteredList;
+
+  const unmatchedContentTypeUriList: string[] = contentTypeUriList.filter(
+    uri => !listToFilter.some(contentType => contentType.contentTypeUri === uri)
+  );
+  if (unmatchedContentTypeUriList.length > 0) {
+    throw new Error(
+      `The following schema ID(s) could not be found: [${unmatchedContentTypeUriList
+        .map(u => `'${u}'`)
+        .join(', ')}].\nNothing was exported, exiting.`
+    );
+  }
+
+  return listToFilter.filter(contentType => contentTypeUriList.some(uri => contentType.contentTypeUri === uri));
 };
 
 export const getExportRecordForContentType = (
@@ -75,7 +77,7 @@ export const getExportRecordForContentType = (
     return {
       filename: uniqueFilename(
         outputDir,
-        contentType.contentTypeUri || '',
+        contentType.contentTypeUri,
         'json',
         Object.keys(previouslyExportedContentTypes)
       ),
@@ -100,7 +102,7 @@ type ExportsMap = {
   filename: string;
 };
 
-export const getExports = (
+export const getContentTypeExports = (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
   contentTypesBeingExported: ContentType[]
@@ -108,34 +110,17 @@ export const getExports = (
   const allExports: ExportRecord[] = [];
   const updatedExportsMap: ExportsMap[] = []; // uri x filename
   for (const contentType of contentTypesBeingExported) {
+    if (!contentType.contentTypeUri) {
+      continue;
+    }
+
     const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
-    previouslyExportedContentTypes[exportRecord.filename] = exportRecord.contentType;
-    if (contentType.contentTypeUri) {
-      allExports.push(exportRecord);
-      if (exportRecord.status === 'UPDATED') {
-        updatedExportsMap.push({ uri: contentType.contentTypeUri, filename: exportRecord.filename });
-      }
+    allExports.push(exportRecord);
+    if (exportRecord.status === 'UPDATED') {
+      updatedExportsMap.push({ uri: contentType.contentTypeUri, filename: exportRecord.filename });
     }
   }
   return [allExports, updatedExportsMap];
-};
-
-export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
-  return new Promise((resolve): void => {
-    process.stdout.write('The following files will be overwritten:\n');
-    // display updatedExportsMap as a table of uri x filename
-    new DataPresenter(updatedExportsMap.map(e => ({ 'Schema ID': e.uri, File: e.filename }))).render();
-
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    rl.question('Do you want to continue (y/n)?: ', answer => {
-      rl.close();
-      return resolve(answer === 'y');
-    });
-  });
 };
 
 export const processContentTypes = async (
@@ -143,31 +128,32 @@ export const processContentTypes = async (
   previouslyExportedContentTypes: { [filename: string]: ContentType },
   contentTypesBeingExported: ContentType[]
 ): Promise<void> => {
-  const [allExports, updatedExportsMap] = getExports(
+  if (contentTypesBeingExported.length === 0) {
+    nothingExportedExit('No content types to export from this hub, exiting.\n');
+  }
+
+  const [allExports, updatedExportsMap] = getContentTypeExports(
     outputDir,
     previouslyExportedContentTypes,
     contentTypesBeingExported
   );
-  if (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap))) {
-    process.stdout.write('Nothing was exported, exiting.\n');
-    process.exit(1);
+  if (
+    allExports.length === 0 ||
+    (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap)))
+  ) {
+    nothingExportedExit();
   }
 
-  if (allExports.length > 0) {
-    const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-    tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
-    for (const { filename, status, contentType } of allExports) {
-      if (status !== 'UP-TO-DATE') {
-        /* eslint-disable @typescript-eslint/no-unused-vars */ // id is intentionally thrown away on the next line
-        const { id, ...exportedContentType } = contentType; // do not export id
-        writeJsonToFile(filename, new ContentType(exportedContentType));
-      }
-      tableStream.write([filename, contentType.contentTypeUri || '', status]);
+  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+  tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  for (const { filename, status, contentType } of allExports) {
+    if (status !== 'UP-TO-DATE') {
+      delete contentType.id; // do not export id
+      writeJsonToFile(filename, contentType);
     }
-    process.stdout.write('\n');
-  } else {
-    process.stdout.write('No content types to export from this hub, exiting.\n');
+    tableStream.write([filename, contentType.contentTypeUri || '', status]);
   }
+  process.stdout.write('\n');
 };
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
