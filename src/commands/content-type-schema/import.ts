@@ -85,17 +85,17 @@ export const processSchemas = async (
 
   tableStream.write([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const schema of schemasToProcess) {
-    let schemaId = schema.id;
     let status: ImportResult;
+    let contentTypeSchema: ContentTypeSchema;
     if (schema.id) {
       const result = await doUpdate(client, schema);
+      contentTypeSchema = result.contentTypeSchema;
       status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
-      const result = await doCreate(hub, schema);
-      schemaId = result.id || 'UNKNOWN';
+      contentTypeSchema = await doCreate(hub, schema);
       status = 'CREATED';
     }
-    tableStream.write([schemaId || '', schema.schemaId || '', status]);
+    tableStream.write([contentTypeSchema.id || '', contentTypeSchema.schemaId || '', status]);
   }
   process.stdout.write('\n');
 };
