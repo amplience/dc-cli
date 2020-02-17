@@ -4,11 +4,11 @@ import { ValidationLevel, Hub, ContentTypeSchema } from 'dc-management-sdk-js';
 describe('create.service', () => {
   describe('createContentTypeSchema', () => {
     it('should create schema', async () => {
-      const schemaBody = { id: 'http://example.com/schema.json' };
+      const schemaBody = { $id: 'http://example.com/schema.json' };
       const schemaToCreate = {
         body: JSON.stringify(schemaBody),
         validationLevel: ValidationLevel.CONTENT_TYPE,
-        schemaId: schemaBody.id
+        schemaId: schemaBody.$id
       };
       const mockCreate = jest.fn().mockResolvedValue(new ContentTypeSchema(schemaToCreate));
       const mockHub = new Hub();

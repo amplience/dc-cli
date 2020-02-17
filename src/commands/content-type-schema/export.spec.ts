@@ -26,6 +26,12 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/resolve-schema-body');
 jest.mock('table');
 
+const schemaBody1 = `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`;
+
+const schemaBody2 = `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`;
+
+const schemaBody3 = `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`;
+
 describe('content-type-schema export command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
@@ -65,17 +71,17 @@ describe('content-type-schema export command', (): void => {
     const exportedContentTypeSchemas = [
       {
         schemaId: 'content-type-schema-id-1',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       },
       {
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody2,
         validationLevel: ValidationLevel.CONTENT_TYPE
       },
       {
         schemaId: 'content-type-schema-id-3',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody3,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }
     ];
@@ -188,7 +194,7 @@ describe('content-type-schema export command', (): void => {
       mutatedContentTypeSchemas[2] = new ContentTypeSchema({
         id: 'content-type-schema-3',
         schemaId: 'content-type-schema-id-3',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody3,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
@@ -247,7 +253,7 @@ describe('content-type-schema export command', (): void => {
       mutatedContentTypeSchemas[2] = new ContentTypeSchema({
         id: 'content-type-schema-3',
         schemaId: 'content-type-schema-id-3',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody3,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
@@ -333,12 +339,12 @@ describe('content-type-schema export command', (): void => {
     const contentTypeSchemasToExport = [
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }),
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody2,
         validationLevel: ValidationLevel.CONTENT_TYPE
       })
     ];
@@ -408,7 +414,7 @@ describe('content-type-schema export command', (): void => {
 
     it('should skip any that do not have a schemaId', () => {
       const skippedSchema = new ContentTypeSchema({
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
       const [allExports, updatedExportsMap] = getContentTypeSchemaExports('export-dir', {}, [skippedSchema]);
@@ -424,12 +430,12 @@ describe('content-type-schema export command', (): void => {
     const exportedContentTypeSchemas = {
       'export-dir/export-filename-1.json': new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }),
       'export-dir/export-filename-2.json': new ContentTypeSchema({
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody2,
         validationLevel: ValidationLevel.CONTENT_TYPE
       })
     };
@@ -441,7 +447,7 @@ describe('content-type-schema export command', (): void => {
     it('should not find any existing files for the exported schemas', async () => {
       const newContentTypeSchemaToExport = new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
@@ -460,7 +466,7 @@ describe('content-type-schema export command', (): void => {
     it('should create a new file for any missing schemas', async () => {
       const newContentTypeSchemaToExport = new ContentTypeSchema({
         schemaId: 'content-type-schema-id-3',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody3,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
@@ -483,7 +489,7 @@ describe('content-type-schema export command', (): void => {
     it('should update a schema with different content', async () => {
       const newContentTypeSchemaToExport = new ContentTypeSchema({
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/updated-test-2.json",\n\n\t"title": "Test Schema 2 Updated",\n\t"description": "Test Schema 2 Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/updated-test-2.json",\n\n\t"title": "Test Schema 2 Updated",\n\t"description": "Test Schema 2 Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
@@ -504,7 +510,7 @@ describe('content-type-schema export command', (): void => {
     it('should not update any schemas with same content', async () => {
       const newContentTypeSchemaToExport = new ContentTypeSchema({
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody2,
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
@@ -527,17 +533,17 @@ describe('content-type-schema export command', (): void => {
     const listToFilter = [
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }),
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody2,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }),
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-3',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody3,
         validationLevel: ValidationLevel.CONTENT_TYPE
       })
     ];
@@ -580,17 +586,17 @@ describe('content-type-schema export command', (): void => {
     const contentTypeSchemasToExport: ContentTypeSchema[] = [
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-1',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody1,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }),
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-2',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody2,
         validationLevel: ValidationLevel.CONTENT_TYPE
       }),
       new ContentTypeSchema({
         schemaId: 'content-type-schema-id-3',
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-3.json",\n\n\t"title": "Test Schema 3",\n\t"description": "Test Schema 3",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBody3,
         validationLevel: ValidationLevel.CONTENT_TYPE
       })
     ];
