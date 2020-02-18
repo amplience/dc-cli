@@ -66,5 +66,5 @@ npm link
 This will then allow the CLI to be used as if it was an executable like so:
 
 ```bash
-dc-cli COMMAND --param1 foo -- param2 bar
+dc-cli COMMAND --param1 foo --param2 bar
 ```
