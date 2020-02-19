@@ -20,9 +20,15 @@ describe('create.service', () => {
       expect(result).toEqual(expect.objectContaining(schemaToCreate));
     });
 
-    it('should throw and error when schemaId is missing from the schemaBody', async () => {
+    it('should throw and error when $id is missing from the schemaBody', async () => {
       await expect(
         createContentTypeSchema(JSON.stringify({}), ValidationLevel.CONTENT_TYPE, new Hub())
+      ).rejects.toThrowErrorMatchingSnapshot();
+    });
+
+    it('should throw and error when $id is invalid', async () => {
+      await expect(
+        createContentTypeSchema(JSON.stringify({ $id: '' }), ValidationLevel.CONTENT_TYPE, new Hub())
       ).rejects.toThrowErrorMatchingSnapshot();
     });
 

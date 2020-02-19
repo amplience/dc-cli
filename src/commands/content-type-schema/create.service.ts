@@ -13,8 +13,10 @@ export const createContentTypeSchema = async (
     throw new Error('Unable to parse schema body');
   }
   const schemaId = resolveSchemaId(schemaJson);
-  if (!schemaId) {
+  if (schemaId === undefined) {
     throw new Error('Missing id from schema');
+  } else if (!schemaId) {
+    throw new Error('The supplied schema id is invalid');
   }
   const contentTypeSchema = new ContentTypeSchema();
   contentTypeSchema.body = schemaBody;
