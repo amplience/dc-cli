@@ -38,11 +38,13 @@ See `dc-cli configure --help` for more information.
 
 ## Building the CLI
 
+We have included some NPM scripts to help create various installations of the CLI.
+
 - [Guide to building the CLI](BUILDING_THE_CLI.md)
 
 ## Required permissions
 
-Outlined below are the permissions required to run each command of the CLI. To request any permissions please contact Amplience support.
+Outlined below are the detailed permissions required to run each command of the CLI. To request an API key to run the CLI, please contact Amplience support.
 
 | Command                                           | Required ACL(s)                                             | Required Functional Permission(s)                                                                                        |
 | ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
