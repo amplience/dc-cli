@@ -15,10 +15,19 @@ export const command = 'import <dir>';
 
 export const desc = 'Import Content Types';
 
+export type CommandParameters = {
+  sync?: boolean;
+};
+
 export const builder = (yargs: Argv): void => {
   yargs.positional('dir', {
     describe: 'Path to Content Type definitions',
     type: 'string'
+  });
+
+  yargs.option('sync', {
+    describe: 'Automatically sync Content Type schema',
+    type: 'boolean'
   });
 };
 
@@ -94,26 +103,41 @@ export const doUpdate = async (
 
   // Check if an update is required
   contentType.settings = { ...retrievedContentType.settings, ...contentType.settings };
+
+  let updatedContentType: ContentType | undefined;
+
   if (equals(retrievedContentType, contentType)) {
     return { contentType: retrievedContentType, updateStatus: UpdateStatus.SKIPPED };
+  } else {
+    try {
+      // Update the content-type
+      updatedContentType = await retrievedContentType.related.update(contentType);
+      return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
+    } catch (err) {
+      throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
+    }
   }
+};
 
-  let updatedContentType: ContentType;
+export const doSync = async (
+  client: DynamicContent,
+  contentType: ContentTypeWithRepositoryAssignments
+): Promise<{ contentType: ContentType; updateStatus: UpdateStatus }> => {
+  let retrievedContentType: ContentType;
   try {
-    // Update the content-type
-    updatedContentType = await retrievedContentType.related.update(contentType);
+    // Get the existing content type
+    retrievedContentType = await client.contentTypes.get(contentType.id || '');
   } catch (err) {
-    throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
+    throw new Error(`Error unable to get content type ${contentType.id}: ${err.message}`);
   }
 
   try {
     // Update the ContentTypeSchema of the updated ContentType
-    await updatedContentType.related.contentTypeSchema.update();
+    await retrievedContentType.related.contentTypeSchema.update();
+    return { contentType: retrievedContentType, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
     throw new Error(`Error updating the content type schema of the content type ${contentType.id}: ${err.message}`);
   }
-
-  return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
 };
 
 export type MappedContentRepositories = Map<string, ContentRepository>;
@@ -170,7 +194,8 @@ export const synchronizeContentTypeRepositories = async (
 export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
   client: DynamicContent,
-  hub: Hub
+  hub: Hub,
+  sync = false
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
@@ -186,7 +211,20 @@ export const processContentTypes = async (
     if (contentType.id) {
       const result = await doUpdate(client, contentType);
       contentTypeResult = result.contentType;
-      status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
+
+      let syncResult: { contentType: ContentType; updateStatus: UpdateStatus } | undefined;
+      if (sync) {
+        syncResult = await doSync(client, contentType);
+      }
+
+      if (
+        result.updateStatus === UpdateStatus.UPDATED ||
+        (syncResult && syncResult.updateStatus === UpdateStatus.UPDATED)
+      ) {
+        status = 'UPDATED';
+      } else {
+        status = 'UP-TO-DATE';
+      }
     } else {
       contentTypeResult = await doCreate(hub, contentType);
       status = 'CREATED';
@@ -207,8 +245,10 @@ export const processContentTypes = async (
   process.stdout.write('\n');
 };
 
-export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir } = argv;
+export const handler = async (
+  argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>
+): Promise<void> => {
+  const { dir, sync = false } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments
@@ -224,5 +264,5 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   for (const [filename, importedContentType] of Object.entries(importedContentTypes)) {
     importedContentTypes[filename] = storedContentTypeMapper(importedContentType, storedContentTypes);
   }
-  await processContentTypes(Object.values(importedContentTypes), client, hub);
+  await processContentTypes(Object.values(importedContentTypes), client, hub, sync);
 };

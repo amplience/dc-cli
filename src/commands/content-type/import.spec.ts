@@ -7,6 +7,7 @@ import {
   ContentTypeWithRepositoryAssignments,
   doCreate,
   doUpdate,
+  doSync,
   handler,
   MappedContentRepositories,
   processContentTypes,
@@ -133,6 +134,76 @@ describe('content-type import command', (): void => {
     });
   });
 
+  describe('doSync', () => {
+    const mockGet = jest.fn();
+    let mockDynamicContentClientFactory: jest.Mock;
+
+    beforeEach(() => {
+      mockDynamicContentClientFactory = (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        contentTypes: {
+          get: mockGet
+        }
+      });
+    });
+
+    it("should throw an error when unable to update a content type's content type schema during update", async () => {
+      const client = mockDynamicContentClientFactory();
+      const contentType = new ContentTypeWithRepositoryAssignments({
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      });
+      const storedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'matched-uri',
+        settings: { label: 'label' }
+      });
+      mockGet.mockResolvedValue(storedContentType);
+
+      const mockContentTypeSchemaUpdate = jest
+        .fn()
+        .mockRejectedValue(new Error('Unable to update content type schema'));
+      storedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
+
+      await expect(doSync(client, contentType)).rejects.toThrowErrorMatchingSnapshot();
+      expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
+    });
+
+    it('should update a content type and return report', async () => {
+      const client = mockDynamicContentClientFactory();
+      const mutatedContentType = {
+        id: 'stored-id',
+        contentTypeUri: 'not-matched-uri',
+        settings: { label: 'mutated-label' }
+      } as ContentType;
+      const storedContentType = new ContentType({
+        id: 'stored-id',
+        contentTypeUri: 'matched-uri',
+        settings: {
+          label: 'label',
+          visualizations: [
+            {
+              label: 'Localhost',
+              templatedUri: 'http://localhost:3000/visualization.html?vse={{vse.domain}}&content={{content.sys.id}}',
+              default: true
+            }
+          ]
+        }
+      });
+      mockGet.mockResolvedValue(storedContentType);
+
+      const mockContentTypeSchemaUpdate = jest.fn().mockResolvedValue(new ContentTypeCachedSchema());
+      storedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
+      const result = await doSync(client, {
+        ...mutatedContentType,
+        repositories: ['Slots']
+      } as ContentTypeWithRepositoryAssignments);
+
+      expect(result).toEqual({ contentType: storedContentType, updateStatus: UpdateStatus.UPDATED });
+      expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
+    });
+  });
+
   describe('doUpdate', () => {
     const mockGet = jest.fn();
     let mockDynamicContentClientFactory: jest.Mock;
@@ -196,7 +267,6 @@ describe('content-type import command', (): void => {
         ...expectedContentType.toJSON(),
         repositories: ['Slots']
       } as ContentTypeWithRepositoryAssignments);
-      expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
     });
 
     it('should skip update when no change to content-type and return report', async () => {
@@ -271,31 +341,6 @@ describe('content-type import command', (): void => {
       const client = mockDynamicContentClientFactory();
       await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
       expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
-    });
-
-    it("should throw an error when unable to update a content type's content type schema during update", async () => {
-      const mutatedContentType = new ContentTypeWithRepositoryAssignments({
-        id: 'stored-id',
-        contentTypeUri: 'not-matched-uri',
-        settings: { label: 'mutated-label' }
-      });
-      const storedContentType = new ContentType({
-        id: 'stored-id',
-        contentTypeUri: 'matched-uri',
-        settings: { label: 'label' }
-      });
-      mockGet.mockResolvedValue(storedContentType);
-      const updatedContentType = new ContentType(mutatedContentType);
-      const mockUpdate = jest.fn().mockResolvedValue(updatedContentType);
-      storedContentType.related.update = mockUpdate;
-      const mockContentTypeSchemaUpdate = jest
-        .fn()
-        .mockRejectedValue(new Error('Unable to update content type schema'));
-      updatedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
-      const client = mockDynamicContentClientFactory();
-      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
-      expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
-      expect(mockContentTypeSchemaUpdate).toHaveBeenCalledWith();
     });
   });
 
@@ -763,7 +808,7 @@ describe('content-type import command', (): void => {
       });
     });
 
-    it('should create a content type and update a content type', async (): Promise<void> => {
+    it('should create a content type and update', async (): Promise<void> => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };
       const fileNamesAndContentTypesToImport = {
         'file-1': new ContentTypeWithRepositoryAssignments({
@@ -795,9 +840,47 @@ describe('content-type import command', (): void => {
       expect(processContentTypes).toHaveBeenCalledWith(
         Object.values(fileNamesAndContentTypesToImport),
         expect.any(Object),
-        expect.any(Object)
+        expect.any(Object),
+        false
       );
     });
+
+    // it('should create a content type, update and sync a content type', async (): Promise<void> => {
+    //   const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: true };
+    //   const fileNamesAndContentTypesToImport = {
+    //     'file-1': new ContentTypeWithRepositoryAssignments({
+    //       contentTypeUri: 'type-uri-1',
+    //       settings: {
+    //         label: 'created'
+    //       }
+    //     }),
+    //     'file-2': new ContentTypeWithRepositoryAssignments({
+    //       id: 'content-type-id',
+    //       contentTypeUri: 'type-uri-2',
+    //       settings: { label: 'updated' },
+    //       repositories: ['Slots']
+    //     })
+    //   };
+
+    //   (loadJsonFromDirectory as jest.Mock).mockReturnValue(fileNamesAndContentTypesToImport);
+    //   mockGetHub.mockResolvedValue(new Hub({ id: 'hub-id' }));
+    //   jest
+    //     .spyOn(importModule, 'storedContentTypeMapper')
+    //     .mockReturnValueOnce(fileNamesAndContentTypesToImport['file-1'])
+    //     .mockReturnValueOnce(fileNamesAndContentTypesToImport['file-2']);
+    //   jest.spyOn(importModule, 'processContentTypes').mockResolvedValueOnce();
+
+    //   await handler(argv);
+
+    //   expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', ContentTypeWithRepositoryAssignments);
+    //   expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+    //   expect(processContentTypes).toHaveBeenCalledWith(
+    //     Object.values(fileNamesAndContentTypesToImport),
+    //     expect.any(Object),
+    //     expect.any(Object),
+    //     true
+    //   );
+    // });
 
     it('should throw an error when no content found in import directory', async (): Promise<void> => {
       const argv = { ...yargArgs, ...config, dir: 'my-empty-dir' };
