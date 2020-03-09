@@ -16,7 +16,7 @@ export const command = 'import <dir>';
 export const desc = 'Import Content Types';
 
 export type CommandParameters = {
-  sync?: boolean;
+  sync: boolean;
 };
 
 export const builder = (yargs: Argv): void => {
@@ -27,7 +27,8 @@ export const builder = (yargs: Argv): void => {
 
   yargs.option('sync', {
     describe: 'Automatically sync Content Type schema',
-    type: 'boolean'
+    type: 'boolean',
+    default: false
   });
 };
 
@@ -108,14 +109,14 @@ export const doUpdate = async (
 
   if (equals(retrievedContentType, contentType)) {
     return { contentType: retrievedContentType, updateStatus: UpdateStatus.SKIPPED };
-  } else {
-    try {
-      // Update the content-type
-      updatedContentType = await retrievedContentType.related.update(contentType);
-      return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
-    } catch (err) {
-      throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
-    }
+  }
+
+  try {
+    // Update the content-type
+    updatedContentType = await retrievedContentType.related.update(contentType);
+    return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
+  } catch (err) {
+    throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
   }
 };
 
@@ -195,7 +196,7 @@ export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
   client: DynamicContent,
   hub: Hub,
-  sync = false
+  sync: boolean
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
@@ -209,21 +210,18 @@ export const processContentTypes = async (
     let contentTypeResult: ContentType;
 
     if (contentType.id) {
+      status = 'UP-TO-DATE';
       const result = await doUpdate(client, contentType);
+      if (result.updateStatus === UpdateStatus.UPDATED) {
+        status = 'UPDATED';
+      }
       contentTypeResult = result.contentType;
 
-      let syncResult: { contentType: ContentType; updateStatus: UpdateStatus } | undefined;
       if (sync) {
-        syncResult = await doSync(client, contentType);
-      }
-
-      if (
-        result.updateStatus === UpdateStatus.UPDATED ||
-        (syncResult && syncResult.updateStatus === UpdateStatus.UPDATED)
-      ) {
-        status = 'UPDATED';
-      } else {
-        status = 'UP-TO-DATE';
+        const syncResult = await doSync(client, contentType);
+        if (syncResult.updateStatus === UpdateStatus.UPDATED) {
+          status = 'UPDATED';
+        }
       }
     } else {
       contentTypeResult = await doCreate(hub, contentType);
@@ -248,7 +246,7 @@ export const processContentTypes = async (
 export const handler = async (
   argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>
 ): Promise<void> => {
-  const { dir, sync = false } = argv;
+  const { dir, sync } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments

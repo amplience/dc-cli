@@ -400,7 +400,7 @@ describe('content-type import command', (): void => {
       };
       jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(doUpdateResult2);
 
-      await processContentTypes(contentTypesToProcess, client, hub);
+      await processContentTypes(contentTypesToProcess, client, hub, false);
 
       expect(paginator).toHaveBeenCalledTimes(1);
       expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0]);
@@ -809,7 +809,7 @@ describe('content-type import command', (): void => {
     });
 
     it('should create a content type and update', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir' };
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: false };
       const fileNamesAndContentTypesToImport = {
         'file-1': new ContentTypeWithRepositoryAssignments({
           contentTypeUri: 'type-uri-1',
@@ -845,45 +845,45 @@ describe('content-type import command', (): void => {
       );
     });
 
-    // it('should create a content type, update and sync a content type', async (): Promise<void> => {
-    //   const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: true };
-    //   const fileNamesAndContentTypesToImport = {
-    //     'file-1': new ContentTypeWithRepositoryAssignments({
-    //       contentTypeUri: 'type-uri-1',
-    //       settings: {
-    //         label: 'created'
-    //       }
-    //     }),
-    //     'file-2': new ContentTypeWithRepositoryAssignments({
-    //       id: 'content-type-id',
-    //       contentTypeUri: 'type-uri-2',
-    //       settings: { label: 'updated' },
-    //       repositories: ['Slots']
-    //     })
-    //   };
+    it('should create a content type, update and sync a content type', async (): Promise<void> => {
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: true };
+      const fileNamesAndContentTypesToImport = {
+        'file-1': new ContentTypeWithRepositoryAssignments({
+          contentTypeUri: 'type-uri-1',
+          settings: {
+            label: 'created'
+          }
+        }),
+        'file-2': new ContentTypeWithRepositoryAssignments({
+          id: 'content-type-id',
+          contentTypeUri: 'type-uri-2',
+          settings: { label: 'updated' },
+          repositories: ['Slots']
+        })
+      };
 
-    //   (loadJsonFromDirectory as jest.Mock).mockReturnValue(fileNamesAndContentTypesToImport);
-    //   mockGetHub.mockResolvedValue(new Hub({ id: 'hub-id' }));
-    //   jest
-    //     .spyOn(importModule, 'storedContentTypeMapper')
-    //     .mockReturnValueOnce(fileNamesAndContentTypesToImport['file-1'])
-    //     .mockReturnValueOnce(fileNamesAndContentTypesToImport['file-2']);
-    //   jest.spyOn(importModule, 'processContentTypes').mockResolvedValueOnce();
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(fileNamesAndContentTypesToImport);
+      mockGetHub.mockResolvedValue(new Hub({ id: 'hub-id' }));
+      jest
+        .spyOn(importModule, 'storedContentTypeMapper')
+        .mockReturnValueOnce(fileNamesAndContentTypesToImport['file-1'])
+        .mockReturnValueOnce(fileNamesAndContentTypesToImport['file-2']);
+      jest.spyOn(importModule, 'processContentTypes').mockResolvedValueOnce();
 
-    //   await handler(argv);
+      await handler(argv);
 
-    //   expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', ContentTypeWithRepositoryAssignments);
-    //   expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-    //   expect(processContentTypes).toHaveBeenCalledWith(
-    //     Object.values(fileNamesAndContentTypesToImport),
-    //     expect.any(Object),
-    //     expect.any(Object),
-    //     true
-    //   );
-    // });
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', ContentTypeWithRepositoryAssignments);
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(processContentTypes).toHaveBeenCalledWith(
+        Object.values(fileNamesAndContentTypesToImport),
+        expect.any(Object),
+        expect.any(Object),
+        true
+      );
+    });
 
     it('should throw an error when no content found in import directory', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-empty-dir' };
+      const argv = { ...yargArgs, ...config, dir: 'my-empty-dir', sync: false };
 
       (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
 
