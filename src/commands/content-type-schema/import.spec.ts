@@ -20,6 +20,10 @@ jest.mock('../../services/resolve-schema-body');
 jest.mock('./create.service');
 jest.mock('./update.service');
 
+const schemaId = 'https://schema.localhost.com/test-1.json';
+const schemaBodyJson =
+  '{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}';
+
 describe('content-type-schema import command', (): void => {
   afterEach((): void => {
     jest.resetAllMocks();
@@ -44,15 +48,15 @@ describe('content-type-schema import command', (): void => {
 
   describe('storedSchemaMapper', () => {
     it('should map a stored schema to the imported list with matching imported schema', () => {
-      const schemaBody = { id: 'schema-id' };
+      const schemaBody = { $id: 'schema-id' };
       const importedSchema = new ContentTypeSchema({
         body: JSON.stringify(schemaBody),
         validationLevel: ValidationLevel.CONTENT_TYPE,
-        schemaId: schemaBody.id
+        schemaId: schemaBody.$id
       });
       const storedContentTypeSchema = new ContentTypeSchema({
         id: 'stored-id',
-        schemaId: schemaBody.id,
+        schemaId: schemaBody.$id,
         ...importedSchema.toJSON()
       });
       const storedSchemaList = [storedContentTypeSchema];
@@ -63,11 +67,11 @@ describe('content-type-schema import command', (): void => {
     });
 
     it('should return the imported schema when there is no matching stored schema', () => {
-      const schemaBody = { id: 'schema-id' };
+      const schemaBody = { $id: 'schema-id' };
       const importedSchema = new ContentTypeSchema({
         body: JSON.stringify(schemaBody),
         validationLevel: ValidationLevel.CONTENT_TYPE,
-        schemaId: schemaBody.id
+        schemaId: schemaBody.$id
       });
       const storedContentTypeSchema = new ContentTypeSchema({
         schemaId: 'stored-schema-id',
@@ -84,9 +88,9 @@ describe('content-type-schema import command', (): void => {
   describe('doCreate', () => {
     it('should create a content type schema and report the results', async () => {
       const hub = new Hub();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
+
       const contentTypeSchema = {
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       (createContentTypeSchema as jest.Mock).mockResolvedValueOnce({ ...contentTypeSchema, id: 'create-id', schemaId });
@@ -102,9 +106,9 @@ describe('content-type-schema import command', (): void => {
 
     it('should throw an error when content type schema fails to create', async () => {
       const hub = new Hub();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
+
       const contentTypeSchema = {
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       (createContentTypeSchema as jest.Mock).mockImplementation(() => {
@@ -127,16 +131,16 @@ describe('content-type-schema import command', (): void => {
     });
     it('should update a content type schema and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
+
       const storedContentTypeSchema = {
         id: 'stored-id',
         schemaId,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       const mutatedContentTypeSchema = {
         ...storedContentTypeSchema,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1 - updated",\n\t"description": "Test Schema 1- updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`
+        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "${schemaId}",\n\n\t"title": "Test Schema 1 - updated",\n\t"description": "Test Schema 1- updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`
       } as ContentTypeSchema;
       mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
       (updateContentTypeSchema as jest.Mock).mockResolvedValueOnce({
@@ -156,11 +160,10 @@ describe('content-type-schema import command', (): void => {
 
     it('should update a content type when only the validationLevel has been updated', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
       const storedContentTypeSchema = {
         id: 'stored-id',
         schemaId,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       const mutatedContentTypeSchema = {
@@ -185,16 +188,16 @@ describe('content-type-schema import command', (): void => {
 
     it('should skip updating a content type schema when no changes detected and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
+
       const storedContentTypeSchema = {
         id: 'stored-id',
         schemaId,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       const mutatedContentTypeSchema = {
         ...storedContentTypeSchema,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`
+        body: schemaBodyJson
       } as ContentTypeSchema;
       mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
 
@@ -206,11 +209,11 @@ describe('content-type-schema import command', (): void => {
 
     it('should throw an error when content type schema fails to create', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
+
       const contentTypeSchema = {
         id: 'stored-id',
         schemaId,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       mockGetContentTypeSchema.mockImplementationOnce(() => {
@@ -232,10 +235,10 @@ describe('content-type-schema import command', (): void => {
     it('should successfully create and update a schema', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
       const hub = new Hub();
-      const schemaId = 'https://schema.localhost.com/test-1.json';
+
       const contentTypeSchemaToCreate = {
         schemaId,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "${schemaId}",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "${schemaId}",\n\n\t"title": "Test Schema - Updated",\n\t"description": "Test Schema - Updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       const contentTypeSchemaToUpdate = { ...contentTypeSchemaToCreate, id: 'stored-id' } as ContentTypeSchema;
@@ -285,12 +288,12 @@ describe('content-type-schema import command', (): void => {
 
     it('should process schemas from a local directory', async (): Promise<void> => {
       const schemaToCreate = {
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
         validationLevel: ValidationLevel.CONTENT_TYPE,
         schemaId: 'create-schema-id'
       };
       const schemaToUpdate = {
-        body: `{\n\t"$schema": "http://json-schema.org/draft-04/schema#",\n\t"id": "https://schema.localhost.com/local-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/local-test-2.json",\n\n\t"title": "Test Schema 2",\n\t"description": "Test Schema 2",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
         validationLevel: ValidationLevel.CONTENT_TYPE,
         schemaId: 'update-schema-id'
       };
