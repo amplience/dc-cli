@@ -1,5 +1,6 @@
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import { jsonResolver } from '../common/json-resolver/json-resolver';
+import resolveSchemaId from '../common/json-schema/resolve-schema-id';
 
 type ResolveSchemaBodyErrors = { [p: string]: Error };
 type ContentTypeSchemaFiles = { [p: string]: ContentTypeSchema };
@@ -16,8 +17,9 @@ export const resolveSchemaBody = async (
         contentTypeSchema.body = await jsonResolver(contentTypeSchema.body, dir);
         if (!contentTypeSchema.schemaId) {
           const parsedBody = JSON.parse(contentTypeSchema.body);
-          if (parsedBody.id) {
-            contentTypeSchema.schemaId = parsedBody.id;
+          const schemaId = resolveSchemaId(parsedBody);
+          if (schemaId) {
+            contentTypeSchema.schemaId = schemaId;
           }
         }
       } catch (err) {

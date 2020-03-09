@@ -41,7 +41,7 @@ describe('resolveSchemaBody', () => {
 
   it('should resolve the schemaId if its not present on ContentTypeSchema', async () => {
     const mockJsonResolver = jsonResolver as jest.Mock;
-    mockJsonResolver.mockResolvedValueOnce(JSON.stringify({ id: 'http://example.com/schema.json' }));
+    mockJsonResolver.mockResolvedValueOnce(JSON.stringify({ $id: 'http://example.com/schema.json' }));
     const schemas = { 'schema.json': new ContentTypeSchema({ body: 'filename.json', schemaId: undefined }) };
     const [result, errors] = await resolveSchemaBody(schemas, __dirname);
 
@@ -49,7 +49,7 @@ describe('resolveSchemaBody', () => {
     expect(result).toMatchInlineSnapshot(`
       Object {
         "schema.json": Object {
-          "body": "{\\"id\\":\\"http://example.com/schema.json\\"}",
+          "body": "{\\"$id\\":\\"http://example.com/schema.json\\"}",
           "schemaId": "http://example.com/schema.json",
         },
       }
