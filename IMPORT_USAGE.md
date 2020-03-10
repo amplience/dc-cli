@@ -24,7 +24,91 @@ For more information on each command use the CLI help command:
 dc-cli --help
 ```
 
+## Content Type Schemas
+
+To import content type schemas:
+
+`dc-cli content-type-schema import <<dir>>`
+
+### Schema with relative path file resolution
+
+Creates or updates the supplied content type schemas resolving the body to a relative local path.
+
+`./content-type-schemas/video.json`:
+```json
+{
+  "body": "./schemas/video.json",
+  "schemaId": "https://example.com/schemas/video.json",
+  "validationLevel": "CONTENT_TYPE"
+}
+```
+
+For this Content Type Schema to be imported a JSON Schema file must be supplied and stored here  `./content-type-schemas/schemas/video.json` (the file in the body property is relative to the json file)
+
+To import run following:
+
+`dc-cli content-type-schema import ./content-type-schemas/`
+
+### Schema with absolute path file resolution
+
+Creates or updates the supplied content type schemas resolving the body to a absolute local path.
+
+`./content-type-schemas/video.json`:
+```json
+{
+  "body": "file:///schemas/video.json",
+  "schemaId": "https://example.com/schemas/video.json",
+  "validationLevel": "CONTENT_TYPE"
+}
+```
+
+For this Content Type Schema to be imported a JSON Schema file must be supplied and stored here  `/schemas/video.json` (the `file://` in the body property denotes an absolute path)
+
+To import run following:
+
+`dc-cli content-type-schema import ./content-type-schemas/`
+
+### Schema with remote file resolution
+
+Creates or updates the supplied content type schemas downloading the body from a remote location.
+
+`./content-type-schema/video.json`:
+```json
+{
+  "body": "https://example.com/schemas/video.json",
+  "schemaId": "https://example.com/schemas/video.json",
+  "validationLevel": "CONTENT_TYPE"
+}
+```
+
+For this Content Type Schema to be imported a JSON Schema file must be supplied and accessible via `https://example.com/schemas/video.json` 
+
+To import run following:
+
+`dc-cli content-type-schema import ./content-type-schemas/`
+
+
+### Schema with a supplied JSON body
+
+Creates or updates the supplied content type schemas with the JSON body supplied.
+
+```json
+{
+  "body": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"https://example.com/schemas/video.json\",\"title\":\"Video\",\"description\":\"Video schema\",\"allOf\":[{\"$ref\":\"http://example.com/content\"}],\"type\":\"object\",\"properties\":{\"video\":{\"title\":\"Video\",\"type\":\"object\",\"anyOf\":[{\"$ref\":\"http://example.com/definitions/video-link\"}]}},\"propertyOrder\":[\"video\"],\"required\":[\"video\"]}",
+  "schemaId": "https://example.com/schemas/video.json",
+  "validationLevel": "CONTENT_TYPE"
+}
+```
+
 ## Content Types
+
+To import content types:
+
+`dc-cli content-type import <dir>`
+
+To import content types and sync with schemas (useful when updating schemas):
+
+`dc-cli content-type import <dir> --sync`
 
 ### Content type only
 
@@ -56,55 +140,5 @@ the CLI will unassign the content type from the repository.
     "icons": []
   },
   "repositories": ["my-repository"]
-}
-```
-
-## Content Type Schemas
-
-### Schema with relative path file resolution
-
-Creates or updates the supplied content type schemas resolving the body to a relative local path.
-
-```json
-{
-  "body": "./schemas/video.json",
-  "schemaId": "https://example.com/schemas/video.json",
-  "validationLevel": "CONTENT_TYPE"
-}
-```
-
-### Schema with absolute path file resolution
-
-Creates or updates the supplied content type schemas resolving the body to a absolute local path.
-
-```json
-{
-  "body": "file:///schemas/video.json",
-  "schemaId": "https://example.com/schemas/video.json",
-  "validationLevel": "CONTENT_TYPE"
-}
-```
-
-### Schema with remote file resolution
-
-Creates or updates the supplied content type schemas downloading the body from a remote location.
-
-```json
-{
-  "body": "https://example.com/schemas/video.json",
-  "schemaId": "https://example.com/schemas/video.json",
-  "validationLevel": "CONTENT_TYPE"
-}
-```
-
-### Schema with a supplied JSON body
-
-Creates or updates the supplied content type schemas with the JSON body supplied.
-
-```json
-{
-  "body": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"https://example.com/schemas/video.json\",\"title\":\"Video\",\"description\":\"Video schema\",\"allOf\":[{\"$ref\":\"http://example.com/content\"}],\"type\":\"object\",\"properties\":{\"video\":{\"title\":\"Video\",\"type\":\"object\",\"anyOf\":[{\"$ref\":\"http://example.com/definitions/video-link\"}]}},\"propertyOrder\":[\"video\"],\"required\":[\"video\"]}",
-  "schemaId": "https://example.com/schemas/video.json",
-  "validationLevel": "CONTENT_TYPE"
 }
 ```
