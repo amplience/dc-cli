@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/amplience/dc-cli/compare/v0.3.0...v0.4.0) (2020-03-11)
+
+
+### Bug Fixes
+
+* **readme:** changed --clientKey to --clientId ([#50](https://github.com/amplience/dc-cli/issues/50)) ([79eee8b](https://github.com/amplience/dc-cli/commit/79eee8b))
+
+
+### Features
+
+* **json schema 7 support:** added support for json schema draft 7 an… ([#47](https://github.com/amplience/dc-cli/issues/47)) ([f8cc75d](https://github.com/amplience/dc-cli/commit/f8cc75d))
+
 ## [0.3.0](https://github.com/amplience/dc-cli/compare/v0.2.0...v0.3.0) (2019-12-11)
 
 
