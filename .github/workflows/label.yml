@@ -15,5 +15,6 @@ jobs:
 
     steps:
     - uses: actions/labeler@v2
+      if: github.event.pull_request.head.repo.fork == false
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
