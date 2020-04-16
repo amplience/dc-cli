@@ -306,6 +306,7 @@ describe('content-type-schema import command', (): void => {
 
       const processSchemasSpy = jest
         .spyOn(importModule, 'processSchemas')
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         .mockImplementation(async (): Promise<void> => {});
 
       await handler(argv);
