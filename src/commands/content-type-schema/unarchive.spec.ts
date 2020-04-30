@@ -1,16 +1,11 @@
-// TESTS
-// should unarchive a content-type-schema by id
-// should unarchive a content-type-schema by schema id with --schemaId
-// should unarchive content-type-schemas by regex on schema id with --schemaId
-// should unarchive content-type-schemas specified in the provided --revertLog
-
 import { builder, command, handler } from './unarchive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
+import rmdir from 'rimraf';
 import { dirname } from 'path';
-import { exists, writeFile, mkdir, rmdir } from 'fs';
+import { exists, writeFile, mkdir } from 'fs';
 import { promisify } from 'util';
 
 jest.mock('readline');
@@ -193,7 +188,7 @@ describe('content-item-schema unarchive command', () => {
           'http://schemas.com/schemaMatch2'
         ],
         schema => {
-          if (schema.schemaId?.indexOf('schemaMatch') !== -1) {
+          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
             targets.push(schema.related.unarchive);
           } else {
             skips.push(schema.related.unarchive);
@@ -262,7 +257,7 @@ describe('content-item-schema unarchive command', () => {
           'http://schemas.com/schemaMatch2'
         ],
         schema => {
-          if (schema.schemaId?.indexOf('schemaMatch') !== -1) {
+          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
             targets.push(schema.related.unarchive);
           } else {
             skips.push(schema.related.unarchive);
@@ -277,7 +272,7 @@ describe('content-item-schema unarchive command', () => {
       };
       await handler(argv);
 
-      await promisify(rmdir)('temp', { recursive: true });
+      await promisify(rmdir)('temp');
 
       targets.forEach(target => expect(target).toHaveBeenCalled());
       skips.forEach(skip => expect(skip).not.toHaveBeenCalled());

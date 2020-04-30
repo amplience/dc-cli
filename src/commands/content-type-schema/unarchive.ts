@@ -2,6 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { readFile } from 'fs';
@@ -44,27 +45,6 @@ export interface UnarchiveOptions {
   ignoreError?: boolean;
 }
 
-async function schemaIdsFromLog(revertLog: string): Promise<string[]> {
-  const log = await promisify(readFile)(revertLog, 'utf8');
-  const logLines = log.split('\n');
-  const schemaIds: string[] = [];
-  logLines.forEach(line => {
-    if (line.startsWith('//')) return;
-    const lineSplit = line.split(' ');
-    if (lineSplit.length > 0) {
-      switch (lineSplit[0]) {
-        case 'ARCHIVE':
-          // Archive content with schema ID
-          if (lineSplit.length > 1) {
-            schemaIds.push(lineSplit[1]);
-          }
-          break;
-      }
-    }
-  });
-  return schemaIds;
-}
-
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
   const { id, schemaId, revertLog, ignoreError } = argv;
   const client = dynamicContentClientFactory(argv);
@@ -78,7 +58,8 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
 
   if (revertLog != null) {
     try {
-      schemaIds = await schemaIdsFromLog(revertLog);
+      const log = await new ArchiveLog().loadFromFile(revertLog);
+      schemaIds = log.getData('ARCHIVE');
     } catch (e) {
       console.log(`Fatal error - could not read archive log. Error: \n${e.toString()}`);
       return;
@@ -87,7 +68,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     schemaIds = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   } else if (id != null) {
     const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
-    schemaIds = [contentTypeSchema.schemaId ?? ''];
+    schemaIds = [contentTypeSchema.schemaId || ''];
   }
 
   let schemas: ContentTypeSchema[];

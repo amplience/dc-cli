@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentType } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -10,13 +10,13 @@ import { join } from 'path';
 
 export const command = 'archive [id]';
 
-export const desc = 'Archive Content Type Schemas';
+export const desc = 'Archive Content Types';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   join(
     process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
     '.amplience',
-    'logs/schema-archive-<DATE>.log'
+    'logs/type-archive-<DATE>.log'
   );
 
 export const builder = (yargs: Argv): void => {
@@ -24,12 +24,12 @@ export const builder = (yargs: Argv): void => {
     .positional('id', {
       type: 'string',
       describe:
-        'The ID of a schema to be archived. Note that this is different from the schema ID - which is in a URL format. If neither this or schemaId are provided, this command will archive ALL content type schemas in the hub.'
+        'The ID of a content type to be archived. If neither this or schemaId are provided, this command will archive ALL content types in the hub.'
     })
     .option('schemaId', {
       type: 'string',
       describe:
-        'The Schema ID of a Content Type Schema to be archived.\nA regex can be provided to select multiple schemas with similar IDs (eg /.header.\\.json/).\nA single --schemaId option may be given to archive a single content type schema.\nMultiple --schemaId options may be given to archive multiple content type schemas at the same time, or even multiple regex.'
+        "The Schema ID of a Content Type's Schema to be archived.\nA regex can be provided to select multiple types with similar or matching schema IDs (eg /.header.\\.json/).\nA single --schemaId option may be given to match a single content type schema.\nMultiple --schemaId options may be given to match multiple content type schemas at the same time, or even multiple regex."
     })
     .alias('f', 'force')
     .option('f', {
@@ -71,7 +71,7 @@ function asyncQuestion(rl: ReadLine, question: string): Promise<string> {
 
 export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
   const { id, logFile, force, silent, ignoreError } = argv;
-  let { schemaId } = argv;
+  const { schemaId } = argv;
   const client = dynamicContentClientFactory(argv);
 
   if (id != null && schemaId != null) {
@@ -79,36 +79,37 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     return;
   }
 
+  let types: ContentType[];
+
   if (id != null) {
     try {
-      // Get the schema ID and use the other path, to avoid code duplication.
-      const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
-      schemaId = contentTypeSchema.schemaId;
+      const contentType: ContentType = await client.contentTypes.get(id);
+      types = [contentType];
     } catch (e) {
-      console.log(`Fatal error: could not find schema with ID ${id}. Error: \n${e.toString()}`);
+      console.log(`Fatal error: could not find content type with ID ${id}. Error: \n${e.toString()}`);
       return;
+    }
+  } else {
+    try {
+      const hub = await client.hubs.get(argv.hubId);
+      types = await paginator(hub.related.contentTypes.list);
+    } catch (e) {
+      console.log(
+        `Fatal error: could not retrieve content types to archive. Is your hub correct? Error: \n${e.toString()}`
+      );
+      return;
+    }
+
+    if (schemaId != null) {
+      const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
+      types = types.filter(type => schemaIdArray.findIndex(id => equalsOrRegex(type.contentTypeUri || '', id)) != -1);
     }
   }
 
-  let schemas: ContentTypeSchema[];
-  try {
-    const hub = await client.hubs.get(argv.hubId);
-    schemas = await paginator(hub.related.contentTypeSchema.list);
-  } catch (e) {
-    console.log(
-      `Fatal error: could not retrieve content type schemas to archive. Is your hub correct? Error: \n${e.toString()}`
-    );
-    return;
-  }
-
-  if (schemaId != null) {
-    const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
-    schemas = schemas.filter(schema => schemaIdArray.findIndex(id => equalsOrRegex(schema.schemaId || '', id)) != -1);
-  }
-
   console.log('The following content will be archived:');
-  schemas.forEach(schema => {
-    console.log('  ' + schema.schemaId);
+  types.forEach(type => {
+    const settings = type.settings;
+    console.log('  ' + (settings === undefined ? 'unknown' : settings.label));
   });
 
   if (!force) {
@@ -135,32 +136,36 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
 
   const logFileName = logFile.replace('<DATE>', timestamp);
 
-  const log = new ArchiveLog(`Content Type Schema Archive Log - ${timestamp}\n`);
+  const log = new ArchiveLog(`Content Type Archive Log - ${timestamp}\n`);
+
+  // let log = `// Content Type Archive Log - ${timestamp}\n`;
 
   let successCount = 0;
 
-  for (let i = 0; i < schemas.length; i++) {
+  for (let i = 0; i < types.length; i++) {
+    const settings = types[i].settings;
+    const label = settings === undefined ? 'unknown' : settings.label;
     try {
-      await schemas[i].related.archive();
+      await types[i].related.archive();
       successCount++;
     } catch (e) {
-      log.addComment(`ARCHIVE FAILED: ${schemas[i].schemaId}`);
+      log.addComment(`ARCHIVE FAILED: ${types[i].id}`);
       if (ignoreError) {
-        console.log(`Failed to unarchive ${schemas[i].schemaId}, continuing. Error: \n${e.toString()}`);
+        console.log(`Failed to unarchive ${label}, continuing. Error: \n${e.toString()}`);
       } else {
-        console.log(`Failed to unarchive ${schemas[i].schemaId}, aborting. Error: \n${e.toString()}`);
+        console.log(`Failed to unarchive ${label}, aborting. Error: \n${e.toString()}`);
         break;
       }
     }
 
-    log.addAction('ARCHIVE', `${schemas[i].schemaId}\n`);
+    log.addAction('ARCHIVE', types[i].id || 'unknown');
   }
 
   if (!silent) {
     await log.writeToFile(logFileName);
   }
 
-  console.log(`Archived ${successCount} content type schemas.`);
+  console.log(`Archived ${successCount} content types.`);
 };
 
 // log format:

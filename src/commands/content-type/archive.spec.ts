@@ -1,6 +1,6 @@
 import { builder, command, handler, LOG_FILENAME } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentTypeSchema, Hub } from 'dc-management-sdk-js';
+import { ContentType, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import rmdir from 'rimraf';
@@ -12,7 +12,7 @@ jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
 
-describe('content-item-schema archive command', () => {
+describe('content-type archive command', () => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -32,13 +32,13 @@ describe('content-item-schema archive command', () => {
       expect(spyPositional).toHaveBeenCalledWith('id', {
         type: 'string',
         describe:
-          'The ID of a schema to be archived. Note that this is different from the schema ID - which is in a URL format. If neither this or schemaId are provided, this command will archive ALL content type schemas in the hub.'
+          'The ID of a content type to be archived. If neither this or schemaId are provided, this command will archive ALL content types in the hub.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('schemaId', {
         type: 'string',
         describe:
-          'The Schema ID of a Content Type Schema to be archived.\nA regex can be provided to select multiple schemas with similar IDs (eg /.header.\\.json/).\nA single --schemaId option may be given to archive a single content type schema.\nMultiple --schemaId options may be given to archive multiple content type schemas at the same time, or even multiple regex.'
+          "The Schema ID of a Content Type's Schema to be archived.\nA regex can be provided to select multiple types with similar or matching schema IDs (eg /.header.\\.json/).\nA single --schemaId option may be given to match a single content type schema.\nMultiple --schemaId options may be given to match multiple content type schemas at the same time, or even multiple regex."
       });
 
       expect(spyOption).toHaveBeenCalledWith('f', {
@@ -79,14 +79,19 @@ describe('content-item-schema archive command', () => {
       hubId: 'hub-id'
     };
 
-    function generateMockSchemaList(
-      names: string[],
-      enrich: (schema: ContentTypeSchema) => void
-    ): MockPage<ContentTypeSchema> {
-      const contentTypeSchemaResponse: ContentTypeSchema[] = names.map(name => {
+    function generateMockTypeList(
+      templates: { name: string; schemaId: string; id?: string }[],
+      enrich: (schema: ContentType) => void
+    ): MockPage<ContentType> {
+      const contentTypeResponse: ContentType[] = templates.map(template => {
         const mockArchive = jest.fn();
 
-        const archiveResponse = new ContentTypeSchema({ schemaId: name });
+        const archiveResponse = new ContentType({
+          settings: { label: template.name },
+          contentTypeUri: template.schemaId,
+          id: template.id
+        });
+        archiveResponse.settings;
         archiveResponse.related.archive = mockArchive;
 
         mockArchive.mockResolvedValue(archiveResponse);
@@ -95,10 +100,13 @@ describe('content-item-schema archive command', () => {
         return archiveResponse;
       });
 
-      return new MockPage(ContentTypeSchema, contentTypeSchemaResponse);
+      return new MockPage(ContentType, contentTypeResponse);
     }
 
-    function injectSchemaMocks(names: string[], enrich: (schema: ContentTypeSchema) => void): void {
+    function injectTypeMocks(
+      templates: { name: string; schemaId: string; id?: string }[],
+      enrich: (schema: ContentType) => void
+    ): void {
       const mockHubGet = jest.fn();
       const mockHubList = jest.fn();
 
@@ -109,26 +117,32 @@ describe('content-item-schema archive command', () => {
       });
 
       const mockHub = new Hub();
-      mockHub.related.contentTypeSchema.list = mockHubList;
+      mockHub.related.contentTypes.list = mockHubList;
       mockHubGet.mockResolvedValue(mockHub);
 
-      mockHubList.mockResolvedValue(generateMockSchemaList(names, enrich));
+      mockHubList.mockResolvedValue(generateMockTypeList(templates, enrich));
     }
 
     it("should ask if the user wishes to archive the content, and do so when providing 'y'", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const targets: (() => Promise<ContentTypeSchema>)[] = [];
-      const skips: (() => Promise<ContentTypeSchema>)[] = [];
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
 
-      injectSchemaMocks(['http://schemas.com/schema1', 'http://schemas.com/schema2'], schema => {
-        if (schema.schemaId === 'http://schemas.com/schema2') {
-          targets.push(schema.related.archive);
-        } else {
-          skips.push(schema.related.archive);
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.archive);
+          } else {
+            skips.push(type.related.archive);
+          }
         }
-      });
+      );
 
       const argv = {
         ...yargArgs,
@@ -151,16 +165,22 @@ describe('content-item-schema archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['n']);
 
-      const targets: (() => Promise<ContentTypeSchema>)[] = [];
-      const skips: (() => Promise<ContentTypeSchema>)[] = [];
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
 
-      injectSchemaMocks(['http://schemas.com/schema1', 'http://schemas.com/schema2'], schema => {
-        if (schema.schemaId === 'http://schemas.com/schema2') {
-          targets.push(schema.related.archive);
-        } else {
-          skips.push(schema.related.archive);
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.archive);
+          } else {
+            skips.push(type.related.archive);
+          }
         }
-      });
+      );
 
       const argv = {
         ...yargArgs,
@@ -183,16 +203,22 @@ describe('content-item-schema archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['input', 'ignored']);
 
-      const targets: (() => Promise<ContentTypeSchema>)[] = [];
-      const skips: (() => Promise<ContentTypeSchema>)[] = [];
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
 
-      injectSchemaMocks(['http://schemas.com/schema1', 'http://schemas.com/schema2'], schema => {
-        if (schema.schemaId === 'http://schemas.com/schema2') {
-          targets.push(schema.related.archive);
-        } else {
-          skips.push(schema.related.archive);
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.archive);
+          } else {
+            skips.push(type.related.archive);
+          }
         }
-      });
+      );
 
       const argv = {
         ...yargArgs,
@@ -213,44 +239,29 @@ describe('content-item-schema archive command', () => {
       skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
     });
 
-    it('should archive a content-type-schema by id', async () => {
+    it('should archive a content-type by id', async () => {
       const mockGet = jest.fn();
-      let mockArchive: (() => Promise<ContentTypeSchema>) | undefined;
-      const mockHubGet = jest.fn();
-      const mockHubList = jest.fn();
+      const mockArchive = jest.fn();
 
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        contentTypeSchemas: {
+        contentTypes: {
           get: mockGet
-        },
-        hubs: {
-          get: mockHubGet
         }
       });
-      const plainListContentTypeSchema = {
-        id: '1',
+      const plainListContentType = {
+        id: 'content-type-id',
         body: '{}',
-        schemaId: 'schemaId1'
+        contentTypeUri: 'schemaId1'
       };
-      const archiveResponse = new ContentTypeSchema(plainListContentTypeSchema);
+      const archiveResponse = new ContentType(plainListContentType);
 
-      const mockHub = new Hub();
-      mockHub.related.contentTypeSchema.list = mockHubList;
-      mockHubGet.mockResolvedValue(mockHub);
-
-      mockHubList.mockResolvedValue(
-        generateMockSchemaList(['schemaId1', 'schemaId2'], schema => {
-          if (schema.schemaId == 'schemaId1') {
-            mockArchive = schema.related.archive;
-          }
-        })
-      );
-
+      archiveResponse.related.archive = mockArchive;
       mockGet.mockResolvedValue(archiveResponse);
+      mockArchive.mockResolvedValue(archiveResponse);
 
       const argv = {
         ...yargArgs,
-        id: 'content-type-schema-id',
+        id: 'content-type-id',
         ...config,
         logFile: LOG_FILENAME(),
         force: true,
@@ -258,21 +269,27 @@ describe('content-item-schema archive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalledWith('content-type-schema-id');
+      expect(mockGet).toHaveBeenCalledWith('content-type-id');
       expect(mockArchive).toHaveBeenCalled();
     });
 
-    it('should archive a content-type-schema by schema id with --schemaId', async () => {
-      const targets: (() => Promise<ContentTypeSchema>)[] = [];
-      const skips: (() => Promise<ContentTypeSchema>)[] = [];
+    it('should archive a content-type by schema id with --schemaId', async () => {
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
 
-      injectSchemaMocks(['http://schemas.com/schema1', 'http://schemas.com/schema2'], schema => {
-        if (schema.schemaId === 'http://schemas.com/schema2') {
-          targets.push(schema.related.archive);
-        } else {
-          skips.push(schema.related.archive);
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.archive);
+          } else {
+            skips.push(type.related.archive);
+          }
         }
-      });
+      );
 
       const argv = {
         ...yargArgs,
@@ -288,23 +305,23 @@ describe('content-item-schema archive command', () => {
       skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
     });
 
-    it('should archive content-type-schemas by regex on schema id with --schemaId', async () => {
-      const targets: (() => Promise<ContentTypeSchema>)[] = [];
-      const skips: (() => Promise<ContentTypeSchema>)[] = [];
+    it('should archive content-types by regex on schema id with --schemaId', async () => {
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
 
-      injectSchemaMocks(
+      injectTypeMocks(
         [
-          'http://schemas.com/schema1',
-          'http://schemas.com/schema2',
-          'http://schemas.com/schemaBanana',
-          'http://schemas.com/schemaMatch1',
-          'http://schemas.com/schemaMatch2'
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2' }
         ],
-        schema => {
-          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
-            targets.push(schema.related.archive);
+        type => {
+          if ((type.contentTypeUri || '').indexOf('schemaMatch') !== -1) {
+            targets.push(type.related.archive);
           } else {
-            skips.push(schema.related.archive);
+            skips.push(type.related.archive);
           }
         }
       );
@@ -324,18 +341,18 @@ describe('content-item-schema archive command', () => {
     });
 
     it('should attempt to archive all content when no option is provided', async () => {
-      const targets: (() => Promise<ContentTypeSchema>)[] = [];
+      const targets: (() => Promise<ContentType>)[] = [];
 
-      injectSchemaMocks(
+      injectTypeMocks(
         [
-          'http://schemas.com/schema1',
-          'http://schemas.com/schema2',
-          'http://schemas.com/schemaBanana',
-          'http://schemas.com/schemaMatch1',
-          'http://schemas.com/schemaMatch2'
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2' }
         ],
-        schema => {
-          targets.push(schema.related.archive);
+        type => {
+          targets.push(type.related.archive);
         }
       );
 
@@ -359,17 +376,17 @@ describe('content-item-schema archive command', () => {
 
       const targets: string[] = [];
 
-      injectSchemaMocks(
+      injectTypeMocks(
         [
-          'http://schemas.com/schema1',
-          'http://schemas.com/schema2',
-          'http://schemas.com/schemaBanana',
-          'http://schemas.com/schemaMatch1',
-          'http://schemas.com/schemaMatch2'
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1', id: 'id1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2', id: 'id2' }
         ],
-        schema => {
-          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
-            targets.push(schema.schemaId || '');
+        type => {
+          if ((type.contentTypeUri || '').indexOf('schemaMatch') !== -1) {
+            targets.push(type.id || '');
           }
         }
       );

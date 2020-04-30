@@ -107,6 +107,7 @@
     "typescript": "^3.6.3"
   },
   "dependencies": {
+    "@types/rimraf": "^3.0.0",
     "axios": "^0.18.1",
     "chalk": "^2.4.2",
     "dc-management-sdk-js": "^1.4.1",
