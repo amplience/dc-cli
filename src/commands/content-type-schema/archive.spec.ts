@@ -215,16 +215,11 @@ describe('content-item-schema archive command', () => {
 
     it('should archive a content-type-schema by id', async () => {
       const mockGet = jest.fn();
-      let mockArchive: (() => Promise<ContentTypeSchema>) | undefined;
-      const mockHubGet = jest.fn();
-      const mockHubList = jest.fn();
+      const mockArchive = jest.fn();
 
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         contentTypeSchemas: {
           get: mockGet
-        },
-        hubs: {
-          get: mockHubGet
         }
       });
       const plainListContentTypeSchema = {
@@ -234,19 +229,9 @@ describe('content-item-schema archive command', () => {
       };
       const archiveResponse = new ContentTypeSchema(plainListContentTypeSchema);
 
-      const mockHub = new Hub();
-      mockHub.related.contentTypeSchema.list = mockHubList;
-      mockHubGet.mockResolvedValue(mockHub);
-
-      mockHubList.mockResolvedValue(
-        generateMockSchemaList(['schemaId1', 'schemaId2'], schema => {
-          if (schema.schemaId == 'schemaId1') {
-            mockArchive = schema.related.archive;
-          }
-        })
-      );
-
+      archiveResponse.related.archive = mockArchive;
       mockGet.mockResolvedValue(archiveResponse);
+      mockArchive.mockResolvedValue(archiveResponse);
 
       const argv = {
         ...yargArgs,

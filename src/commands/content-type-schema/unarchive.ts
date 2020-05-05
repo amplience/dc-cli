@@ -5,8 +5,11 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { readFile } from 'fs';
-import { promisify } from 'util';
+import { getDefaultLogPath } from '../../common/archive/archive-helpers';
+import UnarchiveOptions from '../../common/archive/unarchive-options';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('schema', 'unarchive', platform);
 
 export const command = 'unarchive [id]';
 
@@ -31,22 +34,26 @@ export const builder = (yargs: Argv): void => {
         'Path to a log file containing content archived in a previous run of the archive command.\nWhen provided, unarchives all schemas listed as archived in the log file.',
       requiresArg: false
     })
+    .alias('s', 'silent')
+    .option('s', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'If present, no log file will be produced.'
+    })
     .option('ignoreError', {
       type: 'boolean',
       boolean: true,
       describe: 'If present, unarchive requests that fail will not abort the process.'
+    })
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
-export interface UnarchiveOptions {
-  id?: string;
-  schemaId?: string | string[];
-  revertLog?: string;
-  ignoreError?: boolean;
-}
-
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, schemaId, revertLog, ignoreError } = argv;
+  const { id, schemaId, revertLog, ignoreError, logFile, silent } = argv;
   const client = dynamicContentClientFactory(argv);
 
   if (id != null && schemaId != null) {
@@ -54,47 +61,62 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     return;
   }
 
-  let schemaIds: string[] = [];
+  let schemas: ContentTypeSchema[] = [];
 
-  if (revertLog != null) {
+  if (id != null) {
     try {
-      const log = await new ArchiveLog().loadFromFile(revertLog);
-      schemaIds = log.getData('ARCHIVE');
+      const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
+      schemas = [contentTypeSchema];
     } catch (e) {
-      console.log(`Fatal error - could not read archive log. Error: \n${e.toString()}`);
+      console.log(`Fatal error: could not find content type schema with ID ${id}. Error: \n${e.toString()}`);
       return;
     }
-  } else if (schemaId != null) {
-    schemaIds = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
-  } else if (id != null) {
-    const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
-    schemaIds = [contentTypeSchema.schemaId || ''];
-  }
-
-  let schemas: ContentTypeSchema[];
-  try {
-    const hub = await client.hubs.get(argv.hubId);
-    schemas = await paginator(hub.related.contentTypeSchema.list);
-  } catch (e) {
-    console.log(
-      `Fatal error: could not retrieve content type schemas to unarchive. Is your hub correct? Error: \n${e.toString()}`
-    );
-    return;
-  }
-
-  if (schemaIds.length > 0) {
-    schemas = schemas.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.schemaId || '', id)) != -1);
   } else {
-    console.log('No filter, ID or log file was given, so unarchiving all content.');
+    try {
+      const hub = await client.hubs.get(argv.hubId);
+      schemas = await paginator(hub.related.contentTypeSchema.list, { status: 'ARCHIVED' });
+    } catch (e) {
+      console.log(
+        `Fatal error: could not retrieve content type schemas to unarchive. Is your hub correct? Error: \n${e.toString()}`
+      );
+      return;
+    }
+
+    if (revertLog != null) {
+      try {
+        const log = await new ArchiveLog().loadFromFile(revertLog);
+        const ids = log.getData('ARCHIVE');
+        schemas = schemas.filter(schema => ids.indexOf(schema.schemaId || '') != -1);
+        if (schemas.length != ids.length) {
+          // ask the user?
+        }
+      } catch (e) {
+        console.log(`Fatal error - could not read archive log. Error: \n${e.toString()}`);
+        return;
+      }
+    } else if (schemaId != null) {
+      const schemaIds: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
+      schemas = schemas.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.schemaId || '', id)) != -1);
+    } else {
+      console.log('No filter, ID or log file was given, so unarchiving all content.');
+    }
   }
+
+  const timestamp = Date.now().toString();
+  const log = new ArchiveLog(`Content Type Schema Archive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
   for (let i = 0; i < schemas.length; i++) {
     try {
       await schemas[i].related.unarchive();
+
+      log.addAction('UNARCHIVE', schemas[i].schemaId || 'unknown');
       successCount++;
     } catch (e) {
+      log.addComment(`ARCHIVE FAILED: ${schemas[i].schemaId}`);
+      log.addComment(e.toString());
+
       if (ignoreError) {
         console.log(`Failed to unarchive ${schemas[i].schemaId}, continuing. Error: \n${e.toString()}`);
       } else {
@@ -103,6 +125,10 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       }
     }
     console.log('Unarchived: ' + schemas[i].schemaId);
+  }
+
+  if (!silent) {
+    await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 
   console.log(`Unarchived ${successCount} content type schemas.`);

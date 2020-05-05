@@ -1,11 +1,11 @@
-import { builder, command, handler } from './unarchive';
+import { builder, command, handler, LOG_FILENAME } from './unarchive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentType, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { dirname } from 'path';
 import rmdir from 'rimraf';
-import { exists, writeFile, mkdir } from 'fs';
+import { exists, writeFile, mkdir, readFile } from 'fs';
 import { promisify } from 'util';
 
 jest.mock('readline');
@@ -135,6 +135,8 @@ describe('content-type unarchive command', () => {
 
       const argv = {
         ...yargArgs,
+        logFile: LOG_FILENAME(),
+        slient: true,
         id: 'content-type-id',
         ...config
       };
@@ -165,6 +167,8 @@ describe('content-type unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
+        logFile: LOG_FILENAME(),
+        slient: true,
         schemaId: 'http://schemas.com/schema2'
       };
       await handler(argv);
@@ -197,6 +201,8 @@ describe('content-type unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
+        logFile: LOG_FILENAME(),
+        slient: true,
         schemaId: '/schemaMatch/'
       };
       await handler(argv);
@@ -223,7 +229,9 @@ describe('content-type unarchive command', () => {
 
       const argv = {
         ...yargArgs,
-        ...config
+        ...config,
+        logFile: LOG_FILENAME(),
+        slient: true
       };
       await handler(argv);
 
@@ -263,6 +271,8 @@ describe('content-type unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
+        logFile: LOG_FILENAME(),
+        slient: true,
         revertLog: logFileName
       };
       await handler(argv);
@@ -271,6 +281,63 @@ describe('content-type unarchive command', () => {
 
       targets.forEach(target => expect(target).toHaveBeenCalled());
       skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
+    });
+
+    it('should output unarchived content to a well formatted log file with specified path in --logFile', async () => {
+      // First, ensure the log does not already exist.
+      if (await promisify(exists)('temp/test.log')) {
+        await promisify(rmdir)('temp');
+      }
+
+      const targets: string[] = [];
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1', id: 'id1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2', id: 'id2' }
+        ],
+        type => {
+          if ((type.contentTypeUri || '').indexOf('schemaMatch') !== -1) {
+            targets.push(type.id || '');
+          }
+        }
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: 'temp/test.log',
+        schemaId: '/schemaMatch/',
+        force: true
+      };
+      await handler(argv);
+
+      const logExists = await promisify(exists)('temp/test.log');
+
+      expect(logExists).toBeTruthy();
+
+      // Log should contain the two schema that match.
+
+      const log = await promisify(readFile)('temp/test.log', 'utf8');
+
+      const logLines = log.split('\n');
+      let total = 0;
+      logLines.forEach(line => {
+        if (line.startsWith('//')) return;
+        const lineSplit = line.split(' ');
+        if (lineSplit.length == 2) {
+          expect(lineSplit[0]).toEqual('UNARCHIVE');
+          expect(targets.indexOf(lineSplit[1])).not.toEqual(-1);
+          total++;
+        }
+      });
+
+      expect(total).toEqual(2);
+
+      await promisify(rmdir)('temp');
     });
   });
 });

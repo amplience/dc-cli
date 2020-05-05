@@ -1,10 +1,15 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentType, DynamicContent } from 'dc-management-sdk-js';
+import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
+import { getDefaultLogPath } from '../../common/archive/archive-helpers';
+import UnarchiveOptions from '../../common/archive/unarchive-options';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('schema', 'unarchive', platform);
 
 export const command = 'unarchive [id]';
 
@@ -28,34 +33,26 @@ export const builder = (yargs: Argv): void => {
         'Path to a log file containing content archived in a previous run of the archive command.\nWhen provided, unarchives all content types listed as archived in the log file.',
       requiresArg: false
     })
+    .alias('s', 'silent')
+    .option('s', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'If present, no log file will be produced.'
+    })
     .option('ignoreError', {
       type: 'boolean',
       boolean: true,
       describe: 'If present, unarchive requests that fail will not abort the process.'
+    })
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
-export interface UnarchiveOptions {
-  id?: string;
-  schemaId?: string | string[];
-  revertLog?: string;
-  ignoreError?: boolean;
-}
-
-async function getAllTypes(client: DynamicContent, hubId: string): Promise<ContentType[]> {
-  try {
-    const hub = await client.hubs.get(hubId);
-    return paginator(hub.related.contentTypes.list);
-  } catch (e) {
-    console.log(
-      `Fatal error: could not retrieve content types to unarchive. Is your hub correct? Error: \n${e.toString()}`
-    );
-    throw e;
-  }
-}
-
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, schemaId, revertLog, ignoreError } = argv;
+  const { id, schemaId, revertLog, ignoreError, logFile, silent, hubId } = argv;
   const client = dynamicContentClientFactory(argv);
 
   if (id != null && schemaId != null) {
@@ -74,7 +71,16 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       return;
     }
   } else {
-    types = await getAllTypes(client, argv.hubId);
+    try {
+      const hub = await client.hubs.get(hubId);
+      types = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+    } catch (e) {
+      console.log(
+        `Fatal error: could not retrieve content types to unarchive. Is your hub correct? Error: \n${e.toString()}`
+      );
+      throw e;
+    }
+
     if (revertLog != null) {
       try {
         const log = await new ArchiveLog().loadFromFile(revertLog);
@@ -88,14 +94,16 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
         return;
       }
     } else if (schemaId != null) {
-      const schemaIds: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
-      if (schemaIds.length > 0) {
-        types = types.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.contentTypeUri || '', id)) != -1);
-      }
+      const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
+      types = types.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.contentTypeUri || '', id)) != -1);
     } else {
       console.log('No filter, ID or log file was given, so unarchiving all content.');
     }
   }
+
+  const timestamp = Date.now().toString();
+
+  const log = new ArchiveLog(`Content Type Schema Unarchive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
@@ -104,8 +112,13 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     const label = settings === undefined ? 'unknown' : settings.label;
     try {
       await types[i].related.unarchive();
+
+      log.addAction('UNARCHIVE', types[i].id || 'unknown');
       successCount++;
     } catch (e) {
+      log.addComment(`ARCHIVE FAILED: ${types[i].id}`);
+      log.addComment(e.toString());
+
       if (ignoreError) {
         console.log(`Failed to unarchive ${label}, continuing. Error: \n${e.toString()}`);
       } else {
@@ -114,6 +127,10 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       }
     }
     console.log('Unarchived: ' + label);
+  }
+
+  if (!silent) {
+    await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 
   console.log(`Unarchived ${successCount} content types.`);

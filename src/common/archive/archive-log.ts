@@ -52,16 +52,19 @@ export class ArchiveLog {
         await promisify(mkdir)(dir);
       }
       await promisify(writeFile)(path, log);
-      console.log(`Archive log written to "${path}".`);
+      console.log(`Log written to "${path}".`);
       return true;
     } catch {
-      console.log('Could not write archive log.');
+      console.log('Could not write log.');
       return false;
     }
   }
 
   addComment(comment: string): void {
-    this.items.push({ comment: true, data: comment });
+    const lines = comment.split('\n');
+    lines.forEach(line => {
+      this.items.push({ comment: true, data: line });
+    });
   }
 
   addAction(action: string, data: string): void {
