@@ -100,7 +100,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
           missingContent = true;
         }
       } catch (e) {
-        console.log(`Fatal error - could not read archive log. Error: \n${e.toString()}`);
+        console.log(`Fatal error - could not read unarchive log. Error: \n${e.toString()}`);
         return;
       }
     } else if (schemaId != null) {
@@ -144,9 +144,9 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(`Failed to unarchive ${label}, continuing. Error: \n${e.toString()}`);
+        console.log(`Failed to archive ${label}, continuing. Error: \n${e.toString()}`);
       } else {
-        console.log(`Failed to unarchive ${label}, aborting. Error: \n${e.toString()}`);
+        console.log(`Failed to archive ${label}, aborting. Error: \n${e.toString()}`);
         break;
       }
     }

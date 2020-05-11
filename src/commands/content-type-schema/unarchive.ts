@@ -135,7 +135,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       log.addAction('UNARCHIVE', schemas[i].schemaId || 'unknown');
       successCount++;
     } catch (e) {
-      log.addComment(`ARCHIVE FAILED: ${schemas[i].schemaId}`);
+      log.addComment(`UNARCHIVE FAILED: ${schemas[i].schemaId}`);
       log.addComment(e.toString());
 
       if (ignoreError) {
