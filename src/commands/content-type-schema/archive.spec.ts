@@ -3,8 +3,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentTypeSchema, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
-import rmdir from 'rimraf';
-import { exists, readFile } from 'fs';
+import { exists, readFile, unlink } from 'fs';
 import { promisify } from 'util';
 import readline from 'readline';
 
@@ -338,8 +337,8 @@ describe('content-item-schema archive command', () => {
 
     it('should output archived content to a well formatted log file with specified path in --logFile', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/test.log')) {
-        await promisify(rmdir)('temp');
+      if (await promisify(exists)('temp/schema-archive-test.log')) {
+        await promisify(unlink)('temp/schema-archive-test.log');
       }
 
       const targets: string[] = [];
@@ -362,19 +361,19 @@ describe('content-item-schema archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/test.log',
+        logFile: 'temp/schema-archive-test.log',
         schemaId: '/schemaMatch/',
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/test.log');
+      const logExists = await promisify(exists)('temp/schema-archive-test.log');
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match.
 
-      const log = await promisify(readFile)('temp/test.log', 'utf8');
+      const log = await promisify(readFile)('temp/schema-archive-test.log', 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -390,7 +389,7 @@ describe('content-item-schema archive command', () => {
 
       expect(total).toEqual(2);
 
-      await promisify(rmdir)('temp');
+      await promisify(unlink)('temp/schema-archive-test.log');
     });
   });
 });

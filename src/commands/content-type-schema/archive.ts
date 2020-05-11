@@ -5,7 +5,6 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { equalsOrRegex } from '../../common/filter/filter';
-import readline, { ReadLine } from 'readline';
 import { getDefaultLogPath, confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 

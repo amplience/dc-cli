@@ -4,9 +4,9 @@ import { ContentType, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { dirname } from 'path';
-import rmdir from 'rimraf';
-import { exists, writeFile, mkdir, readFile } from 'fs';
+import { exists, writeFile, mkdir, readFile, unlink } from 'fs';
 import { promisify } from 'util';
+import readline from 'readline';
 
 jest.mock('readline');
 
@@ -111,6 +111,122 @@ describe('content-type unarchive command', () => {
       mockHubList.mockResolvedValue(generateMockTypeList(templates, enrich));
     }
 
+    it("should ask if the user wishes to unarchive the content, and do so when providing 'y'", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.unarchive);
+          } else {
+            skips.push(type.related.unarchive);
+          }
+        }
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        schemaId: 'http://schemas.com/schema2',
+        silent: true
+      };
+      await handler(argv);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((readline as any).responsesLeft()).toEqual(0);
+
+      // Should have unarchived relevant content, since we said yes.
+      targets.forEach(target => expect(target).toHaveBeenCalled());
+      skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
+    });
+
+    it("should abort when answering 'n' to the question", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['n']);
+
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.unarchive);
+          } else {
+            skips.push(type.related.unarchive);
+          }
+        }
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        schemaId: 'http://schemas.com/schema2',
+        silent: true
+      };
+      await handler(argv);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((readline as any).responsesLeft()).toEqual(0);
+
+      // No content should have been unarchived.
+      targets.forEach(target => expect(target).not.toHaveBeenCalled());
+      skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
+    });
+
+    it('should unarchive without asking if --force is provided', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['input', 'ignored']);
+
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' }
+        ],
+        type => {
+          if (type.contentTypeUri === 'http://schemas.com/schema2') {
+            targets.push(type.related.unarchive);
+          } else {
+            skips.push(type.related.unarchive);
+          }
+        }
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        schemaId: 'http://schemas.com/schema2',
+        silent: true,
+        force: true
+      };
+      await handler(argv);
+
+      // We expect our mocked responses to still be present, as the user will not be asked to continue.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((readline as any).responsesLeft()).toEqual(2);
+
+      // Should have unarchived relevant content, since we forced operation.
+      targets.forEach(target => expect(target).toHaveBeenCalled());
+      skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
+    });
+
     it('should unarchive a content-type by id', async () => {
       const mockGet = jest.fn();
       const mockUnarchive = jest.fn();
@@ -137,6 +253,7 @@ describe('content-type unarchive command', () => {
         ...yargArgs,
         logFile: LOG_FILENAME(),
         slient: true,
+        force: true,
         id: 'content-type-id',
         ...config
       };
@@ -169,6 +286,7 @@ describe('content-type unarchive command', () => {
         ...config,
         logFile: LOG_FILENAME(),
         slient: true,
+        force: true,
         schemaId: 'http://schemas.com/schema2'
       };
       await handler(argv);
@@ -203,6 +321,7 @@ describe('content-type unarchive command', () => {
         ...config,
         logFile: LOG_FILENAME(),
         slient: true,
+        force: true,
         schemaId: '/schemaMatch/'
       };
       await handler(argv);
@@ -231,7 +350,8 @@ describe('content-type unarchive command', () => {
         ...yargArgs,
         ...config,
         logFile: LOG_FILENAME(),
-        slient: true
+        slient: true,
+        force: true
       };
       await handler(argv);
 
@@ -242,7 +362,7 @@ describe('content-type unarchive command', () => {
       const targets: (() => Promise<ContentType>)[] = [];
       const skips: (() => Promise<ContentType>)[] = [];
 
-      const logFileName = 'temp/unarchive.log';
+      const logFileName = 'temp/type-unarchive-revert.log';
       const log = '// Type log test file\n' + 'ARCHIVE id1\n' + 'ARCHIVE id2';
 
       const dir = dirname(logFileName);
@@ -273,11 +393,12 @@ describe('content-type unarchive command', () => {
         ...config,
         logFile: LOG_FILENAME(),
         slient: true,
+        force: true,
         revertLog: logFileName
       };
       await handler(argv);
 
-      await promisify(rmdir)('temp');
+      await promisify(unlink)(logFileName);
 
       targets.forEach(target => expect(target).toHaveBeenCalled());
       skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
@@ -285,8 +406,10 @@ describe('content-type unarchive command', () => {
 
     it('should output unarchived content to a well formatted log file with specified path in --logFile', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/test.log')) {
-        await promisify(rmdir)('temp');
+      const logFileName = 'temp/type-unarchive-test.log';
+
+      if (await promisify(exists)(logFileName)) {
+        await promisify(unlink)(logFileName);
       }
 
       const targets: string[] = [];
@@ -309,19 +432,19 @@ describe('content-type unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/test.log',
+        logFile: logFileName,
         schemaId: '/schemaMatch/',
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/test.log');
+      const logExists = await promisify(exists)(logFileName);
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match.
 
-      const log = await promisify(readFile)('temp/test.log', 'utf8');
+      const log = await promisify(readFile)(logFileName, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -337,7 +460,7 @@ describe('content-type unarchive command', () => {
 
       expect(total).toEqual(2);
 
-      await promisify(rmdir)('temp');
+      await promisify(unlink)(logFileName);
     });
   });
 });

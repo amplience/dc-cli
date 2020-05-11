@@ -1,11 +1,11 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
+import { ContentType } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { getDefaultLogPath } from '../../common/archive/archive-helpers';
+import { getDefaultLogPath, confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
@@ -33,6 +33,12 @@ export const builder = (yargs: Argv): void => {
         'Path to a log file containing content archived in a previous run of the archive command.\nWhen provided, unarchives all content types listed as archived in the log file.',
       requiresArg: false
     })
+    .alias('f', 'force')
+    .option('f', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'If present, there will be no confirmation prompt before unarchiving the found content.'
+    })
     .alias('s', 'silent')
     .option('s', {
       type: 'boolean',
@@ -52,7 +58,7 @@ export const builder = (yargs: Argv): void => {
 };
 
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, schemaId, revertLog, ignoreError, logFile, silent, hubId } = argv;
+  const { id, schemaId, revertLog, ignoreError, logFile, silent, hubId, force } = argv;
   const client = dynamicContentClientFactory(argv);
 
   if (id != null && schemaId != null) {
@@ -61,6 +67,8 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   }
 
   let types: ContentType[];
+  let allContent = false;
+  let missingContent = false;
 
   if (id != null) {
     try {
@@ -87,7 +95,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
         const ids = log.getData('ARCHIVE');
         types = types.filter(type => ids.indexOf(type.id || '') != -1);
         if (types.length != ids.length) {
-          // ask the user?
+          missingContent = true;
         }
       } catch (e) {
         console.log(`Fatal error - could not read archive log. Error: \n${e.toString()}`);
@@ -97,12 +105,23 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
       types = types.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.contentTypeUri || '', id)) != -1);
     } else {
+      allContent = true;
       console.log('No filter, ID or log file was given, so unarchiving all content.');
     }
   }
 
-  const timestamp = Date.now().toString();
+  if (!force) {
+    const yes = await confirmArchive(
+      'Providing no ID or filter will unarchive ALL content type schemas! Are you sure you want to do this? (y/n)\n',
+      allContent,
+      missingContent
+    );
+    if (!yes) {
+      return;
+    }
+  }
 
+  const timestamp = Date.now().toString();
   const log = new ArchiveLog(`Content Type Schema Unarchive Log - ${timestamp}\n`);
 
   let successCount = 0;
