@@ -38,7 +38,7 @@ export const builder = (yargs: Argv): void => {
     .option('f', {
       type: 'boolean',
       boolean: true,
-      describe: 'If present, there will be no confirmation prompt before archiving the found content.'
+      describe: 'If present, there will be no confirmation prompt before unarchiving the found content.'
     })
     .alias('s', 'silent')
     .option('s', {
@@ -117,11 +117,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   });
 
   if (!force) {
-    const yes = await confirmArchive(
-      'Providing no ID or filter will unarchive ALL content type schemas! Are you sure you want to do this? (y/n)\n',
-      allContent,
-      missingContent
-    );
+    const yes = await confirmArchive('unarchive', 'content type schema', allContent, missingContent);
     if (!yes) {
       return;
     }

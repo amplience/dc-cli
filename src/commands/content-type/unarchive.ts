@@ -110,12 +110,14 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     }
   }
 
+  console.log('The following content will be unarchived:');
+  types.forEach(type => {
+    const settings = type.settings;
+    console.log('  ' + (settings === undefined ? 'unknown' : settings.label));
+  });
+
   if (!force) {
-    const yes = await confirmArchive(
-      'Providing no ID or filter will unarchive ALL content type schemas! Are you sure you want to do this? (y/n)\n',
-      allContent,
-      missingContent
-    );
+    const yes = await confirmArchive('unarchive', 'content types', allContent, missingContent);
     if (!yes) {
       return;
     }

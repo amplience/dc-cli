@@ -93,7 +93,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     if (revertLog != null) {
       try {
         const log = await new ArchiveLog().loadFromFile(revertLog);
-        const ids = log.getData('ARCHIVE');
+        const ids = log.getData('UNARCHIVE');
         schemas = schemas.filter(schema => ids.indexOf(schema.schemaId || '') != -1);
         if (schemas.length != ids.length) {
           missingContent = true;
@@ -117,11 +117,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   });
 
   if (!force) {
-    const yes = await confirmArchive(
-      'Providing no ID or filter will archive ALL content type schemas! Are you sure you want to do this? (y/n)\n',
-      allContent,
-      missingContent
-    );
+    const yes = await confirmArchive('archive', 'content type schema', allContent, missingContent);
     if (!yes) {
       return;
     }

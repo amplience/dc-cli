@@ -15,7 +15,12 @@ function asyncQuestion(rl: ReadLine, question: string): Promise<string> {
   });
 }
 
-export async function confirmArchive(message: string, allContent: boolean, missingContent: boolean): Promise<boolean> {
+export async function confirmArchive(
+  action: string,
+  type: string,
+  allContent: boolean,
+  missingContent: boolean
+): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -23,10 +28,10 @@ export async function confirmArchive(message: string, allContent: boolean, missi
   });
 
   const question = allContent
-    ? message
+    ? `Providing no ID or filter will ${action} ALL ${type}! Are you sure you want to do this? (y/n)\n`
     : missingContent
     ? 'Warning: Some content specified on the log is missing. Are you sure you want to continue? (y/n)\n'
-    : 'Are you sure you want to archive these content type schemas? (y/n)\n';
+    : `Are you sure you want to ${action} these ${type}? (y/n)\n`;
 
   const answer: string = await asyncQuestion(rl, question);
   rl.close();

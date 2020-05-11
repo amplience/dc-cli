@@ -48,10 +48,28 @@ describe('content-type unarchive command', () => {
         requiresArg: false
       });
 
+      expect(spyOption).toHaveBeenCalledWith('f', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'If present, there will be no confirmation prompt before unarchiving the found content.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('s', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'If present, no log file will be produced.'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('ignoreError', {
         type: 'boolean',
         boolean: true,
         describe: 'If present, unarchive requests that fail will not abort the process.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.'
       });
     });
   });

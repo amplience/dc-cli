@@ -3,7 +3,8 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentTypeSchema, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
-import { exists, readFile, unlink } from 'fs';
+import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
+import { dirname } from 'path';
 import { promisify } from 'util';
 import readline from 'readline';
 
@@ -38,6 +39,13 @@ describe('content-item-schema archive command', () => {
         type: 'string',
         describe:
           'The Schema ID of a Content Type Schema to be archived.\nA regex can be provided to select multiple schemas with similar IDs (eg /.header.\\.json/).\nA single --schemaId option may be given to archive a single content type schema.\nMultiple --schemaId options may be given to archive multiple content type schemas at the same time, or even multiple regex.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('revertLog', {
+        type: 'string',
+        describe:
+          'Path to a log file containing content unarchived in a previous run of the unarchive command.\nWhen provided, archives all schemas listed as unarchived in the log file.',
+        requiresArg: false
       });
 
       expect(spyOption).toHaveBeenCalledWith('f', {
@@ -333,6 +341,55 @@ describe('content-item-schema archive command', () => {
       await handler(argv);
 
       targets.forEach(target => expect(target).toHaveBeenCalled());
+    });
+
+    it('should archive content-type-schemas specified in the provided --revertLog', async () => {
+      const targets: (() => Promise<ContentTypeSchema>)[] = [];
+      const skips: (() => Promise<ContentTypeSchema>)[] = [];
+
+      const logFileName = 'temp/schema-archive-revert.log';
+      const log =
+        '// Schema log test file\n' +
+        'UNARCHIVE http://schemas.com/schemaMatch1\n' +
+        'UNARCHIVE http://schemas.com/schemaMatch2';
+
+      const dir = dirname(logFileName);
+      if (!(await promisify(exists)(dir))) {
+        await promisify(mkdir)(dir);
+      }
+      await promisify(writeFile)(logFileName, log);
+
+      injectSchemaMocks(
+        [
+          'http://schemas.com/schema1',
+          'http://schemas.com/schema2',
+          'http://schemas.com/schemaBanana',
+          'http://schemas.com/schemaMatch1',
+          'http://schemas.com/schemaMatch2'
+        ],
+        schema => {
+          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
+            targets.push(schema.related.archive);
+          } else {
+            skips.push(schema.related.archive);
+          }
+        }
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        slient: true,
+        force: true,
+        revertLog: logFileName
+      };
+      await handler(argv);
+
+      await promisify(unlink)(logFileName);
+
+      targets.forEach(target => expect(target).toHaveBeenCalled());
+      skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
     });
 
     it('should output archived content to a well formatted log file with specified path in --logFile', async () => {

@@ -3,7 +3,8 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentType, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
-import { exists, readFile, unlink } from 'fs';
+import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
+import { dirname } from 'path';
 import { promisify } from 'util';
 import readline from 'readline';
 
@@ -38,6 +39,13 @@ describe('content-type archive command', () => {
         type: 'string',
         describe:
           "The Schema ID of a Content Type's Schema to be archived.\nA regex can be provided to select multiple types with similar or matching schema IDs (eg /.header.\\.json/).\nA single --schemaId option may be given to match a single content type schema.\nMultiple --schemaId options may be given to match multiple content type schemas at the same time, or even multiple regex."
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('revertLog', {
+        type: 'string',
+        describe:
+          'Path to a log file containing content unarchived in a previous run of the unarchive command.\nWhen provided, archives all types listed as unarchived in the log file.',
+        requiresArg: false
       });
 
       expect(spyOption).toHaveBeenCalledWith('f', {
@@ -365,6 +373,52 @@ describe('content-type archive command', () => {
       await handler(argv);
 
       targets.forEach(target => expect(target).toHaveBeenCalled());
+    });
+
+    it('should archive content-types specified in the provided --revertLog', async () => {
+      const targets: (() => Promise<ContentType>)[] = [];
+      const skips: (() => Promise<ContentType>)[] = [];
+
+      const logFileName = 'temp/type-archive-revert.log';
+      const log = '// Type log test file\n' + 'UNARCHIVE id1\n' + 'UNARCHIVE id2';
+
+      const dir = dirname(logFileName);
+      if (!(await promisify(exists)(dir))) {
+        await promisify(mkdir)(dir);
+      }
+      await promisify(writeFile)(logFileName, log);
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1', id: 'id1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2', id: 'id2' }
+        ],
+        type => {
+          if ((type.contentTypeUri || '').indexOf('schemaMatch') !== -1) {
+            targets.push(type.related.archive);
+          } else {
+            skips.push(type.related.archive);
+          }
+        }
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        slient: true,
+        force: true,
+        revertLog: logFileName
+      };
+      await handler(argv);
+
+      await promisify(unlink)(logFileName);
+
+      targets.forEach(target => expect(target).toHaveBeenCalled());
+      skips.forEach(skip => expect(skip).not.toHaveBeenCalled());
     });
 
     it('should output archived content to a well formatted log file with specified path in --logFile', async () => {

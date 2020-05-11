@@ -31,7 +31,7 @@ export const builder = (yargs: Argv): void => {
     .option('revertLog', {
       type: 'string',
       describe:
-        'Path to a log file containing content unarchived in a previous run of the unarchive command.\nWhen provided, archives all schemas listed as unarchived in the log file.',
+        'Path to a log file containing content unarchived in a previous run of the unarchive command.\nWhen provided, archives all types listed as unarchived in the log file.',
       requiresArg: false
     })
     .alias('f', 'force')
@@ -119,11 +119,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   });
 
   if (!force) {
-    const yes = await confirmArchive(
-      'Providing no ID or filter will archive ALL content types! Are you sure you want to do this? (y/n)\n',
-      allContent,
-      missingContent
-    );
+    const yes = await confirmArchive('archive', 'content types', allContent, missingContent);
     if (!yes) {
       return;
     }
