@@ -111,6 +111,11 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     }
   }
 
+  if (schemas.length == 0) {
+    console.log('Nothing found to unarchive, aborting.');
+    return;
+  }
+
   console.log('The following content will be unarchived:');
   schemas.forEach(schema => {
     console.log('  ' + schema.schemaId);

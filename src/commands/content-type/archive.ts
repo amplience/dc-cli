@@ -112,6 +112,11 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
+  if (types.length == 0) {
+    console.log('Nothing found to archive, aborting.');
+    return;
+  }
+
   console.log('The following content will be archived:');
   types.forEach(type => {
     const settings = type.settings;

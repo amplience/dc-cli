@@ -110,6 +110,11 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     }
   }
 
+  if (types.length == 0) {
+    console.log('Nothing found to unarchive, aborting.');
+    return;
+  }
+
   console.log('The following content will be unarchived:');
   types.forEach(type => {
     const settings = type.settings;
@@ -137,7 +142,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       log.addAction('UNARCHIVE', types[i].id || 'unknown');
       successCount++;
     } catch (e) {
-      log.addComment(`ARCHIVE FAILED: ${types[i].id}`);
+      log.addComment(`UNARCHIVE FAILED: ${types[i].id}`);
       log.addComment(e.toString());
 
       if (ignoreError) {

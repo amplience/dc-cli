@@ -111,6 +111,11 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
+  if (schemas.length == 0) {
+    console.log('Nothing found to archive, aborting.');
+    return;
+  }
+
   console.log('The following content will be archived:');
   schemas.forEach(schema => {
     console.log('  ' + schema.schemaId);
