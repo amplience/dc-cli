@@ -129,7 +129,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   }
 
   const timestamp = Date.now().toString();
-  const log = new ArchiveLog(`Content Type Schema Archive Log - ${timestamp}\n`);
+  const log = new ArchiveLog(`Content Type Schema Unarchive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
