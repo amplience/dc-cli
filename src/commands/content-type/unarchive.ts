@@ -9,7 +9,7 @@ import { getDefaultLogPath, confirmArchive } from '../../common/archive/archive-
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
-  getDefaultLogPath('schema', 'unarchive', platform);
+  getDefaultLogPath('type', 'unarchive', platform);
 
 export const command = 'unarchive [id]';
 
@@ -129,7 +129,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   }
 
   const timestamp = Date.now().toString();
-  const log = new ArchiveLog(`Content Type Schema Unarchive Log - ${timestamp}\n`);
+  const log = new ArchiveLog(`Content Type Unarchive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
