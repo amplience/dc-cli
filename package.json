@@ -113,6 +113,7 @@
     "chalk": "^2.4.2",
     "dc-management-sdk-js": "^1.6.0",
     "lodash": "^4.17.15",
+    "sanitize-filename": "^1.6.3",
     "table": "^5.4.6",
     "yargs": "^14.0.0"
   }
