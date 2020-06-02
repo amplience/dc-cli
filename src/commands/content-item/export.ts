@@ -4,13 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { dirname, join, sep } from 'path';
 import { equalsOrRegex } from '../../common/filter/filter';
 import sanitize from 'sanitize-filename';
-import {
-  ExportResult,
-  nothingExportedExit,
-  promptToOverwriteExports,
-  uniqueFilenamePath,
-  writeJsonToFile
-} from '../../services/export.service';
+import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.service';
 
 import { mkdir, writeFile, exists, lstat } from 'fs';
 import { promisify } from 'util';
@@ -20,7 +14,7 @@ import { ContentItem, Folder, DynamicContent, Hub } from 'dc-management-sdk-js';
 
 export const command = 'export <dir>';
 
-export const desc = 'Export Content Types';
+export const desc = 'Export Content Items';
 
 export const builder = (yargs: Argv): void => {
   yargs
