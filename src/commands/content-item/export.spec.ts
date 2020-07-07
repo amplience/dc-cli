@@ -1,10 +1,8 @@
 import { builder, command, handler } from './export';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { Hub, ContentItem, ContentRepository, Folder } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
-import MockPage from '../../common/dc-management-sdk-js/mock-page';
+import { ItemTemplate, getItemInfo, getItemName, MockContent } from '../../common/dc-management-sdk-js/mock-content';
 import { exists } from 'fs';
-import { join } from 'path';
 import { promisify } from 'util';
 import readline from 'readline';
 
@@ -68,17 +66,24 @@ describe('content-item export command', () => {
     });
   });
 
-  interface ItemTemplate {
-    label: string;
-    id?: string;
-    folderPath?: string;
-    repoId: string;
-    typeSchemaUri: string;
+  async function itemsExist(baseDir: string, items: ItemTemplate[], validRepos?: string[]): Promise<void> {
+    const info = getItemInfo(items);
+    for (let i = 0; i < items.length; i++) {
+      const itemName = getItemName(baseDir, items[i], info, validRepos);
+      const itemExists = await promisify(exists)(itemName);
+      if (!itemExists) debugger;
+      expect(itemExists).toBeTruthy();
+    }
   }
 
-  interface ItemInfo {
-    repos: string[];
-    baseFolders: string[];
+  async function itemsDontExist(baseDir: string, items: ItemTemplate[], validRepos?: string[]): Promise<void> {
+    const info = getItemInfo(items);
+    for (let i = 0; i < items.length; i++) {
+      const itemName = getItemName(baseDir, items[i], info, validRepos);
+      const itemExists = await promisify(exists)(itemName);
+      if (itemExists) debugger;
+      expect(itemExists).toBeFalsy();
+    }
   }
 
   describe('handler tests', function() {
@@ -97,193 +102,6 @@ describe('content-item export command', () => {
       await rimraf('temp/export/');
     });
 
-    function mockContentItems(templates: ItemTemplate[]): void {
-      const repoIds: string[] = [];
-      const folderTemplates: { name: string; id: string; repoId: string }[] = [];
-
-      // Generate items.
-      const items = templates.map(template => {
-        let folderName = '';
-        const folderId = template.folderPath;
-        if (folderId != null) {
-          const pathSplit = folderId.split('/');
-          folderName = pathSplit[pathSplit.length - 1];
-        }
-
-        const folderNullOrEmpty = folderId == null || folderId.length == 0;
-
-        const item = new ContentItem({
-          label: template.label,
-          status: 'ACTIVE',
-          id: template.id || '0',
-          folderId: folderNullOrEmpty ? null : folderId,
-          body: {
-            _meta: {
-              schema: template.typeSchemaUri
-            }
-          },
-
-          // Not meant to be here, but used later for sorting by repository
-          repoId: template.repoId
-        });
-
-        if (repoIds.indexOf(template.repoId) === -1) {
-          repoIds.push(template.repoId);
-        }
-
-        if (!folderNullOrEmpty && folderTemplates.findIndex(folder => folder.id == folderId) === -1) {
-          folderTemplates.push({ id: folderId || '', name: folderName, repoId: template.repoId });
-        }
-
-        return item;
-      });
-
-      // Generate folders.
-      const folderById = new Map<string, Folder>();
-
-      const folders: Folder[] = folderTemplates.map(folderTemplate => {
-        const folder = new Folder({
-          id: folderTemplate.id,
-          name: folderTemplate.name,
-          repoId: folderTemplate.repoId
-        });
-
-        const mockFolderList = jest.fn();
-        folder.related.contentItems.list = mockFolderList;
-        const mockFolderSubfolder = jest.fn();
-        folder.related.folders.list = mockFolderSubfolder;
-        const mockFolderParent = jest.fn();
-        folder.related.folders.parent = mockFolderParent;
-
-        mockFolderList.mockResolvedValue(
-          new MockPage(ContentItem, items.filter(item => item.folderId === folderTemplate.id))
-        );
-        mockFolderSubfolder.mockImplementation(() => {
-          const subfolders: Folder[] = [];
-          folderById.forEach((value, key) => {
-            if (key !== folderTemplate.id && key.startsWith(folderTemplate.id)) {
-              subfolders.push(value);
-            }
-          });
-          return Promise.resolve(new MockPage(Folder, subfolders));
-        });
-        mockFolderParent.mockImplementation(() => {
-          const slashInd = folderTemplate.id.lastIndexOf('/');
-          if (slashInd === -1) {
-            return null;
-          } else {
-            return Promise.resolve(folderById.get(folderTemplate.id.substring(0, slashInd)));
-          }
-        });
-
-        folderById.set(folderTemplate.id, folder);
-        return folder;
-      });
-
-      // Generate repositories.
-      const repoById = new Map<string, ContentRepository>();
-
-      const repos = repoIds.map(repoId => {
-        const repo = new ContentRepository({
-          id: repoId,
-          label: repoId
-        });
-
-        const mockItemList = jest.fn();
-        repo.related.contentItems.list = mockItemList;
-        const mockFolderList = jest.fn();
-        repo.related.folders.list = mockFolderList;
-
-        mockItemList.mockResolvedValue(
-          new MockPage(ContentItem, items.filter(item => (item as any).repoId === repoId))
-        );
-        mockFolderList.mockResolvedValue(
-          new MockPage(Folder, folders.filter(folder => (folder as any).repoId === repoId && folder.id == folder.name))
-        );
-
-        repoById.set(repoId, repo);
-        return repo;
-      });
-
-      const mockHub = new Hub();
-
-      const mockRepoGet = jest.fn(id => Promise.resolve(repoById.get(id)));
-
-      const mockRepoList = jest.fn().mockResolvedValue(new MockPage(ContentRepository, repos));
-
-      mockHub.related.contentRepositories.list = mockRepoList;
-
-      const mockFolderGet = jest.fn(id => Promise.resolve(folderById.get(id)));
-
-      const mockHubGet = jest.fn().mockResolvedValue(mockHub);
-
-      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        hubs: {
-          get: mockHubGet
-        },
-        folders: {
-          get: mockFolderGet
-        },
-        contentRepositories: {
-          get: mockRepoGet
-        }
-      });
-    }
-
-    function getItemInfo(items: ItemTemplate[]): ItemInfo {
-      const repos: string[] = [];
-      const baseFolders: string[] = [];
-
-      items.forEach(item => {
-        if (repos.indexOf(item.repoId) === -1) {
-          repos.push(item.repoId);
-        }
-
-        if (item.folderPath != null) {
-          const folderFirstSlash = item.folderPath.indexOf('/');
-          const baseFolder = folderFirstSlash === -1 ? item.folderPath : item.folderPath.substring(0, folderFirstSlash);
-
-          if (baseFolder.length > 0 && baseFolders.indexOf(baseFolder) === -1) {
-            baseFolders.push(baseFolder);
-          }
-        }
-      });
-
-      return { repos, baseFolders };
-    }
-
-    function getItemName(baseDir: string, item: ItemTemplate, info: ItemInfo, validRepos?: string[]): string {
-      if (validRepos) {
-        let basePath = item.folderPath || '';
-        if (info.repos.length > 1 && validRepos.indexOf(item.repoId) !== -1) {
-          basePath = `${item.repoId}/${basePath}`;
-        }
-        return join(baseDir + basePath, item.label + '.json');
-      } else {
-        return join(baseDir + (item.folderPath || ''), item.label + '.json');
-      }
-    }
-
-    async function itemsExist(baseDir: string, items: ItemTemplate[], validRepos?: string[]): Promise<void> {
-      const info = getItemInfo(items);
-      for (let i = 0; i < items.length; i++) {
-        const itemName = getItemName(baseDir, items[i], info, validRepos);
-        const itemExists = await promisify(exists)(itemName);
-        if (!itemExists) debugger;
-        expect(itemExists).toBeTruthy();
-      }
-    }
-
-    async function itemsDontExist(baseDir: string, items: ItemTemplate[], validRepos?: string[]): Promise<void> {
-      const info = getItemInfo(items);
-      for (let i = 0; i < items.length; i++) {
-        const itemName = getItemName(baseDir, items[i], info, validRepos);
-        const itemExists = await promisify(exists)(itemName);
-        if (itemExists) debugger;
-        expect(itemExists).toBeFalsy();
-      }
-    }
-
     it('should export all content when given only an output directory', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
@@ -295,7 +113,7 @@ describe('content-item export command', () => {
         { label: 'item4', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -325,7 +143,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -359,7 +177,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -392,7 +210,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -423,7 +241,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -456,7 +274,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -492,7 +310,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,
@@ -549,7 +367,7 @@ describe('content-item export command', () => {
 
       const templates = skips.concat(exists);
 
-      mockContentItems(templates);
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
 
       const argv = {
         ...yargArgs,

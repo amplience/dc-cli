@@ -1,7 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { dirname, join, sep } from 'path';
+import { dirname, join } from 'path';
 import { equalsOrRegex } from '../../common/filter/filter';
 import sanitize from 'sanitize-filename';
 import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.service';
@@ -11,6 +11,8 @@ import { promisify } from 'util';
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentItem, Folder, DynamicContent, Hub } from 'dc-management-sdk-js';
+
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 export const command = 'export <dir>';
 
@@ -44,6 +46,12 @@ export const builder = (yargs: Argv): void => {
         'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
     });
 };
+
+// multi export concerns:
+// Track dependancies.
+//  - notify and save dependancies which are not within the specified folders/repos
+//  - save dependancies with archived status (only if depended on). should be recreated then archived.
+//  - save info for exported content. (absolute content paths)
 
 export const writeItemBody = async (filename: string, body?: string): Promise<void> => {
   if (!body) {
@@ -105,34 +113,6 @@ const getOrAddFolderPath = async (
 
   folderToPathMap.set(id, path);
   return path;
-};
-
-const ensureDirectoryExists = async (dir: string): Promise<void> => {
-  if (await promisify(exists)(dir)) {
-    const dirStat = await promisify(lstat)(dir);
-    if (!dirStat || !dirStat.isDirectory()) {
-      throw new Error(`"${dir}" already exists and is not a directory.`);
-    }
-  } else {
-    // Ensure parent directory exists.
-    const parentPath = dir.split(sep);
-    parentPath.pop();
-    const parent = parentPath.join(sep);
-    if (parentPath.length > 0) {
-      await ensureDirectoryExists(parent);
-    }
-
-    if (dir.length > 0) {
-      try {
-        await promisify(mkdir)(dir);
-      } catch (e) {
-        if (await promisify(exists)(dir)) {
-          return; // This directory could have been created after we checked if it existed.
-        }
-        throw new Error(`Unable to create directory: "${dir}".`);
-      }
-    }
-  }
 };
 
 export const filterContentItemsBySchemaId = (
