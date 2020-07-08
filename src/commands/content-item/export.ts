@@ -13,6 +13,7 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentItem, Folder, DynamicContent, Hub } from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
+import { first } from 'lodash';
 
 export const command = 'export <dir>';
 
@@ -139,6 +140,7 @@ const getContentItems = async (
   folderToPathMap: Map<string, string>,
   client: DynamicContent,
   hub: Hub,
+  dir: string,
   repoId?: string | string[],
   folderId?: string | string[]
 ): Promise<{ path: string; item: ContentItem }[]> => {
@@ -159,7 +161,7 @@ const getContentItems = async (
   for (let i = 0; i < repositories.length; i++) {
     const repository = repositories[i];
     const baseDir = specifyBasePaths ? `${sanitize(repository.label as string)}/` : '';
-    await ensureDirectoryExists(baseDir);
+    await ensureDirectoryExists(join(dir, baseDir));
     const newFolders = await paginator(repository.related.folders.list);
     newFolders.forEach(folder => {
       if (folderIds.indexOf(folder.id as string) === -1) {
@@ -182,43 +184,55 @@ const getContentItems = async (
     Array.prototype.push.apply(items, newItems.map(item => ({ item, path: baseDir })));
   }
 
+  const parallelism = 10;
   const folders = await Promise.all(folderIds.map(id => client.folders.get(id)));
-  const baseFolders = folders.length;
   console.log(`Found ${folders.length} base folders.`);
 
   specifyBasePaths = specifyBasePaths || folders.length > 1;
 
-  for (let i = 0; i < folders.length; i++) {
-    const folder = folders[i];
-    if (i < baseFolders) {
-      if (!folderToPathMap.has(folder.id as string)) {
-        folderToPathMap.set(folder.id as string, specifyBasePaths ? `${sanitize(folder.name as string)}/` : '');
-      }
-    }
-    const path = await getOrAddFolderPath(folderToPathMap, client, folder);
-    console.log(`Processing ${path}...`);
+  const nextFolders: Folder[] = [];
+  let processFolders = folders;
+  let baseFolder = true;
 
-    let newItems: ContentItem[];
-    // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
-    // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
-    newItems = repoItems.filter(item => item.folderId == folder.id);
-    if (newItems.length == 0) {
-      console.log(`Fetching additional folder: ${folder.name}`);
-      try {
-        newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
-      } catch (e) {
-        console.error(`Error getting items from folder ${folder.name} (${folder.id}): ${e.toString()}`);
-        continue;
-      }
-    }
-    Array.prototype.push.apply(items, newItems.map(item => ({ item, path: path })));
+  while (processFolders.length > 0) {
+    const promises = processFolders.map(
+      async (folder: Folder): Promise<void> => {
+        if (baseFolder) {
+          if (!folderToPathMap.has(folder.id as string)) {
+            folderToPathMap.set(folder.id as string, specifyBasePaths ? `${sanitize(folder.name as string)}/` : '');
+          }
+        }
+        const path = await getOrAddFolderPath(folderToPathMap, client, folder);
+        console.log(`Processing ${path}...`);
 
-    try {
-      const subfolders = await paginator(folder.related.folders.list);
-      Array.prototype.push.apply(folders, subfolders);
-    } catch (e) {
-      console.error(`Error getting subfolders from folder ${folder.name} (${folder.id}): ${e.toString()}`);
-    }
+        let newItems: ContentItem[];
+        // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
+        // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
+        newItems = repoItems.filter(item => item.folderId == folder.id);
+        if (newItems.length == 0) {
+          console.log(`Fetching additional folder: ${folder.name}`);
+          try {
+            newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
+          } catch (e) {
+            console.error(`Error getting items from folder ${folder.name} (${folder.id}): ${e.toString()}`);
+            return;
+          }
+        }
+        Array.prototype.push.apply(items, newItems.map(item => ({ item, path: path })));
+
+        try {
+          const subfolders = await paginator(folder.related.folders.list);
+          Array.prototype.push.apply(nextFolders, subfolders);
+        } catch (e) {
+          console.error(`Error getting subfolders from folder ${folder.name} (${folder.id}): ${e.toString()}`);
+        }
+      }
+    );
+
+    await Promise.all(promises);
+
+    baseFolder = false;
+    processFolders = nextFolders.splice(0, Math.min(nextFolders.length, parallelism));
   }
   return items;
 };
@@ -240,7 +254,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   console.log('Retrieving content items, please wait.');
-  let items = await getContentItems(folderToPathMap, client, hub, repoId, folderId);
+  let items = await getContentItems(folderToPathMap, client, hub, dir, repoId, folderId);
 
   // Filter using the schemaId and name, if present.
   if (schemaId != null) {
