@@ -10,10 +10,11 @@ import { mkdir, writeFile, exists, lstat } from 'fs';
 import { promisify } from 'util';
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentItem, Folder, DynamicContent, Hub } from 'dc-management-sdk-js';
+import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { first } from 'lodash';
+import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
+import { ContentMapping } from '../../common/content-item/content-mapping';
 
 export const command = 'export <dir>';
 
@@ -250,6 +251,8 @@ const getContentItems = async (
 export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, repoId, folderId, schemaId, name } = argv;
 
+  const dummyRepo = new ContentRepository();
+
   const folderToPathMap: Map<string, string> = new Map();
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
@@ -268,6 +271,50 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     items = items.filter(
       ({ item }: { item: ContentItem }) => names.findIndex(name => equalsOrRegex(item.label as string, name)) !== -1
     );
+  }
+
+  console.log('Scanning for dependancies.');
+  const tree = new ContentDependancyTree(
+    items.map(item => ({ repo: dummyRepo, content: item.item })),
+    new ContentMapping()
+  );
+
+  const missingIDs = new Set<string>();
+  const invalidContentItems = tree.filterAny(item => {
+    const missingDeps = item.dependancies.filter(dep => !tree.byId.has(dep.dependancy.id as string));
+    missingDeps.forEach(dep => {
+      if (dep.dependancy.id != null) {
+        missingIDs.add(dep.dependancy.id);
+      }
+    });
+    return missingDeps.length > 0;
+  });
+
+  if (invalidContentItems) {
+    // There are missing content items. We'll need to fetch them and see what their deal is.
+    const missingIdArray = Array.from(missingIDs);
+    for (let i = 0; i < missingIdArray.length; i++) {
+      let item: ContentItem | null = null;
+
+      try {
+        item = await client.contentItems.get(missingIdArray[i]);
+      } catch {}
+
+      if (item != null) {
+        if (item.status === 'ACTIVE') {
+          // The item is active and should probably be included.
+          const path = '_dependancies/';
+          items.push({ item, path });
+
+          console.log(`Referenced content '${item.label}' added to the export.`);
+        } else {
+          // The item is archived and should not be included. Make a note to the user.
+          console.log(`Referenced content '${item.label}' is archived, so was not exported.`);
+        }
+      } else {
+        console.log(`Referenced content ${missingIdArray[i]} does not exist.`);
+      }
+    }
   }
 
   console.log('Saving content items.');

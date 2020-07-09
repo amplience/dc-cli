@@ -462,6 +462,8 @@ const prepareContentForImport = async (
       return null;
     }
 
+    invalidContentItems.forEach(item => console.log(`  ${item.owner.content.label}`));
+
     const ignore =
       force ||
       (await asyncQuestion(
