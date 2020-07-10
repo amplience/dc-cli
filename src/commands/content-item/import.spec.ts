@@ -675,7 +675,8 @@ describe('content-item import command', () => {
         ...config,
         dir: 'temp/import/refMissing/',
         mapFile: 'temp/import/refMissing.json',
-        baseRepo: 'repo'
+        baseRepo: 'repo',
+        skipIncomplete: true
       };
       await handler(argv);
 

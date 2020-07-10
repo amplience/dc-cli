@@ -5,4 +5,5 @@ export interface ImportItemBuilderOptions {
   mapFile?: string;
   force?: boolean;
   validate?: boolean;
+  skipIncomplete?: boolean;
 }

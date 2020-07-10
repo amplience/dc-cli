@@ -17,10 +17,13 @@ import {
   ContentTypeSchema
 } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-item/content-mapping';
-import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
+import {
+  ContentDependancyTree,
+  RepositoryContentItem,
+  ItemContentDependancies
+} from '../../common/content-item/content-dependancy-tree';
 
 import { asyncQuestion } from '../../common/archive/archive-helpers';
-import { repeat } from 'lodash';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -75,6 +78,12 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Only recreate folder structure - content is validated but not imported.'
+    })
+
+    .option('skipIncomplete', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Skip any content items that has one or more missing dependancy.'
     });
 };
 
@@ -204,12 +213,14 @@ const prepareContentForImport = async (
   repos: { basePath: string; repo: ContentRepository }[],
   folder: Folder | null,
   mapping: ContentMapping,
-  force: boolean
+  argv: ImportItemBuilderOptions
 ): Promise<ContentDependancyTree | null> => {
   // traverse folder structure and find content items
   // replicate relative path string in target repo/folder (create if does not exist)
   // if there is an existing mapping (old id to new id), update the existing content (check all before beginning and ask user)
   // otherwise create new
+
+  const { force, skipIncomplete } = argv;
 
   const contexts = new Map<ContentRepository, ImportContext>();
   repos.forEach(repo => {
@@ -449,13 +460,40 @@ const prepareContentForImport = async (
   });
 
   if (invalidContentItems.length > 0) {
-    console.log('Required content items (targets of links/references) are missing from the import and mapping:');
-    missingIDs.forEach(id => console.log(`  ${id}`));
-    console.log(
-      `All items referencing these content items will be skipped. Note: if you have already imported these items before, make sure you are using a mapping file from that import.`
-    );
+    if (skipIncomplete) {
+      tree.removeContent(invalidContentItems);
+    } else {
+      const mustSkip: ItemContentDependancies[] = [];
+      invalidContentItems.forEach(item => {
+        try {
+          tree.removeContentDependancies(
+            item.owner,
+            item.owner.content.body,
+            item.dependancies.map(dependancy => dependancy.dependancy)
+          );
+        } catch {
+          // Throws if removing the item causes validation failure. (not currently done)
+          mustSkip.push(item);
+        }
+      });
 
-    tree.removeContent(invalidContentItems);
+      if (mustSkip.length > 0) {
+        console.log(
+          'Required dependancies for the following content items are missing, and would cause validation errors if nullified.'
+        );
+        console.log('These items will be skipped:');
+        mustSkip.forEach(item => console.log(`  ${item.owner.content.label}`));
+
+        tree.removeContent(mustSkip);
+      }
+    }
+
+    console.log('Referenced content items (targets of links/references) are missing from the import and mapping:');
+    missingIDs.forEach(id => console.log(`  ${id}`));
+    const action = skipIncomplete ? 'skipped' : 'set as null';
+    console.log(
+      `All references to these content items will be ${action}. Note: if you have already imported these items before, make sure you are using a mapping file from that import.`
+    );
 
     if (tree.all.length === 0) {
       console.log('No content remains after removing those with missing dependancies. Aborting.');
@@ -467,7 +505,7 @@ const prepareContentForImport = async (
     const ignore =
       force ||
       (await asyncQuestion(
-        `${invalidContentItems.length} out of ${contentItems.length} content items will be skipped. Are you sure you still wish to continue? (y/n) `
+        `${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `
       ));
     if (!ignore) {
       return null;
@@ -660,7 +698,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
       console.error(`Couldn't get base folder: ${e.toString()}`);
       return;
     }
-    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, force);
+    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, argv);
   } else if (baseRepo != null) {
     let repo: ContentRepository;
     try {
@@ -669,7 +707,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
       console.error(`Couldn't get base repository: ${e.toString()}`);
       return;
     }
-    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, force);
+    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, argv);
   } else {
     // Match repositories by label.
     let repos: ContentRepository[];
@@ -722,7 +760,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
       return;
     }
 
-    tree = await prepareContentForImport(client, hub, importRepos, null, mapping, force);
+    tree = await prepareContentForImport(client, hub, importRepos, null, mapping, argv);
   }
 
   if (tree != null) {

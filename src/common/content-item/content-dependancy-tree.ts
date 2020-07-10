@@ -128,6 +128,62 @@ export class ContentDependancyTree {
     }
   }
 
+  public removeContentDependancies(
+    item: RepositoryContentItem,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body: any,
+    remove: object[]
+  ): void {
+    if (Array.isArray(body)) {
+      for (let i = 0; i < body.length; i++) {
+        if (remove.indexOf(body[i]) !== -1) {
+          body.splice(i--, 1);
+        } else {
+          this.removeContentDependancies(item, body[i], remove);
+        }
+      }
+    } else {
+      const allPropertyNames = Object.getOwnPropertyNames(body);
+
+      allPropertyNames.forEach(propName => {
+        const prop = body[propName];
+        if (remove.indexOf(prop) !== -1) {
+          delete body[propName];
+        } else if (typeof prop === 'object') {
+          this.removeContentDependancies(item, prop, remove);
+        }
+      });
+    }
+  }
+
+  public simpleValidation(
+    item: RepositoryContentItem,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body: any,
+    remove: object[]
+  ): void {
+    if (Array.isArray(body)) {
+      for (let i = 0; i < body.length; i++) {
+        if (remove.indexOf(body[i]) !== -1) {
+          body.splice(i--, 1);
+        } else {
+          this.removeContentDependancies(item, body[i], remove);
+        }
+      }
+    } else {
+      const allPropertyNames = Object.getOwnPropertyNames(body);
+
+      allPropertyNames.forEach(propName => {
+        const prop = body[propName];
+        if (remove.indexOf(prop) !== -1) {
+          delete body[propName];
+        } else if (typeof prop === 'object') {
+          this.removeContentDependancies(item, prop, remove);
+        }
+      });
+    }
+  }
+
   private identifyContentDependancies(items: RepositoryContentItem[]): ItemContentDependancies[] {
     return items.map(item => {
       const result: ContentDependancyInfo[] = [];

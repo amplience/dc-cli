@@ -49,12 +49,6 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-// multi export concerns:
-// Track dependancies.
-//  - notify and save dependancies which are not within the specified folders/repos
-//  - save dependancies with archived status (only if depended on). should be recreated then archived.
-//  - save info for exported content. (absolute content paths)
-
 export const writeItemBody = async (filename: string, body?: string): Promise<void> => {
   if (!body) {
     return;
@@ -237,16 +231,6 @@ const getContentItems = async (
   }
   return items;
 };
-
-// Output Plan:
-//
-// {repo}/{folderTree}/{label}.json
-//
-// repo is only present if all/more than one repository is specified, and a specific folder is not specified.
-// folder is only present if a specific folder is not specified.
-//
-// schema ID must be included in the json. (used to link relevant content type)
-//
 
 export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, repoId, folderId, schemaId, name } = argv;
