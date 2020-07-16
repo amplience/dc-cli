@@ -460,6 +460,43 @@ const prepareContentForImport = async (
 
   const tree = new ContentDependancyTree(contentItems, mapping);
 
+  // Do all the content types that items use exist in the schema list?
+  const missingSchema = tree.requiredSchema.filter(
+    schemaId =>
+      schemas.findIndex(schema => schema.schemaId === schemaId) === -1 &&
+      types.findIndex(type => type.contentTypeUri === schemaId) === -1 // Can also exist with external schema.
+  );
+
+  if (missingSchema.length > 0) {
+    log.appendLine('Required content type schema are missing from the target hub:');
+    missingSchema.forEach(schema => log.appendLine(`  ${schema}`));
+    log.appendLine(
+      'All content referencing this content type schema, and any content depending on those items will be skipped.'
+    );
+
+    const affectedContentItems = tree.filterAny(item => {
+      return missingSchema.indexOf(item.owner.content.body._meta.schema) !== -1;
+    });
+
+    // Ignore content items that use the required content type schema.
+    const beforeRemove = tree.all.length;
+    tree.removeContent(affectedContentItems);
+
+    if (tree.all.length === 0) {
+      log.appendLine('No content remains after removing those with missing content type schemas. Aborting.');
+      return null;
+    }
+
+    const ignore =
+      force ||
+      (await asyncQuestion(
+        `${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `
+      ));
+    if (!ignore) {
+      return null;
+    }
+  }
+
   // Do all the content items that we depend on exist either in the mapping or in the items we're importing?
   const missingIDs = new Set<string>();
   const invalidContentItems = tree.filterAny(item => {
@@ -489,8 +526,12 @@ const prepareContentForImport = async (
             item.dependancies.map(dependancy => dependancy.dependancy)
           );
 
-          if (!(await validator.validate(item.owner.content.body))) {
-            mustSkip.push(item);
+          try {
+            if (!(await validator.validate(item.owner.content.body))) {
+              mustSkip.push(item);
+            }
+          } catch {
+            // Just ignore invalid schema for now.
           }
         })
       );
@@ -524,43 +565,6 @@ const prepareContentForImport = async (
       force ||
       (await asyncQuestion(
         `${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `
-      ));
-    if (!ignore) {
-      return null;
-    }
-  }
-
-  // Do all the content types that items use exist in the schema list?
-  const missingSchema = tree.requiredSchema.filter(
-    schemaId =>
-      schemas.findIndex(schema => schema.schemaId === schemaId) === -1 &&
-      types.findIndex(type => type.contentTypeUri === schemaId) === -1 // Can also exist with external schema.
-  );
-
-  if (missingSchema.length > 0) {
-    log.appendLine('Required content type schema are missing from the target hub:');
-    missingSchema.forEach(schema => log.appendLine(`  ${schema}`));
-    log.appendLine(
-      'All content referencing this content type schema, and any content depending on those items will be skipped.'
-    );
-
-    const affectedContentItems = tree.filterAny(item => {
-      return missingSchema.indexOf(item.owner.content.body._meta.schema) !== -1;
-    });
-
-    // Ignore content items that use the required content type schema.
-    const beforeRemove = tree.all.length;
-    tree.removeContent(affectedContentItems);
-
-    if (tree.all.length === 0) {
-      log.appendLine('No content remains after removing those with missing content type schemas. Aborting.');
-      return null;
-    }
-
-    const ignore =
-      force ||
-      (await asyncQuestion(
-        `${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `
       ));
     if (!ignore) {
       return null;
