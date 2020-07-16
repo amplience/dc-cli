@@ -1,6 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { FileLog } from '../../common/file-log';
 import { dirname, join } from 'path';
 import { equalsOrRegex } from '../../common/filter/filter';
 import sanitize from 'sanitize-filename';
@@ -15,10 +16,15 @@ import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { AmplienceSchemaValidator } from '../../common/content-item/amplience-schema-validator';
 
 export const command = 'export <dir>';
 
 export const desc = 'Export Content Items';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('item', 'export', platform);
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -46,6 +52,11 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       describe:
         'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
+    })
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
@@ -79,6 +90,7 @@ const getOrAddFolderPath = async (
   folderToPathMap: Map<string, string>,
   client: DynamicContent,
   folderOrId: Folder | string | undefined,
+  log: FileLog,
   baseDir?: string
 ): Promise<string> => {
   if (folderOrId == null) return '';
@@ -97,9 +109,9 @@ const getOrAddFolderPath = async (
   try {
     const parent = await folder.related.folders.parent();
 
-    path = `${join(await getOrAddFolderPath(folderToPathMap, client, parent), name)}`;
+    path = `${join(await getOrAddFolderPath(folderToPathMap, client, parent, log), name)}`;
   } catch {
-    console.log(`Could not determine path for ${folder.name}. Placing in base directory.`);
+    log.appendLine(`Could not determine path for ${folder.name}. Placing in base directory.`);
     path = `${name}`;
   }
 
@@ -136,6 +148,7 @@ const getContentItems = async (
   client: DynamicContent,
   hub: Hub,
   dir: string,
+  log: FileLog,
   repoId?: string | string[],
   folderId?: string | string[]
 ): Promise<{ path: string; item: ContentItem }[]> => {
@@ -181,7 +194,7 @@ const getContentItems = async (
 
   const parallelism = 10;
   const folders = await Promise.all(folderIds.map(id => client.folders.get(id)));
-  console.log(`Found ${folders.length} base folders.`);
+  log.appendLine(`Found ${folders.length} base folders.`);
 
   specifyBasePaths = specifyBasePaths || folders.length > 1;
 
@@ -197,15 +210,15 @@ const getContentItems = async (
             folderToPathMap.set(folder.id as string, specifyBasePaths ? `${sanitize(folder.name as string)}/` : '');
           }
         }
-        const path = await getOrAddFolderPath(folderToPathMap, client, folder);
-        console.log(`Processing ${path}...`);
+        const path = await getOrAddFolderPath(folderToPathMap, client, folder, log);
+        log.appendLine(`Processing ${path}...`);
 
         let newItems: ContentItem[];
         // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
         // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
         newItems = repoItems.filter(item => item.folderId == folder.id);
         if (newItems.length == 0) {
-          console.log(`Fetching additional folder: ${folder.name}`);
+          log.appendLine(`Fetching additional folder: ${folder.name}`);
           try {
             newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
           } catch (e) {
@@ -233,15 +246,17 @@ const getContentItems = async (
 };
 
 export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, repoId, folderId, schemaId, name } = argv;
+  const { dir, repoId, folderId, schemaId, name, logFile } = argv;
 
   const dummyRepo = new ContentRepository();
 
   const folderToPathMap: Map<string, string> = new Map();
   const client = dynamicContentClientFactory(argv);
+  const log = new FileLog(logFile);
   const hub = await client.hubs.get(argv.hubId);
-  console.log('Retrieving content items, please wait.');
-  let items = await getContentItems(folderToPathMap, client, hub, dir, repoId, folderId);
+
+  log.appendLine('Retrieving content items, please wait.');
+  let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId);
 
   // Filter using the schemaId and name, if present.
   if (schemaId != null) {
@@ -257,7 +272,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     );
   }
 
-  console.log('Scanning for dependancies.');
+  log.appendLine('Scanning for dependancies.');
   const tree = new ContentDependancyTree(
     items.map(item => ({ repo: dummyRepo, content: item.item })),
     new ContentMapping()
@@ -290,22 +305,36 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
           const path = '_dependancies/';
           items.push({ item, path });
 
-          console.log(`Referenced content '${item.label}' added to the export.`);
+          log.appendLine(`Referenced content '${item.label}' added to the export.`);
         } else {
           // The item is archived and should not be included. Make a note to the user.
-          console.log(`Referenced content '${item.label}' is archived, so was not exported.`);
+          log.appendLine(`Referenced content '${item.label}' is archived, so was not exported.`);
         }
       } else {
-        console.log(`Referenced content ${missingIdArray[i]} does not exist.`);
+        log.appendLine(`Referenced content ${missingIdArray[i]} does not exist.`);
       }
     }
   }
 
-  console.log('Saving content items.');
+  log.appendLine('Saving content items.');
   const filenames: string[] = [];
+
+  const schemas = await paginator(hub.related.contentTypeSchema.list);
+
+  const validator = new AmplienceSchemaValidator(schemas);
 
   for (let i = 0; i < items.length; i++) {
     const { item, path } = items[i];
+
+    try {
+      if (!(await validator.validate(item.body))) {
+        log.appendLine(
+          `WARNING: ${item.label} does not validate under the available schema. It may not import correctly.`
+        );
+      }
+    } catch (e) {
+      log.appendLine(`WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e}`);
+    }
 
     let resolvedPath: string;
     resolvedPath = path;
@@ -313,9 +342,11 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     const directory = join(dir, resolvedPath);
     resolvedPath = uniqueFilenamePath(directory, `${sanitize(item.label as string)}`, 'json', filenames);
     filenames.push(resolvedPath);
-    console.log(resolvedPath);
+    log.appendLine(resolvedPath);
     await ensureDirectoryExists(directory);
 
     writeJsonToFile(resolvedPath, item);
   }
+
+  log.close();
 };

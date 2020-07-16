@@ -4,4 +4,5 @@ export interface ExportItemBuilderOptions {
   repoId?: string[] | string;
   schemaId?: string[] | string;
   name?: string[] | string;
+  logFile?: string;
 }

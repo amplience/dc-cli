@@ -1,4 +1,4 @@
-import { builder, command, handler } from './import';
+import { builder, command, handler, LOG_FILENAME } from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Folder, ContentType } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -73,6 +73,18 @@ describe('content-item import command', () => {
         type: 'boolean',
         boolean: true,
         describe: 'Only recreate folder structure - content is validated but not imported.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('skipIncomplete', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Skip any content items that has one or more missing dependancy.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.'
       });
     });
   });
@@ -847,6 +859,8 @@ describe('content-item import command', () => {
         ...yargArgs,
         ...config,
         force: true,
+        skipIncomplete: true, // Make it easier to detect that "yes" was said to the dependancy question
+
         dir: 'temp/import/force/',
         mapFile: 'temp/import/force.json'
       };

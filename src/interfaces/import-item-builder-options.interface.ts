@@ -6,4 +6,5 @@ export interface ImportItemBuilderOptions {
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
+  logFile?: string;
 }

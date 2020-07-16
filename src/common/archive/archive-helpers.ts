@@ -1,6 +1,7 @@
 import { join } from 'path';
 import readline, { ReadLine } from 'readline';
 
+<<<<<<< HEAD
 export function getDefaultLogPath(type: string, action: string, platform: string = process.platform): string {
   return join(
     process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
@@ -10,6 +11,8 @@ export function getDefaultLogPath(type: string, action: string, platform: string
   );
 }
 
+=======
+>>>>>>> feat(content-item): allow log file output, validation for setting fields null and warnings on export
 function asyncQuestionInternal(rl: ReadLine, question: string): Promise<string> {
   return new Promise((resolve): void => {
     rl.question(question, resolve);

@@ -1,4 +1,4 @@
-import { builder, command, handler } from './export';
+import { builder, command, handler, LOG_FILENAME } from './export';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import Yargs from 'yargs/yargs';
 import { ItemTemplate, getItemInfo, getItemName, MockContent } from '../../common/dc-management-sdk-js/mock-content';
@@ -62,6 +62,12 @@ describe('content-item export command', () => {
         type: 'string',
         describe:
           'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.'
       });
     });
   });

@@ -1,6 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { FileLog } from '../../common/file-log';
 import { dirname, basename, join, relative, resolve, extname } from 'path';
 
 import { lstat, readdir, readFile } from 'fs';
@@ -24,6 +25,8 @@ import {
 } from '../../common/content-item/content-dependancy-tree';
 
 import { asyncQuestion } from '../../common/archive/archive-helpers';
+import { AmplienceSchemaValidator } from '../../common/content-item/amplience-schema-validator';
+import { getDefaultLogPath } from '../../common/log-helpers';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -37,6 +40,9 @@ export function getDefaultMappingPath(name: string, platform: string = process.p
 export const command = 'import <dir>';
 
 export const desc = 'Import content items';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('item', 'import', platform);
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -84,6 +90,12 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Skip any content items that has one or more missing dependancy.'
+    })
+
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
@@ -96,6 +108,7 @@ interface ImportContext {
   folderToSubfolderMap: Map<string, Promise<Folder[]>>;
   mapping: ContentMapping;
   rootFolders: Folder[];
+  log: FileLog;
 }
 
 const getSubfolders = (context: ImportContext, folder: Folder): Promise<Folder[]> => {
@@ -135,14 +148,14 @@ const getOrCreateFolder = async (context: ImportContext, rel: string): Promise<F
         result = await parent.related.folders.create(new Folder(folderInfo));
       }
 
-      console.log(`Created folder in ${containerName}: '${rel}'.`);
+      context.log.appendLine(`Created folder in ${containerName}: '${rel}'.`);
     } else {
-      console.log(`Found existing subfolder in ${containerName}: '${rel}'.`);
+      context.log.appendLine(`Found existing subfolder in ${containerName}: '${rel}'.`);
     }
 
     return result;
   } catch (e) {
-    console.log(`Couldn't get or create folder ${rel}! ${e.toString()}`);
+    context.log.appendLine(`Couldn't get or create folder ${rel}! ${e.toString()}`);
     throw e;
   }
 };
@@ -197,12 +210,12 @@ const createOrUpdateContent = async (
   }
 };
 
-const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping): Promise<void> => {
+const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping, log: FileLog): Promise<void> => {
   if (mapFile != null) {
     try {
       await mapping.save(mapFile);
     } catch (e) {
-      console.log(`Failed to save the mapping. ${e.toString()}`);
+      log.appendLine(`Failed to save the mapping. ${e.toString()}`);
     }
   }
 };
@@ -213,6 +226,7 @@ const prepareContentForImport = async (
   repos: { basePath: string; repo: ContentRepository }[],
   folder: Folder | null,
   mapping: ContentMapping,
+  log: FileLog,
   argv: ImportItemBuilderOptions
 ): Promise<ContentDependancyTree | null> => {
   // traverse folder structure and find content items
@@ -240,7 +254,8 @@ const prepareContentForImport = async (
       baseDir: resolve(repo.basePath),
       folderToSubfolderMap: new Map(),
       mapping,
-      rootFolders: []
+      rootFolders: [],
+      log
     });
   });
 
@@ -272,11 +287,11 @@ const prepareContentForImport = async (
         }
       }
     } catch (e) {
-      console.log(`Could not get base folders for repository ${repo.label}: ${e.toString()}`);
+      log.appendLine(`Could not get base folders for repository ${repo.label}: ${e.toString()}`);
       return null;
     }
 
-    console.log(`Scanning structure and content in '${repos[i].basePath}' for repository '${repo.label}'...`);
+    log.appendLine(`Scanning structure and content in '${repos[i].basePath}' for repository '${repo.label}'...`);
 
     await traverseRecursive(resolve(repos[i].basePath), async path => {
       // Is this valid content? Must have extension .json to be considered, for a start.
@@ -290,7 +305,7 @@ const prepareContentForImport = async (
         const contentText = await promisify(readFile)(path, { encoding: 'utf8' });
         contentJSON = JSON.parse(contentText);
       } catch (e) {
-        console.log(`Couldn't read content item at '${path}': ${e.toString()}`);
+        log.appendLine(`Couldn't read content item at '${path}': ${e.toString()}`);
         return;
       }
 
@@ -312,7 +327,7 @@ const prepareContentForImport = async (
     });
   }
 
-  console.log('Done. Validating content...');
+  log.appendLine('Done. Validating content...');
 
   const alreadyExists = contentItems.filter(item => mapping.getContentItem(item.content.id) != null);
   if (alreadyExists.length > 0) {
@@ -352,11 +367,11 @@ const prepareContentForImport = async (
 
     const existing = schemas.filter(schema => missingTypes.indexOf(schema.schemaId as string) !== -1);
 
-    console.log('Required content types are missing from the target hub.');
+    log.appendLine('Required content types are missing from the target hub.');
     if (existing.length > 0) {
-      console.log('The following required content types schemas exist, but do not exist as content types:');
+      log.appendLine('The following required content types schemas exist, but do not exist as content types:');
       existing.forEach(schema => {
-        console.log(`  ${schema.schemaId}`);
+        log.appendLine(`  ${schema.schemaId}`);
       });
       const create =
         force ||
@@ -411,13 +426,13 @@ const prepareContentForImport = async (
   });
 
   if (missingRepoAssignments.length > 0) {
-    console.log('Some content items are using types incompatible with the target repository. Missing assignments:');
+    log.appendLine('Some content items are using types incompatible with the target repository. Missing assignments:');
     missingRepoAssignments.forEach(([repo, type]) => {
       let label = '<no label>';
       if (type.settings && type.settings.label) {
         label = type.settings.label;
       }
-      console.log(`  ${repo.label} - ${label} (${type.contentTypeUri})`);
+      log.appendLine(`  ${repo.label} - ${label} (${type.contentTypeUri})`);
     });
 
     const createAssignments =
@@ -434,7 +449,7 @@ const prepareContentForImport = async (
         missingRepoAssignments.map(([repo, type]) => repo.related.contentTypes.assign(type.id as string))
       );
     } catch (e) {
-      console.log(`Failed creating repo assignments. Error: ${e.toString()}`);
+      log.appendLine(`Failed creating repo assignments. Error: ${e.toString()}`);
       return null;
     }
   }
@@ -463,44 +478,47 @@ const prepareContentForImport = async (
     if (skipIncomplete) {
       tree.removeContent(invalidContentItems);
     } else {
+      const validator = new AmplienceSchemaValidator(schemas);
+
       const mustSkip: ItemContentDependancies[] = [];
-      invalidContentItems.forEach(item => {
-        try {
+      await Promise.all(
+        invalidContentItems.map(async item => {
           tree.removeContentDependancies(
             item.owner,
             item.owner.content.body,
             item.dependancies.map(dependancy => dependancy.dependancy)
           );
-        } catch {
-          // Throws if removing the item causes validation failure. (not currently done)
-          mustSkip.push(item);
-        }
-      });
+
+          if (!(await validator.validate(item.owner.content.body))) {
+            mustSkip.push(item);
+          }
+        })
+      );
 
       if (mustSkip.length > 0) {
-        console.log(
-          'Required dependancies for the following content items are missing, and would cause validation errors if nullified.'
+        log.appendLine(
+          'Required dependancies for the following content items are missing, and would cause validation errors if set null.'
         );
-        console.log('These items will be skipped:');
-        mustSkip.forEach(item => console.log(`  ${item.owner.content.label}`));
+        log.appendLine('These items will be skipped:');
+        mustSkip.forEach(item => log.appendLine(`  ${item.owner.content.label}`));
 
         tree.removeContent(mustSkip);
       }
     }
 
-    console.log('Referenced content items (targets of links/references) are missing from the import and mapping:');
-    missingIDs.forEach(id => console.log(`  ${id}`));
+    log.appendLine('Referenced content items (targets of links/references) are missing from the import and mapping:');
+    missingIDs.forEach(id => log.appendLine(`  ${id}`));
     const action = skipIncomplete ? 'skipped' : 'set as null';
-    console.log(
+    log.appendLine(
       `All references to these content items will be ${action}. Note: if you have already imported these items before, make sure you are using a mapping file from that import.`
     );
 
     if (tree.all.length === 0) {
-      console.log('No content remains after removing those with missing dependancies. Aborting.');
+      log.appendLine('No content remains after removing those with missing dependancies. Aborting.');
       return null;
     }
 
-    invalidContentItems.forEach(item => console.log(`  ${item.owner.content.label}`));
+    invalidContentItems.forEach(item => log.appendLine(`  ${item.owner.content.label}`));
 
     const ignore =
       force ||
@@ -520,9 +538,9 @@ const prepareContentForImport = async (
   );
 
   if (missingSchema.length > 0) {
-    console.log('Required content type schema are missing from the target hub:');
-    missingSchema.forEach(schema => console.log(`  ${schema}`));
-    console.log(
+    log.appendLine('Required content type schema are missing from the target hub:');
+    missingSchema.forEach(schema => log.appendLine(`  ${schema}`));
+    log.appendLine(
       'All content referencing this content type schema, and any content depending on those items will be skipped.'
     );
 
@@ -535,7 +553,7 @@ const prepareContentForImport = async (
     tree.removeContent(affectedContentItems);
 
     if (tree.all.length === 0) {
-      console.log('No content remains after removing those with missing content type schemas. Aborting.');
+      log.appendLine('No content remains after removing those with missing content type schemas. Aborting.');
       return null;
     }
 
@@ -549,10 +567,10 @@ const prepareContentForImport = async (
     }
   }
 
-  console.log(
+  log.appendLine(
     `Found ${tree.levels.length} dependancy levels in ${tree.all.length} items, ${tree.circularLinks.length} referencing a circular dependancy.`
   );
-  console.log(`Importing ${tree.all.length} content items...`);
+  log.appendLine(`Importing ${tree.all.length} content items...`);
 
   return tree;
 };
@@ -560,10 +578,11 @@ const prepareContentForImport = async (
 const importTree = async (
   client: DynamicContent,
   tree: ContentDependancyTree,
-  mapping: ContentMapping
+  mapping: ContentMapping,
+  log: FileLog
 ): Promise<boolean> => {
   const abort = (error: Error): void => {
-    console.log(`Importing content item failed, aborting. Error: ${error.toString()}`);
+    log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
   };
 
   for (let i = 0; i < tree.levels.length; i++) {
@@ -593,12 +612,12 @@ const importTree = async (
         newItem = result.newItem;
         updated = result.updated;
       } catch (e) {
-        console.log(`Failed creating ${content.label}.`);
+        log.appendLine(`Failed creating ${content.label}.`);
         abort(e);
         return false;
       }
 
-      console.log(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
+      log.appendLine(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
       mapping.registerContentItem(originalId as string, newItem.id as string);
     }
   }
@@ -609,7 +628,7 @@ const importTree = async (
 
   for (let pass = 0; pass < 2; pass++) {
     const mode = pass === 0 ? 'Creating' : 'Resolving';
-    console.log(`${mode} circular dependants.`);
+    log.appendLine(`${mode} circular dependants.`);
 
     for (let i = 0; i < tree.circularLinks.length; i++) {
       const item = tree.circularLinks[i];
@@ -632,12 +651,12 @@ const importTree = async (
         );
         newItem = result.newItem;
       } catch (e) {
-        console.log(`Failed creating ${content.label}.`);
+        log.appendLine(`Failed creating ${content.label}.`);
         abort(e);
         return false;
       }
 
-      console.log(`Processed ${content.label}.`);
+      log.appendLine(`Processed ${content.label}.`);
 
       if (pass === 0) {
         // New mappings are created in the first pass, they are only propagated in the second.
@@ -647,22 +666,24 @@ const importTree = async (
     }
   }
 
-  console.log('Done!');
+  log.appendLine('Done!');
   return true;
 };
 
 export const handler = async (argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, baseRepo, baseFolder, validate } = argv;
+  const { dir, baseRepo, baseFolder, validate, logFile } = argv;
   const force = argv.force || false;
   let { mapFile } = argv;
 
   const client = dynamicContentClientFactory(argv);
+  const log = new FileLog(logFile);
 
   let hub: Hub;
   try {
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
     console.error(`Couldn't get hub: ${e.toString()}`);
+    log.close();
     return;
   }
 
@@ -681,9 +702,9 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
   }
 
   if (mapping.load(mapFile)) {
-    console.log(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
+    log.appendLine(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
   } else {
-    console.log(`Creating new mapping file at '${mapFile}'.`);
+    log.appendLine(`Creating new mapping file at '${mapFile}'.`);
   }
 
   let tree: ContentDependancyTree | null;
@@ -696,25 +717,28 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
       folder = bFolder;
     } catch (e) {
       console.error(`Couldn't get base folder: ${e.toString()}`);
+      log.close();
       return;
     }
-    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, argv);
+    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, log, argv);
   } else if (baseRepo != null) {
     let repo: ContentRepository;
     try {
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
       console.error(`Couldn't get base repository: ${e.toString()}`);
+      log.close();
       return;
     }
-    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, argv);
+    tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, log, argv);
   } else {
     // Match repositories by label.
     let repos: ContentRepository[];
     try {
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
-      console.log(`Couldn't get repositories: ${e.toString()}`);
+      log.appendLine(`Couldn't get repositories: ${e.toString()}`);
+      log.close();
       return;
     }
 
@@ -737,11 +761,11 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
     }
 
     if (missingRepos.length > 0) {
-      console.log(
+      log.appendLine(
         "The following repositories must exist on the destination hub to import content into them, but don't:"
       );
       missingRepos.forEach(name => {
-        console.log(`  ${name}`);
+        log.appendLine(`  ${name}`);
       });
       if (importRepos.length > 0) {
         const ignore =
@@ -750,26 +774,29 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
             'These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) '
           ));
         if (!ignore) {
+          log.close();
           return;
         }
       }
     }
 
     if (importRepos.length == 0) {
-      console.log('Could not find any matching repositories to import into, aborting.');
+      log.appendLine('Could not find any matching repositories to import into, aborting.');
+      log.close();
       return;
     }
 
-    tree = await prepareContentForImport(client, hub, importRepos, null, mapping, argv);
+    tree = await prepareContentForImport(client, hub, importRepos, null, mapping, log, argv);
   }
 
   if (tree != null) {
     if (!validate) {
-      await importTree(client, tree, mapping);
+      await importTree(client, tree, mapping, log);
     } else {
-      console.log('--validate was passed, so no content was imported.');
+      log.appendLine('--validate was passed, so no content was imported.');
     }
   }
 
-  trySaveMapping(mapFile, mapping);
+  trySaveMapping(mapFile, mapping, log);
+  log.close();
 };
