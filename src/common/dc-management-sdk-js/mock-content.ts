@@ -8,7 +8,8 @@ import {
   DynamicContent,
   ContentType,
   ContentTypeSchema,
-  ContentRepositoryContentType
+  ContentRepositoryContentType,
+  Status
 } from 'dc-management-sdk-js';
 import MockPage from './mock-page';
 
@@ -18,6 +19,8 @@ export interface ItemTemplate {
   folderPath?: string;
   repoId: string;
   typeSchemaUri: string;
+  version?: number;
+  status?: Status;
 
   body?: any;
 }
@@ -36,6 +39,7 @@ export interface MockRepository {
 export class MockContentMetrics {
   itemsCreated = 0;
   itemsUpdated = 0;
+  itemsArchived = 0;
   foldersCreated = 0;
   typesCreated = 0;
   typeSchemasCreated = 0;
@@ -43,6 +47,7 @@ export class MockContentMetrics {
   reset(): void {
     this.itemsCreated = 0;
     this.itemsUpdated = 0;
+    this.itemsArchived = 0;
     this.foldersCreated = 0;
     this.typesCreated = 0;
     this.typeSchemasCreated = 0;
@@ -64,6 +69,9 @@ export class MockContent {
 
   metrics = new MockContentMetrics();
 
+  // If true, actions performed on content items will throw as if they failed.
+  failItemActions: null | 'all' | 'not-version' = null;
+
   uniqueId = 0;
 
   constructor(private contentService: jest.Mock<DynamicContent>) {
@@ -79,7 +87,13 @@ export class MockContent {
 
     const mockTypeSchemaGet = jest.fn(id => Promise.resolve(this.typeSchemaById.get(id) as ContentTypeSchema));
 
-    const mockItemGet = jest.fn(id => Promise.resolve(this.items.find(item => item.id === id)));
+    const mockItemGet = jest.fn(id => {
+      const result = this.items.find(item => item.id === id);
+      if (result == null) {
+        throw new Error(`Content item with id ${id} was requested, but is missing.`);
+      }
+      return Promise.resolve(result);
+    });
 
     contentService.mockReturnValue(({
       hubs: {
@@ -202,21 +216,31 @@ export class MockContent {
   createItem(item: ContentItem, mockRepo: MockRepository | undefined): void {
     this.metrics.itemsCreated++;
 
+    item.version = item.version || 1;
+
     const mockItemRepo = jest.fn();
     item.related.contentRepository = mockItemRepo;
 
     const mockItemUpdate = jest.fn();
     item.related.update = mockItemUpdate;
 
+    const mockItemArchive = jest.fn();
+    item.related.archive = mockItemArchive;
+
+    const mockItemVersion = jest.fn();
+    item.related.contentItemVersion = mockItemVersion;
+
     if (mockRepo != null) {
       (item as any).repoId = mockRepo.repo.id;
     }
 
-    mockItemRepo.mockImplementation(() =>
-      Promise.resolve((this.repoById.get((item as any).repoId) as MockRepository).repo)
-    );
+    mockItemRepo.mockImplementation(() => {
+      if (this.failItemActions) throw new Error('Simulated network failure.');
+      return Promise.resolve((this.repoById.get((item as any).repoId) as MockRepository).repo);
+    });
 
     mockItemUpdate.mockImplementation(newItem => {
+      if (this.failItemActions) throw new Error('Simulated network failure.');
       this.metrics.itemsUpdated++;
 
       item.label = newItem.label;
@@ -225,6 +249,28 @@ export class MockContent {
       item.version = newItem.version;
 
       return Promise.resolve(item);
+    });
+
+    mockItemArchive.mockImplementation(() => {
+      if (this.failItemActions) throw new Error('Simulated network failure.');
+      if (item.status != Status.ACTIVE) {
+        throw new Error('Cannot archive content that is already archived.');
+      }
+
+      this.metrics.itemsArchived++;
+
+      item.status = Status.DELETED;
+
+      return Promise.resolve(item);
+    });
+
+    mockItemVersion.mockImplementation(version => {
+      if (this.failItemActions && this.failItemActions != 'not-version') throw new Error('Simulated network failure.');
+      const newItem = { ...item };
+
+      newItem.version = version;
+
+      return Promise.resolve(newItem);
     });
 
     this.items.push(item);
@@ -281,9 +327,10 @@ export class MockContent {
 
       const item = new ContentItem({
         label: template.label,
-        status: 'ACTIVE',
+        status: template.status || Status.ACTIVE,
         id: template.id || '0',
         folderId: folderNullOrEmpty ? null : folderId,
+        version: template.version,
         body: {
           _meta: {
             schema: template.typeSchemaUri

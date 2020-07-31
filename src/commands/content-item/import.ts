@@ -1,6 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { revert } from './import-revert';
 import { FileLog } from '../../common/file-log';
 import { dirname, basename, join, relative, resolve, extname } from 'path';
 
@@ -194,7 +195,7 @@ const createOrUpdateContent = async (
   repo: ContentRepository,
   existing: string | ContentItem | null,
   item: ContentItem
-): Promise<{ newItem: ContentItem; updated: boolean }> => {
+): Promise<{ newItem: ContentItem; oldVersion: number }> => {
   let oldItem: ContentItem | null = null;
   if (typeof existing === 'string') {
     oldItem = await client.contentItems.get(existing);
@@ -203,10 +204,10 @@ const createOrUpdateContent = async (
   }
 
   if (oldItem == null) {
-    return { newItem: await repo.related.contentItems.create(item), updated: false };
+    return { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
   } else {
     item.version = oldItem.version;
-    return { newItem: await oldItem.related.update(item), updated: true };
+    return { newItem: await oldItem.related.update(item), oldVersion: oldItem.version || 0 };
   }
 };
 
@@ -605,7 +606,7 @@ const importTree = async (
       content.id = mapping.getContentItem(content.id as string);
 
       let newItem: ContentItem;
-      let updated: boolean;
+      let oldVersion: number;
       try {
         const result = await createOrUpdateContent(
           client,
@@ -614,14 +615,20 @@ const importTree = async (
           content
         );
         newItem = result.newItem;
-        updated = result.updated;
+        oldVersion = result.oldVersion;
       } catch (e) {
         log.appendLine(`Failed creating ${content.label}.`);
         abort(e);
         return false;
       }
 
-      log.appendLine(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
+      const updated = oldVersion > 0;
+      log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
+      log.addAction(
+        updated ? 'UPDATE' : 'CREATE',
+        (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
+      );
+
       mapping.registerContentItem(originalId as string, newItem.id as string);
     }
   }
@@ -646,6 +653,7 @@ const importTree = async (
       content.id = mapping.getContentItem(content.id);
 
       let newItem: ContentItem;
+      let oldVersion: number;
       try {
         const result = await createOrUpdateContent(
           client,
@@ -654,16 +662,22 @@ const importTree = async (
           content
         );
         newItem = result.newItem;
+        oldVersion = result.oldVersion;
       } catch (e) {
         log.appendLine(`Failed creating ${content.label}.`);
         abort(e);
         return false;
       }
 
-      log.appendLine(`Processed ${content.label}.`);
-
       if (pass === 0) {
         // New mappings are created in the first pass, they are only propagated in the second.
+        const updated = oldVersion > 0;
+        log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
+        log.addAction(
+          updated ? 'UPDATE' : 'CREATE',
+          (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
+        );
+
         newDependants[i] = newItem;
         mapping.registerContentItem(originalId as string, newItem.id as string);
       }
@@ -674,13 +688,19 @@ const importTree = async (
   return true;
 };
 
-export const handler = async (argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
+export const handler = async (
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
+): Promise<boolean> => {
+  if (argv.revertLog != null) {
+    return revert(argv);
+  }
+
   const { dir, baseRepo, baseFolder, validate, logFile } = argv;
   const force = argv.force || false;
   let { mapFile } = argv;
 
   const client = dynamicContentClientFactory(argv);
-  const log = new FileLog(logFile);
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
 
   let hub: Hub;
   try {
@@ -688,7 +708,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
   } catch (e) {
     console.error(`Couldn't get hub: ${e.toString()}`);
     log.close();
-    return;
+    return false;
   }
 
   let importTitle = 'unknownImport';
@@ -722,7 +742,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
     } catch (e) {
       console.error(`Couldn't get base folder: ${e.toString()}`);
       log.close();
-      return;
+      return false;
     }
     tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, log, argv);
   } else if (baseRepo != null) {
@@ -732,7 +752,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
     } catch (e) {
       console.error(`Couldn't get base repository: ${e.toString()}`);
       log.close();
-      return;
+      return false;
     }
     tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, log, argv);
   } else {
@@ -743,7 +763,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
     } catch (e) {
       log.appendLine(`Couldn't get repositories: ${e.toString()}`);
       log.close();
-      return;
+      return false;
     }
 
     const baseDirContents = await promisify(readdir)(dir);
@@ -779,7 +799,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
           ));
         if (!ignore) {
           log.close();
-          return;
+          return false;
         }
       }
     }
@@ -787,7 +807,7 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
     if (importRepos.length == 0) {
       log.appendLine('Could not find any matching repositories to import into, aborting.');
       log.close();
-      return;
+      return false;
     }
 
     tree = await prepareContentForImport(client, hub, importRepos, null, mapping, log, argv);
@@ -803,4 +823,5 @@ export const handler = async (argv: Arguments<ImportItemBuilderOptions & Configu
 
   trySaveMapping(mapFile, mapping, log);
   log.close();
+  return true;
 };

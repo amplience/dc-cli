@@ -252,7 +252,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
 
   const folderToPathMap: Map<string, string> = new Map();
   const client = dynamicContentClientFactory(argv);
-  const log = new FileLog(logFile);
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
   const hub = await client.hubs.get(argv.hubId);
 
   log.appendLine('Retrieving content items, please wait.');

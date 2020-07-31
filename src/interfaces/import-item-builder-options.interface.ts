@@ -1,3 +1,5 @@
+import { FileLog } from '../common/file-log';
+
 export interface ImportItemBuilderOptions {
   dir: string;
   baseRepo?: string;
@@ -6,5 +8,7 @@ export interface ImportItemBuilderOptions {
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
-  logFile?: string;
+  logFile?: string | FileLog;
+
+  revertLog?: string;
 }

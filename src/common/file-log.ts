@@ -1,10 +1,9 @@
-import { writeFile } from 'fs';
-import { promisify } from 'util';
+import { ArchiveLog } from './archive/archive-log';
 
-export class FileLog {
-  private contents: string;
-
+export class FileLog extends ArchiveLog {
   constructor(private filename?: string) {
+    super((filename || '').replace('<DATE>', Date.now().toString()));
+
     if (this.filename != null) {
       const timestamp = Date.now().toString();
       this.filename = this.filename.replace('<DATE>', timestamp);
@@ -14,17 +13,13 @@ export class FileLog {
   public appendLine(text?: string): void {
     console.log(text);
 
-    if (text !== null) {
-      this.contents += text;
-    }
-
-    this.contents += '\n';
+    this.addComment(text as string);
   }
 
   public async close(): Promise<void> {
     if (this.filename != null) {
       try {
-        await promisify(writeFile)(this.filename, this.contents);
+        await this.writeToFile(this.filename);
         console.log(`Log written to "${this.filename}".`);
       } catch {
         console.log(`Could not write log.`);
