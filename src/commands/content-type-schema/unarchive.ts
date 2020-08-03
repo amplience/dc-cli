@@ -94,7 +94,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       try {
         const log = await new ArchiveLog().loadFromFile(revertLog);
         const ids = log.getData('ARCHIVE');
-        schemas = schemas.filter(schema => ids.indexOf(schema.schemaId || '') != -1);
+        schemas = schemas.filter(schema => ids.indexOf(schema.schemaId as string) != -1);
         if (schemas.length != ids.length) {
           missingContent = true;
         }
@@ -103,8 +103,8 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
         return;
       }
     } else if (schemaId != null) {
-      const schemaIds: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
-      schemas = schemas.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.schemaId || '', id)) != -1);
+      const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
+      schemas = schemas.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.schemaId as string, id)) != -1);
     } else {
       allContent = true;
       console.log('No filter, ID or log file was given, so unarchiving all content.');
@@ -137,7 +137,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     try {
       await schemas[i].related.unarchive();
 
-      log.addAction('UNARCHIVE', schemas[i].schemaId || 'unknown');
+      log.addAction('UNARCHIVE', schemas[i].schemaId as string);
       successCount++;
     } catch (e) {
       log.addComment(`UNARCHIVE FAILED: ${schemas[i].schemaId}`);
@@ -147,7 +147,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
         console.log(`Failed to unarchive ${schemas[i].schemaId}, continuing. Error: \n${e.toString()}`);
       } else {
         console.log(`Failed to unarchive ${schemas[i].schemaId}, aborting. Error: \n${e.toString()}`);
-        return;
+        break;
       }
     }
     console.log('Unarchived: ' + schemas[i].schemaId);

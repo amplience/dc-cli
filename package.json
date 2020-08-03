@@ -110,7 +110,7 @@
     "@types/rimraf": "^3.0.0",
     "axios": "^0.18.1",
     "chalk": "^2.4.2",
-    "dc-management-sdk-js": "^1.4.1",
+    "dc-management-sdk-js": "^1.6.0",
     "lodash": "^4.17.15",
     "table": "^5.4.6",
     "yargs": "^14.0.0"

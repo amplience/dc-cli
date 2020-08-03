@@ -86,7 +86,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       console.log(
         `Fatal error: could not retrieve content types to unarchive. Is your hub correct? Error: \n${e.toString()}`
       );
-      throw e;
+      return;
     }
 
     if (revertLog != null) {
@@ -103,7 +103,9 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       }
     } else if (schemaId != null) {
       const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
-      types = types.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.contentTypeUri || '', id)) != -1);
+      types = types.filter(
+        schema => schemaIds.findIndex(id => equalsOrRegex(schema.contentTypeUri as string, id)) != -1
+      );
     } else {
       allContent = true;
       console.log('No filter, ID or log file was given, so unarchiving all content.');
@@ -149,7 +151,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
         console.log(`Failed to unarchive ${label}, continuing. Error: \n${e.toString()}`);
       } else {
         console.log(`Failed to unarchive ${label}, aborting. Error: \n${e.toString()}`);
-        return;
+        break;
       }
     }
     console.log('Unarchived: ' + label);

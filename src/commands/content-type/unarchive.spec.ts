@@ -88,7 +88,8 @@ describe('content-type unarchive command', () => {
 
     function generateMockTypeList(
       templates: { name: string; schemaId: string; id?: string }[],
-      enrich: (type: ContentType) => void
+      enrich: (type: ContentType) => void,
+      failUnarchive?: boolean
     ): MockPage<ContentType> {
       const contentTypeResponse: ContentType[] = templates.map(template => {
         const mockUnarchive = jest.fn();
@@ -100,7 +101,12 @@ describe('content-type unarchive command', () => {
         });
         unarchiveResponse.related.unarchive = mockUnarchive;
 
-        mockUnarchive.mockResolvedValue(unarchiveResponse);
+        mockUnarchive.mockImplementation(() => {
+          if (failUnarchive) {
+            throw new Error('Simulated request failure.');
+          }
+          return Promise.resolve(unarchiveResponse);
+        });
 
         enrich(unarchiveResponse);
         return unarchiveResponse;
@@ -111,7 +117,8 @@ describe('content-type unarchive command', () => {
 
     function injectTypeMocks(
       templates: { name: string; schemaId: string; id?: string }[],
-      enrich: (type: ContentType) => void
+      enrich: (type: ContentType) => void,
+      failUnarchive?: boolean
     ): void {
       const mockHubGet = jest.fn();
       const mockHubList = jest.fn();
@@ -126,7 +133,7 @@ describe('content-type unarchive command', () => {
       mockHub.related.contentTypes.list = mockHubList;
       mockHubGet.mockResolvedValue(mockHub);
 
-      mockHubList.mockResolvedValue(generateMockTypeList(templates, enrich));
+      mockHubList.mockResolvedValue(generateMockTypeList(templates, enrich, failUnarchive));
     }
 
     it("should ask if the user wishes to unarchive the content, and do so when providing 'y'", async () => {
@@ -340,7 +347,7 @@ describe('content-type unarchive command', () => {
         logFile: LOG_FILENAME(),
         slient: true,
         force: true,
-        schemaId: '/schemaMatch/'
+        schemaId: ['/schemaMatch/'] // Pass as an array to cover that case too.
       };
       await handler(argv);
 
@@ -381,7 +388,7 @@ describe('content-type unarchive command', () => {
       const skips: (() => Promise<ContentType>)[] = [];
 
       const logFileName = 'temp/type-unarchive-revert.log';
-      const log = '// Type log test file\n' + 'ARCHIVE id1\n' + 'ARCHIVE id2';
+      const log = '// Type log test file\n' + 'ARCHIVE id1\n' + 'ARCHIVE id2\n' + 'ARCHIVE missing';
 
       const dir = dirname(logFileName);
       if (!(await promisify(exists)(dir))) {
@@ -479,6 +486,188 @@ describe('content-type unarchive command', () => {
       expect(total).toEqual(2);
 
       await promisify(unlink)(logFileName);
+    });
+
+    it('should report a failed unarchive in the provided --logFile and exit immediately', async () => {
+      // First, ensure the log does not already exist.
+      if (await promisify(exists)('temp/type-unarchive-failed.log')) {
+        await promisify(unlink)('temp/type-unarchive-failed.log');
+      }
+
+      const targets: string[] = [];
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1', id: 'id1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2', id: 'id2' }
+        ],
+        type => {
+          if ((type.contentTypeUri || '').indexOf('schemaMatch') !== -1) {
+            targets.push(type.id || '');
+          }
+        },
+        true
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: 'temp/type-unarchive-failed.log',
+        schemaId: '/schemaMatch/',
+        force: true
+      };
+      await handler(argv);
+
+      const logExists = await promisify(exists)('temp/type-unarchive-failed.log');
+
+      expect(logExists).toBeTruthy();
+
+      // Log should contain the two schema that match (as failures)
+
+      const log = await promisify(readFile)('temp/type-unarchive-failed.log', 'utf8');
+
+      const logLines = log.split('\n');
+      let total = 0;
+      logLines.forEach(line => {
+        if (line.indexOf('UNARCHIVE FAILED') !== -1) {
+          total++;
+        }
+      });
+
+      expect(total).toEqual(1); // Does not continue to archive the next one
+
+      await promisify(unlink)('temp/type-unarchive-failed.log');
+    });
+
+    it('should skip failed unarchives when --ignoreError is provided, but log all failures', async () => {
+      // First, ensure the log does not already exist.
+      if (await promisify(exists)('temp/type-unarchive-skip.log')) {
+        await promisify(unlink)('temp/type-unarchive-skip.log');
+      }
+
+      const targets: string[] = [];
+
+      injectTypeMocks(
+        [
+          { name: 'Schema 1', schemaId: 'http://schemas.com/schema1' },
+          { name: 'Schema 2', schemaId: 'http://schemas.com/schema2' },
+          { name: 'Schema Banana', schemaId: 'http://schemas.com/schemaBanana' },
+          { name: 'Schema Match 1', schemaId: 'http://schemas.com/schemaMatch1', id: 'id1' },
+          { name: 'Schema Match 2', schemaId: 'http://schemas.com/schemaMatch2', id: 'id2' }
+        ],
+        type => {
+          if ((type.contentTypeUri || '').indexOf('schemaMatch') !== -1) {
+            targets.push(type.id || '');
+          }
+        },
+        true
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: 'temp/type-unarchive-skip.log',
+        schemaId: '/schemaMatch/',
+        ignoreError: true,
+        force: true
+      };
+      await handler(argv);
+
+      const logExists = await promisify(exists)('temp/type-unarchive-skip.log');
+
+      expect(logExists).toBeTruthy();
+
+      // Log should contain the two schema that match (as failures)
+
+      const log = await promisify(readFile)('temp/type-unarchive-skip.log', 'utf8');
+
+      const logLines = log.split('\n');
+      let total = 0;
+      logLines.forEach(line => {
+        if (line.indexOf('UNARCHIVE FAILED') !== -1) {
+          total++;
+        }
+      });
+
+      expect(total).toEqual(2); // Fails to archive each matching type.
+
+      await promisify(unlink)('temp/type-unarchive-skip.log');
+    });
+
+    it('should exit cleanly when no content can be unarchived', async () => {
+      injectTypeMocks([], () => {});
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true
+      };
+      await handler(argv);
+    });
+
+    it('should exit cleanly when revert log is missing', async () => {
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true,
+        revertLog: 'doesntExist.txt'
+      };
+      await handler(argv);
+    });
+
+    it('should exit cleanly when hub is not configured, or on invalid input.', async () => {
+      // Content list/get is not init, so it will throw.
+
+      const mockHubGet = jest.fn();
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockHubGet
+        }
+      });
+
+      const mockHub = new Hub();
+      mockHubGet.mockResolvedValue(mockHub);
+
+      // All
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true
+      };
+      await handler(argv);
+
+      // Id
+      const argv2 = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true,
+        id: 'test'
+      };
+      await handler(argv2);
+
+      // Id and Schema id
+      const argv3 = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true,
+        id: 'test',
+        schemaId: 'conflict'
+      };
+      await handler(argv3);
     });
   });
 });

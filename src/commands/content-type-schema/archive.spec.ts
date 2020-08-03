@@ -88,7 +88,8 @@ describe('content-item-schema archive command', () => {
 
     function generateMockSchemaList(
       names: string[],
-      enrich: (schema: ContentTypeSchema) => void
+      enrich: (schema: ContentTypeSchema) => void,
+      failArchive?: boolean
     ): MockPage<ContentTypeSchema> {
       const contentTypeSchemaResponse: ContentTypeSchema[] = names.map(name => {
         const mockArchive = jest.fn();
@@ -96,7 +97,12 @@ describe('content-item-schema archive command', () => {
         const archiveResponse = new ContentTypeSchema({ schemaId: name });
         archiveResponse.related.archive = mockArchive;
 
-        mockArchive.mockResolvedValue(archiveResponse);
+        mockArchive.mockImplementation(() => {
+          if (failArchive) {
+            throw new Error('Simulated request failure.');
+          }
+          return Promise.resolve(archiveResponse);
+        });
 
         enrich(archiveResponse);
         return archiveResponse;
@@ -105,7 +111,11 @@ describe('content-item-schema archive command', () => {
       return new MockPage(ContentTypeSchema, contentTypeSchemaResponse);
     }
 
-    function injectSchemaMocks(names: string[], enrich: (schema: ContentTypeSchema) => void): void {
+    function injectSchemaMocks(
+      names: string[],
+      enrich: (schema: ContentTypeSchema) => void,
+      failArchive?: boolean
+    ): void {
       const mockHubGet = jest.fn();
       const mockHubList = jest.fn();
 
@@ -119,7 +129,7 @@ describe('content-item-schema archive command', () => {
       mockHub.related.contentTypeSchema.list = mockHubList;
       mockHubGet.mockResolvedValue(mockHub);
 
-      mockHubList.mockResolvedValue(generateMockSchemaList(names, enrich));
+      mockHubList.mockResolvedValue(generateMockSchemaList(names, enrich, failArchive));
     }
 
     it("should ask if the user wishes to archive the content, and do so when providing 'y'", async () => {
@@ -305,7 +315,7 @@ describe('content-item-schema archive command', () => {
         ...yargArgs,
         ...config,
         logFile: LOG_FILENAME(),
-        schemaId: '/schemaMatch/',
+        schemaId: ['/schemaMatch/'], // Pass as an array to cover that case too.
         force: true,
         silent: true
       };
@@ -351,7 +361,8 @@ describe('content-item-schema archive command', () => {
       const log =
         '// Schema log test file\n' +
         'UNARCHIVE http://schemas.com/schemaMatch1\n' +
-        'UNARCHIVE http://schemas.com/schemaMatch2';
+        'UNARCHIVE http://schemas.com/schemaMatch2\n' +
+        'UNARCHIVE http://schemas.com/schemaMissing';
 
       const dir = dirname(logFileName);
       if (!(await promisify(exists)(dir))) {
@@ -447,6 +458,188 @@ describe('content-item-schema archive command', () => {
       expect(total).toEqual(2);
 
       await promisify(unlink)('temp/schema-archive-test.log');
+    });
+
+    it('should report a failed archive in the provided --logFile and exit immediately', async () => {
+      // First, ensure the log does not already exist.
+      if (await promisify(exists)('temp/schema-archive-failed.log')) {
+        await promisify(unlink)('temp/schema-archive-failed.log');
+      }
+
+      const targets: string[] = [];
+
+      injectSchemaMocks(
+        [
+          'http://schemas.com/schema1',
+          'http://schemas.com/schema2',
+          'http://schemas.com/schemaBanana',
+          'http://schemas.com/schemaMatch1',
+          'http://schemas.com/schemaMatch2'
+        ],
+        schema => {
+          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
+            targets.push(schema.schemaId || '');
+          }
+        },
+        true
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: 'temp/schema-archive-failed.log',
+        schemaId: '/schemaMatch/',
+        force: true
+      };
+      await handler(argv);
+
+      const logExists = await promisify(exists)('temp/schema-archive-failed.log');
+
+      expect(logExists).toBeTruthy();
+
+      // Log should contain the two schema that match (as failures)
+
+      const log = await promisify(readFile)('temp/schema-archive-failed.log', 'utf8');
+
+      const logLines = log.split('\n');
+      let total = 0;
+      logLines.forEach(line => {
+        if (line.indexOf('ARCHIVE FAILED') !== -1) {
+          total++;
+        }
+      });
+
+      expect(total).toEqual(1); // Does not continue to archive the next one
+
+      await promisify(unlink)('temp/schema-archive-failed.log');
+    });
+
+    it('should skip failed archives when --ignoreError is provided, but log all failures', async () => {
+      // First, ensure the log does not already exist.
+      if (await promisify(exists)('temp/schema-archive-skip.log')) {
+        await promisify(unlink)('temp/schema-archive-skip.log');
+      }
+
+      const targets: string[] = [];
+
+      injectSchemaMocks(
+        [
+          'http://schemas.com/schema1',
+          'http://schemas.com/schema2',
+          'http://schemas.com/schemaBanana',
+          'http://schemas.com/schemaMatch1',
+          'http://schemas.com/schemaMatch2'
+        ],
+        schema => {
+          if ((schema.schemaId || '').indexOf('schemaMatch') !== -1) {
+            targets.push(schema.schemaId || '');
+          }
+        },
+        true
+      );
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: 'temp/schema-archive-skip.log',
+        schemaId: '/schemaMatch/',
+        ignoreError: true,
+        force: true
+      };
+      await handler(argv);
+
+      const logExists = await promisify(exists)('temp/schema-archive-skip.log');
+
+      expect(logExists).toBeTruthy();
+
+      // Log should contain the two schema that match (as failures)
+
+      const log = await promisify(readFile)('temp/schema-archive-skip.log', 'utf8');
+
+      const logLines = log.split('\n');
+      let total = 0;
+      logLines.forEach(line => {
+        if (line.indexOf('ARCHIVE FAILED') !== -1) {
+          total++;
+        }
+      });
+
+      expect(total).toEqual(2); // Fails to archive each matching type.
+
+      await promisify(unlink)('temp/schema-archive-skip.log');
+    });
+
+    it('should exit cleanly when no content can be archived', async () => {
+      injectSchemaMocks([], () => {});
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true
+      };
+      await handler(argv);
+    });
+
+    it('should exit cleanly when revert log is missing', async () => {
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true,
+        revertLog: 'doesntExist.txt'
+      };
+      await handler(argv);
+    });
+
+    it('should exit cleanly when hub is not configured, or on invalid input.', async () => {
+      // Content list/get is not init, so it will throw.
+
+      const mockHubGet = jest.fn();
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockHubGet
+        }
+      });
+
+      const mockHub = new Hub();
+      mockHubGet.mockResolvedValue(mockHub);
+
+      // All
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true
+      };
+      await handler(argv);
+
+      // Id
+      const argv2 = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true,
+        id: 'test'
+      };
+      await handler(argv2);
+
+      // Id and Schema id
+      const argv3 = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        force: true,
+        silent: true,
+        id: 'test',
+        schemaId: 'conflict'
+      };
+      await handler(argv3);
     });
   });
 });
