@@ -1,9 +1,8 @@
-import axios from 'axios';
+import nock from 'nock';
 import fs from 'fs';
 import { jsonResolver } from './json-resolver';
 import path from 'path';
 
-jest.mock('axios');
 jest.mock('fs');
 jest.mock('path');
 
@@ -13,39 +12,33 @@ describe('content type schema helper', function() {
   });
 
   describe('Loading JSON from URL', () => {
-    async function successfulAxiosGetInvocation(
-      protocol: string,
-      schema: string,
-      stringifyData: boolean
-    ): Promise<void> {
-      const mockAxiosGet = axios.get as jest.Mock;
-      const data = {
-        $schema: 'test',
-        id: 'test'
-      };
-      const mockSchemaResponse = {
-        data: stringifyData ? JSON.stringify(data) : data
-      };
-      mockAxiosGet.mockResolvedValue(mockSchemaResponse);
-      const response = await jsonResolver(schema);
-      expect(mockAxiosGet).toHaveBeenCalledWith(expect.stringMatching(protocol));
-      expect(response).toEqual(JSON.stringify(data));
+    async function successfulAxiosGetInvocation(basePath: string, path: string): Promise<void> {
+      const url = `${basePath}${path}`;
+      const data = JSON.stringify(
+        {
+          $schema: 'test',
+          $id: url
+        },
+        null,
+        2
+      );
+
+      const scope = nock(basePath)
+        .get(path)
+        .reply(200, data);
+
+      const response = await jsonResolver(url);
+
+      expect(scope.isDone()).toBeTruthy();
+      expect(response).toEqual(data);
     }
 
     it('should load JSON from a url (http) as object', async function() {
-      await successfulAxiosGetInvocation('http', 'http://example.com/schema.json', false);
+      await successfulAxiosGetInvocation('http://example.com', '/schema.json');
     });
 
     it('should load JSON from a url (https) as object', async function() {
-      await successfulAxiosGetInvocation('https', 'https://example.com/schema.json', false);
-    });
-
-    it('should load JSON from a url (http) as JSON string', async function() {
-      await successfulAxiosGetInvocation('http', 'http://example.com/schema.json', true);
-    });
-
-    it('should load JSON from a url (https) as JSON string', async function() {
-      await successfulAxiosGetInvocation('https', 'https://example.com/schema.json', true);
+      await successfulAxiosGetInvocation('https://example.com', '/schema.json');
     });
   });
 
@@ -82,7 +75,6 @@ describe('content type schema helper', function() {
   });
 
   describe('Loading JSON from a escaped string', () => {
-    const mockAxiosGet = axios.get as jest.Mock;
     const mockFileRead = fs.readFileSync as jest.Mock;
     const mockExistsSync = fs.existsSync as jest.Mock;
 
@@ -93,7 +85,6 @@ describe('content type schema helper', function() {
     it('should load valid JSON (Object as string passed in)', async function() {
       const json = { foo: 'bar', bar: 'baz' };
       const response = await jsonResolver(JSON.stringify(json));
-      expect(mockAxiosGet).toHaveBeenCalledTimes(0);
       expect(mockFileRead).toHaveBeenCalledTimes(0);
       expect(response).toEqual(JSON.stringify(json));
     });
@@ -101,7 +92,6 @@ describe('content type schema helper', function() {
     it('should load valid JSON (Object as escaped string passed in)', async function() {
       const escapedjson = '{"foo":"bar","bar":"baz"}';
       const response = await jsonResolver(escapedjson);
-      expect(mockAxiosGet).toHaveBeenCalledTimes(0);
       expect(mockFileRead).toHaveBeenCalledTimes(0);
       expect(response).toEqual(escapedjson);
     });
@@ -109,7 +99,6 @@ describe('content type schema helper', function() {
     it('should load valid JSON (Array passed in)', async function() {
       const json = [{ foo: 'bar', bar: 'baz' }];
       const response = await jsonResolver(JSON.stringify(json));
-      expect(mockAxiosGet).toHaveBeenCalledTimes(0);
       expect(mockFileRead).toHaveBeenCalledTimes(0);
       expect(response).toEqual(JSON.stringify(json));
     });
