@@ -9,7 +9,7 @@
 Run `dc-cli` to get a list of available commands
 
 ## CONFIGURATION
-**dc-cli** requires a valid set of Amplience client credentials (`--client-key` & `--client-secret`) and hub ID (`--hub-id`) to operate. These must be supplied for each command or alternatively they can saved to a user-level configuration file using `dc-cli configure`.
+**dc-cli** requires a valid set of Amplience client credentials (`--clientId` & `--clientSecret`) and hub ID (`--hubId`) to operate. These must be supplied for each command or alternatively they can saved to a user-level configuration file using `dc-cli configure`.
 
 By default the configuration file is saved into the directory `<HOME_DIR>/.amplience/`, this can be overridden using the `--config` option.
 
