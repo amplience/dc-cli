@@ -1,6 +1,6 @@
 import { builder, command, handler, LOG_FILENAME } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, Hub, Page } from 'dc-management-sdk-js';
+import { ContentType, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
