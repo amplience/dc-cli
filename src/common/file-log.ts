@@ -18,12 +18,7 @@ export class FileLog extends ArchiveLog {
 
   public async close(): Promise<void> {
     if (this.filename != null) {
-      try {
-        await this.writeToFile(this.filename);
-        console.log(`Log written to "${this.filename}".`);
-      } catch {
-        console.log(`Could not write log.`);
-      }
+      await this.writeToFile(this.filename);
     }
   }
 }
