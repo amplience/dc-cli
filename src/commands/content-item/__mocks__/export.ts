@@ -4,6 +4,10 @@ import { Arguments } from 'yargs';
 
 export const calls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = [];
 
-export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
+export const handler = async (
+  argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>
+): Promise<boolean> => {
   calls.push(argv);
+
+  return true;
 };

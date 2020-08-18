@@ -1,4 +1,4 @@
-import Ajv from 'ajv';
+import Ajv, { ErrorObject } from 'ajv';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
 import fetch from 'node-fetch';
 
@@ -61,8 +61,9 @@ export class AmplienceSchemaValidator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async validate(body: any): Promise<boolean> {
+  public async validate(body: any): Promise<ErrorObject[]> {
     const validator = await this.getValidatorCached(body);
-    return validator(body);
+    const result = validator(body);
+    return result ? [] : validator.errors || [];
   }
 }

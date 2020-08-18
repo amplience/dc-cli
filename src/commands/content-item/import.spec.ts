@@ -102,6 +102,9 @@ describe('content-item import command', () => {
     };
 
     beforeAll(async () => {
+      jest.mock('readline');
+      jest.mock('../../services/dynamic-content-client-factory');
+
       await rimraf('temp/import/');
     });
 
@@ -884,6 +887,114 @@ describe('content-item import command', () => {
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
       await rimraf('temp/import/force/');
+    });
+
+    it('should exit without prompt when importing with no base and no content', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses([]);
+
+      await ensureDirectoryExists('temp/import/none/');
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('repo');
+
+      mockContent.registerContentType('http://type', 'type', ['repo', 'repo2']);
+      mockContent.registerContentType('http://type2', 'type2', ['repo', 'repo2']);
+      mockContent.registerContentType('http://type3', 'type3', 'repo2');
+
+      mockContent.metrics.reset();
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/import/none/',
+        mapFile: 'temp/import/none.json'
+      };
+      await handler(argv);
+
+      expect(mockContent.items.length).toEqual(0); // Should have done nothing
+
+      await rimraf('temp/import/none/');
+    });
+
+    it("should exit when importing repositories that don't exist on the target, and the prompt to continue is declined", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['n']);
+
+      await ensureDirectoryExists('temp/import/repoMissing/');
+      await ensureDirectoryExists('temp/import/repoMissing/repo');
+      await ensureDirectoryExists('temp/import/repoMissing/repoMissing');
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('repo');
+
+      mockContent.registerContentType('http://type', 'type', ['repo', 'repo2']);
+      mockContent.registerContentType('http://type2', 'type2', ['repo', 'repo2']);
+      mockContent.registerContentType('http://type3', 'type3', 'repo2');
+
+      mockContent.metrics.reset();
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/import/repoMissing/',
+        mapFile: 'temp/import/repoMissing.json'
+      };
+
+      expect(await handler(argv)).toBeFalsy();
+
+      expect(mockContent.items.length).toEqual(0); // Should have done nothing
+
+      await rimraf('temp/import/repoMissing/');
+    });
+
+    it('should exit without prompt when the content service is unreachable (all variants)', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses([]);
+
+      await ensureDirectoryExists('temp/import/netError/');
+
+      // First run: can't get hub.
+      const argv0 = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/import/netError/',
+        mapFile: 'temp/import/netError.json'
+      };
+      expect(await handler(argv0)).toBeFalsy();
+
+      // Other runs: everything but hub fails.
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.failHubList = true;
+
+      const argv1 = {
+        ...yargArgs,
+        ...config,
+        baseFolder: 'ignore',
+        dir: 'temp/import/netError/',
+        mapFile: 'temp/import/netError.json'
+      };
+      expect(await handler(argv1)).toBeFalsy();
+
+      const argv2 = {
+        ...yargArgs,
+        ...config,
+        baseRepo: 'ignore',
+        dir: 'temp/import/netError/',
+        mapFile: 'temp/import/netError.json'
+      };
+      expect(await handler(argv2)).toBeFalsy();
+
+      const argv3 = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/import/netError/',
+        mapFile: 'temp/import/netError.json'
+      };
+      expect(await handler(argv3)).toBeFalsy();
+
+      await rimraf('temp/import/netError/');
     });
   });
 });

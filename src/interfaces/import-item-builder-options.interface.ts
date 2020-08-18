@@ -5,6 +5,7 @@ export interface ImportItemBuilderOptions {
   baseRepo?: string;
   baseFolder?: string;
   mapFile?: string;
+  publish?: boolean;
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;

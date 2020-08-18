@@ -327,10 +327,12 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     const { item, path } = items[i];
 
     try {
-      if (!(await validator.validate(item.body))) {
+      const errors = await validator.validate(item.body);
+      if (errors.length > 0) {
         log.appendLine(
           `WARNING: ${item.label} does not validate under the available schema. It may not import correctly.`
         );
+        log.appendLine(JSON.stringify(errors, null, 2));
       }
     } catch (e) {
       log.appendLine(`WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e}`);

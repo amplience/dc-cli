@@ -28,6 +28,7 @@ import {
 import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { AmplienceSchemaValidator } from '../../common/content-item/amplience-schema-validator';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { PublishQueue } from '../../common/import/publish-queue';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -91,6 +92,12 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Skip any content items that has one or more missing dependancy.'
+    })
+
+    .option('publish', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Publish any content items that have an existing publish status in their JSON.'
     })
 
     .option('logFile', {
@@ -203,12 +210,25 @@ const createOrUpdateContent = async (
     oldItem = existing;
   }
 
+  let result: { newItem: ContentItem; oldVersion: number };
+
   if (oldItem == null) {
-    return { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
+    result = { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
   } else {
     item.version = oldItem.version;
-    return { newItem: await oldItem.related.update(item), oldVersion: oldItem.version || 0 };
+    result = { newItem: await oldItem.related.update(item), oldVersion: oldItem.version || 0 };
   }
+
+  if (item.locale != null && result.newItem.locale != item.locale) {
+    await result.newItem.related.setLocale(item.locale);
+  }
+
+  return result;
+};
+
+const itemShouldPublish = (item: ContentItem): boolean => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (item as any).publish; // Added when creating the filtered content.
 };
 
 const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping, log: FileLog): Promise<void> => {
@@ -317,9 +337,12 @@ const prepareContentForImport = async (
       const filteredContent = {
         id: contentJSON.id,
         label: contentJSON.label,
+        locale: contentJSON.locale,
+        workflow: contentJSON.workflow,
         body: contentJSON.body,
         deliveryId: contentJSON.deliveryId == contentJSON.Id ? undefined : contentJSON.deliveryId,
-        folderId: folder == null ? null : folder.id
+        folderId: folder == null ? null : folder.id,
+        publish: contentJSON.lastPublishedVersion != null
       };
 
       schemaNames.add(contentJSON.body._meta.schema);
@@ -528,7 +551,8 @@ const prepareContentForImport = async (
           );
 
           try {
-            if (!(await validator.validate(item.owner.content.body))) {
+            const errors = await validator.validate(item.owner.content.body);
+            if (errors.length > 0) {
               mustSkip.push(item);
             }
           } catch {
@@ -584,11 +608,14 @@ const importTree = async (
   client: DynamicContent,
   tree: ContentDependancyTree,
   mapping: ContentMapping,
-  log: FileLog
+  log: FileLog,
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
   const abort = (error: Error): void => {
     log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
   };
+
+  const publishable = [];
 
   for (let i = 0; i < tree.levels.length; i++) {
     const level = tree.levels[i];
@@ -628,6 +655,10 @@ const importTree = async (
         updated ? 'UPDATE' : 'CREATE',
         (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
       );
+
+      if (itemShouldPublish(content)) {
+        publishable.push(newItem);
+      }
 
       mapping.registerContentItem(originalId as string, newItem.id as string);
     }
@@ -680,8 +711,32 @@ const importTree = async (
 
         newDependants[i] = newItem;
         mapping.registerContentItem(originalId as string, newItem.id as string);
+      } else {
+        if (itemShouldPublish(content)) {
+          publishable.push(newItem);
+        }
       }
     }
+  }
+
+  if (argv.publish) {
+    const pubQueue = new PublishQueue(argv);
+    log.appendLine(`Publishing ${publishable.length} items.`);
+
+    for (let i = 0; i < publishable.length; i++) {
+      const item = publishable[i];
+
+      try {
+        await pubQueue.publish(item);
+        log.appendLine(`Started publish for ${item.label}.`);
+      } catch (e) {
+        log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
+      }
+    }
+
+    log.appendLine(`Waiting for all publishes to complete...`);
+    await pubQueue.waitForAll();
+    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
   }
 
   log.appendLine('Done!');
@@ -815,7 +870,7 @@ export const handler = async (
 
   if (tree != null) {
     if (!validate) {
-      await importTree(client, tree, mapping, log);
+      await importTree(client, tree, mapping, log, argv);
     } else {
       log.appendLine('--validate was passed, so no content was imported.');
     }

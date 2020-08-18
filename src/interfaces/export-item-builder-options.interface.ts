@@ -7,4 +7,6 @@ export interface ExportItemBuilderOptions {
   schemaId?: string[] | string;
   name?: string[] | string;
   logFile?: string | FileLog;
+
+  exportedIds?: string[];
 }

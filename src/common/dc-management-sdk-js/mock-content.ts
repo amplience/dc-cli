@@ -20,7 +20,7 @@ export interface ItemTemplate {
   repoId: string;
   typeSchemaUri: string;
   version?: number;
-  status?: Status;
+  status?: string;
 
   body?: any;
 }
@@ -40,6 +40,7 @@ export class MockContentMetrics {
   itemsCreated = 0;
   itemsUpdated = 0;
   itemsArchived = 0;
+  itemsUnarchived = 0;
   foldersCreated = 0;
   typesCreated = 0;
   typeSchemasCreated = 0;
@@ -48,6 +49,7 @@ export class MockContentMetrics {
     this.itemsCreated = 0;
     this.itemsUpdated = 0;
     this.itemsArchived = 0;
+    this.itemsUnarchived = 0;
     this.foldersCreated = 0;
     this.typesCreated = 0;
     this.typeSchemasCreated = 0;
@@ -71,6 +73,7 @@ export class MockContent {
 
   // If true, actions performed on content items will throw as if they failed.
   failItemActions: null | 'all' | 'not-version' = null;
+  failHubList: boolean;
 
   uniqueId = 0;
 
@@ -121,9 +124,12 @@ export class MockContent {
   private createMockHub(): Hub {
     const mockHub = new Hub();
 
-    const mockRepoList = jest
-      .fn()
-      .mockImplementation(() => Promise.resolve(new MockPage(ContentRepository, this.repos.map(repo => repo.repo))));
+    const mockRepoList = jest.fn().mockImplementation(() => {
+      if (this.failHubList) {
+        throw new Error('Simulated Netowrk Failure.');
+      }
+      return Promise.resolve(new MockPage(ContentRepository, this.repos.map(repo => repo.repo)));
+    });
     const mockTypesList = jest
       .fn()
       .mockImplementation(() => Promise.resolve(new MockPage(ContentType, Array.from(this.typeById.values()))));
@@ -227,6 +233,9 @@ export class MockContent {
     const mockItemArchive = jest.fn();
     item.related.archive = mockItemArchive;
 
+    const mockItemUnarchive = jest.fn();
+    item.related.unarchive = mockItemUnarchive;
+
     const mockItemVersion = jest.fn();
     item.related.contentItemVersion = mockItemVersion;
 
@@ -260,6 +269,19 @@ export class MockContent {
       this.metrics.itemsArchived++;
 
       item.status = Status.DELETED;
+
+      return Promise.resolve(item);
+    });
+
+    mockItemUnarchive.mockImplementation(() => {
+      if (this.failItemActions) throw new Error('Simulated network failure.');
+      if (item.status == Status.ACTIVE) {
+        throw new Error('Cannot unarchive content that is not archived.');
+      }
+
+      this.metrics.itemsUnarchived++;
+
+      item.status = Status.ACTIVE;
 
       return Promise.resolve(item);
     });
