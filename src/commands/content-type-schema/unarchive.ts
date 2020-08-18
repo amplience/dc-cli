@@ -94,8 +94,8 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       try {
         const log = await new ArchiveLog().loadFromFile(revertLog);
         const ids = log.getData('ARCHIVE');
-        schemas = schemas.filter(schema => ids.indexOf(schema.schemaId as string) != -1);
-        if (schemas.length != ids.length) {
+        schemas = schemas.filter(schema => ids.indexOf(schema.schemaId as string) !== -1);
+        if (schemas.length !== ids.length) {
           missingContent = true;
         }
       } catch (e) {
@@ -104,14 +104,16 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       }
     } else if (schemaId != null) {
       const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
-      schemas = schemas.filter(schema => schemaIds.findIndex(id => equalsOrRegex(schema.schemaId as string, id)) != -1);
+      schemas = schemas.filter(
+        schema => schemaIds.findIndex(id => equalsOrRegex(schema.schemaId as string, id)) !== -1
+      );
     } else {
       allContent = true;
       console.log('No filter, ID or log file was given, so unarchiving all content.');
     }
   }
 
-  if (schemas.length == 0) {
+  if (schemas.length === 0) {
     console.log('Nothing found to unarchive, aborting.');
     return;
   }

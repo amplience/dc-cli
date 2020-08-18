@@ -11,5 +11,6 @@ export const builder = (yargs: Argv): Argv =>
     .demandCommand()
     .help();
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const handler = (): void => {};
+export const handler = (): void => {
+  /* do nothing */
+};

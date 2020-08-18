@@ -36,5 +36,5 @@ export async function confirmArchive(
 
   const answer: string = await asyncQuestion(rl, question);
   rl.close();
-  return answer.length > 0 && answer[0].toLowerCase() == 'y';
+  return answer.length > 0 && answer[0].toLowerCase() === 'y';
 }
