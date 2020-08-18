@@ -60,32 +60,6 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const writeItemBody = async (filename: string, body?: string): Promise<void> => {
-  if (!body) {
-    return;
-  }
-
-  const dir = dirname(filename);
-  if (await promisify(exists)(dir)) {
-    const dirStat = await promisify(lstat)(dir);
-    if (!dirStat || !dirStat.isDirectory()) {
-      throw new Error(`Unable to write schema to "${filename}" as "${dir}" is not a directory.`);
-    }
-  } else {
-    try {
-      await promisify(mkdir)(dir);
-    } catch {
-      throw new Error(`Unable to create directory: "${dir}".`);
-    }
-  }
-
-  try {
-    await promisify(writeFile)(filename, body);
-  } catch {
-    throw new Error(`Unable to write file: "${filename}".`);
-  }
-};
-
 const getOrAddFolderPath = async (
   folderToPathMap: Map<string, string>,
   client: DynamicContent,
@@ -121,26 +95,6 @@ const getOrAddFolderPath = async (
 
   folderToPathMap.set(id, path);
   return path;
-};
-
-export const filterContentItemsBySchemaId = (
-  listToFilter: ContentItem[],
-  listToMatch: string[] = []
-): ContentItem[] => {
-  if (listToMatch.length === 0) {
-    return listToFilter;
-  }
-
-  const unmatchedIdList: string[] = listToMatch.filter(id => !listToFilter.some(item => item.body._meta.schema === id));
-  if (unmatchedIdList.length > 0) {
-    throw new Error(
-      `Content matching the following schema ID(s) could not be found: [${unmatchedIdList
-        .map(u => `'${u}'`)
-        .join(', ')}].\nNothing was exported, exiting.`
-    );
-  }
-
-  return listToFilter.filter(item => listToMatch.some(id => item.body._meta.schema === id));
 };
 
 const getContentItems = async (

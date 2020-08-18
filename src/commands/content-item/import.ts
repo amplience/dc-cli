@@ -338,7 +338,6 @@ const prepareContentForImport = async (
         id: contentJSON.id,
         label: contentJSON.label,
         locale: contentJSON.locale,
-        workflow: contentJSON.workflow,
         body: contentJSON.body,
         deliveryId: contentJSON.deliveryId == contentJSON.Id ? undefined : contentJSON.deliveryId,
         folderId: folder == null ? null : folder.id,
