@@ -246,6 +246,9 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   if (invalidContentItems) {
     // There are missing content items. We'll need to fetch them and see what their deal is.
     const missingIdArray = Array.from(missingIDs);
+
+    const allRepo = repoId == null && folderId == null;
+
     for (let i = 0; i < missingIdArray.length; i++) {
       let item: ContentItem | null = null;
 
@@ -254,16 +257,23 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
       } catch {}
 
       if (item != null) {
-        if (item.status === 'ACTIVE') {
-          // The item is active and should probably be included.
-          const path = '_dependancies/';
-          items.push({ item, path });
+        // The item is active and should probably be included.
+        let path = '_dependancies/';
 
-          log.appendLine(`Referenced content '${item.label}' added to the export.`);
-        } else {
-          // The item is archived and should not be included. Make a note to the user.
-          log.appendLine(`Referenced content '${item.label}' is archived, so was not exported.`);
+        if (allRepo) {
+          // Find the repository for this item.
+          const repo = await item.related.contentRepository();
+
+          path = join(sanitize(repo.label as string), path);
         }
+
+        items.push({ item, path });
+
+        log.appendLine(
+          item.status === 'ACTIVE'
+            ? `Referenced content '${item.label}' added to the export.`
+            : `Referenced content '${item.label}' is archived, but is needed as a dependancy. It has been added to the export.`
+        );
       } else {
         log.appendLine(`Referenced content ${missingIdArray[i]} does not exist.`);
       }
