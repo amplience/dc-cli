@@ -23,6 +23,7 @@ export interface ItemTemplate {
   status?: string;
 
   body?: any;
+  dependancy?: string;
 }
 
 export interface ItemInfo {
@@ -354,6 +355,7 @@ export class MockContent {
         folderId: folderNullOrEmpty ? null : folderId,
         version: template.version,
         body: {
+          ...template.body,
           _meta: {
             schema: template.typeSchemaUri
           }
@@ -540,6 +542,10 @@ export function getItemInfo(items: ItemTemplate[]): ItemInfo {
 }
 
 export function getItemName(baseDir: string, item: ItemTemplate, info: ItemInfo, validRepos?: string[]): string {
+  if (item.dependancy) {
+    return join(baseDir, item.dependancy, '_dependancies', item.label + '.json');
+  }
+
   if (validRepos) {
     let basePath = item.folderPath || '';
     if (info.repos.length > 1 && validRepos.indexOf(item.repoId) !== -1) {

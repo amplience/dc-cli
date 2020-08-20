@@ -14,7 +14,7 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
+import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator } from '../../common/content-item/amplience-schema-validator';
@@ -227,42 +227,56 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   }
 
   log.appendLine('Scanning for dependancies.');
-  const tree = new ContentDependancyTree(
-    items.map(item => ({ repo: dummyRepo, content: item.item })),
-    new ContentMapping()
-  );
+
+  const repoItems: RepositoryContentItem[] = items.map(item => ({ repo: dummyRepo, content: item.item }));
 
   const missingIDs = new Set<string>();
-  const invalidContentItems = tree.filterAny(item => {
-    const missingDeps = item.dependancies.filter(dep => !tree.byId.has(dep.dependancy.id as string));
-    missingDeps.forEach(dep => {
-      if (dep.dependancy.id != null) {
-        missingIDs.add(dep.dependancy.id);
-      }
-    });
-    return missingDeps.length > 0;
-  });
+  let newMissingIDs: Set<string>;
+  do {
+    const tree = new ContentDependancyTree(repoItems, new ContentMapping());
 
-  if (invalidContentItems) {
+    newMissingIDs = new Set();
+    tree.filterAny(item => {
+      const missingDeps = item.dependancies.filter(dep => !tree.byId.has(dep.dependancy.id as string));
+      missingDeps.forEach(dep => {
+        if (dep.dependancy.id != null) {
+          if (!missingIDs.has(dep.dependancy.id)) {
+            newMissingIDs.add(dep.dependancy.id);
+          }
+          missingIDs.add(dep.dependancy.id);
+        }
+      });
+      return missingDeps.length > 0;
+    });
+
+    // Add the newly found content to the items list.
+    const newIdArray = Array.from(newMissingIDs);
+    for (let i = 0; i < newIdArray.length; i++) {
+      try {
+        const item = await client.contentItems.get(newIdArray[i]);
+        // Add this item as a dependancy.
+        repoItems.push({ repo: await item.related.contentRepository(), content: item });
+      } catch {}
+    }
+  } while (newMissingIDs.size > 0);
+
+  if (missingIDs.size > 0) {
     // There are missing content items. We'll need to fetch them and see what their deal is.
     const missingIdArray = Array.from(missingIDs);
 
     const allRepo = repoId == null && folderId == null;
 
     for (let i = 0; i < missingIdArray.length; i++) {
-      let item: ContentItem | null = null;
+      const repoItem = repoItems.find(ri => ri.content.id == missingIdArray[i]);
 
-      try {
-        item = await client.contentItems.get(missingIdArray[i]);
-      } catch {}
-
-      if (item != null) {
+      if (repoItem != null) {
         // The item is active and should probably be included.
+        const item = repoItem.content;
         let path = '_dependancies/';
 
         if (allRepo) {
           // Find the repository for this item.
-          const repo = await item.related.contentRepository();
+          const repo = repoItem.repo;
 
           path = join(sanitize(repo.label as string), path);
         }

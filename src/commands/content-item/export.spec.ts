@@ -391,5 +391,83 @@ describe('content-item export command', () => {
 
       await rimraf('temp/export/allFilter/');
     });
+
+    function dependsOn(itemIds: string[]): any {
+      return {
+        links: itemIds.map(id => ({
+          _meta: {
+            schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
+          },
+          contentType: 'https://dev-solutions.s3.amazonaws.com/DynamicContentTypes/Accelerators/blog.json',
+          id: id
+        }))
+      };
+    }
+
+    it('should export content outwith the filter if it is depended on', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const exists: ItemTemplate[] = [
+        {
+          label: 'item2',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://typeD',
+          folderPath: 'folder1',
+          body: dependsOn(['item5', 'item7'])
+        },
+        { label: 'item3', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'folder1/nested' },
+
+        // These are in a different folder, but exported as dependancies.
+        {
+          id: 'item5',
+          label: 'item5',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://typeD',
+          folderPath: 'folder2',
+          body: dependsOn(['item6']),
+          dependancy: 'folder1'
+        },
+        {
+          id: 'item6',
+          label: 'item6',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folder2',
+          body: dependsOn(['item5']),
+          dependancy: 'folder1'
+        },
+        {
+          id: 'item7',
+          label: 'item7',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folder2',
+          dependancy: 'folder1'
+        }
+      ];
+
+      const skips: ItemTemplate[] = [
+        { label: 'item1', repoId: 'repo1', typeSchemaUri: 'http://type' },
+        { label: 'item4', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'folder2' }
+      ];
+
+      const templates = skips.concat(exists);
+
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/export/folder1',
+        folderId: 'folder1'
+      };
+      await handler(argv);
+
+      await itemsExist('temp/export/', exists);
+      await itemsDontExist('temp/export/', skips);
+
+      await rimraf('temp/export/folder1/');
+    });
   });
 });
