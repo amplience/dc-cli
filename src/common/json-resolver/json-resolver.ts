@@ -12,13 +12,8 @@ export async function jsonResolver(jsonToResolve = '', relativeDir: string = __d
   } catch {}
 
   if (jsonToResolve.match(/^(http|https):\/\//)) {
-    const result = await axios.get(jsonToResolve);
-
-    if (typeof result.data == 'string') {
-      return result.data;
-    }
-
-    return JSON.stringify(result.data);
+    const result = await axios.get(jsonToResolve, { transformResponse: data => data });
+    return result.data;
   }
 
   let resolvedFilename: string | URL = jsonToResolve;

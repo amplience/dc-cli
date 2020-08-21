@@ -11,4 +11,6 @@ export const builder = (yargs: Argv): Argv =>
     .demandCommand()
     .help();
 
-export const handler = (): void => {};
+export const handler = (): void => {
+  /* do nothing */
+};
