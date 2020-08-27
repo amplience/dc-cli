@@ -40,20 +40,7 @@ describe('publish-queue', () => {
       jest.resetAllMocks();
     });
 
-    // should request a publish using the REST api, with authentication given by the creation arguments
-    // should wait for publish completion when hitting the concurrent limit and attempting to publish more
-    // should never wait for publish completion between publishes when less than the concurrent limit
     // should wait for all publishes to complete when calling waitForAll
-    // should complete immediately when calling waitForAll with no publishes in progress
-
-    // should throw an error when publish link is not present
-    // should throw an error when publish fails to start (request is not OK)
-    // should throw an error when publish POST response headers do not include a Location for the job status
-
-    // should ignore an attempt waiting for job status if fetching it does not succeed, and request again later as usual
-    // should delay when a job reports as not completed and it is being waited on
-    // should throw an error when waiting for a publish job exceeds the maxAttempts number
-    // should report failed publishes in the failedJobs list
 
     function sharedMock(templates: PublishTemplate[]): void {
       (OAuth2Client.prototype.getToken as jest.Mock).mockImplementation(() => {
@@ -318,10 +305,8 @@ describe('publish-queue', () => {
       expect(totalPolls).toEqual(0);
     });
 
-    // should ignore an attempt waiting for job status if fetching it does not succeed, and request again later as usual
     // should delay when a job reports as not completed and it is being waited on
     // should throw an error when waiting for a publish job exceeds the maxAttempts number
-    // should report failed publishes in the failedJobs list
 
     it('should ignore an attempt waiting for job status if fetching it does not succeed, and request again later as usual', async () => {
       const item1 = getPublishableItem('id1');

@@ -4,11 +4,9 @@ import { promisify } from 'util';
 
 export class ContentMapping {
   contentItems: Map<string, string>;
-  contentTypes: Map<string, string>;
 
   constructor() {
     this.contentItems = new Map<string, string>();
-    this.contentTypes = new Map<string, string>();
   }
 
   getContentItem(id: string | undefined): string | undefined {
@@ -21,18 +19,6 @@ export class ContentMapping {
 
   registerContentItem(fromId: string, toId: string): void {
     this.contentItems.set(fromId, toId);
-  }
-
-  getContentType(id: string | undefined): string | undefined {
-    if (id === undefined) {
-      return undefined;
-    }
-
-    return this.contentTypes.get(id);
-  }
-
-  registerContentType(fromId: string, toId: string): void {
-    this.contentTypes.set(fromId, toId);
   }
 
   async save(filename: string): Promise<void> {

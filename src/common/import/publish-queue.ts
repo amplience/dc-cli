@@ -19,7 +19,7 @@ async function delay(duration: number): Promise<void> {
   });
 }
 
-interface JobRequest {
+export interface JobRequest {
   item: ContentItem;
   href: string;
 }

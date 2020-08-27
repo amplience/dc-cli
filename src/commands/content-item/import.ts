@@ -96,8 +96,14 @@ export const builder = (yargs: Argv): void => {
 
     .option('publish', {
       type: 'boolean',
-      boolean: false,
+      boolean: true,
       describe: 'Publish any content items that have an existing publish status in their JSON.'
+    })
+
+    .option('republish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
     })
 
     .option('logFile', {
@@ -197,12 +203,17 @@ const traverseRecursive = async (path: string, action: (path: string) => Promise
   );
 };
 
+interface ContentImportResult {
+  newItem: ContentItem;
+  oldVersion: number;
+}
+
 const createOrUpdateContent = async (
   client: DynamicContent,
   repo: ContentRepository,
   existing: string | ContentItem | null,
   item: ContentItem
-): Promise<{ newItem: ContentItem; oldVersion: number }> => {
+): Promise<ContentImportResult> => {
   let oldItem: ContentItem | null = null;
   if (typeof existing === 'string') {
     oldItem = await client.contentItems.get(existing);
@@ -210,13 +221,14 @@ const createOrUpdateContent = async (
     oldItem = existing;
   }
 
-  let result: { newItem: ContentItem; oldVersion: number };
+  let result: ContentImportResult;
 
   if (oldItem == null) {
     result = { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
   } else {
+    const oldVersion = oldItem.version || 0;
     item.version = oldItem.version;
-    result = { newItem: await oldItem.related.update(item), oldVersion: oldItem.version || 0 };
+    result = { newItem: await oldItem.related.update(item), oldVersion };
   }
 
   if (item.locale != null && result.newItem.locale != item.locale) {
@@ -614,7 +626,7 @@ const importTree = async (
     log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
   };
 
-  const publishable = [];
+  let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
 
   for (let i = 0; i < tree.levels.length; i++) {
     const level = tree.levels[i];
@@ -655,13 +667,33 @@ const importTree = async (
         (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
       );
 
-      if (itemShouldPublish(content)) {
-        publishable.push(newItem);
+      if (itemShouldPublish(content) && (newItem.version != oldVersion || argv.republish)) {
+        publishable.push({ item: newItem, node: item });
       }
 
       mapping.registerContentItem(originalId as string, newItem.id as string);
     }
   }
+
+  // Filter publishables to remove items that will be published as part of another publish.
+  // Cuts down on unnecessary requests.
+  let publishChildren = 0;
+
+  publishable = publishable.filter(entry => {
+    let isTopLevel = true;
+
+    tree.traverseDependants(entry.node, dependant => {
+      if (dependant != entry.node && publishable.findIndex(entry => entry.node === dependant) !== -1) {
+        isTopLevel = false;
+      }
+    });
+
+    if (!isTopLevel) {
+      publishChildren++;
+    }
+
+    return isTopLevel;
+  });
 
   // Create circular dependancies with all the mappings we have, and update the mapping.
   // Do a second pass that updates the existing assets to point to the new ones.
@@ -711,8 +743,8 @@ const importTree = async (
         newDependants[i] = newItem;
         mapping.registerContentItem(originalId as string, newItem.id as string);
       } else {
-        if (itemShouldPublish(content)) {
-          publishable.push(newItem);
+        if (itemShouldPublish(content) && (newItem.version != oldVersion || argv.republish)) {
+          publishable.push({ item: newItem, node: item });
         }
       }
     }
@@ -720,10 +752,10 @@ const importTree = async (
 
   if (argv.publish) {
     const pubQueue = new PublishQueue(argv);
-    log.appendLine(`Publishing ${publishable.length} items.`);
+    log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
 
     for (let i = 0; i < publishable.length; i++) {
-      const item = publishable[i];
+      const item = publishable[i].item;
 
       try {
         await pubQueue.publish(item);
@@ -752,6 +784,7 @@ export const handler = async (
   const { dir, baseRepo, baseFolder, validate, logFile } = argv;
   const force = argv.force || false;
   let { mapFile } = argv;
+  argv.publish = argv.publish || argv.republish;
 
   const client = dynamicContentClientFactory(argv);
   const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
@@ -867,9 +900,11 @@ export const handler = async (
     tree = await prepareContentForImport(client, hub, importRepos, null, mapping, log, argv);
   }
 
+  let result = true;
+
   if (tree != null) {
     if (!validate) {
-      await importTree(client, tree, mapping, log, argv);
+      result = await importTree(client, tree, mapping, log, argv);
     } else {
       log.appendLine('--validate was passed, so no content was imported.');
     }
@@ -877,5 +912,5 @@ export const handler = async (
 
   trySaveMapping(mapFile, mapping, log);
   log.close();
-  return true;
+  return result;
 };

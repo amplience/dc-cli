@@ -2,13 +2,11 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import { equalsOrRegex } from '../../common/filter/filter';
 import sanitize from 'sanitize-filename';
 import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.service';
 
-import { mkdir, writeFile, exists, lstat } from 'fs';
-import { promisify } from 'util';
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
@@ -63,12 +61,10 @@ export const builder = (yargs: Argv): void => {
 const getOrAddFolderPath = async (
   folderToPathMap: Map<string, string>,
   client: DynamicContent,
-  folderOrId: Folder | string | undefined,
-  log: FileLog,
-  baseDir?: string
+  folder: Folder,
+  log: FileLog
 ): Promise<string> => {
-  if (folderOrId == null) return '';
-  const id = typeof folderOrId === 'string' ? folderOrId : (folderOrId.id as string);
+  const id = folder.id as string;
 
   const mapResult = folderToPathMap.get(id);
   if (mapResult !== undefined) {
@@ -76,8 +72,6 @@ const getOrAddFolderPath = async (
   }
 
   // Build the path for this folder.
-  const folder = typeof folderOrId === 'string' ? await client.folders.get(folderOrId) : folderOrId;
-
   const name = sanitize(folder.name as string);
   let path: string;
   try {
@@ -87,10 +81,6 @@ const getOrAddFolderPath = async (
   } catch {
     log.appendLine(`Could not determine path for ${folder.name}. Placing in base directory.`);
     path = `${name}`;
-  }
-
-  if (baseDir != null) {
-    path = join(baseDir, path);
   }
 
   folderToPathMap.set(id, path);
