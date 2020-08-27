@@ -25,7 +25,7 @@ export interface JobRequest {
 }
 
 export class PublishQueue {
-  maxWaiting = 3;
+  maxWaiting = 10;
   attemptDelay = 1000;
   failedJobs: JobRequest[] = [];
 
