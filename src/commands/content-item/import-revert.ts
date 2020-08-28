@@ -20,7 +20,6 @@ export const revert = async (argv: Arguments<ImportItemBuilderOptions & Configur
 
   const toArchive = log.getData('CREATE'); // Undo created content by archiving it.
   const toDowngrade = log.getData('UPDATE'); // Undo updated content by downgrading it.
-  // const folderToRemove = log.getData('FOLDER'); // Folders to remove. (TODO: needs changes to management sdk)
 
   const items: { item: ContentItem; oldVersion: number; newVersion: number }[] = [];
 
@@ -39,7 +38,7 @@ export const revert = async (argv: Arguments<ImportItemBuilderOptions & Configur
 
   for (let i = 0; i < toDowngrade.length; i++) {
     const split = toDowngrade[i].split(' ');
-    if (split.length != 3) {
+    if (split.length !== 3) {
       continue; // Must be in format (id, oldVersion, newVersion)
     }
     const id = split[0];

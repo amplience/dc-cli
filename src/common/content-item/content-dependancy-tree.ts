@@ -1,5 +1,6 @@
 import { ContentItem, ContentRepository } from 'dc-management-sdk-js';
 import { ContentMapping } from './content-mapping';
+import { Body } from './body';
 
 type DependancyContentTypeSchema =
   | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
@@ -36,6 +37,8 @@ export const referenceTypes = [
   'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link',
   'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'
 ];
+
+type RecursiveSearchStep = Body | ContentDependancy | Array<Body>;
 
 export class ContentDependancyTree {
   levels: ContentDependancyLayer[];
@@ -98,8 +101,7 @@ export class ContentDependancyTree {
 
   public searchObjectForContentDependancies(
     item: RepositoryContentItem,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    body: any,
+    body: RecursiveSearchStep,
     result: ContentDependancyInfo[]
   ): void {
     if (Array.isArray(body)) {
@@ -115,12 +117,12 @@ export class ContentDependancyTree {
         typeof body.contentType === 'string' &&
         typeof body.id === 'string'
       ) {
-        result.push({ dependancy: body, owner: item });
+        result.push({ dependancy: body as ContentDependancy, owner: item });
         return;
       }
 
       allPropertyNames.forEach(propName => {
-        const prop = body[propName];
+        const prop = (body as Body)[propName];
         if (typeof prop === 'object') {
           this.searchObjectForContentDependancies(item, prop, result);
         }

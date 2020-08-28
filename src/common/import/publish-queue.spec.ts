@@ -305,9 +305,6 @@ describe('publish-queue', () => {
       expect(totalPolls).toEqual(0);
     });
 
-    // should delay when a job reports as not completed and it is being waited on
-    // should throw an error when waiting for a publish job exceeds the maxAttempts number
-
     it('should ignore an attempt waiting for job status if fetching it does not succeed, and request again later as usual', async () => {
       const item1 = getPublishableItem('id1');
 
@@ -375,6 +372,31 @@ describe('publish-queue', () => {
       await queue.waitForAll();
 
       expect(totalPolls).toEqual(10);
+    });
+
+    it('should error publishes when waiting for a publish job exceeds the maxAttempts number', async () => {
+      const items = multiMock(10, 5); // 10 items, return success on the 5th poll (after our limit)
+
+      const queue = makeQueue(5); // After 5 concurrent requests, start waiting.
+      queue.maxAttempts = 2;
+
+      for (let i = 0; i < items.length; i++) {
+        await queue.publish(items[i]);
+
+        if (queue.failedJobs.length > 0) {
+          // The first job should have failed.
+          expect(i).toEqual(5); // We only waited for the first job after 0-4 were in the queue.
+          expect(queue.failedJobs[0].item).toBe(items[0]);
+          break;
+        }
+
+        expect(i).toBeLessThan(5);
+      }
+
+      await queue.waitForAll();
+
+      expect(totalPolls).toEqual(12); // 6 total publish requests. 2 waits before each before giving up.
+      expect(queue.failedJobs.length).toEqual(6);
     });
   });
 });

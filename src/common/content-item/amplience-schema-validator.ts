@@ -1,5 +1,6 @@
 import Ajv, { ErrorObject } from 'ajv';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { Body } from './body';
 import fetch from 'node-fetch';
 
 export class AmplienceSchemaValidator {
@@ -33,8 +34,7 @@ export class AmplienceSchemaValidator {
     this.cache = new Map();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private getValidatorCached(body: any): PromiseLike<Ajv.ValidateFunction> {
+  private getValidatorCached(body: Body): PromiseLike<Ajv.ValidateFunction> {
     const schemaId = body._meta.schema;
 
     const cacheResult = this.cache.get(schemaId);
@@ -60,8 +60,7 @@ export class AmplienceSchemaValidator {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async validate(body: any): Promise<ErrorObject[]> {
+  public async validate(body: Body): Promise<ErrorObject[]> {
     const validator = await this.getValidatorCached(body);
     const result = validator(body);
     return result ? [] : validator.errors || [];

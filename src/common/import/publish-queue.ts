@@ -26,6 +26,7 @@ export interface JobRequest {
 
 export class PublishQueue {
   maxWaiting = 10;
+  maxAttempts = 30;
   attemptDelay = 1000;
   failedJobs: JobRequest[] = [];
 
@@ -95,7 +96,8 @@ export class PublishQueue {
     // Request the status for the oldest ID.
     // If it's still not published/errored, then wait a bit and try again.
 
-    while (true) {
+    let attempts = 0;
+    for (; attempts < this.maxAttempts; attempts++) {
       let job: PublishingJob;
       try {
         job = await (await this.fetch(oldestJob.href, 'GET')).json();
@@ -112,6 +114,10 @@ export class PublishQueue {
       } else {
         await delay(this.attemptDelay);
       }
+    }
+
+    if (attempts == this.maxAttempts) {
+      this.failedJobs.push(oldestJob);
     }
 
     // The wait completed. Notify the first in the queue.
