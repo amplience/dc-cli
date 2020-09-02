@@ -767,7 +767,11 @@ const importTree = async (
 
     log.appendLine(`Waiting for all publishes to complete...`);
     await pubQueue.waitForAll();
+    
     log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
+    pubQueue.failedJobs.forEach(job => {
+      log.appendLine(` - ${job.item.label}`);
+    });
   }
 
   log.appendLine('Done!');

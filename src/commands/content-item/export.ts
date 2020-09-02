@@ -229,12 +229,11 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     tree.filterAny(item => {
       const missingDeps = item.dependancies.filter(dep => !tree.byId.has(dep.dependancy.id as string));
       missingDeps.forEach(dep => {
-        if (dep.dependancy.id != null) {
-          if (!missingIDs.has(dep.dependancy.id)) {
-            newMissingIDs.add(dep.dependancy.id);
-          }
-          missingIDs.add(dep.dependancy.id);
+        const id = dep.dependancy.id as string;
+        if (!missingIDs.has(id)) {
+          newMissingIDs.add(id);
         }
+        missingIDs.add(id);
       });
       return missingDeps.length > 0;
     });
