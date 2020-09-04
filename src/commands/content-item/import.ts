@@ -26,7 +26,7 @@ import {
 } from '../../common/content-item/content-dependancy-tree';
 
 import { asyncQuestion } from '../../common/archive/archive-helpers';
-import { AmplienceSchemaValidator } from '../../common/content-item/amplience-schema-validator';
+import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 
@@ -550,7 +550,7 @@ const prepareContentForImport = async (
     if (skipIncomplete) {
       tree.removeContent(invalidContentItems);
     } else {
-      const validator = new AmplienceSchemaValidator(schemas);
+      const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
 
       const mustSkip: ItemContentDependancies[] = [];
       await Promise.all(
@@ -767,7 +767,7 @@ const importTree = async (
 
     log.appendLine(`Waiting for all publishes to complete...`);
     await pubQueue.waitForAll();
-    
+
     log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
     pubQueue.failedJobs.forEach(job => {
       log.appendLine(` - ${job.item.label}`);

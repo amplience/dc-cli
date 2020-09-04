@@ -73,6 +73,12 @@ describe('content-item export command', () => {
           'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('publish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'When available, export the last published version of a content item rather than its newest version.'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
@@ -734,6 +740,56 @@ describe('content-item export command', () => {
       await itemsDontExist('temp/export/failSubfolder/', skips);
 
       await rimraf('temp/export/failSubfolder/');
+    });
+
+    it('should fetch the last published version of content when available and --publish is passed', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses([]);
+
+      const templates: ItemTemplate[] = [
+        { label: 'item1', repoId: 'repo1', typeSchemaUri: 'http://type' },
+        {
+          label: 'item2',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folderTest',
+          lastPublishedVersion: 4,
+          version: 5
+        },
+        {
+          label: 'item3',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folderTest',
+          lastPublishedVersion: 5, // Version is the same, so does not need to be fetched.
+          version: 5
+        },
+        {
+          label: 'item4',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folderTest/nested',
+          lastPublishedVersion: 3,
+          version: 5
+        }
+      ];
+
+      const content = new MockContent(dynamicContentClientFactory as jest.Mock);
+      content.importItemTemplates(templates);
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/export/version/',
+        publish: true
+      };
+      await handler(argv);
+
+      expect(content.metrics.itemsVersionGet).toEqual(2);
+
+      await itemsExist('temp/export/version/', templates);
+
+      await rimraf('temp/export/version/');
     });
   });
 });

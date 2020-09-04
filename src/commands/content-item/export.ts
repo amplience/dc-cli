@@ -1,4 +1,4 @@
-import { Arguments, Argv } from 'yargs';
+import { Arguments, Argv, argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
@@ -9,13 +9,21 @@ import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.servi
 
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
+import {
+  ContentItem,
+  Folder,
+  DynamicContent,
+  Hub,
+  ContentRepository,
+  ContentTypeSchema,
+  CachedSchema
+} from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import { AmplienceSchemaValidator } from '../../common/content-item/amplience-schema-validator';
+import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 
 export const command = 'export <dir>';
 
@@ -50,6 +58,11 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       describe:
         'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
+    })
+    .option('publish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'When available, export the last published version of a content item rather than its newest version.'
     })
     .option('logFile', {
       type: 'string',
@@ -94,7 +107,8 @@ const getContentItems = async (
   dir: string,
   log: FileLog,
   repoId?: string | string[],
-  folderId?: string | string[]
+  folderId?: string | string[],
+  publish?: boolean
 ): Promise<{ path: string; item: ContentItem }[]> => {
   const items: { path: string; item: ContentItem }[] = [];
 
@@ -186,11 +200,24 @@ const getContentItems = async (
     baseFolder = false;
     processFolders = nextFolders.splice(0, Math.min(nextFolders.length, parallelism));
   }
+
+  if (publish) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      const publishedVersion: number | undefined = (item.item as any).lastPublishedVersion;
+      if (publishedVersion != null && publishedVersion != item.item.version) {
+        const newVersion = await item.item.related.contentItemVersion(publishedVersion);
+        item.item = newVersion;
+      }
+    }
+  }
+
   return items;
 };
 
 export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, repoId, folderId, schemaId, name, logFile } = argv;
+  const { dir, repoId, folderId, schemaId, name, logFile, publish } = argv;
 
   const dummyRepo = new ContentRepository();
 
@@ -200,7 +227,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   const hub = await client.hubs.get(argv.hubId);
 
   log.appendLine('Retrieving content items, please wait.');
-  let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId);
+  let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId, publish);
 
   // Filter using the schemaId and name, if present.
   if (schemaId != null) {
@@ -287,8 +314,9 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   const filenames: string[] = [];
 
   const schemas = await paginator(hub.related.contentTypeSchema.list);
+  const types = await paginator(hub.related.contentTypes.list);
 
-  const validator = new AmplienceSchemaValidator(schemas);
+  const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
 
   for (let i = 0; i < items.length; i++) {
     const { item, path } = items[i];
@@ -302,7 +330,9 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
         log.appendLine(JSON.stringify(errors, null, 2));
       }
     } catch (e) {
-      log.appendLine(`WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e}`);
+      log.appendLine(
+        `WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e} \n ${e.stack}`
+      );
     }
 
     let resolvedPath: string;

@@ -236,7 +236,7 @@ describe('revert tests', function() {
 
     await createLog(
       'temp/revert/revertSkip.txt',
-      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nUPDATE id8 1 1\nUPDATE id9 0 1 invalid'
+      '// Title\n// Comment\nUPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nUPDATE id8 1 1\nUPDATE id9 0 1 invalid'
     );
 
     // Create content to import

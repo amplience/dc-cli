@@ -2,8 +2,19 @@ import * as cli from './cli';
 import Yargs from 'yargs/yargs';
 import { configureCommandOptions } from './commands/configure';
 import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-options';
+import rmdir from 'rimraf';
 
 jest.mock('./commands/configure');
+
+function rimraf(dir: string): Promise<Error> {
+  return new Promise((resolve): void => {
+    rmdir(dir, resolve);
+  });
+}
+
+afterAll(() => {
+  rimraf('temp/');
+});
 
 describe('cli', (): void => {
   afterEach(() => {

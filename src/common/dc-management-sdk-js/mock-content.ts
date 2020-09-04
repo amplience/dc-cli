@@ -9,7 +9,8 @@ import {
   ContentType,
   ContentTypeSchema,
   ContentRepositoryContentType,
-  Status
+  Status,
+  ContentTypeCachedSchema
 } from 'dc-management-sdk-js';
 import MockPage from './mock-page';
 
@@ -45,6 +46,7 @@ export class MockContentMetrics {
   itemsArchived = 0;
   itemsUnarchived = 0;
   itemsLocaleSet = 0;
+  itemsVersionGet = 0;
   foldersCreated = 0;
   typesCreated = 0;
   typeSchemasCreated = 0;
@@ -55,6 +57,7 @@ export class MockContentMetrics {
     this.itemsArchived = 0;
     this.itemsUnarchived = 0;
     this.itemsLocaleSet = 0;
+    this.itemsVersionGet = 0;
     this.foldersCreated = 0;
     this.typesCreated = 0;
     this.typeSchemasCreated = 0;
@@ -341,6 +344,7 @@ export class MockContent {
       const newItem = { ...item };
 
       newItem.version = version;
+      this.metrics.itemsVersionGet++;
 
       return Promise.resolve(newItem);
     });
@@ -367,6 +371,18 @@ export class MockContent {
     if (!schemaOnly) {
       const type = new ContentType({ id: id, contentTypeUri: schemaName, settings: { label: basename(schemaName) } });
       this.typeById.set(id, type);
+
+      const mockCached = jest.fn();
+      type.related.contentTypeSchema.get = mockCached;
+
+      mockCached.mockImplementation(() => {
+        const cached = new ContentTypeCachedSchema({
+          contentTypeUri: schemaName,
+          cachedSchema: { ...body, $id: schemaName }
+        });
+
+        return Promise.resolve(cached);
+      });
 
       const repoArray = typeof repos === 'string' ? [repos] : repos;
       repoArray.forEach(repoName => {
@@ -399,6 +415,7 @@ export class MockContent {
         id: template.id || '0',
         folderId: folderNullOrEmpty ? null : folderId,
         version: template.version,
+        lastPublishedVersion: template.lastPublishedVersion,
         locale: template.locale,
         body: {
           ...template.body,
