@@ -1,4 +1,4 @@
-import { Arguments, Argv, argv } from 'yargs';
+import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
@@ -9,15 +9,7 @@ import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.servi
 
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import {
-  ContentItem,
-  Folder,
-  DynamicContent,
-  Hub,
-  ContentRepository,
-  ContentTypeSchema,
-  CachedSchema
-} from 'dc-management-sdk-js';
+import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
@@ -330,9 +322,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
         log.appendLine(JSON.stringify(errors, null, 2));
       }
     } catch (e) {
-      log.appendLine(
-        `WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e} \n ${e.stack}`
-      );
+      log.appendLine(`WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e}`);
     }
 
     let resolvedPath: string;
