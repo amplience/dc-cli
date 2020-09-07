@@ -25,7 +25,6 @@ export interface JobRequest {
 }
 
 export class PublishQueue {
-  maxWaiting = 10;
   maxAttempts = 30;
   attemptDelay = 1000;
   failedJobs: JobRequest[] = [];
@@ -138,7 +137,7 @@ export class PublishQueue {
   }
 
   private async rateLimit(): Promise<void> {
-    if (this.inProgressJobs.length != this.maxWaiting) {
+    if (this.inProgressJobs.length == 0) {
       return;
     }
 
