@@ -63,8 +63,9 @@ export class AmplienceSchemaValidator {
 
     if (internal === undefined) {
       try {
-        body = await (await fetch(uri)).json();
-      } catch {
+        const result = await (await fetch(uri)).text();
+        body = JSON.parse(result.trim());
+      } catch (e) {
         return false;
       }
     } else {
