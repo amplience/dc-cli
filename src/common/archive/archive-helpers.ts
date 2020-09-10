@@ -10,7 +10,7 @@ export function getDefaultLogPath(type: string, action: string, platform: string
   );
 }
 
-function asyncQuestion(rl: ReadLine, question: string): Promise<string> {
+export function asyncQuestion(rl: ReadLine, question: string): Promise<string> {
   return new Promise((resolve): void => {
     rl.question(question, resolve);
   });

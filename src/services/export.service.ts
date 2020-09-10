@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { HalResource } from 'dc-management-sdk-js';
 import * as path from 'path';
 import { URL } from 'url';
 import DataPresenter from '../view/data-presenter';
@@ -27,7 +26,7 @@ export const uniqueFilename = (dir: string, uri = '', extension: string, exportF
   return uniqueFilename;
 };
 
-export const writeJsonToFile = <T extends HalResource>(filename: string, resource: T): void => {
+export const writeJsonToFile = <T extends {}>(filename: string, resource: T): void => {
   try {
     fs.writeFileSync(filename, JSON.stringify(resource, null, 2));
   } catch (e) {
@@ -51,6 +50,20 @@ export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: str
     });
 
     rl.question('Do you want to continue (y/n)?: ', answer => {
+      rl.close();
+      return resolve(answer === 'y');
+    });
+  });
+};
+
+export const promptToExportSettings = (filename: string): Promise<boolean> => {
+  return new Promise((resolve): void => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question(`Do you want to export setting to ${filename} (y/n)?: `, answer => {
       rl.close();
       return resolve(answer === 'y');
     });
