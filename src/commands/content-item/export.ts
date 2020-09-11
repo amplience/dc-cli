@@ -17,6 +17,11 @@ import { ContentMapping } from '../../common/content-item/content-mapping';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 
+interface PublishedContentItem {
+  lastPublishedVersion?: number;
+  lastPublishedDate?: string;
+}
+
 export const command = 'export <dir>';
 
 export const desc = 'Export Content Items';
@@ -197,7 +202,7 @@ const getContentItems = async (
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
 
-      const publishedVersion: number | undefined = (item.item as any).lastPublishedVersion;
+      const publishedVersion: number | undefined = (item.item as PublishedContentItem).lastPublishedVersion;
       if (publishedVersion != null && publishedVersion != item.item.version) {
         const newVersion = await item.item.related.contentItemVersion(publishedVersion);
         item.item = newVersion;

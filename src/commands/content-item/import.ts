@@ -555,8 +555,7 @@ const prepareContentForImport = async (
       const mustSkip: ItemContentDependancies[] = [];
       await Promise.all(
         invalidContentItems.map(async item => {
-          tree.removeContentDependancies(
-            item.owner,
+          tree.removeContentDependanciesFromBody(
             item.owner.content.body,
             item.dependancies.map(dependancy => dependancy.dependancy)
           );
