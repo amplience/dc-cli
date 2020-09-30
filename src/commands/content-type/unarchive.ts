@@ -5,8 +5,9 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { getDefaultLogPath, confirmArchive } from '../../common/archive/archive-helpers';
+import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
+import { getDefaultLogPath } from '../../common/log-helpers';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('type', 'unarchive', platform);

@@ -21,7 +21,7 @@ export class ArchiveLog {
       if (line.startsWith('//')) {
         // The first comment is the title, all ones after it should be recorded as comment items.
         const message = line.substring(2).trimLeft();
-        if (this.items.length === 0) {
+        if (this.title == null) {
           this.title = message;
         } else {
           this.addComment(message);

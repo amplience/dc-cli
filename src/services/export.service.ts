@@ -7,13 +7,11 @@ import readline from 'readline';
 
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
-export const uniqueFilename = (dir: string, uri = '', extension: string, exportFilenames: string[]): string => {
+export const uniqueFilenamePath = (dir: string, file = '', extension: string, exportFilenames: string[]): string => {
   if (dir.substr(-1) === path.sep) {
     dir = dir.slice(0, -1);
   }
 
-  const url = new URL(uri);
-  const file = path.basename(url.pathname, '.' + extension) || url.hostname.replace('.', '_');
   let counter = 0;
   let uniqueFilename = '';
   do {
@@ -25,6 +23,12 @@ export const uniqueFilename = (dir: string, uri = '', extension: string, exportF
     counter++;
   } while (exportFilenames.includes(uniqueFilename));
   return uniqueFilename;
+};
+
+export const uniqueFilename = (dir: string, uri = '', extension: string, exportFilenames: string[]): string => {
+  const url = new URL(uri);
+  const file = path.basename(url.pathname, '.' + extension) || url.hostname.replace('.', '_');
+  return uniqueFilenamePath(dir, file, extension, exportFilenames);
 };
 
 export const writeJsonToFile = <T extends HalResource>(filename: string, resource: T): void => {
