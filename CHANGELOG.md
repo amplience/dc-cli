@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.6.0](https://github.com/amplience/dc-cli/compare/v0.5.0...v0.6.0) (2020-09-30)
+
+
+### Features
+
+* **content-item:** import/export content item commands ([121761c](https://github.com/amplience/dc-cli/commit/121761c))
+
 ## [0.5.0](https://github.com/amplience/dc-cli/compare/v0.4.0...v0.5.0) (2020-08-21)
 
 
