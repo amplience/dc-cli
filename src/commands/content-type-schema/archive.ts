@@ -155,7 +155,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
-  if (!silent) {
+  if (!silent && logFile) {
     await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 
