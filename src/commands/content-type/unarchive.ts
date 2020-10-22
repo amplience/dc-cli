@@ -158,7 +158,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     console.log('Unarchived: ' + label);
   }
 
-  if (!silent) {
+  if (!silent && logFile) {
     await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 

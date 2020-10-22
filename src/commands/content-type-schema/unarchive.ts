@@ -156,7 +156,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     console.log('Unarchived: ' + schemas[i].schemaId);
   }
 
-  if (!silent) {
+  if (!silent && logFile) {
     await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 
