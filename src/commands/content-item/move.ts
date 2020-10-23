@@ -9,12 +9,6 @@ import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentItem, Status } from 'dc-management-sdk-js';
 
-/*
-export function getTempFolder(name: string, platform: string = process.platform): string {
-  return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `move-${name}/`);
-}
-*/
-
 export const command = 'move';
 
 export const desc = 'Move content items. The active account and hub are the source for the move.';
@@ -159,17 +153,15 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   const exported = argv.exportedIds;
 
-  if (exported.length > 0) {
-    for (let i = 0; i < exported.length; i++) {
-      const item = await client.contentItems.get(exported[i]);
+  for (let i = 0; i < exported.length; i++) {
+    const item = await client.contentItems.get(exported[i]);
 
-      try {
-        await item.related.archive();
-        log.addAction('MOVED', item.id as string);
-      } catch (e) {
-        log.addComment(`ARCHIVE FAILED: ${item.id}`);
-        log.addComment(e.toString());
-      }
+    try {
+      await item.related.archive();
+      log.addAction('MOVED', item.id as string);
+    } catch (e) {
+      log.addComment(`ARCHIVE FAILED: ${item.id}`);
+      log.addComment(e.toString());
     }
   }
 };

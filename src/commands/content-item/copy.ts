@@ -120,12 +120,18 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
     json: true
   };
 
+  let result = false;
+
+  const dstHubId = argv.dstHub || argv.hubId;
+  const dstClientId = argv.dstClientId || argv.clientId;
+  const dstSecret = argv.dstSecret || argv.clientSecret;
+
   if (argv.revertLog) {
-    await revert({
+    result = await revert({
       ...yargArgs,
-      hubId: argv.dstHub || argv.hubId,
-      clientId: argv.dstClientId || argv.clientId,
-      clientSecret: argv.dstSecret || argv.clientSecret,
+      hubId: dstHubId,
+      clientId: dstClientId,
+      clientSecret: dstSecret,
 
       dir: tempFolder, // unused
 
@@ -156,9 +162,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       const importResult = await importer({
         ...yargArgs,
-        hubId: argv.dstHub || argv.hubId,
-        clientId: argv.dstClientId || argv.clientId,
-        clientSecret: argv.dstSecret || argv.clientSecret,
+        hubId: dstHubId,
+        clientId: dstClientId,
+        clientSecret: dstSecret,
 
         dir: tempFolder,
 
@@ -173,10 +179,10 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       if (!importResult) {
         await log.close();
-        return false;
+      } else {
+        log.appendLine('=== Done! ===');
+        result = true;
       }
-
-      log.appendLine('=== Done! ===');
     } catch (e) {
       log.appendLine('An unexpected error occurred: \n' + e.toString());
     }
@@ -185,5 +191,5 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
   }
 
   await log.close();
-  return true;
+  return result;
 };

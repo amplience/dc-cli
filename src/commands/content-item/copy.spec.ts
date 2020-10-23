@@ -13,12 +13,14 @@ import { Arguments } from 'yargs';
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
+import { getDefaultLogPath } from '../../common/log-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 
 jest.mock('./export');
 jest.mock('./import');
 jest.mock('./import-revert');
+jest.mock('../../common/log-helpers');
 
 function rimraf(dir: string): Promise<Error> {
   return new Promise((resolve): void => {
@@ -153,6 +155,12 @@ describe('content-item copy command', () => {
       clearArray(revertCalls);
     });
 
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+      LOG_FILENAME();
+
+      expect(getDefaultLogPath).toHaveBeenCalledWith('item', 'copy', process.platform);
+    });
+
     it('should call both export and import with the correct parameters', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
@@ -231,6 +239,51 @@ describe('content-item copy command', () => {
       expect(revertCalls[0].clientSecret).toEqual(argv.dstSecret);
       expect(revertCalls[0].hubId).toEqual(argv.dstHub);
       expect(revertCalls[0].revertLog).toEqual(argv.revertLog);
+    });
+
+    it('should return false and remove temp folder when import fails or throws.', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
+
+      (importer as any).setExpectedReturn(false);
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+
+        srcRepo: 'repo1-id',
+
+        dstRepo: 'repo2-id',
+
+        hubId: 'hub2-id',
+        clientId: 'acc2-id',
+        clientSecret: 'acc2-secret',
+
+        schemaId: '/./',
+        name: '/./',
+
+        mapFile: 'map.json',
+        force: false,
+        validate: false,
+        skipIncomplete: false
+      };
+      const result = await handler(argv);
+
+      expect(exportCalls.length).toEqual(1);
+      expect(importCalls.length).toEqual(1);
+
+      expect(result).toBeFalsy();
+
+      (importer as any).setExpectedReturn('throw');
+
+      const result2 = await handler(argv);
+
+      expect(result2).toBeFalsy();
+
+      expect(exportCalls.length).toEqual(2);
+      expect(importCalls.length).toEqual(2);
     });
   });
 });

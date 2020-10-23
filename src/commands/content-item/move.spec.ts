@@ -17,9 +17,11 @@ import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-optio
 import { ItemTemplate, MockContent } from '../../common/dc-management-sdk-js/mock-content';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
+import { getDefaultLogPath } from '../../common/log-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./copy');
+jest.mock('../../common/log-helpers');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const copierAny = copier as any;
@@ -154,6 +156,12 @@ describe('content-item move command', () => {
       await ensureDirectoryExists(dir);
       await promisify(writeFile)(logFileName, log);
     }
+
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+      LOG_FILENAME();
+
+      expect(getDefaultLogPath).toHaveBeenCalledWith('item', 'move', process.platform);
+    });
 
     it('should call copy with the correct parameters, and archive content reported as "exported"', async () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
@@ -413,9 +421,9 @@ describe('content-item move command', () => {
 
         dstRepo: 'repo2-id',
 
-        dstHub: 'hub2-id',
-        dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret',
+        hubId: 'hub2-id',
+        clientId: 'acc2-id',
+        clientSecret: 'acc2-secret',
 
         schemaId: '/./',
         name: '/./',
