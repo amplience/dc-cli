@@ -18,6 +18,7 @@ import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 export const command = 'export <dir>';
 
@@ -144,6 +145,8 @@ export const processContentTypes = async (
     nothingExportedExit();
   }
 
+  await ensureDirectoryExists(outputDir);
+
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentType } of allExports) {
@@ -163,7 +166,7 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const storedContentTypes = await paginator(hub.related.contentTypes.list);
+  const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
   await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);
