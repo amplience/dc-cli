@@ -1,4 +1,5 @@
 import * as exportModule from './export';
+import * as directoryUtils from '../../common/import/directory-utils';
 import {
   builder,
   command,
@@ -21,6 +22,7 @@ import { loadJsonFromDirectory } from '../../services/import.service';
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./import');
 jest.mock('../../services/import.service');
+jest.mock('../../common/import/directory-utils');
 jest.mock('table');
 
 describe('content-type export command', (): void => {
@@ -304,6 +306,7 @@ describe('content-type export command', (): void => {
   });
 
   describe('processContentTypes', () => {
+    let mockEnsureDirectory: jest.Mock;
     let mockStreamWrite: jest.Mock;
     let stdoutSpy: jest.SpyInstance;
 
@@ -341,6 +344,7 @@ describe('content-type export command', (): void => {
     ];
 
     beforeEach(() => {
+      mockEnsureDirectory = directoryUtils.ensureDirectoryExists as jest.Mock;
       mockStreamWrite = jest.fn();
       (createStream as jest.Mock).mockReturnValue({
         write: mockStreamWrite
@@ -348,6 +352,10 @@ describe('content-type export command', (): void => {
       jest.spyOn(exportServiceModule, 'writeJsonToFile').mockImplementation();
       stdoutSpy = jest.spyOn(process.stdout, 'write');
       stdoutSpy.mockImplementation();
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
     });
 
     it('should output export files for the given content types if nothing previously exported', async () => {
@@ -381,6 +389,8 @@ describe('content-type export command', (): void => {
         previouslyExportedContentTypes,
         contentTypesToProcess
       );
+
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
 
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(3);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenNthCalledWith(
@@ -436,6 +446,7 @@ describe('content-type export command', (): void => {
         exitError
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(0);
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
@@ -476,6 +487,7 @@ describe('content-type export command', (): void => {
         contentTypesToProcess
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
@@ -550,6 +562,7 @@ describe('content-type export command', (): void => {
         mutatedContentTypes
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(1);
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
@@ -629,6 +642,7 @@ describe('content-type export command', (): void => {
         mutatedContentTypes
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenCalledTimes(0);
       expect(process.exit).toHaveBeenCalled();

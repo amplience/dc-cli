@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as directoryUtils from '../../common/import/directory-utils';
 import * as exportModule from './export';
 import {
   builder,
@@ -25,6 +26,7 @@ jest.mock('../../services/import.service');
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/resolve-schema-body');
 jest.mock('table');
+jest.mock('../../common/import/directory-utils');
 
 const schemaBody1 = `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "https://schema.localhost.com/remote-test-1.json",\n\n\t"title": "Test Schema 1",\n\t"description": "Test Schema 1",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`;
 
@@ -59,10 +61,16 @@ describe('content-type-schema export command', (): void => {
           'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
         requiresArg: true
       });
+      expect(spyOption).toHaveBeenCalledWith('archived', {
+        type: 'boolean',
+        describe: 'If present, archived content type schemas will also be considered.',
+        boolean: true
+      });
     });
   });
 
   describe('processContentTypeSchemas', () => {
+    let mockEnsureDirectory: jest.Mock;
     let mockOverwritePrompt: jest.SpyInstance;
     let mockGetContentTypeSchemaExports: jest.SpyInstance;
     let mockWriteJsonToFile: jest.SpyInstance;
@@ -93,6 +101,7 @@ describe('content-type-schema export command', (): void => {
     ];
 
     beforeEach(() => {
+      mockEnsureDirectory = directoryUtils.ensureDirectoryExists as jest.Mock;
       mockOverwritePrompt = jest.spyOn(exportServiceModule, 'promptToOverwriteExports');
       mockGetContentTypeSchemaExports = jest.spyOn(exportModule, 'getContentTypeSchemaExports');
       mockWriteSchemaBody = jest.spyOn(exportModule, 'writeSchemaBody');
@@ -138,6 +147,8 @@ describe('content-type-schema export command', (): void => {
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledWith('export-dir', {}, contentTypeSchemasToProcess);
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
+
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(3);
       expect(mockWriteJsonToFile.mock.calls).toMatchSnapshot();
 
@@ -182,6 +193,7 @@ describe('content-type-schema export command', (): void => {
         contentTypeSchemasToProcess
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
 
@@ -237,6 +249,8 @@ describe('content-type-schema export command', (): void => {
         previouslyExportedContentTypeSchemas,
         mutatedContentTypeSchemas
       );
+
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
 
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(1);
       expect(mockWriteJsonToFile.mock.calls).toMatchSnapshot();
@@ -307,6 +321,7 @@ describe('content-type-schema export command', (): void => {
         mutatedContentTypeSchemas
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenCalledTimes(0);
@@ -326,6 +341,7 @@ describe('content-type-schema export command', (): void => {
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(0);
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenCalledTimes(0);
