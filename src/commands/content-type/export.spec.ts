@@ -180,13 +180,15 @@ describe('content-type export command', (): void => {
 
       jest.spyOn(exportServiceModule, 'uniqueFilename').mockReturnValueOnce('export-dir/export-filename-3.json');
 
+      const existingTypes = Object.keys(exportedContentTypes);
+
       const result = getExportRecordForContentType(newContentTypeToExport, 'export-dir', exportedContentTypes);
 
       expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith(
         'export-dir',
         newContentTypeToExport.contentTypeUri,
         'json',
-        Object.keys(exportedContentTypes)
+        existingTypes
       );
       expect(result).toEqual({
         filename: 'export-dir/export-filename-3.json',
