@@ -120,13 +120,18 @@ export const getExportRecordForContentTypeSchema = (
     c => c.schemaId === contentTypeSchema.schemaId
   );
   if (indexOfExportedContentTypeSchema < 0) {
+    const filename = uniqueFilename(
+      outputDir,
+      contentTypeSchema.schemaId,
+      'json',
+      Object.keys(previouslyExportedContentTypeSchemas)
+    );
+
+    // This filename is now used.
+    previouslyExportedContentTypeSchemas[filename] = contentTypeSchema;
+
     return {
-      filename: uniqueFilename(
-        outputDir,
-        contentTypeSchema.schemaId,
-        'json',
-        Object.keys(previouslyExportedContentTypeSchemas)
-      ),
+      filename: filename,
       status: 'CREATED',
       contentTypeSchema
     };
