@@ -166,6 +166,7 @@ export const processContentTypes = async (
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, schemaId } = argv;
+
   const previouslyExportedContentTypes = loadJsonFromDirectory<ContentType>(dir, ContentType);
   validateNoDuplicateContentTypeUris(previouslyExportedContentTypes);
 
