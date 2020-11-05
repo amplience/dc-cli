@@ -4,7 +4,8 @@ import { Body } from './body';
 
 type DependancyContentTypeSchema =
   | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
-  | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference';
+  | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'
+  | '_hierarchy'; // Used internally for parent dependancies.
 
 export interface RepositoryContentItem {
   repo: ContentRepository;
@@ -164,6 +165,20 @@ export class ContentDependancyTree {
     return items.map(item => {
       const result: ContentDependancyInfo[] = [];
       this.searchObjectForContentDependancies(item, item.content.body, result);
+
+      // Hierarchy parent is also a dependancy.
+      if (item.content.body._meta.hierarchy && item.content.body._meta.hierarchy.parentId) {
+        result.push({
+          dependancy: {
+            _meta: {
+              schema: '_hierarchy'
+            },
+            id: item.content.body._meta.hierarchy.parentId,
+            contentType: ''
+          }, owner: item
+        });
+      }
+
       return { owner: item, dependancies: result, dependants: [] };
     });
   }
