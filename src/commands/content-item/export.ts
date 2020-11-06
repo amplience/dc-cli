@@ -137,6 +137,7 @@ const getContentItems = async (
     let newItems: ContentItem[];
     try {
       const allItems = await paginator(repository.related.contentItems.list, { status: 'ACTIVE' });
+
       Array.prototype.push.apply(repoItems, allItems);
       newItems = allItems.filter(item => item.folderId == null);
     } catch (e) {

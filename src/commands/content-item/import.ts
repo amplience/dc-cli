@@ -22,7 +22,8 @@ import { ContentMapping } from '../../common/content-item/content-mapping';
 import {
   ContentDependancyTree,
   RepositoryContentItem,
-  ItemContentDependancies, ContentDependancyInfo
+  ItemContentDependancies,
+  ContentDependancyInfo
 } from '../../common/content-item/content-dependancy-tree';
 
 import { asyncQuestion } from '../../common/archive/archive-helpers';
@@ -621,7 +622,7 @@ const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping):
   } else {
     dep.dependancy.id = id;
   }
-}
+};
 
 const importTree = async (
   client: DynamicContent,
