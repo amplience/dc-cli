@@ -175,7 +175,8 @@ export class ContentDependancyTree {
             },
             id: item.content.body._meta.hierarchy.parentId,
             contentType: ''
-          }, owner: item
+          },
+          owner: item
         });
       }
 
