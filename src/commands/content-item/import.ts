@@ -691,11 +691,15 @@ const importTree = async (
   publishable = publishable.filter(entry => {
     let isTopLevel = true;
 
-    tree.traverseDependants(entry.node, dependant => {
-      if (dependant != entry.node && publishable.findIndex(entry => entry.node === dependant) !== -1) {
-        isTopLevel = false;
-      }
-    });
+    tree.traverseDependants(
+      entry.node,
+      dependant => {
+        if (dependant != entry.node && publishable.findIndex(entry => entry.node === dependant) !== -1) {
+          isTopLevel = false;
+        }
+      },
+      true
+    );
 
     if (!isTopLevel) {
       publishChildren++;
