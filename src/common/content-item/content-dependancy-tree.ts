@@ -27,7 +27,7 @@ export interface ContentDependancyInfo {
 export interface ItemContentDependancies {
   owner: RepositoryContentItem;
   dependancies: ContentDependancyInfo[];
-  dependants: ItemContentDependancies[];
+  dependants: ContentDependancyInfo[];
 }
 
 export interface ContentDependancyLayer {
@@ -198,7 +198,7 @@ export class ContentDependancyTree {
         const target = idMap.get(dep.dependancy.id as string);
         dep.resolved = target;
         if (target) {
-          target.dependants.push(item);
+          target.dependants.push({ owner: target.owner, resolved: item, dependancy: dep.dependancy });
           resolve(target);
         }
       });
@@ -210,14 +210,20 @@ export class ContentDependancyTree {
   public traverseDependants(
     item: ItemContentDependancies,
     action: (item: ItemContentDependancies) => void,
+    ignoreHier = false,
     traversed?: Set<ItemContentDependancies>
   ): void {
     const traversedSet = traversed || new Set<ItemContentDependancies>();
     traversedSet.add(item);
     action(item);
     item.dependants.forEach(dependant => {
-      if (!traversedSet.has(dependant)) {
-        this.traverseDependants(dependant, action, traversedSet);
+      if (ignoreHier && dependant.dependancy._meta.schema == '_hierarchy') {
+        return;
+      }
+
+      const resolved = dependant.resolved as ItemContentDependancies;
+      if (!traversedSet.has(resolved)) {
+        this.traverseDependants(resolved, action, ignoreHier, traversedSet);
       }
     });
   }
