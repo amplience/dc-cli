@@ -1,6 +1,8 @@
 import { ArchiveLog } from './archive/archive-log';
 
 export class FileLog extends ArchiveLog {
+  closed: boolean;
+
   constructor(private filename?: string) {
     super((filename || '').replace('<DATE>', Date.now().toString()));
 
@@ -20,5 +22,7 @@ export class FileLog extends ArchiveLog {
     if (this.filename != null) {
       await this.writeToFile(this.filename);
     }
+
+    this.closed = true;
   }
 }

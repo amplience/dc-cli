@@ -137,6 +137,7 @@ const getContentItems = async (
     let newItems: ContentItem[];
     try {
       const allItems = await paginator(repository.related.contentItems.list, { status: 'ACTIVE' });
+
       Array.prototype.push.apply(repoItems, allItems);
       newItems = allItems.filter(item => item.folderId == null);
     } catch (e) {
@@ -342,5 +343,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     writeJsonToFile(resolvedPath, item);
   }
 
-  log.close();
+  if (typeof logFile !== 'object') {
+    await log.close();
+  }
 };

@@ -792,12 +792,18 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
   const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
 
+  const closeLog = async (): Promise<void> => {
+    if (typeof logFile !== 'object') {
+      await log.close();
+    }
+  };
+
   let hub: Hub;
   try {
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
     console.error(`Couldn't get hub: ${e.toString()}`);
-    log.close();
+    closeLog();
     return false;
   }
 
@@ -831,7 +837,7 @@ export const handler = async (
       folder = bFolder;
     } catch (e) {
       console.error(`Couldn't get base folder: ${e.toString()}`);
-      log.close();
+      closeLog();
       return false;
     }
     tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, log, argv);
@@ -841,7 +847,7 @@ export const handler = async (
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
       console.error(`Couldn't get base repository: ${e.toString()}`);
-      log.close();
+      closeLog();
       return false;
     }
     tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, log, argv);
@@ -852,7 +858,7 @@ export const handler = async (
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
       log.appendLine(`Couldn't get repositories: ${e.toString()}`);
-      log.close();
+      closeLog();
       return false;
     }
 
@@ -888,7 +894,7 @@ export const handler = async (
             'These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) '
           ));
         if (!ignore) {
-          log.close();
+          closeLog();
           return false;
         }
       }
@@ -896,7 +902,7 @@ export const handler = async (
 
     if (importRepos.length == 0) {
       log.appendLine('Could not find any matching repositories to import into, aborting.');
-      log.close();
+      closeLog();
       return false;
     }
 
@@ -914,6 +920,6 @@ export const handler = async (
   }
 
   trySaveMapping(mapFile, mapping, log);
-  log.close();
+  closeLog();
   return result;
 };

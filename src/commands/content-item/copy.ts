@@ -10,6 +10,7 @@ import { handler as importer } from './import';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { revert } from './import-revert';
+import { loadCopyConfig } from '../../common/content-item/copy-config';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -54,7 +55,7 @@ export const builder = (yargs: Argv): void => {
         'Copy matching the given folder to the source base directory, by ID. Folder structure will be followed and replicated from there.'
     })
 
-    .option('dstHub', {
+    .option('dstHubId', {
       type: 'string',
       describe: 'Destination hub ID. If not specified, it will be the same as the source.'
     })
@@ -100,6 +101,12 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.'
+    })
+
+    .option('copyConfig', {
+      type: 'string',
+      describe:
+        'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
     });
 };
 
@@ -122,13 +129,18 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   let result = false;
 
-  const dstHubId = argv.dstHub || argv.hubId;
-  const dstClientId = argv.dstClientId || argv.clientId;
-  const dstSecret = argv.dstSecret || argv.clientSecret;
+  const copyConfig = typeof argv.copyConfig !== 'object' ? await loadCopyConfig(argv, log) : argv.copyConfig;
+
+  if (copyConfig == null) {
+    return false;
+  }
+
+  const { srcHubId, srcClientId, srcSecret, dstHubId, dstClientId, dstSecret } = copyConfig;
 
   if (argv.revertLog) {
     result = await revert({
       ...yargArgs,
+
       hubId: dstHubId,
       clientId: dstClientId,
       clientSecret: dstSecret,
@@ -145,9 +157,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       await exporter({
         ...yargArgs,
-        hubId: argv.hubId,
-        clientId: argv.clientId,
-        clientSecret: argv.clientSecret,
+        hubId: srcHubId,
+        clientId: srcClientId,
+        clientSecret: srcSecret,
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,
@@ -177,9 +189,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         logFile: log
       });
 
-      if (!importResult) {
-        await log.close();
-      } else {
+      if (importResult) {
         log.appendLine('=== Done! ===');
         result = true;
       }
@@ -190,6 +200,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
     await rimraf(tempFolder);
   }
 
-  await log.close();
+  if (typeof logFile !== 'object') {
+    await log.close();
+  }
+
   return result;
 };

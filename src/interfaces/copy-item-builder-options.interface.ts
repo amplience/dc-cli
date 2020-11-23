@@ -1,3 +1,4 @@
+import { CopyConfig } from '../common/content-item/copy-config';
 import { FileLog } from '../common/file-log';
 
 export interface CopyItemBuilderOptions {
@@ -7,7 +8,7 @@ export interface CopyItemBuilderOptions {
   dstRepo?: string;
   dstFolder?: string;
 
-  dstHub?: string;
+  dstHubId?: string;
   dstClientId?: string;
   dstSecret?: string;
 
@@ -19,6 +20,7 @@ export interface CopyItemBuilderOptions {
   validate?: boolean;
   skipIncomplete?: boolean;
   logFile?: string | FileLog;
+  copyConfig?: string | CopyConfig;
 
   revertLog?: string;
 
