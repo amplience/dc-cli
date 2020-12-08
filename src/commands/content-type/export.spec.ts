@@ -56,6 +56,11 @@ describe('content-type export command', (): void => {
           'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
         requiresArg: true
       });
+      expect(spyOption).toHaveBeenCalledWith('archived', {
+        type: 'boolean',
+        describe: 'If present, archived content types will also be considered.',
+        boolean: true
+      });
     });
   });
 
@@ -713,7 +718,29 @@ describe('content-type export command', (): void => {
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-      expect(mockList).toHaveBeenCalled();
+      expect(mockList).toHaveBeenCalledTimes(1);
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ACTIVE' });
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
+      expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
+      expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);
+      expect(exportModule.processContentTypes).toHaveBeenCalledWith(argv.dir, [], filteredContentTypesToExport);
+    });
+
+    it('should export even archived content types for the current hub if --archived is provided', async (): Promise<
+      void
+    > => {
+      const schemaIdsToExport: string[] | undefined = undefined;
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, archived: true };
+
+      const filteredContentTypesToExport = [...contentTypesToExport];
+      jest.spyOn(exportModule, 'filterContentTypesByUri').mockReturnValue(filteredContentTypesToExport);
+
+      await handler(argv);
+
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalledTimes(2);
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ACTIVE' });
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ARCHIVED' });
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
       expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);

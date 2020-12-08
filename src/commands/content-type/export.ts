@@ -35,6 +35,11 @@ export const builder = (yargs: Argv): void => {
       describe:
         'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
       requiresArg: true
+    })
+    .option('archived', {
+      type: 'boolean',
+      describe: 'If present, archived content types will also be considered.',
+      boolean: true
     });
 };
 
@@ -173,6 +178,10 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+  if (argv.archived) {
+    const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+    Array.prototype.push.apply(storedContentTypes, archivedContentTypes);
+  }
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
   await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);
