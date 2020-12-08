@@ -711,7 +711,7 @@ describe('content-type-schema export command', (): void => {
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-      expect(mockList).toHaveBeenCalled();
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ACTIVE' });
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
@@ -723,7 +723,19 @@ describe('content-type-schema export command', (): void => {
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-      expect(mockList).toHaveBeenCalled();
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ACTIVE' });
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
+      expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
+      expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
+      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+    });
+
+    it('should export even archived content type schemas when --archived is provided', async (): Promise<void> => {
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: undefined, archived: true };
+      await handler(argv);
+
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalledWith({ size: 100 });
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
