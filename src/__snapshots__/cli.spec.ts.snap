@@ -9,6 +9,7 @@ Commands:
   dc-cli content-repository   Content Repository
   dc-cli content-type-schema  Content Type Schema
   dc-cli content-type         Content Type
+  dc-cli event                Event
 
 Options:
   --help          Show help                                            [boolean]

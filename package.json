@@ -113,7 +113,7 @@
     "ajv": "^6.12.3",
     "axios": "^0.18.1",
     "chalk": "^2.4.2",
-    "dc-management-sdk-js": "^1.6.0",
+    "dc-management-sdk-js": "git://github.com/PikinerLiliya/dc-management-sdk-js.git#feature/archiveEvents",
     "lodash": "^4.17.15",
     "node-fetch": "^2.6.0",
     "sanitize-filename": "^1.6.3",

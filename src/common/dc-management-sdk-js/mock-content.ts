@@ -267,7 +267,7 @@ export class MockContent {
     this.metrics.itemsCreated++;
 
     item.version = item.version || 1;
-    item.locale = undefined; // This is not created with the content.
+    item.locale = ''; // This is not created with the content.
 
     const mockItemRepo = jest.fn();
     item.related.contentRepository = mockItemRepo;
