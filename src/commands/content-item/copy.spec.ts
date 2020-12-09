@@ -121,6 +121,31 @@ describe('content-item copy command', () => {
         default: LOG_FILENAME,
         describe: 'Path to a log file to write to.'
       });
+
+      expect(spyOption).toHaveBeenCalledWith('copyConfig', {
+        type: 'string',
+        describe:
+          'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('lastPublish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'When available, export the last published version of a content item rather than its newest version.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('publish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Publish any content items that have an existing publish status in their JSON.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('republish', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+      });
     });
   });
 
@@ -190,7 +215,11 @@ describe('content-item copy command', () => {
         mapFile: 'map.json',
         force: false,
         validate: false,
-        skipIncomplete: false
+        skipIncomplete: false,
+
+        lastPublish: true,
+        publish: true,
+        republish: true
       };
       await handler(argv);
 
@@ -203,6 +232,7 @@ describe('content-item copy command', () => {
       expect(exportCalls[0].schemaId).toEqual(argv.schemaId);
       expect(exportCalls[0].name).toEqual(argv.name);
       expect(exportCalls[0].repoId).toEqual(argv.srcRepo);
+      expect(exportCalls[0].publish).toEqual(argv.lastPublish);
 
       expect(importCalls[0].clientId).toEqual(argv.dstClientId);
       expect(importCalls[0].clientSecret).toEqual(argv.dstSecret);
@@ -213,6 +243,9 @@ describe('content-item copy command', () => {
       expect(importCalls[0].force).toEqual(argv.force);
       expect(importCalls[0].validate).toEqual(argv.validate);
       expect(importCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
+
+      expect(importCalls[0].publish).toEqual(argv.publish);
+      expect(importCalls[0].republish).toEqual(argv.republish);
     });
 
     it('should forward to import-revert when revertLog is present.', async () => {

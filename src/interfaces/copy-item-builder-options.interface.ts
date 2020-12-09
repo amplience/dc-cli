@@ -24,5 +24,9 @@ export interface CopyItemBuilderOptions {
 
   revertLog?: string;
 
+  lastPublish?: boolean;
+  publish?: boolean;
+  republish?: boolean;
+
   exportedIds?: string[];
 }

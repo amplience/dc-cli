@@ -107,6 +107,24 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       describe:
         'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
+    })
+
+    .option('lastPublish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'When available, export the last published version of a content item rather than its newest version.'
+    })
+
+    .option('publish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Publish any content items that have an existing publish status in their JSON.'
+    })
+
+    .option('republish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
     });
 };
 
@@ -167,7 +185,10 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         name: argv.name,
         logFile: log,
 
-        dir: tempFolder
+        dir: tempFolder,
+
+        exportedIds: argv.exportedIds,
+        publish: argv.publish
       });
 
       log.appendLine('=== Importing to destination... ===');
@@ -186,7 +207,10 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         force: argv.force,
         validate: argv.validate,
         skipIncomplete: argv.skipIncomplete,
-        logFile: log
+        logFile: log,
+
+        republish: argv.republish,
+        publish: argv.publish
       });
 
       if (importResult) {
