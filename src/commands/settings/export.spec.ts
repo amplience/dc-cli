@@ -1,4 +1,4 @@
-import { builder, command, handler } from './export';
+import { builder, command, handler, processSettings } from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Hub, WorkflowState } from 'dc-management-sdk-js';

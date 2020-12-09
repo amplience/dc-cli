@@ -8,7 +8,6 @@ import { FileLog } from '../../common/file-log';
 import { getDefaultLogPath } from '../../common/archive/archive-helpers';
 import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { join } from 'path';
-import readline from 'readline';
 import { readFile } from 'fs';
 import { promisify } from 'util';
 import { uniq, uniqBy } from 'lodash';
@@ -75,7 +74,7 @@ export const builder = (yargs: Argv): void => {
 export const handler = async (
   argv: Arguments<ImportBuilderOptions & ConfigurationParameters & Answer>
 ): Promise<void> => {
-  const { dir: sourceFile, logFile, force, answer = ['y'] } = argv;
+  const { dir: sourceFile, logFile, force, answer = true } = argv;
   let { mapFile } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
@@ -124,22 +123,13 @@ export const handler = async (
     const alreadyExists = workflowStates.filter((item: WorkflowState) => mapping.getWorkflowState(item.id) != null);
 
     if (alreadyExists.length > 0) {
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        terminal: false
-      });
-
       const question = !force
         ? await asyncQuestion(
-            rl,
             `${alreadyExists.length} of the workflow states being imported already exist in the mapping. Would you like to update these workflow states instead of skipping them? (y/n) `
           )
         : answer;
 
-      rl && rl.close();
-
-      const updateExisting = (question.length > 0 && question[0].toLowerCase() == 'y') || force;
+      const updateExisting = question || force;
 
       if (!updateExisting) {
         workflowStates = workflowStates.filter((item: WorkflowState) => mapping.getWorkflowState(item.id) == null);

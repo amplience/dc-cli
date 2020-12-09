@@ -3,6 +3,7 @@ let responseQueue: string[] = [];
 module.exports = {
   createInterface: jest.fn().mockReturnValue({
     question: jest.fn().mockImplementation((questionText, cb) => {
+      console.log(questionText);
       if (responseQueue.length == 0) {
         throw new Error('Too many responses given.');
       }

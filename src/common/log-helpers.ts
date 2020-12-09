@@ -4,7 +4,6 @@ export function getDefaultLogPath(type: string, action: string, platform: string
   return join(
     process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
     '.amplience',
-    'logs',
-    `${type}-${action}-<DATE>.log`
+    `logs/${type}-${action}-<DATE>.log`
   );
 }
