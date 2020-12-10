@@ -288,8 +288,8 @@ describe('content-item move command', () => {
 
       expect(revertCalls.length).toEqual(1);
       expect(revertCalls[0]).toEqual({
-        '$0': '',
-        '_': [],
+        $0: '',
+        _: [],
         json: true,
         clientId: 'acc2-id',
         clientSecret: 'acc2-secret',
