@@ -157,7 +157,7 @@ export const processItems = async ({
   logFile?: string;
   missingContent: boolean;
   ignoreError?: boolean;
-}) => {
+}): Promise<void | []> => {
   try {
     for (let i = 0; i < events.length; i++) {
       events[i].deleteEditions = events[i].editions.filter(
@@ -246,7 +246,7 @@ export const processItems = async ({
       await log.writeToFile(logFile.replace('<DATE>', timestamp));
     }
 
-    console.log(`Processed ${successCount} events.`);
+    return console.log(`Processed ${successCount} events.`);
   } catch (e) {
     return [];
   }
