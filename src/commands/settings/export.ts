@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { Hub, WorkflowState } from 'dc-management-sdk-js';
+import { Hub, Settings, WorkflowState } from 'dc-management-sdk-js';
 import { nothingExportedExit, promptToExportSettings, writeJsonToFile } from '../../services/export.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import * as path from 'path';
@@ -23,23 +23,12 @@ export const processSettings = async (
   hubToExport: Hub,
   workflowStates: WorkflowState[]
 ): Promise<void> => {
-  const {
-    id,
-    name,
-    label,
-    description,
-    status,
-    settings,
-    createdBy,
-    createdDate,
-    lastModifiedBy,
-    lastModifiedDate
-  } = hubToExport;
+  const { id, name, label, settings = new Settings() } = hubToExport;
   let dir = outputDir;
   if (outputDir.substr(-1) === path.sep) {
     dir = dir.slice(0, -1);
   }
-  const file = path.basename(`settings-${hubToExport.id}`, '.json');
+  const file = path.basename(`hub-settings-${id}-${name}`, '.json');
 
   const uniqueFilename = dir + path.sep + file + '.json';
 
@@ -51,13 +40,11 @@ export const processSettings = async (
     id,
     name,
     label,
-    description,
-    status,
-    settings,
-    createdBy,
-    createdDate,
-    lastModifiedBy,
-    lastModifiedDate,
+    settings: {
+      devices: settings.devices,
+      applications: settings.applications,
+      localization: settings.localization
+    },
     workflowStates: workflowStates
   });
 

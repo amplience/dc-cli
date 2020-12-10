@@ -235,14 +235,14 @@ describe('settings export command', (): void => {
 
       await handler(argv);
 
-      const fileExists = await promisify(exists)('./settings-5db1727bcff47e0001ce5fd1.json');
+      const fileExists = await promisify(exists)('./hub-settings-5db1727bcff47e0001ce5fd1-amplienceclone1.json');
 
       expect(mockGetHub).toHaveBeenCalledTimes(1);
       expect(mockListStates.mock.calls).toMatchSnapshot();
       expect(exportedSettings).toMatchSnapshot();
       expect(fileExists).toBeTruthy();
 
-      await promisify(unlink)('./settings-5db1727bcff47e0001ce5fd1.json');
+      await promisify(unlink)('./hub-settings-5db1727bcff47e0001ce5fd1-amplienceclone1.json');
     });
   });
 });

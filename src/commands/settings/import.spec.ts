@@ -315,7 +315,7 @@ describe('settings import command', (): void => {
   });
 
   it('should implement an import command', () => {
-    expect(command).toEqual('import <dir>');
+    expect(command).toEqual('import <filePath>');
   });
 
   describe('builder tests', () => {
@@ -326,8 +326,8 @@ describe('settings import command', (): void => {
 
       builder(argv);
 
-      expect(spyPositional).toHaveBeenCalledWith('dir', {
-        describe: 'Source file containing Settings definition',
+      expect(spyPositional).toHaveBeenCalledWith('filePath', {
+        describe: 'Source file path containing Settings definition',
         type: 'string'
       });
 
@@ -364,7 +364,7 @@ describe('settings import command', (): void => {
     const argv = {
       ...yargArgs,
       ...config,
-      dir: './settings-5db1727bcff47e0001ce5fd2.json'
+      filePath: './settings-5db1727bcff47e0001ce5fd2.json'
     };
 
     const settingsMappingFile = { workflowStates: [['5dcc126052faff0001783741', '5f57a008c9e77c00018c0c29']] };

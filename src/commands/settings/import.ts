@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { WorkflowState, Settings } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
+import { ImportSettingsBuilderOptions } from '../../interfaces/import-settings-builder-options.interface';
 import { WorkflowStatesMapping } from '../../common/workflowStates/workflowStates-mapping';
 import { FileLog } from '../../common/file-log';
 import { getDefaultLogPath } from '../../common/archive/archive-helpers';
@@ -16,7 +16,7 @@ export type Answer = {
   answer?: string[];
 };
 
-export const command = 'import <dir>';
+export const command = 'import <filePath>';
 
 export const desc = 'Import Settings';
 
@@ -48,8 +48,8 @@ export const LOG_FILENAME = (platform: string = process.platform): string =>
 
 export const builder = (yargs: Argv): void => {
   yargs
-    .positional('dir', {
-      describe: 'Source file containing Settings definition',
+    .positional('filePath', {
+      describe: 'Source file path containing Settings definition',
       type: 'string'
     })
     .option('mapFile', {
@@ -72,9 +72,9 @@ export const builder = (yargs: Argv): void => {
 };
 
 export const handler = async (
-  argv: Arguments<ImportBuilderOptions & ConfigurationParameters & Answer>
+  argv: Arguments<ImportSettingsBuilderOptions & ConfigurationParameters & Answer>
 ): Promise<void> => {
-  const { dir: sourceFile, logFile, force, answer = true } = argv;
+  const { filePath: sourceFile, logFile, force, answer = true } = argv;
   let { mapFile } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
