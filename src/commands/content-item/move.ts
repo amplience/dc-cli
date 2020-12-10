@@ -9,6 +9,7 @@ import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentItem, Status } from 'dc-management-sdk-js';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
+import { revert } from './import-revert';
 
 export const command = 'move';
 
@@ -172,7 +173,23 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       }
     }
 
-    console.log('Done!');
+    const yargArgs = {
+      $0: '',
+      _: [],
+      json: true
+    };
+
+    await revert({
+      ...yargArgs,
+
+      hubId: copyConfig.dstHubId,
+      clientId: copyConfig.dstClientId,
+      clientSecret: copyConfig.dstSecret,
+
+      dir: '', // unused
+
+      revertLog: argv.revertLog
+    });
   } else {
     const log = new FileLog(argv.logFile as string);
     argv.logFile = log;

@@ -5,6 +5,7 @@
 import { builder, command, handler, LOG_FILENAME } from './move';
 import Yargs from 'yargs/yargs';
 import * as copier from './copy';
+import * as reverter from './import-revert';
 
 import { writeFile } from 'fs';
 import { dirname } from 'path';
@@ -19,9 +20,11 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import * as copyConfig from '../../common/content-item/copy-config';
+import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./copy');
+jest.mock('./import-revert');
 jest.mock('../../common/log-helpers');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -228,6 +231,10 @@ describe('content-item move command', () => {
 
     it('should attempt to unarchive based on MOVE actions when passing a revert log', async () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
+      const revertCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (reverter as any).calls;
+
+      copyCalls.splice(0, copyCalls.length);
+      revertCalls.splice(0, revertCalls.length);
 
       await createLog('temp/move/moveRevert.txt', 'MOVED id1\nMOVED id2\nMOVED id3\nMOVED id4');
 
@@ -277,6 +284,20 @@ describe('content-item move command', () => {
 
       expect(mockContent.metrics.itemsUnarchived).toEqual(3);
       expect(copyCalls.length).toEqual(0);
+
+      expect(revertCalls.length).toEqual(1);
+      expect(revertCalls[0]).toMatchInlineSnapshot(`
+        Object {
+          "$0": "",
+          "_": Array [],
+          "clientId": "acc2-id",
+          "clientSecret": "acc2-secret",
+          "dir": "",
+          "hubId": "hub2-id",
+          "json": true,
+          "revertLog": "temp/move/moveRevert.txt",
+        }
+      `);
 
       rimraf('temp/move/moveRevert.txt');
     });
