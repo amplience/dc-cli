@@ -231,6 +231,7 @@ describe('content-item move command', () => {
 
     it('should attempt to unarchive based on MOVE actions when passing a revert log', async () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const revertCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (reverter as any).calls;
 
       copyCalls.splice(0, copyCalls.length);
@@ -286,18 +287,16 @@ describe('content-item move command', () => {
       expect(copyCalls.length).toEqual(0);
 
       expect(revertCalls.length).toEqual(1);
-      expect(revertCalls[0]).toMatchInlineSnapshot(`
-        Object {
-          "$0": "",
-          "_": Array [],
-          "clientId": "acc2-id",
-          "clientSecret": "acc2-secret",
-          "dir": "",
-          "hubId": "hub2-id",
-          "json": true,
-          "revertLog": "temp/move/moveRevert.txt",
-        }
-      `);
+      expect(revertCalls[0]).toEqual({
+        '$0': '',
+        '_': [],
+        json: true,
+        clientId: 'acc2-id',
+        clientSecret: 'acc2-secret',
+        dir: '',
+        hubId: 'hub2-id',
+        revertLog: 'temp/move/moveRevert.txt'
+      });
 
       rimraf('temp/move/moveRevert.txt');
     });

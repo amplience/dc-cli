@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CopyConfigFile, loadCopyConfig } from './copy-config';
 import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../../commands/configure';
