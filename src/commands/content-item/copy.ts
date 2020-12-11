@@ -188,7 +188,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         dir: tempFolder,
 
         exportedIds: argv.exportedIds,
-        publish: argv.publish
+        publish: argv.lastPublish
       });
 
       log.appendLine('=== Importing to destination... ===');
