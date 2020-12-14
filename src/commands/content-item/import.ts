@@ -237,7 +237,7 @@ const createOrUpdateContent = async (
     item.version = oldItem.version;
     if (oldItem.status !== Status.ACTIVE) {
       // If an item is archived, it must be unarchived before updating it.
-      await oldItem.related.unarchive();
+      oldItem = await oldItem.related.unarchive();
     }
     result = { newItem: await oldItem.related.update(item), oldVersion };
   }
