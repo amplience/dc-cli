@@ -97,12 +97,6 @@ export const builder = (yargs: Argv): void => {
       describe: 'Skip any content item that has one or more missing dependancy.'
     })
 
-    .option('logFile', {
-      type: 'string',
-      default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
-    })
-
     .option('copyConfig', {
       type: 'string',
       describe:
@@ -125,6 +119,18 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+    })
+
+    .option('excludeKeys', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Exclude delivery keys when importing content items.'
+    })
+
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
@@ -210,7 +216,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         logFile: log,
 
         republish: argv.republish,
-        publish: argv.publish
+        publish: argv.publish,
+
+        excludeKeys: argv.excludeKeys
       });
 
       if (importResult) {

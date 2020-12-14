@@ -28,5 +28,7 @@ export interface CopyItemBuilderOptions {
   publish?: boolean;
   republish?: boolean;
 
+  excludeKeys?: boolean;
+
   exportedIds?: string[];
 }

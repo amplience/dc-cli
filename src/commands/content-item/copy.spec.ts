@@ -116,12 +116,6 @@ describe('content-item copy command', () => {
         describe: 'Skip any content item that has one or more missing dependancy.'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('logFile', {
-        type: 'string',
-        default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
-      });
-
       expect(spyOption).toHaveBeenCalledWith('copyConfig', {
         type: 'string',
         describe:
@@ -145,6 +139,18 @@ describe('content-item copy command', () => {
         boolean: true,
         describe:
           'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('excludeKeys', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Exclude delivery keys when importing content items.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.'
       });
     });
   });
@@ -219,7 +225,9 @@ describe('content-item copy command', () => {
 
         lastPublish: true,
         publish: true,
-        republish: true
+        republish: true,
+
+        excludeKeys: true
       };
       await handler(argv);
 
@@ -246,6 +254,8 @@ describe('content-item copy command', () => {
 
       expect(importCalls[0].publish).toEqual(argv.publish);
       expect(importCalls[0].republish).toEqual(argv.republish);
+
+      expect(importCalls[0].excludeKeys).toEqual(argv.excludeKeys);
     });
 
     it('should forward to import-revert when revertLog is present.', async () => {
@@ -283,7 +293,7 @@ describe('content-item copy command', () => {
       const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (importer as any).setExpectedReturn(false);
 
       const argv = {
@@ -313,6 +323,7 @@ describe('content-item copy command', () => {
 
       expect(result).toBeFalsy();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (importer as any).setExpectedReturn('throw');
 
       const result2 = await handler(argv);

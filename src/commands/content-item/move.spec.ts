@@ -122,6 +122,12 @@ describe('content-item move command', () => {
         describe: 'Skip any content item that has one or more missing dependancy.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('excludeKeys', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Exclude delivery keys when importing content items.'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,

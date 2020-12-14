@@ -106,6 +106,12 @@ export const builder = (yargs: Argv): void => {
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
     })
 
+    .option('excludeKeys', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Exclude delivery keys when importing content items.'
+    })
+
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
@@ -351,7 +357,7 @@ const prepareContentForImport = async (
         label: contentJSON.label,
         locale: contentJSON.locale,
         body: contentJSON.body,
-        deliveryId: contentJSON.deliveryId == contentJSON.Id ? undefined : contentJSON.deliveryId,
+        deliveryId: contentJSON.deliveryId == contentJSON.Id || argv.excludeKeys ? undefined : contentJSON.deliveryId,
         folderId: folder == null ? null : folder.id,
         publish: contentJSON.lastPublishedVersion != null
       };
