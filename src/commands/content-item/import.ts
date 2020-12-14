@@ -16,7 +16,8 @@ import {
   Hub,
   ContentRepository,
   ContentType,
-  ContentTypeSchema
+  ContentTypeSchema,
+  Status
 } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import {
@@ -234,6 +235,10 @@ const createOrUpdateContent = async (
   } else {
     const oldVersion = oldItem.version || 0;
     item.version = oldItem.version;
+    if (oldItem.status !== Status.ACTIVE) {
+      // If an item is archived, it must be unarchived before updating it.
+      await oldItem.related.unarchive();
+    }
     result = { newItem: await oldItem.related.update(item), oldVersion };
   }
 

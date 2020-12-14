@@ -111,6 +111,12 @@ describe('content-item import command', () => {
           'Republish content items regardless of whether the import changed them or not. (--publish not required)'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('excludeKeys', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Exclude delivery keys when importing content items.'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
@@ -764,7 +770,14 @@ describe('content-item import command', () => {
 
       const oldTemplates: ItemTemplate[] = [
         { id: 'old1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
-        { id: 'old2', label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' }
+        {
+          id: 'old2',
+          label: 'item2',
+          repoId: 'repo',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folderTest',
+          status: 'ARCHIVED'
+        }
       ];
 
       const newTemplates = oldTemplates.map(old => ({ ...old, id: 'new' + (old.id as string)[3] }));
@@ -812,6 +825,7 @@ describe('content-item import command', () => {
 
       expect(mockContent.metrics.itemsCreated).toEqual(2);
       expect(mockContent.metrics.itemsUpdated).toEqual(2);
+      expect(mockContent.metrics.itemsUnarchived).toEqual(1); // The existing archived item should be unarchived.
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
