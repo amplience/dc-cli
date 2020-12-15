@@ -206,7 +206,6 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       return;
     }
 
-    const client = dynamicContentClientFactory(argv);
     argv.copyConfig = copyConfig;
 
     const copySuccess = await copy.handler(argv);
@@ -214,6 +213,13 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
     if (!copySuccess) {
       return;
     }
+
+    const client = dynamicContentClientFactory({
+      ...argv,
+      hubId: copyConfig.srcHubId,
+      clientId: copyConfig.srcClientId,
+      clientSecret: copyConfig.srcSecret
+    });
 
     // Only archive the result of the export once the copy has completed.
     // This ensures the content is always active in one location if something goes wrong.
