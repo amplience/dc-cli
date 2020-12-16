@@ -16,7 +16,8 @@ import {
   Hub,
   ContentRepository,
   ContentType,
-  ContentTypeSchema
+  ContentTypeSchema,
+  Status
 } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import {
@@ -105,6 +106,12 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+    })
+
+    .option('excludeKeys', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Exclude delivery keys when importing content items.'
     })
 
     .option('logFile', {
@@ -229,6 +236,10 @@ const createOrUpdateContent = async (
   } else {
     const oldVersion = oldItem.version || 0;
     item.version = oldItem.version;
+    if (oldItem.status !== Status.ACTIVE) {
+      // If an item is archived, it must be unarchived before updating it.
+      oldItem = await oldItem.related.unarchive();
+    }
     result = { newItem: await oldItem.related.update(item), oldVersion };
   }
 
@@ -352,10 +363,14 @@ const prepareContentForImport = async (
         label: contentJSON.label,
         locale: contentJSON.locale,
         body: contentJSON.body,
-        deliveryId: contentJSON.deliveryId == contentJSON.Id ? undefined : contentJSON.deliveryId,
+        deliveryId: contentJSON.deliveryId == contentJSON.Id || argv.excludeKeys ? undefined : contentJSON.deliveryId,
         folderId: folder == null ? null : folder.id,
         publish: contentJSON.lastPublishedVersion != null
       };
+
+      if (argv.excludeKeys) {
+        delete filteredContent.body._meta.deliveryKey;
+      }
 
       schemaNames.add(contentJSON.body._meta.schema);
 
@@ -806,12 +821,18 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
   const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
 
+  const closeLog = async (): Promise<void> => {
+    if (typeof logFile !== 'object') {
+      await log.close();
+    }
+  };
+
   let hub: Hub;
   try {
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
     console.error(`Couldn't get hub: ${e.toString()}`);
-    log.close();
+    closeLog();
     return false;
   }
 
@@ -845,7 +866,7 @@ export const handler = async (
       folder = bFolder;
     } catch (e) {
       console.error(`Couldn't get base folder: ${e.toString()}`);
-      log.close();
+      closeLog();
       return false;
     }
     tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], folder, mapping, log, argv);
@@ -855,7 +876,7 @@ export const handler = async (
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
       console.error(`Couldn't get base repository: ${e.toString()}`);
-      log.close();
+      closeLog();
       return false;
     }
     tree = await prepareContentForImport(client, hub, [{ repo, basePath: dir }], null, mapping, log, argv);
@@ -866,7 +887,7 @@ export const handler = async (
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
       log.appendLine(`Couldn't get repositories: ${e.toString()}`);
-      log.close();
+      closeLog();
       return false;
     }
 
@@ -902,7 +923,7 @@ export const handler = async (
             'These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) '
           ));
         if (!ignore) {
-          log.close();
+          closeLog();
           return false;
         }
       }
@@ -910,7 +931,7 @@ export const handler = async (
 
     if (importRepos.length == 0) {
       log.appendLine('Could not find any matching repositories to import into, aborting.');
-      log.close();
+      closeLog();
       return false;
     }
 
@@ -928,6 +949,6 @@ export const handler = async (
   }
 
   trySaveMapping(mapFile, mapping, log);
-  log.close();
+  closeLog();
   return result;
 };

@@ -340,8 +340,14 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     log.appendLine(resolvedPath);
     await ensureDirectoryExists(directory);
 
+    if (argv.exportedIds) {
+      argv.exportedIds.push(item.id as string);
+    }
+
     writeJsonToFile(resolvedPath, item);
   }
 
-  log.close();
+  if (typeof logFile !== 'object') {
+    await log.close();
+  }
 };

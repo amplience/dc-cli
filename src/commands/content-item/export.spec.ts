@@ -791,5 +791,42 @@ describe('content-item export command', () => {
 
       await rimraf('temp/export/version/');
     });
+
+    it('should populate exportedIds with the ids of exported content items when present', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const exists: ItemTemplate[] = [
+        { id: 'id1', label: 'item2', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'exportedIds' },
+        { id: 'id2', label: 'item3', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'exportedIds/nested' }
+      ];
+
+      const skips: ItemTemplate[] = [
+        { label: 'item1', repoId: 'repo1', typeSchemaUri: 'http://type' },
+        { label: 'item4', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'folder2' }
+      ];
+
+      const templates = skips.concat(exists);
+
+      new MockContent(dynamicContentClientFactory as jest.Mock).importItemTemplates(templates);
+
+      const exportedIds: string[] = [];
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/export/exportedIds',
+        folderId: 'exportedIds',
+        exportedIds
+      };
+      await handler(argv);
+
+      await itemsExist('temp/export/', exists);
+      await itemsDontExist('temp/export/', skips);
+
+      expect(exportedIds).toEqual(exists.map(item => item.id as string));
+
+      await rimraf('temp/export/exportedIds/');
+    });
   });
 });

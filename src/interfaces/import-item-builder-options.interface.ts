@@ -10,6 +10,7 @@ export interface ImportItemBuilderOptions {
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
+  excludeKeys?: boolean;
   logFile?: string | FileLog;
 
   revertLog?: string;
