@@ -13,6 +13,10 @@ export const loadJsonFromDirectory = <T extends HalResource>(
   dir: string,
   resourceType: HalResourceConstructor<T>
 ): { [p: string]: T } => {
+  if (!fs.existsSync(dir)) {
+    return {};
+  }
+
   const files = fs
     .readdirSync(dir)
     .map(file => path.resolve(dir, file))

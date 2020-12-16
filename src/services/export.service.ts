@@ -21,7 +21,7 @@ export const uniqueFilenamePath = (dir: string, file = '', extension: string, ex
       uniqueFilename = dir + path.sep + file + '-' + counter + '.' + extension;
     }
     counter++;
-  } while (exportFilenames.includes(uniqueFilename));
+  } while (exportFilenames.find(filename => uniqueFilename.toLowerCase() === filename.toLowerCase()));
   return uniqueFilename;
 };
 

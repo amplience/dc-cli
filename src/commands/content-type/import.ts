@@ -258,7 +258,11 @@ export const handler = async (
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const storedContentTypes = await paginator(hub.related.contentTypes.list);
+
+  const activeContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+  const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+  const storedContentTypes = [...activeContentTypes, ...archivedContentTypes];
+
   for (const [filename, importedContentType] of Object.entries(importedContentTypes)) {
     importedContentTypes[filename] = storedContentTypeMapper(importedContentType, storedContentTypes);
   }
