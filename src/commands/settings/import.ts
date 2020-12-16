@@ -158,7 +158,7 @@ export const handler = async (
             })
           );
 
-          log.addAction('CREATE', newItem.id);
+          log.addAction('CREATE', newItem.id || '');
 
           mapping.registerWorkflowState(item.id as string, newItem.id as string);
         }
