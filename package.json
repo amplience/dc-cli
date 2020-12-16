@@ -14,7 +14,7 @@
     "pretest": "npm run lint",
     "test": "FORCE_COLOR=1 jest --silent --coverage",
     "fix": "prettier --write '**/*.ts'",
-    "reset": "git clean -dfx && git reset --hard && npm i",
+    "reset": "git clean -dfx && git reset --hard && npm ci",
     "prerelease": "npm run reset",
     "release": "standard-version",
     "prereleaseas": "npm run reset",
