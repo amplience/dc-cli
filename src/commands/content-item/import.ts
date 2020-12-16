@@ -367,6 +367,10 @@ const prepareContentForImport = async (
         publish: contentJSON.lastPublishedVersion != null
       };
 
+      if (argv.excludeKeys) {
+        delete filteredContent.body._meta.deliveryKey;
+      }
+
       schemaNames.add(contentJSON.body._meta.schema);
 
       contentItems.push({ repo: repo, content: new ContentItem(filteredContent) });
