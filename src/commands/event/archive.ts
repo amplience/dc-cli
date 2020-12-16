@@ -59,7 +59,8 @@ const getEventUntilSuccess = async ({
 
   for (let i = 0; i < 200; i++) {
     const event: Event = await client.events.get(id);
-    if (event._links && event._links[resource]) {
+    const link = event._links && (event._links as any)[resource];
+    if (link) {
       resourceEvent = event;
       break;
     }
