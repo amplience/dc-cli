@@ -19,6 +19,7 @@ import { ExportBuilderOptions } from '../../interfaces/export-builder-options.in
 import * as path from 'path';
 import * as fs from 'fs';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 export const streamTableOptions = {
   ...baseTableConfig,
@@ -57,6 +58,11 @@ export const builder = (yargs: Argv): void => {
       describe:
         'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
       requiresArg: true
+    })
+    .option('archived', {
+      type: 'boolean',
+      describe: 'If present, archived content type schemas will also be considered.',
+      boolean: true
     });
 };
 
@@ -114,13 +120,18 @@ export const getExportRecordForContentTypeSchema = (
     c => c.schemaId === contentTypeSchema.schemaId
   );
   if (indexOfExportedContentTypeSchema < 0) {
+    const filename = uniqueFilename(
+      outputDir,
+      contentTypeSchema.schemaId,
+      'json',
+      Object.keys(previouslyExportedContentTypeSchemas)
+    );
+
+    // This filename is now used.
+    previouslyExportedContentTypeSchemas[filename] = contentTypeSchema;
+
     return {
-      filename: uniqueFilename(
-        outputDir,
-        contentTypeSchema.schemaId,
-        'json',
-        Object.keys(previouslyExportedContentTypeSchemas)
-      ),
+      filename: filename,
       status: 'CREATED',
       contentTypeSchema
     };
@@ -206,6 +217,8 @@ export const processContentTypeSchemas = async (
     nothingExportedExit();
   }
 
+  await ensureDirectoryExists(outputDir);
+
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   tableStream.write([chalk.bold('File'), chalk.bold('Schema file'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentTypeSchema } of allExports) {
@@ -239,7 +252,10 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   );
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const storedContentTypeSchemas = await paginator(hub.related.contentTypeSchema.list);
+  const storedContentTypeSchemas = await paginator(
+    hub.related.contentTypeSchema.list,
+    argv.archived ? undefined : { status: 'ACTIVE' }
+  );
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaIdArray);
   await processContentTypeSchemas(dir, contentTypeSchemas, filteredContentTypeSchemas);

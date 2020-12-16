@@ -18,6 +18,7 @@ import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 export const command = 'export <dir>';
 
@@ -34,6 +35,11 @@ export const builder = (yargs: Argv): void => {
       describe:
         'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
       requiresArg: true
+    })
+    .option('archived', {
+      type: 'boolean',
+      describe: 'If present, archived content types will also be considered.',
+      boolean: true
     });
 };
 
@@ -74,13 +80,18 @@ export const getExportRecordForContentType = (
     c => c.contentTypeUri === contentType.contentTypeUri
   );
   if (indexOfExportedContentType < 0) {
+    const filename = uniqueFilename(
+      outputDir,
+      contentType.contentTypeUri,
+      'json',
+      Object.keys(previouslyExportedContentTypes)
+    );
+
+    // This filename is now used.
+    previouslyExportedContentTypes[filename] = contentType;
+
     return {
-      filename: uniqueFilename(
-        outputDir,
-        contentType.contentTypeUri,
-        'json',
-        Object.keys(previouslyExportedContentTypes)
-      ),
+      filename: filename,
       status: 'CREATED',
       contentType
     };
@@ -144,6 +155,8 @@ export const processContentTypes = async (
     nothingExportedExit();
   }
 
+  await ensureDirectoryExists(outputDir);
+
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentType } of allExports) {
@@ -158,12 +171,17 @@ export const processContentTypes = async (
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, schemaId } = argv;
+
   const previouslyExportedContentTypes = loadJsonFromDirectory<ContentType>(dir, ContentType);
   validateNoDuplicateContentTypeUris(previouslyExportedContentTypes);
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const storedContentTypes = await paginator(hub.related.contentTypes.list);
+  const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+  if (argv.archived) {
+    const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+    Array.prototype.push.apply(storedContentTypes, archivedContentTypes);
+  }
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
   await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);

@@ -23,7 +23,8 @@ import { ContentMapping } from '../../common/content-item/content-mapping';
 import {
   ContentDependancyTree,
   RepositoryContentItem,
-  ItemContentDependancies
+  ItemContentDependancies,
+  ContentDependancyInfo
 } from '../../common/content-item/content-dependancy-tree';
 
 import { asyncQuestion } from '../../common/archive/archive-helpers';
@@ -629,6 +630,15 @@ const prepareContentForImport = async (
   return tree;
 };
 
+const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping): void => {
+  const id = mapping.getContentItem(dep.dependancy.id) || dep.dependancy.id;
+  if (dep.dependancy._meta.schema === '_hierarchy') {
+    dep.owner.content.body._meta.hierarchy.parentId = id;
+  } else {
+    dep.dependancy.id = id;
+  }
+};
+
 const importTree = async (
   client: DynamicContent,
   tree: ContentDependancyTree,
@@ -651,7 +661,7 @@ const importTree = async (
 
       // Replace any dependancies with the existing mapping.
       item.dependancies.forEach(dep => {
-        dep.dependancy.id = mapping.getContentItem(dep.dependancy.id) || dep.dependancy.id;
+        rewriteDependancy(dep, mapping);
       });
 
       const originalId = content.id;
@@ -696,11 +706,15 @@ const importTree = async (
   publishable = publishable.filter(entry => {
     let isTopLevel = true;
 
-    tree.traverseDependants(entry.node, dependant => {
-      if (dependant != entry.node && publishable.findIndex(entry => entry.node === dependant) !== -1) {
-        isTopLevel = false;
-      }
-    });
+    tree.traverseDependants(
+      entry.node,
+      dependant => {
+        if (dependant != entry.node && publishable.findIndex(entry => entry.node === dependant) !== -1) {
+          isTopLevel = false;
+        }
+      },
+      true
+    );
 
     if (!isTopLevel) {
       publishChildren++;
@@ -722,7 +736,7 @@ const importTree = async (
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
-        dep.dependancy.id = mapping.getContentItem(dep.dependancy.id) || dep.dependancy.id;
+        rewriteDependancy(dep, mapping);
       });
 
       const originalId = content.id;

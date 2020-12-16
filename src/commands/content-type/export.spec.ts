@@ -1,4 +1,5 @@
 import * as exportModule from './export';
+import * as directoryUtils from '../../common/import/directory-utils';
 import {
   builder,
   command,
@@ -21,6 +22,7 @@ import { loadJsonFromDirectory } from '../../services/import.service';
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./import');
 jest.mock('../../services/import.service');
+jest.mock('../../common/import/directory-utils');
 jest.mock('table');
 
 describe('content-type export command', (): void => {
@@ -53,6 +55,11 @@ describe('content-type export command', (): void => {
         describe:
           'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
         requiresArg: true
+      });
+      expect(spyOption).toHaveBeenCalledWith('archived', {
+        type: 'boolean',
+        describe: 'If present, archived content types will also be considered.',
+        boolean: true
       });
     });
   });
@@ -178,13 +185,15 @@ describe('content-type export command', (): void => {
 
       jest.spyOn(exportServiceModule, 'uniqueFilename').mockReturnValueOnce('export-dir/export-filename-3.json');
 
+      const existingTypes = Object.keys(exportedContentTypes);
+
       const result = getExportRecordForContentType(newContentTypeToExport, 'export-dir', exportedContentTypes);
 
       expect(exportServiceModule.uniqueFilename).toHaveBeenCalledWith(
         'export-dir',
         newContentTypeToExport.contentTypeUri,
         'json',
-        Object.keys(exportedContentTypes)
+        existingTypes
       );
       expect(result).toEqual({
         filename: 'export-dir/export-filename-3.json',
@@ -304,6 +313,7 @@ describe('content-type export command', (): void => {
   });
 
   describe('processContentTypes', () => {
+    let mockEnsureDirectory: jest.Mock;
     let mockStreamWrite: jest.Mock;
     let stdoutSpy: jest.SpyInstance;
 
@@ -341,6 +351,7 @@ describe('content-type export command', (): void => {
     ];
 
     beforeEach(() => {
+      mockEnsureDirectory = directoryUtils.ensureDirectoryExists as jest.Mock;
       mockStreamWrite = jest.fn();
       (createStream as jest.Mock).mockReturnValue({
         write: mockStreamWrite
@@ -348,6 +359,10 @@ describe('content-type export command', (): void => {
       jest.spyOn(exportServiceModule, 'writeJsonToFile').mockImplementation();
       stdoutSpy = jest.spyOn(process.stdout, 'write');
       stdoutSpy.mockImplementation();
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
     });
 
     it('should output export files for the given content types if nothing previously exported', async () => {
@@ -381,6 +396,8 @@ describe('content-type export command', (): void => {
         previouslyExportedContentTypes,
         contentTypesToProcess
       );
+
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
 
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(3);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenNthCalledWith(
@@ -436,6 +453,7 @@ describe('content-type export command', (): void => {
         exitError
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(0);
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
@@ -476,6 +494,7 @@ describe('content-type export command', (): void => {
         contentTypesToProcess
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
@@ -550,6 +569,7 @@ describe('content-type export command', (): void => {
         mutatedContentTypes
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(1);
 
       expect(mockStreamWrite).toHaveBeenCalledTimes(4);
@@ -629,6 +649,7 @@ describe('content-type export command', (): void => {
         mutatedContentTypes
       );
 
+      expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockStreamWrite).toHaveBeenCalledTimes(0);
       expect(process.exit).toHaveBeenCalled();
@@ -697,7 +718,29 @@ describe('content-type export command', (): void => {
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-      expect(mockList).toHaveBeenCalled();
+      expect(mockList).toHaveBeenCalledTimes(1);
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ACTIVE' });
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
+      expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
+      expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);
+      expect(exportModule.processContentTypes).toHaveBeenCalledWith(argv.dir, [], filteredContentTypesToExport);
+    });
+
+    it('should export even archived content types for the current hub if --archived is provided', async (): Promise<
+      void
+    > => {
+      const schemaIdsToExport: string[] | undefined = undefined;
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, archived: true };
+
+      const filteredContentTypesToExport = [...contentTypesToExport];
+      jest.spyOn(exportModule, 'filterContentTypesByUri').mockReturnValue(filteredContentTypesToExport);
+
+      await handler(argv);
+
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalledTimes(2);
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ACTIVE' });
+      expect(mockList).toHaveBeenCalledWith({ size: 100, status: 'ARCHIVED' });
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
       expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);
