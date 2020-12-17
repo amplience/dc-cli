@@ -31,3 +31,7 @@ export const loadJsonFromDirectory = <T extends HalResource>(
   });
   return loadedFiles;
 };
+
+export const loadFileFromDirectory = <json>(sourceFile: string): string => {
+  return fs.readFileSync(sourceFile, { encoding: 'utf8' });
+};

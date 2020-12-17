@@ -665,7 +665,7 @@ const importTree = async (
       });
 
       const originalId = content.id;
-      content.id = mapping.getContentItem(content.id as string);
+      content.id = mapping.getContentItem(content.id as string) || '';
 
       let newItem: ContentItem;
       let oldVersion: number;
@@ -740,7 +740,7 @@ const importTree = async (
       });
 
       const originalId = content.id;
-      content.id = mapping.getContentItem(content.id);
+      content.id = mapping.getContentItem(content.id) || '';
 
       let newItem: ContentItem;
       let oldVersion: number;

@@ -1,0 +1,98 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`settings export command export should export settings 1`] = `
+Array [
+  Array [
+    Object {
+      "href": "https://api.amplience.net/v2/content/hubs/5db1727bcff47e0001ce5fd1/workflow-states{?page,size,sort}",
+      "templated": true,
+    },
+    Object {
+      "size": 100,
+    },
+    [Function],
+  ],
+]
+`;
+
+exports[`settings export command export should export settings 2`] = `
+Object {
+  "createdBy": "2f65cbc0-42e4-4899-8819-9b0cf9acf119",
+  "createdDate": "2019-10-24T09:44:27.853Z",
+  "description": null,
+  "id": "5db1727bcff47e0001ce5fd1",
+  "label": "Amplience Clone 1",
+  "lastModifiedBy": "dee49f9e-acc0-44c2-bee0-c5e2dbb7e95a",
+  "lastModifiedDate": "2019-11-13T16:27:55.197Z",
+  "name": "amplienceclone1",
+  "settings": Object {
+    "applications": Array [
+      Object {
+        "name": "amplience",
+        "templatedUri": "https://amplience.com/",
+      },
+    ],
+    "devices": Array [
+      Object {
+        "height": 768,
+        "name": "Desktop",
+        "orientate": false,
+        "width": 1024,
+      },
+      Object {
+        "height": 768,
+        "name": "Tablet",
+        "orientate": false,
+        "width": 640,
+      },
+      Object {
+        "height": 512,
+        "name": "Mobile",
+        "orientate": false,
+        "width": 320,
+      },
+      Object {
+        "height": 768,
+        "name": "Mobile big",
+        "orientate": true,
+        "width": 768,
+      },
+    ],
+    "localization": Object {
+      "locales": Array [
+        "en-GB",
+        "de-DE",
+        "sv-SE",
+        "fr-BE",
+        "fr-FR",
+      ],
+    },
+    "previewVirtualStagingEnvironment": Object {
+      "hostname": "lt4678qbqk371h3pz8xszxcvn.staging.bigcontent.io",
+    },
+    "publishing": Object {
+      "platforms": Object {
+        "amplienceDam": Object {
+          "API_KEY": "dee49f9e-acc0-44c2-bee0-c5e2dbb7e93fd",
+          "endpoint": "amp",
+        },
+      },
+    },
+    "virtualStagingEnvironment": Object {
+      "hostname": "lt4678qbqk371h3pz8xszxcvn.staging.bigcontent.io",
+    },
+  },
+  "status": "ACTIVE",
+  "workflowStates": Array [
+    Object {
+      "color": "rgb(25,195,151)",
+      "createdBy": "dee49f9e-acc0-44c2-bee0-c5e2dbb7e95a",
+      "createdDate": "2019-11-13T16:27:55.411Z",
+      "id": "5dcc2f0b4cedfd0001d3ef41",
+      "label": "new",
+      "lastModifiedBy": "dee49f9e-acc0-44c2-bee0-c5e2dbb7e95a",
+      "lastModifiedDate": "2019-11-13T16:27:55.411Z",
+    },
+  ],
+}
+`;
