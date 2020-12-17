@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.9.0](https://github.com/amplience/dc-cli/compare/v0.8.1...v0.9.0) (2020-12-17)
+
+
+### Features
+
+* **event:** feature of archive and delete events along with their editions ([#64](https://github.com/amplience/dc-cli/issues/64)) ([3c2a9c5](https://github.com/amplience/dc-cli/commit/3c2a9c5))
+* **settings:** export and import settings between hubs ([#63](https://github.com/amplience/dc-cli/issues/63)) ([b67d5d9](https://github.com/amplience/dc-cli/commit/b67d5d9))
+
 ### [0.8.1](https://github.com/amplience/dc-cli/compare/v0.8.0...v0.8.1) (2020-12-16)
 
 
