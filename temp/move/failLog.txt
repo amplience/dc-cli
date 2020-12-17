@@ -1,5 +1,0 @@
-// temp/move/failLog.txt
-// ARCHIVE FAILED: example-id
-// Error: Simulated network failure.
-// ARCHIVE FAILED: example-id2
-// Error: Simulated network failure.

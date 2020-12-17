@@ -43,3 +43,6 @@ packages
 
 # Coverage
 coverage
+
+# Temp files
+temp/
