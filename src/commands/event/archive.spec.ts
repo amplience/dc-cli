@@ -1,4 +1,4 @@
-import { builder, command, handler, LOG_FILENAME, processItems, getEvents } from './archive';
+import { builder, command, handler, LOG_FILENAME, getEvents } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Event, Edition, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';

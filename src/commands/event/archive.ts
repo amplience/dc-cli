@@ -8,6 +8,7 @@ import ArchiveOptions from '../../common/archive/archive-options';
 import { Edition, Event, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
+const maxAttempts = 30;
 
 export const command = 'archive [id]';
 
@@ -57,8 +58,9 @@ const getEventUntilSuccess = async ({
 }): Promise<Event | undefined> => {
   let resourceEvent;
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < maxAttempts; i++) {
     const event: Event = await client.events.get(id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const link = event._links && (event._links as any)[resource];
     if (link) {
       resourceEvent = event;
@@ -158,7 +160,7 @@ export const processItems = async ({
   logFile?: string;
   missingContent: boolean;
   ignoreError?: boolean;
-}): Promise<void | []> => {
+}): Promise<void> => {
   try {
     for (let i = 0; i < events.length; i++) {
       events[i].deleteEditions = events[i].editions.filter(
@@ -249,7 +251,7 @@ export const processItems = async ({
 
     return console.log(`Processed ${successCount} events.`);
   } catch (e) {
-    return [];
+    return;
   }
 };
 
