@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-cli",
-  "version": "0.7.0",
+  "version": "0.8.1",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
   "man": "./dist/dc-cli.1",
@@ -14,7 +14,7 @@
     "pretest": "npm run lint",
     "test": "FORCE_COLOR=1 jest --silent --coverage",
     "fix": "prettier --write '**/*.ts'",
-    "reset": "git clean -dfx && git reset --hard && npm i",
+    "reset": "git clean -dfx && git reset --hard && npm ci",
     "prerelease": "npm run reset",
     "release": "standard-version",
     "prereleaseas": "npm run reset",
@@ -103,7 +103,6 @@
     "nock": "^12.0.3",
     "pkg": "^4.4.0",
     "prettier": "^1.18.2",
-    "rimraf": "^3.0.0",
     "standard-version": "^7.0.0",
     "ts-jest": "^24.1.0",
     "ts-node": "^8.4.1",
@@ -116,6 +115,7 @@
     "dc-management-sdk-js": "^1.9.0",
     "lodash": "^4.17.15",
     "node-fetch": "^2.6.0",
+    "rimraf": "^3.0.0",
     "sanitize-filename": "^1.6.3",
     "table": "^5.4.6",
     "yargs": "^14.0.0"

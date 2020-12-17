@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.8.1](https://github.com/amplience/dc-cli/compare/v0.8.0...v0.8.1) (2020-12-16)
+
+
+### Bug Fixes
+
+* **deps:** moved rimraf from dev dep to dep ([6ac1e5d](https://github.com/amplience/dc-cli/commit/6ac1e5d))
+
+## [0.8.0](https://github.com/amplience/dc-cli/compare/v0.7.0...v0.8.0) (2020-12-16)
+
+
+### Bug Fixes
+
+* **content-item:** disregard hierarchical dependencies for publishing ([19f3d25](https://github.com/amplience/dc-cli/commit/19f3d25))
+* **content-item:** ignore case for unique filename check ([e2b9ef2](https://github.com/amplience/dc-cli/commit/e2b9ef2))
+* **content-type:** consider archived content types as reserved/updatable ([51662ae](https://github.com/amplience/dc-cli/commit/51662ae))
+* **content-type-schema:** ensure content type and type schema names are unique ([f106598](https://github.com/amplience/dc-cli/commit/f106598))
+
+
+### Features
+
+* **content-item:** add copy and move commands ([#61](https://github.com/amplience/dc-cli/issues/61)) ([ae5e062](https://github.com/amplience/dc-cli/commit/ae5e062))
+* **content-item:** add dependancy tracking for hierarchies ([babbbea](https://github.com/amplience/dc-cli/commit/babbbea))
+* **content-type:** allow archived content types to be exported using a flag ([dbe5bb4](https://github.com/amplience/dc-cli/commit/dbe5bb4))
+* **content-type-schema:** make exporting archived schema optional, automatically create destination ([2aa7a90](https://github.com/amplience/dc-cli/commit/2aa7a90))
+
 ## [0.7.0](https://github.com/amplience/dc-cli/compare/v0.6.0...v0.7.0) (2020-10-22)
 
 
