@@ -5,7 +5,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ImportSettingsBuilderOptions } from '../../interfaces/import-settings-builder-options.interface';
 import { WorkflowStatesMapping } from '../../common/workflowStates/workflowStates-mapping';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/archive/archive-helpers';
+import { getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { join } from 'path';
 import { readFile } from 'fs';

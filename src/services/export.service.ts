@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { HalResource } from 'dc-management-sdk-js';
 import * as path from 'path';
 import { URL } from 'url';
 import DataPresenter from '../view/data-presenter';

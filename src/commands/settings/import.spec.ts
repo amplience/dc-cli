@@ -4,10 +4,10 @@ import { command, builder, handler, LOG_FILENAME } from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Hub, Settings, WorkflowState } from 'dc-management-sdk-js';
 import { promisify } from 'util';
-import readline from 'readline';
 import { exists, unlink, writeFile } from 'fs';
 import rmdir from 'rimraf';
 
+jest.mock('readline');
 jest.mock('../../services/dynamic-content-client-factory');
 
 function rimraf(dir: string): Promise<Error> {
@@ -16,8 +16,6 @@ function rimraf(dir: string): Promise<Error> {
   });
 }
 
-let responseQueue = [];
-
 describe('settings import command', (): void => {
   const mockGetHub = jest.fn();
   const mockGetState = jest.fn();
@@ -25,16 +23,6 @@ describe('settings import command', (): void => {
   const mockUpdateState = jest.fn();
   const mockUpdateSettings = jest.fn();
   const mockQuestion = jest.fn();
-
-  jest.mock('readline', () => ({
-    createInterface: jest.fn(() => ({
-      question: mockQuestion,
-      close: jest.fn()
-    })),
-    setResponses: jest.fn(responses => {
-      responseQueue = ['n'];
-    })
-  }));
 
   beforeEach(() => {
     mockCreateState.mockResolvedValue(

@@ -1,14 +1,4 @@
-import { join } from 'path';
 import readline, { ReadLine } from 'readline';
-
-export function getDefaultLogPath(type: string, action: string, platform: string = process.platform): string {
-  return join(
-    process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
-    '.amplience',
-    'logs',
-    `${type}-${action}-<DATE>.log`
-  );
-}
 
 function asyncQuestionInternal(rl: ReadLine, question: string): Promise<string> {
   return new Promise((resolve): void => {
