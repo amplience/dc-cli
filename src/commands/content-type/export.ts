@@ -129,7 +129,7 @@ const getReposNamesForContentType = (
         el => el.hubContentTypeId === contentType.id && el.contentTypeUri === contentType.contentTypeUri
       );
     if (isAssigned) {
-      names.push(repo.label || '');
+      names.push(repo.name || '');
     }
   });
   return names;
