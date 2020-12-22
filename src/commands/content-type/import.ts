@@ -17,6 +17,7 @@ export const desc = 'Import Content Types';
 
 export type CommandParameters = {
   sync: boolean;
+  skipAssign?: boolean;
 };
 
 export const builder = (yargs: Argv): void => {
@@ -27,6 +28,12 @@ export const builder = (yargs: Argv): void => {
 
   yargs.option('sync', {
     describe: 'Automatically sync Content Type schema',
+    type: 'boolean',
+    default: false
+  });
+
+  yargs.option('skipAssign', {
+    describe: 'Skip assignment content types to the repositories',
     type: 'boolean',
     default: false
   });
@@ -196,7 +203,8 @@ export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
   client: DynamicContent,
   hub: Hub,
-  sync: boolean
+  sync: boolean,
+  skipAssign = false
 ): Promise<void> => {
   const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
@@ -230,6 +238,7 @@ export const processContentTypes = async (
 
     if (
       contentType.repositories &&
+      !skipAssign &&
       (await synchronizeContentTypeRepositories(
         new ContentTypeWithRepositoryAssignments({ ...contentType, ...contentTypeResult }),
         namedRepositories
@@ -246,7 +255,7 @@ export const processContentTypes = async (
 export const handler = async (
   argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>
 ): Promise<void> => {
-  const { dir, sync } = argv;
+  const { dir, sync, skipAssign } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments
@@ -266,5 +275,5 @@ export const handler = async (
   for (const [filename, importedContentType] of Object.entries(importedContentTypes)) {
     importedContentTypes[filename] = storedContentTypeMapper(importedContentType, storedContentTypes);
   }
-  await processContentTypes(Object.values(importedContentTypes), client, hub, sync);
+  await processContentTypes(Object.values(importedContentTypes), client, hub, sync, skipAssign);
 };

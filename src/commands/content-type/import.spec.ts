@@ -50,12 +50,19 @@ describe('content-type import command', (): void => {
     it('should configure yargs', () => {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
+      const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
 
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('dir', {
         describe: 'Path to Content Type definitions',
         type: 'string'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('skipAssign', {
+        describe: 'Skip assignment content types to the repositories',
+        type: 'boolean',
+        default: false
       });
     });
   });
@@ -841,7 +848,8 @@ describe('content-type import command', (): void => {
         Object.values(fileNamesAndContentTypesToImport),
         expect.any(Object),
         expect.any(Object),
-        false
+        false,
+        undefined
       );
     });
 
@@ -878,7 +886,8 @@ describe('content-type import command', (): void => {
         Object.values(fileNamesAndContentTypesToImport),
         expect.any(Object),
         expect.any(Object),
-        true
+        true,
+        undefined
       );
     });
 
