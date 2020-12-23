@@ -16,9 +16,9 @@ export const uniqueFilenamePath = (dir: string, file = '', extension: string, ex
   let uniqueFilename = '';
   do {
     if (counter == 0) {
-      uniqueFilename = dir + path.sep + file + '.' + extension;
+      uniqueFilename = dir + path.sep + encodeURIComponent(file) + '.' + extension;
     } else {
-      uniqueFilename = dir + path.sep + file + '-' + counter + '.' + extension;
+      uniqueFilename = dir + path.sep + encodeURIComponent(file) + '-' + counter + '.' + extension;
     }
     counter++;
   } while (exportFilenames.find(filename => uniqueFilename.toLowerCase() === filename.toLowerCase()));

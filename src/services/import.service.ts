@@ -24,7 +24,7 @@ export const loadJsonFromDirectory = <T extends HalResource>(
   const loadedFiles: { [filename: string]: T } = {};
   files.forEach(filename => {
     try {
-      loadedFiles[filename] = new resourceType(JSON.parse(fs.readFileSync(filename, 'utf-8')));
+      loadedFiles[decodeURIComponent(filename)] = new resourceType(JSON.parse(fs.readFileSync(filename, 'utf-8')));
     } catch (e) {
       throw new Error(`Non-JSON file found: ${filename}, aborting...`);
     }
