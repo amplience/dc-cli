@@ -21,6 +21,7 @@ export const LOG_FILENAME = (platform: string = process.platform): string =>
 
 export type CommandParameters = {
   sync: boolean;
+  skipAssign?: boolean;
 };
 
 export const builder = (yargs: Argv): void => {
@@ -40,6 +41,12 @@ export const builder = (yargs: Argv): void => {
     default: LOG_FILENAME,
     describe: 'Path to a log file to write to.',
     coerce: createLog
+  });
+
+  yargs.option('skipAssign', {
+    describe: 'Skip assignment content types to the repositories',
+    type: 'boolean',
+    default: false
   });
 };
 
@@ -240,7 +247,8 @@ export const processContentTypes = async (
   client: DynamicContent,
   hub: Hub,
   sync: boolean,
-  log: FileLog
+  log: FileLog,
+  skipAssign = false
 ): Promise<void> => {
   const data: string[][] = [];
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
@@ -274,6 +282,7 @@ export const processContentTypes = async (
 
     if (
       contentType.repositories &&
+      !skipAssign &&
       (await synchronizeContentTypeRepositories(
         new ContentTypeWithRepositoryAssignments({ ...contentType, ...contentTypeResult }),
         namedRepositories
@@ -292,7 +301,7 @@ export const handler = async (
   argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>,
   idFilter?: string[]
 ): Promise<void> => {
-  const { dir, sync, logFile } = argv;
+  const { dir, sync, logFile, skipAssign } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments
@@ -317,7 +326,7 @@ export const handler = async (
   for (const [filename, importedContentType] of Object.entries(importedContentTypes)) {
     importedContentTypes[filename] = storedContentTypeMapper(importedContentType, storedContentTypes);
   }
-  await processContentTypes(Object.values(importedContentTypes), client, hub, sync, log);
+  await processContentTypes(Object.values(importedContentTypes), client, hub, sync, log, skipAssign);
 
   await log.close();
 };

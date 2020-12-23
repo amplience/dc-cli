@@ -12,7 +12,7 @@ import {
 } from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, ContentRepository } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import * as exportServiceModule from '../../services/export.service';
 import { table } from 'table';
@@ -405,6 +405,7 @@ describe('content-type export command', (): void => {
         'export-dir',
         previouslyExportedContentTypes,
         contentTypesToProcess,
+        undefined,
         new FileLog(),
         false
       );
@@ -413,7 +414,8 @@ describe('content-type export command', (): void => {
       expect(exportModule.getContentTypeExports).toHaveBeenCalledWith(
         'export-dir',
         previouslyExportedContentTypes,
-        contentTypesToProcess
+        contentTypesToProcess,
+        undefined
       );
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
@@ -453,7 +455,7 @@ describe('content-type export command', (): void => {
 
       const previouslyExportedContentTypes = {};
 
-      await processContentTypes('export-dir', previouslyExportedContentTypes, [], new FileLog(), false);
+      await processContentTypes('export-dir', previouslyExportedContentTypes, [], undefined, new FileLog(), false);
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(0);
@@ -491,6 +493,7 @@ describe('content-type export command', (): void => {
         'export-dir',
         previouslyExportedContentTypes,
         contentTypesToProcess,
+        undefined,
         new FileLog(),
         false
       );
@@ -499,7 +502,8 @@ describe('content-type export command', (): void => {
       expect(exportModule.getContentTypeExports).toHaveBeenCalledWith(
         'export-dir',
         previouslyExportedContentTypes,
-        contentTypesToProcess
+        contentTypesToProcess,
+        undefined
       );
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
@@ -562,6 +566,7 @@ describe('content-type export command', (): void => {
         'export-dir',
         previouslyExportedContentTypes,
         mutatedContentTypes,
+        undefined,
         new FileLog(),
         false
       );
@@ -570,7 +575,8 @@ describe('content-type export command', (): void => {
       expect(exportModule.getContentTypeExports).toHaveBeenCalledWith(
         'export-dir',
         previouslyExportedContentTypes,
-        mutatedContentTypes
+        mutatedContentTypes,
+        undefined
       );
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(1);
@@ -632,6 +638,7 @@ describe('content-type export command', (): void => {
         'export-dir',
         previouslyExportedContentTypes,
         mutatedContentTypes,
+        undefined,
         new FileLog(),
         false
       );
@@ -640,7 +647,8 @@ describe('content-type export command', (): void => {
       expect(exportModule.getContentTypeExports).toHaveBeenCalledWith(
         'export-dir',
         previouslyExportedContentTypes,
-        mutatedContentTypes
+        mutatedContentTypes,
+        undefined
       );
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
@@ -684,11 +692,16 @@ describe('content-type export command', (): void => {
 
       const listResponse = new MockPage(ContentType, contentTypesToExport);
       mockList = jest.fn().mockResolvedValue(listResponse);
+      const listReposResponse = new MockPage(ContentRepository, []);
+      const mockListRepos = jest.fn().mockResolvedValue(listReposResponse);
 
       mockGetHub = jest.fn().mockResolvedValue({
         related: {
           contentTypes: {
             list: mockList
+          },
+          contentRepositories: {
+            list: mockListRepos
           }
         }
       });
@@ -700,10 +713,6 @@ describe('content-type export command', (): void => {
       });
       jest.spyOn(exportModule, 'processContentTypes').mockResolvedValue();
     });
-
-    function expectProcessArguments(dir: string, types: ContentType[]): void {
-      expect((exportModule.processContentTypes as jest.Mock).mock.calls[0].slice(0, 3)).toEqual([dir, [], types]);
-    }
 
     it('should export all content types for the current hub if no schemaIds specified', async (): Promise<void> => {
       const schemaIdsToExport: string[] | undefined = undefined;
@@ -720,7 +729,14 @@ describe('content-type export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
       expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);
-      expectProcessArguments(argv.dir, filteredContentTypesToExport);
+      expect(exportModule.processContentTypes).toHaveBeenCalledWith(
+        argv.dir,
+        [],
+        filteredContentTypesToExport,
+        [],
+        expect.any(FileLog),
+        false
+      );
     });
 
     it('should export even archived content types for the current hub if --archived is provided', async (): Promise<
@@ -748,7 +764,14 @@ describe('content-type export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
       expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, []);
-      expectProcessArguments(argv.dir, filteredContentTypesToExport);
+      expect(exportModule.processContentTypes).toHaveBeenCalledWith(
+        argv.dir,
+        [],
+        filteredContentTypesToExport,
+        [],
+        expect.any(FileLog),
+        false
+      );
     });
 
     it('should export only selected content types if schemaIds specified', async (): Promise<void> => {
@@ -765,7 +788,14 @@ describe('content-type export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentType);
       expect(validateNoDuplicateContentTypeUris).toHaveBeenCalled();
       expect(exportModule.filterContentTypesByUri).toHaveBeenCalledWith(contentTypesToExport, schemaIdsToExport);
-      expectProcessArguments(argv.dir, filteredContentTypesToExport);
+      expect(exportModule.processContentTypes).toHaveBeenCalledWith(
+        argv.dir,
+        [],
+        filteredContentTypesToExport,
+        [],
+        expect.any(FileLog),
+        false
+      );
     });
   });
 });

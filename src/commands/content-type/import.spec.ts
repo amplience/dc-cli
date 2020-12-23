@@ -69,6 +69,12 @@ describe('content-type import command', (): void => {
         describe: 'Path to a log file to write to.',
         coerce: createLog
       });
+
+      expect(spyOption).toHaveBeenCalledWith('skipAssign', {
+        describe: 'Skip assignment content types to the repositories',
+        type: 'boolean',
+        default: false
+      });
     });
   });
 
@@ -871,7 +877,8 @@ describe('content-type import command', (): void => {
         expect.any(Object),
         expect.any(Object),
         false,
-        expect.any(Object)
+        expect.any(FileLog),
+        undefined
       );
     });
 
@@ -909,7 +916,8 @@ describe('content-type import command', (): void => {
         expect.any(Object),
         expect.any(Object),
         true,
-        expect.any(Object)
+        expect.any(FileLog),
+        undefined
       );
     });
 
