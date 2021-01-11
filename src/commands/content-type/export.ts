@@ -133,7 +133,7 @@ type ExportsMap = {
   filename: string;
 };
 
-const getReposNamesForContentType = (
+export const getReposNamesForContentType = (
   repositories: ContentRepository[] = [],
   contentType: ContentType
 ): string[] | [] => {

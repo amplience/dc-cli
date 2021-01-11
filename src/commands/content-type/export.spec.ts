@@ -8,7 +8,8 @@ import {
   getExportRecordForContentType,
   handler,
   LOG_FILENAME,
-  processContentTypes
+  processContentTypes,
+  getReposNamesForContentType
 } from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
@@ -324,6 +325,68 @@ describe('content-type export command', (): void => {
       expect(() =>
         filterContentTypesByUri(listToFilter, ['content-type-uri-1', 'content-type-uri-4', 'content-type-uri-3'])
       ).toThrowErrorMatchingSnapshot();
+    });
+  });
+
+  describe('getReposNamesForContentType', () => {
+    const repositoriesList = [
+      new ContentRepository({
+        name: 'repo1',
+        contentTypes: []
+      }),
+      new ContentRepository({
+        name: 'repo2',
+        contentTypes: [
+          {
+            hubContentTypeId: '1',
+            contentTypeUri: 'content-type-uri-1'
+          },
+          {
+            hubContentTypeId: '2',
+            contentTypeUri: 'content-type-uri-1'
+          }
+        ]
+      }),
+      new ContentRepository({
+        contentTypes: [
+          {
+            hubContentTypeId: '1',
+            contentTypeUri: 'content-type-uri-1'
+          },
+          {
+            hubContentTypeId: '2',
+            contentTypeUri: 'content-type-uri-1'
+          }
+        ]
+      })
+    ];
+
+    it('should return names of repos to which content type is assigned', async () => {
+      const result = getReposNamesForContentType(
+        repositoriesList,
+        new ContentType({
+          contentTypeUri: 'content-type-uri-1',
+          id: '1',
+          settings: {
+            label: 'content type 1'
+          }
+        })
+      );
+      expect(result).toEqual(expect.arrayContaining(['repo2']));
+    });
+
+    it('should return empty array', async () => {
+      const result = getReposNamesForContentType(
+        repositoriesList,
+        new ContentType({
+          contentTypeUri: 'content-type-uri-3',
+          id: '3',
+          settings: {
+            label: 'content type 3'
+          }
+        })
+      );
+      expect(result).toEqual([]);
     });
   });
 
