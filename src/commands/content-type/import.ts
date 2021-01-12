@@ -46,7 +46,7 @@ export const builder = (yargs: Argv): void => {
   });
 
   yargs.option('skipAssign', {
-    describe: 'Skip assignment content types to the repositories',
+    describe: 'Skip assigning content types to repositories.',
     type: 'boolean',
     default: false
   });
@@ -303,9 +303,9 @@ export const processContentTypes = async (
   log.appendLine(table(data, streamTableOptions));
 
   if (!skipAssign && notFoundRepositories.length) {
-    log.appendLine('\nFollowing Repositories were not found in destination Hub:');
+    log.appendLine('\nThe following Repositories were not found in destination Hub:');
 
-    uniq(notFoundRepositories).map(name => log.appendLine(name));
+    uniq(notFoundRepositories).map(name => log.appendLine(`  ${name}`));
   } else if (skipAssign) {
     log.appendLine(
       '\nContent types were not automatically registered to the repositories because of --skipAssign argument.'

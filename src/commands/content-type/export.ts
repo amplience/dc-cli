@@ -91,14 +91,32 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
   return listToFilter.filter(contentType => contentTypeUriList.some(uri => contentType.contentTypeUri === uri));
 };
 
+export const getReposNamesForContentType = (
+  repositories: ContentRepository[] = [],
+  contentType: ContentType
+): string[] => {
+  return repositories
+    .filter(
+      repo =>
+        repo.contentTypes &&
+        repo.contentTypes.find(
+          el => el.hubContentTypeId === contentType.id && el.contentTypeUri === contentType.contentTypeUri
+        )
+    )
+    .map(repo => repo.name || '');
+};
+
 export const getExportRecordForContentType = (
-  contentType: ContentType,
+  contentType: ContentTypeExtended,
   outputDir: string,
-  previouslyExportedContentTypes: { [filename: string]: ContentType }
+  previouslyExportedContentTypes: { [filename: string]: ContentType },
+  repositories?: ContentRepository[]
 ): ExportRecord => {
   const indexOfExportedContentType = Object.values(previouslyExportedContentTypes).findIndex(
     c => c.contentTypeUri === contentType.contentTypeUri
   );
+  contentType.repositories = getReposNamesForContentType(repositories, contentType);
+
   if (indexOfExportedContentType < 0) {
     const filename = uniqueFilename(
       outputDir,
@@ -133,24 +151,6 @@ type ExportsMap = {
   filename: string;
 };
 
-export const getReposNamesForContentType = (
-  repositories: ContentRepository[] = [],
-  contentType: ContentType
-): string[] | [] => {
-  const names: string[] = [];
-  repositories.map((repo: ContentRepository) => {
-    const isAssigned =
-      repo.contentTypes &&
-      repo.contentTypes.find(
-        el => el.hubContentTypeId === contentType.id && el.contentTypeUri === contentType.contentTypeUri
-      );
-    if (isAssigned) {
-      names.push(repo.name || '');
-    }
-  });
-  return names;
-};
-
 export const getContentTypeExports = (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
@@ -164,9 +164,15 @@ export const getContentTypeExports = (
       continue;
     }
 
-    const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
-    exportRecord.contentType.repositories = getReposNamesForContentType(repositories, contentType);
+    const exportRecord = getExportRecordForContentType(
+      contentType,
+      outputDir,
+      previouslyExportedContentTypes,
+      repositories
+    );
+
     allExports.push(exportRecord);
+
     if (exportRecord.status === 'UPDATED') {
       updatedExportsMap.push({ uri: contentType.contentTypeUri, filename: exportRecord.filename });
     }

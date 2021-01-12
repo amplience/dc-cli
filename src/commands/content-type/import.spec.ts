@@ -71,7 +71,7 @@ describe('content-type import command', (): void => {
       });
 
       expect(spyOption).toHaveBeenCalledWith('skipAssign', {
-        describe: 'Skip assignment content types to the repositories',
+        describe: 'Skip assigning content types to repositories.',
         type: 'boolean',
         default: false
       });
