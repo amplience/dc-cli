@@ -3,7 +3,7 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentRepository, ContentType, DynamicContent, Hub, Status } from 'dc-management-sdk-js';
-import { isEqual } from 'lodash';
+import { isEqual, difference, uniq, intersection } from 'lodash';
 import { table } from 'table';
 import chalk from 'chalk';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
@@ -18,6 +18,8 @@ export const desc = 'Import Content Types';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('type', 'import', platform);
+
+let notFoundRepositories: string[] = [];
 
 export type CommandParameters = {
   sync: boolean;
@@ -216,8 +218,12 @@ export const synchronizeContentTypeRepositories = async (
 
   const contentTypeId = contentType.id || '';
 
-  const definedContentRepository = (contentType.repositories || []).filter(
+  const definedContentRepository = intersection(contentType.repositories || [], [...namedRepositories.keys()]).filter(
     (value, index, array) => array.indexOf(value) === index
+  );
+
+  notFoundRepositories = notFoundRepositories.concat(
+    difference(contentType.repositories, [...namedRepositories.keys()])
   );
 
   let changedAssignment = false;
@@ -295,6 +301,14 @@ export const processContentTypes = async (
   }
 
   log.appendLine(table(data, streamTableOptions));
+
+  if (!skipAssign && notFoundRepositories.length) {
+    log.appendLine('\nFollowing Repositories were not found in destination Hub:');
+
+    uniq(notFoundRepositories).map(name => log.appendLine(name));
+  }
+
+  log.appendLine();
 };
 
 export const handler = async (

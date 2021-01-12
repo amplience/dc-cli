@@ -656,7 +656,7 @@ describe('content-type import command', (): void => {
       expect(contentRepository.related.contentTypes.assign).toHaveBeenCalledWith(contentType.id);
     });
 
-    it('should throw an error if content type has an unknown repository', async () => {
+    it('should log a list of unknown repositories if content type has an unknown repository', async () => {
       const contentType = new ContentTypeWithRepositoryAssignments({
         id: 'id',
         contentTypeUri: 'http://example.com/content-type.json',
@@ -669,9 +669,15 @@ describe('content-type import command', (): void => {
         contentTypes: []
       });
 
-      await expect(
-        synchronizeContentTypeRepositories(contentType, createContentRepositoriesMap([contentRepository]))
-      ).rejects.toThrowErrorMatchingSnapshot();
+      contentRepository.related.contentTypes.assign = jest.fn().mockResolvedValue(contentRepository);
+
+      const result = await synchronizeContentTypeRepositories(
+        contentType,
+        createContentRepositoriesMap([contentRepository])
+      );
+
+      expect(result).toEqual(false);
+      expect(contentRepository.related.contentTypes.assign).not.toHaveBeenCalled();
     });
 
     it('should not assign content type to a repository if its already assigned', async () => {
