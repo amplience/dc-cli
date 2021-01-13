@@ -103,7 +103,17 @@ Array [
     },
     "export-dir",
     Object {},
-    undefined,
+    Array [
+      Object {
+        "contentTypes": Array [
+          Object {
+            "contentTypeUri": "content-type-uri-1",
+            "hubContentTypeId": "1",
+          },
+        ],
+        "name": "repo1",
+      },
+    ],
   ],
   Array [
     Object {
@@ -114,7 +124,17 @@ Array [
     },
     "export-dir",
     Object {},
-    undefined,
+    Array [
+      Object {
+        "contentTypes": Array [
+          Object {
+            "contentTypeUri": "content-type-uri-1",
+            "hubContentTypeId": "1",
+          },
+        ],
+        "name": "repo1",
+      },
+    ],
   ],
 ]
 `;
@@ -124,6 +144,10 @@ Array [
   Object {
     "contentType": Object {
       "contentTypeUri": "content-type-uri-1",
+      "id": "1",
+      "repositories": Array [
+        "repo1",
+      ],
       "settings": Object {
         "label": "content type 1",
       },
@@ -141,6 +165,12 @@ Array [
     "filename": "export-dir/export-filename-2.json",
     "status": "CREATED",
   },
+]
+`;
+
+exports[`content-type export command getReposNamesForContentType should return names of repos to which content type is assigned 1`] = `
+Array [
+  "repo2",
 ]
 `;
 

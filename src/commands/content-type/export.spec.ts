@@ -103,6 +103,13 @@ describe('content-type export command', (): void => {
       'export-dir/export-filename-2.json': contentTypesToExport[1]
     };
 
+    const exportedContentTypeWithRepos = {
+      id: '1',
+      contentTypeUri: 'content-type-uri-1',
+      repositories: ['repo1'],
+      settings: { label: 'content type 1' }
+    };
+
     beforeEach(() => {
       getExportRecordForContentTypeSpy = jest.spyOn(exportModule, 'getExportRecordForContentType');
     });
@@ -112,7 +119,7 @@ describe('content-type export command', (): void => {
         .mockReturnValueOnce({
           filename: 'export-dir/export-filename-1.json',
           status: 'CREATED',
-          contentType: contentTypesToExport[0]
+          contentType: exportedContentTypeWithRepos
         })
         .mockReturnValueOnce({
           filename: 'export-dir/export-filename-2.json',
@@ -120,7 +127,17 @@ describe('content-type export command', (): void => {
           contentType: contentTypesToExport[1]
         });
 
-      const [allExports, updatedExportsMap] = getContentTypeExports('export-dir', {}, contentTypesToExport);
+      const [allExports, updatedExportsMap] = getContentTypeExports('export-dir', {}, contentTypesToExport, [
+        new ContentRepository({
+          name: 'repo1',
+          contentTypes: [
+            {
+              hubContentTypeId: '1',
+              contentTypeUri: 'content-type-uri-1'
+            }
+          ]
+        })
+      ]);
 
       expect(getExportRecordForContentTypeSpy).toHaveBeenCalledTimes(2);
       expect(getExportRecordForContentTypeSpy.mock.calls).toMatchSnapshot();
@@ -373,6 +390,7 @@ describe('content-type export command', (): void => {
         })
       );
       expect(result).toEqual(expect.arrayContaining(['repo2']));
+      expect(result).toMatchSnapshot();
     });
 
     it('should return empty array', async () => {
