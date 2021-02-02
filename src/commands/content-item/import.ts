@@ -114,6 +114,13 @@ export const builder = (yargs: Argv): void => {
       describe: 'Exclude delivery keys when importing content items.'
     })
 
+    .option('media', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+    })
+
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
@@ -506,6 +513,29 @@ const prepareContentForImport = async (
     } catch (e) {
       log.error('Failed creating repo assignments:', e);
       return null;
+    }
+  }
+
+  // Step 2.5: Detect media links and rewrite their IDs, endpoints etc.
+  if (argv.media) {
+    log.appendLine(`Detecting and rewriting media links...`);
+    const rewriter = new MediaRewriter(argv, contentItems);
+
+    let missing: Set<string>;
+    try {
+      missing = await rewriter.rewrite();
+    } catch (e) {
+      log.error(
+        `Failed to rewrite media links. Make sure your client is properly configured, or remove the --media flag.`,
+        e
+      );
+      return null;
+    }
+
+    log.appendLine(`Finished rewriting media links.`);
+
+    if (missing.size > 0) {
+      log.warn(`${missing.size} media items could not be found in the target asset store. Ignoring.`);
     }
   }
 

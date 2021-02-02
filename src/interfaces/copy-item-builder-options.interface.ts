@@ -19,6 +19,7 @@ export interface CopyItemBuilderOptions {
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
+  media?: boolean;
   logFile?: string | FileLog;
   copyConfig?: string | CopyConfig;
 
