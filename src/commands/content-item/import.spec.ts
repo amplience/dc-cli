@@ -15,6 +15,7 @@ import rmdir from 'rimraf';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { MockContent, ItemTemplate } from '../../common/dc-management-sdk-js/mock-content';
 import { FileLog } from '../../common/file-log';
+import { MediaRewriter } from '../../common/media/media-rewriter';
 
 jest.mock('readline');
 jest.mock('./import-revert');
@@ -116,6 +117,13 @@ describe('content-item import command', () => {
         type: 'boolean',
         boolean: true,
         describe: 'Exclude delivery keys when importing content items.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('media', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
       });
 
       expect(spyOption).toHaveBeenCalledWith('logFile', {
@@ -1303,6 +1311,34 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsCreated).toEqual(0);
 
       await rimraf('temp/import/abort2/');
+    });
+
+    it('should call the media rewriter when --media is passed', async () => {
+      const templates: ItemTemplate[] = [{ label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }];
+
+      await createContent('temp/import/media1/', templates, false);
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('targetRepo');
+      mockContent.registerContentType('http://type', 'type', 'targetRepo');
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/import/media1/',
+        mapFile: 'temp/import/media1.json',
+        baseRepo: 'targetRepo',
+        media: true
+      };
+      await handler(argv);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((MediaRewriter as any).rewrites).toEqual(1);
+
+      expect(mockContent.metrics.itemsCreated).toEqual(1);
+      expect(mockContent.metrics.itemsUpdated).toEqual(0);
+
+      await rimraf('temp/import/media1/');
     });
   });
 });

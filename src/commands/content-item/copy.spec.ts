@@ -147,6 +147,13 @@ describe('content-item copy command', () => {
         describe: 'Exclude delivery keys when importing content items.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('media', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
@@ -227,7 +234,8 @@ describe('content-item copy command', () => {
         publish: true,
         republish: true,
 
-        excludeKeys: true
+        excludeKeys: true,
+        media: true
       };
       await handler(argv);
 
@@ -256,6 +264,7 @@ describe('content-item copy command', () => {
       expect(importCalls[0].republish).toEqual(argv.republish);
 
       expect(importCalls[0].excludeKeys).toEqual(argv.excludeKeys);
+      expect(importCalls[0].media).toEqual(argv.media);
     });
 
     it('should forward to import-revert when revertLog is present.', async () => {

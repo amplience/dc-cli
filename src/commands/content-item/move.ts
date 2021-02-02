@@ -122,6 +122,13 @@ export const builder = (yargs: Argv): void => {
       describe: 'Exclude delivery keys when importing content items.'
     })
 
+    .option('media', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+    })
+
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
