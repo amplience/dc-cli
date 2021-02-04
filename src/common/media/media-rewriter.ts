@@ -20,6 +20,10 @@ export class MediaRewriter {
     this.injector = new MediaLinkInjector(items);
   }
 
+  private escapeForRegex(url: string): string {
+    return url.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  }
+
   private connectDam(): void {
     this.dam = damClientFactory(this.config);
   }
@@ -111,7 +115,7 @@ export class MediaRewriter {
     let totalFound = 0;
 
     for (let i = 0; i < allNames.size; i++) {
-      const additionalRequest = `${names[i]}`;
+      const additionalRequest = `${this.escapeForRegex(names[i])}`;
 
       const lengthSoFar = requestBuilder.length;
       if (lengthSoFar == 6) {
