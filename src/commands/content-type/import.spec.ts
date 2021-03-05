@@ -13,13 +13,16 @@ import {
   processContentTypes,
   storedContentTypeMapper,
   synchronizeContentTypeRepositories,
-  validateNoDuplicateContentTypeUris
+  validateNoDuplicateContentTypeUris,
+  LOG_FILENAME
 } from './import';
 import Yargs from 'yargs/yargs';
-import { createStream } from 'table';
+import { table } from 'table';
+import { streamTableOptions } from '../../common/table/table.consts';
 import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import chalk from 'chalk';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
@@ -50,12 +53,19 @@ describe('content-type import command', (): void => {
     it('should configure yargs', () => {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
+      const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
 
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('dir', {
         describe: 'Path to Content Type definitions',
         type: 'string'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.'
       });
     });
   });
@@ -99,29 +109,38 @@ describe('content-type import command', (): void => {
   describe('doCreate', () => {
     it('should create a content type and return report', async () => {
       const mockHub = new Hub();
+      const log = new FileLog();
       const newContentType = new ContentType({ id: 'created-id' });
       const mockRegister = jest.fn().mockResolvedValue(newContentType);
       mockHub.related.contentTypes.register = mockRegister;
       const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
-      const result = await doCreate(mockHub, contentType as ContentType);
+      const result = await doCreate(mockHub, contentType as ContentType, log);
 
+      expect(log.getData('CREATE')).toMatchInlineSnapshot(`
+        Array [
+          "undefined",
+        ]
+      `);
       expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentType));
       expect(result).toEqual(newContentType);
     });
 
     it('should throw an error when content type create fails', async () => {
       const mockHub = new Hub();
+      const log = new FileLog();
       const mockRegister = jest.fn().mockImplementation(() => {
         throw new Error('Error creating content type');
       });
       mockHub.related.contentTypes.register = mockRegister;
       const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
 
-      await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(doCreate(mockHub, contentType as ContentType, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('UPDATE')).toEqual([]);
     });
 
     it('should throw an error when content type create fails if a string error is returned by the sdk', async () => {
       const mockHub = new Hub();
+      const log = new FileLog();
       const mockRegister = jest
         .fn()
         .mockRejectedValue(
@@ -130,7 +149,8 @@ describe('content-type import command', (): void => {
       mockHub.related.contentTypes.register = mockRegister;
       const contentType = { contentTypeUri: 'content-type-uri', settings: { label: 'test-label' } };
 
-      await expect(doCreate(mockHub, contentType as ContentType)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(doCreate(mockHub, contentType as ContentType, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('UPDATE')).toEqual([]);
     });
   });
 
@@ -257,11 +277,21 @@ describe('content-type import command', (): void => {
       const mockContentTypeSchemaUpdate = jest.fn().mockResolvedValue(new ContentTypeCachedSchema());
       updatedContentType.related.contentTypeSchema.update = mockContentTypeSchemaUpdate;
       const client = mockDynamicContentClientFactory();
-      const result = await doUpdate(client, {
-        ...mutatedContentType,
-        repositories: ['Slots']
-      } as ContentTypeWithRepositoryAssignments);
+      const log = new FileLog();
+      const result = await doUpdate(
+        client,
+        {
+          ...mutatedContentType,
+          repositories: ['Slots']
+        } as ContentTypeWithRepositoryAssignments,
+        log
+      );
 
+      expect(log.getData('UPDATE')).toMatchInlineSnapshot(`
+        Array [
+          "stored-id",
+        ]
+      `);
       expect(result).toEqual({ contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED });
       expect(mockUpdate).toHaveBeenCalledWith({
         ...expectedContentType.toJSON(),
@@ -283,9 +313,11 @@ describe('content-type import command', (): void => {
       });
       mockGet.mockResolvedValue(storedContentType);
       const client = mockDynamicContentClientFactory();
-      const result = await doUpdate(client, mutatedContentType);
+      const log = new FileLog();
+      const result = await doUpdate(client, mutatedContentType, log);
 
       expect(result).toEqual({ contentType: storedContentType, updateStatus: UpdateStatus.SKIPPED });
+      expect(log.getData('UPDATE')).toEqual([]);
     });
 
     it('should throw an error when unable to get content type during update', async () => {
@@ -299,8 +331,10 @@ describe('content-type import command', (): void => {
         throw new Error('Error retrieving content type');
       });
       const client = mockDynamicContentClientFactory();
+      const log = new FileLog();
 
-      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(doUpdate(client, mutatedContentType, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('UPDATE')).toEqual([]);
     });
 
     it('should throw an error when unable to update content type during update if a string error is returned by sdk', async () => {
@@ -320,7 +354,9 @@ describe('content-type import command', (): void => {
       storedContentType.related.update = mockUpdate;
       mockGet.mockResolvedValue(storedContentType);
       const client = mockDynamicContentClientFactory();
-      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      const log = new FileLog();
+      await expect(doUpdate(client, mutatedContentType, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('UPDATE')).toEqual([]);
       expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
     });
 
@@ -339,18 +375,19 @@ describe('content-type import command', (): void => {
       storedContentType.related.update = mockUpdate;
       mockGet.mockResolvedValue(storedContentType);
       const client = mockDynamicContentClientFactory();
-      await expect(doUpdate(client, mutatedContentType)).rejects.toThrowErrorMatchingSnapshot();
+      const log = new FileLog();
+      await expect(doUpdate(client, mutatedContentType, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('UPDATE')).toEqual([]);
       expect(mockUpdate).toHaveBeenCalledWith(mutatedContentType);
     });
   });
 
   describe('processContentTypes', () => {
-    const mockStreamWrite = jest.fn();
+    let mockTable: jest.Mock;
 
     beforeEach(() => {
-      (createStream as jest.Mock).mockReturnValue({
-        write: mockStreamWrite
-      });
+      mockTable = table as jest.Mock;
+      mockTable.mockImplementation(jest.requireActual('table').table);
     });
 
     it('should create and update a content type', async () => {
@@ -400,11 +437,11 @@ describe('content-type import command', (): void => {
       };
       jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(doUpdateResult2);
 
-      await processContentTypes(contentTypesToProcess, client, hub, false);
+      await processContentTypes(contentTypesToProcess, client, hub, false, new FileLog());
 
       expect(paginator).toHaveBeenCalledTimes(1);
-      expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0]);
-      expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypesToProcess[1]);
+      expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypesToProcess[0], expect.any(FileLog));
+      expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypesToProcess[1], expect.any(FileLog));
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(3);
       const mappedReposByName = createContentRepositoriesMap(contentRepositories);
       expect(importModule.synchronizeContentTypeRepositories).toHaveBeenCalledTimes(3);
@@ -427,27 +464,17 @@ describe('content-type import command', (): void => {
         expect.objectContaining({ ...contentTypesToProcess[2].toJSON(), repositories: ['Slots'] }),
         mappedReposByName
       );
-      expect(mockStreamWrite).toHaveBeenCalledTimes(4);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(1, [
-        chalk.bold('ID'),
-        chalk.bold('Schema ID'),
-        chalk.bold('Result')
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, [
-        createdContentType.id,
-        createdContentType.contentTypeUri,
-        'CREATED'
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, [
-        doUpdateResult1.contentType.id,
-        doUpdateResult1.contentType.contentTypeUri,
-        'UPDATED'
-      ]);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(4, [
-        doUpdateResult2.contentType.id,
-        doUpdateResult2.contentType.contentTypeUri,
-        'UP-TO-DATE'
-      ]);
+      expect(mockTable).toHaveBeenCalledTimes(1);
+      expect(mockTable).toHaveBeenNthCalledWith(
+        1,
+        [
+          [chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')],
+          [createdContentType.id, createdContentType.contentTypeUri, 'CREATED'],
+          [doUpdateResult1.contentType.id, doUpdateResult1.contentType.contentTypeUri, 'UPDATED'],
+          [doUpdateResult2.contentType.id, doUpdateResult2.contentType.contentTypeUri, 'UP-TO-DATE']
+        ],
+        streamTableOptions
+      );
     });
   });
 
@@ -841,7 +868,8 @@ describe('content-type import command', (): void => {
         Object.values(fileNamesAndContentTypesToImport),
         expect.any(Object),
         expect.any(Object),
-        false
+        false,
+        expect.any(Object)
       );
     });
 
@@ -878,7 +906,8 @@ describe('content-type import command', (): void => {
         Object.values(fileNamesAndContentTypesToImport),
         expect.any(Object),
         expect.any(Object),
-        true
+        true,
+        expect.any(Object)
       );
     });
 

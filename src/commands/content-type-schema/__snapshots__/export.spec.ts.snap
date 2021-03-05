@@ -581,35 +581,52 @@ exports[`content-type-schema export command processContentTypeSchemas should not
 Array [
   Array [
     Array [
-      "[1mFile[22m",
-      "[1mSchema file[22m",
-      "[1mSchema ID[22m",
-      "[1mResult[22m",
+      Array [
+        "[1mFile[22m",
+        "[1mSchema file[22m",
+        "[1mSchema ID[22m",
+        "[1mResult[22m",
+      ],
+      Array [
+        "export-dir/export-filename-1.json",
+        "",
+        "content-type-schema-id-1",
+        "UP-TO-DATE",
+      ],
+      Array [
+        "export-dir/export-filename-2.json",
+        "",
+        "content-type-schema-id-2",
+        "UP-TO-DATE",
+      ],
+      Array [
+        "export-dir/export-filename-3.json",
+        "",
+        "content-type-schema-id-3",
+        "UP-TO-DATE",
+      ],
     ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-1.json",
-      "",
-      "content-type-schema-id-1",
-      "UP-TO-DATE",
-    ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-2.json",
-      "",
-      "content-type-schema-id-2",
-      "UP-TO-DATE",
-    ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-3.json",
-      "",
-      "content-type-schema-id-3",
-      "UP-TO-DATE",
-    ],
+    Object {
+      "border": undefined,
+      "columnCount": 4,
+      "columnDefault": Object {
+        "width": 50,
+      },
+      "columns": Object {
+        "0": Object {
+          "width": 30,
+        },
+        "1": Object {
+          "width": 30,
+        },
+        "2": Object {
+          "width": 100,
+        },
+        "3": Object {
+          "width": 10,
+        },
+      },
+    },
   ],
 ]
 `;
@@ -727,35 +744,52 @@ exports[`content-type-schema export command processContentTypeSchemas should out
 Array [
   Array [
     Array [
-      "[1mFile[22m",
-      "[1mSchema file[22m",
-      "[1mSchema ID[22m",
-      "[1mResult[22m",
+      Array [
+        "[1mFile[22m",
+        "[1mSchema file[22m",
+        "[1mSchema ID[22m",
+        "[1mResult[22m",
+      ],
+      Array [
+        "export-dir/export-filename-1.json",
+        "export-dir/schemas/export-filename-1-schema.json",
+        "content-type-schema-id-1",
+        "CREATED",
+      ],
+      Array [
+        "export-dir/export-filename-2.json",
+        "export-dir/schemas/export-filename-2-schema.json",
+        "content-type-schema-id-2",
+        "CREATED",
+      ],
+      Array [
+        "export-dir/export-filename-3.json",
+        "export-dir/schemas/export-filename-3-schema.json",
+        "content-type-schema-id-3",
+        "CREATED",
+      ],
     ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-1.json",
-      "export-dir/schemas/export-filename-1-schema.json",
-      "content-type-schema-id-1",
-      "CREATED",
-    ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-2.json",
-      "export-dir/schemas/export-filename-2-schema.json",
-      "content-type-schema-id-2",
-      "CREATED",
-    ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-3.json",
-      "export-dir/schemas/export-filename-3-schema.json",
-      "content-type-schema-id-3",
-      "CREATED",
-    ],
+    Object {
+      "border": undefined,
+      "columnCount": 4,
+      "columnDefault": Object {
+        "width": 50,
+      },
+      "columns": Object {
+        "0": Object {
+          "width": 30,
+        },
+        "1": Object {
+          "width": 30,
+        },
+        "2": Object {
+          "width": 100,
+        },
+        "3": Object {
+          "width": 10,
+        },
+      },
+    },
   ],
 ]
 `;
@@ -804,35 +838,52 @@ exports[`content-type-schema export command processContentTypeSchemas should upd
 Array [
   Array [
     Array [
-      "[1mFile[22m",
-      "[1mSchema file[22m",
-      "[1mSchema ID[22m",
-      "[1mResult[22m",
+      Array [
+        "[1mFile[22m",
+        "[1mSchema file[22m",
+        "[1mSchema ID[22m",
+        "[1mResult[22m",
+      ],
+      Array [
+        "export-dir/export-filename-1.json",
+        "",
+        "content-type-schema-id-1",
+        "UP-TO-DATE",
+      ],
+      Array [
+        "export-dir/export-filename-2.json",
+        "",
+        "content-type-schema-id-2",
+        "UP-TO-DATE",
+      ],
+      Array [
+        "export-dir/export-filename-3.json",
+        "export-dir/schemas/export-filename-3-schema.json",
+        "content-type-schema-id-3",
+        "UPDATED",
+      ],
     ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-1.json",
-      "",
-      "content-type-schema-id-1",
-      "UP-TO-DATE",
-    ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-2.json",
-      "",
-      "content-type-schema-id-2",
-      "UP-TO-DATE",
-    ],
-  ],
-  Array [
-    Array [
-      "export-dir/export-filename-3.json",
-      "export-dir/schemas/export-filename-3-schema.json",
-      "content-type-schema-id-3",
-      "UPDATED",
-    ],
+    Object {
+      "border": undefined,
+      "columnCount": 4,
+      "columnDefault": Object {
+        "width": 50,
+      },
+      "columns": Object {
+        "0": Object {
+          "width": 30,
+        },
+        "1": Object {
+          "width": 30,
+        },
+        "2": Object {
+          "width": 100,
+        },
+        "3": Object {
+          "width": 10,
+        },
+      },
+    },
   ],
 ]
 `;

@@ -3,9 +3,8 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentTypeSchema } from 'dc-management-sdk-js';
-import { createStream } from 'table';
+import { table } from 'table';
 import { baseTableConfig } from '../../common/table/table.consts';
-import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
 import {
   ExportResult,
@@ -20,6 +19,9 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
+import { FileLog } from '../../common/file-log';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const streamTableOptions = {
   ...baseTableConfig,
@@ -47,6 +49,9 @@ export const command = 'export <dir>';
 
 export const desc = 'Export Content Type Schemas';
 
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('schema', 'export', platform);
+
 export const builder = (yargs: Argv): void => {
   yargs
     .positional('dir', {
@@ -59,10 +64,21 @@ export const builder = (yargs: Argv): void => {
         'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
       requiresArg: true
     })
+    .alias('f', 'force')
+    .option('f', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Overwrite content type schema without asking.'
+    })
     .option('archived', {
       type: 'boolean',
       describe: 'If present, archived content type schemas will also be considered.',
       boolean: true
+    })
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
@@ -199,10 +215,12 @@ export const getContentTypeSchemaExports = (
 export const processContentTypeSchemas = async (
   outputDir: string,
   previouslyExportedContentTypeSchemas: { [filename: string]: ContentTypeSchema },
-  storedContentTypeSchemas: ContentTypeSchema[]
+  storedContentTypeSchemas: ContentTypeSchema[],
+  log: FileLog,
+  force: boolean
 ): Promise<void> => {
   if (storedContentTypeSchemas.length === 0) {
-    nothingExportedExit('No content type schemas to export from this hub, exiting.\n');
+    nothingExportedExit(log, 'No content type schemas to export from this hub, exiting.');
   }
 
   const [allExports, updatedExportsMap] = getContentTypeSchemaExports(
@@ -212,15 +230,15 @@ export const processContentTypeSchemas = async (
   );
   if (
     allExports.length === 0 ||
-    (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap)))
+    (Object.keys(updatedExportsMap).length > 0 && !(force || (await promptToOverwriteExports(updatedExportsMap, log))))
   ) {
-    nothingExportedExit();
+    nothingExportedExit(log);
   }
 
   await ensureDirectoryExists(outputDir);
 
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('File'), chalk.bold('Schema file'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  const data: string[][] = [];
+  data.push([chalk.bold('File'), chalk.bold('Schema file'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentTypeSchema } of allExports) {
     let schemaFilename = '';
     if (status !== 'UP-TO-DATE') {
@@ -239,24 +257,31 @@ export const processContentTypeSchemas = async (
         })
       );
     }
-    tableStream.write([filename, schemaFilename, contentTypeSchema.schemaId || '', status]);
+    data.push([filename, schemaFilename, contentTypeSchema.schemaId || '', status]);
   }
-  process.stdout.write('\n');
+
+  log.appendLine(table(data, streamTableOptions));
 };
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, schemaId } = argv;
+  const { dir, schemaId, logFile, force } = argv;
   const [contentTypeSchemas] = await resolveSchemaBody(
     loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema),
     dir
   );
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
   const storedContentTypeSchemas = await paginator(
     hub.related.contentTypeSchema.list,
-    argv.archived ? undefined : { status: 'ACTIVE' }
+    argv.archived ? undefined : { status: Status.ACTIVE }
   );
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaIdArray);
-  await processContentTypeSchemas(dir, contentTypeSchemas, filteredContentTypeSchemas);
+  await processContentTypeSchemas(dir, contentTypeSchemas, filteredContentTypeSchemas, log, force || false);
+
+  if (typeof logFile !== 'object') {
+    // Only close the log if it was opened by this handler.
+    await log.close();
+  }
 };

@@ -10,6 +10,7 @@ import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'archive [id]';
 
@@ -79,8 +80,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
 
   if (id != null) {
     try {
-      const contentType: ContentType = await client.contentTypes.get(id);
-      types = [contentType];
+      const typeIds = Array.isArray(id) ? id : [id];
+      types = await Promise.all(typeIds.map(id => client.contentTypes.get(id)));
     } catch (e) {
       console.log(`Fatal error: could not find content type with ID ${id}. Error: \n${e.toString()}`);
       return;
@@ -88,7 +89,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(argv.hubId);
-      types = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+      types = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content types to archive. Is your hub correct? Error: \n${e.toString()}`

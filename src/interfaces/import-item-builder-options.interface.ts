@@ -13,5 +13,6 @@ export interface ImportItemBuilderOptions {
   excludeKeys?: boolean;
   media?: boolean;
   logFile?: FileLog;
-  revertLog?: string;
+
+  revertLog?: string | FileLog;
 }

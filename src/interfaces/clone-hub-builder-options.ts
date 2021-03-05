@@ -1,35 +1,27 @@
 import { CopyConfig } from '../common/content-item/copy-config';
 import { FileLog } from '../common/file-log';
 
-export interface CopyItemBuilderOptions {
-  srcRepo?: string;
-  srcFolder?: string;
-
-  dstRepo?: string;
-  dstFolder?: string;
+export interface CloneHubBuilderOptions {
+  dir: string;
 
   dstHubId?: string;
   dstClientId?: string;
   dstSecret?: string;
 
-  schemaId?: string[] | string;
-  name?: string[] | string;
+  revertLog?: string;
+  step?: number;
 
   mapFile?: string;
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
   media?: boolean;
-  logFile: FileLog;
+  logFile?: string | FileLog;
   copyConfig?: string | CopyConfig;
-
-  revertLog?: string | FileLog;
 
   lastPublish?: boolean;
   publish?: boolean;
   republish?: boolean;
 
   excludeKeys?: boolean;
-
-  exportedIds?: string[];
 }

@@ -3,9 +3,8 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentType } from 'dc-management-sdk-js';
-import { createStream } from 'table';
+import { table } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
-import { TableStream } from '../../interfaces/table.interface';
 import chalk from 'chalk';
 import {
   ExportResult,
@@ -19,10 +18,16 @@ import { validateNoDuplicateContentTypeUris } from './import';
 import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
+import { FileLog } from '../../common/file-log';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'export <dir>';
 
 export const desc = 'Export Content Types';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('type', 'export', platform);
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -36,10 +41,21 @@ export const builder = (yargs: Argv): void => {
         'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
       requiresArg: true
     })
+    .alias('f', 'force')
+    .option('f', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Overwrite content types without asking.'
+    })
     .option('archived', {
       type: 'boolean',
       describe: 'If present, archived content types will also be considered.',
       boolean: true
+    })
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.'
     });
 };
 
@@ -137,10 +153,12 @@ export const getContentTypeExports = (
 export const processContentTypes = async (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
-  contentTypesBeingExported: ContentType[]
+  contentTypesBeingExported: ContentType[],
+  log: FileLog,
+  force: boolean
 ): Promise<void> => {
   if (contentTypesBeingExported.length === 0) {
-    nothingExportedExit('No content types to export from this hub, exiting.\n');
+    nothingExportedExit(log, 'No content types to export from this hub, exiting.');
   }
 
   const [allExports, updatedExportsMap] = getContentTypeExports(
@@ -150,39 +168,47 @@ export const processContentTypes = async (
   );
   if (
     allExports.length === 0 ||
-    (Object.keys(updatedExportsMap).length > 0 && !(await promptToOverwriteExports(updatedExportsMap)))
+    (Object.keys(updatedExportsMap).length > 0 && !(force || (await promptToOverwriteExports(updatedExportsMap, log))))
   ) {
-    nothingExportedExit();
+    nothingExportedExit(log);
   }
 
   await ensureDirectoryExists(outputDir);
 
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
-  tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  const data: string[][] = [];
+
+  data.push([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, contentType } of allExports) {
     if (status !== 'UP-TO-DATE') {
       delete contentType.id; // do not export id
       writeJsonToFile(filename, contentType);
     }
-    tableStream.write([filename, contentType.contentTypeUri || '', status]);
+    data.push([filename, contentType.contentTypeUri || '', status]);
   }
-  process.stdout.write('\n');
+
+  log.appendLine(table(data, streamTableOptions));
 };
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, schemaId } = argv;
+  const { dir, schemaId, logFile, force } = argv;
 
   const previouslyExportedContentTypes = loadJsonFromDirectory<ContentType>(dir, ContentType);
   validateNoDuplicateContentTypeUris(previouslyExportedContentTypes);
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
   if (argv.archived) {
-    const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+    const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
     Array.prototype.push.apply(storedContentTypes, archivedContentTypes);
   }
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
-  await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes);
+  await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes, log, force || false);
+
+  if (typeof logFile !== 'object') {
+    // Only close the log if it was opened by this handler.
+    await log.close();
+  }
 };
