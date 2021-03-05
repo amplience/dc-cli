@@ -8,6 +8,7 @@ import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'unarchive [id]';
 
@@ -188,7 +189,7 @@ export const getContentItems = async ({
         )
       : await Promise.all(
           contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: 'ACTIVE' });
+            const items = await paginator(source.related.contentItems.list, { status: Status.ACTIVE });
             contentItems.push(...items);
           })
         );

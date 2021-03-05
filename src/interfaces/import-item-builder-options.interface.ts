@@ -14,5 +14,5 @@ export interface ImportItemBuilderOptions {
   media?: boolean;
   logFile?: string | FileLog;
 
-  revertLog?: string;
+  revertLog?: string | FileLog;
 }

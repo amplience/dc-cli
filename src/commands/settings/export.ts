@@ -6,22 +6,32 @@ import { Hub, Settings, WorkflowState } from 'dc-management-sdk-js';
 import { nothingExportedExit, promptToExportSettings, writeJsonToFile } from '../../services/export.service';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import * as path from 'path';
+import { FileLog } from '../../common/file-log';
 
 export const command = 'export <dir>';
 
 export const desc = 'Export Hub Settings';
 
 export const builder = (yargs: Argv): void => {
-  yargs.positional('dir', {
-    describe: 'Output directory for the exported Settings',
-    type: 'string'
-  });
+  yargs
+    .positional('dir', {
+      describe: 'Output directory for the exported Settings',
+      type: 'string'
+    })
+    .alias('f', 'force')
+    .option('f', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Overwrite settings without asking.'
+    });
 };
 
 export const processSettings = async (
   outputDir: string,
   hubToExport: Hub,
-  workflowStates: WorkflowState[]
+  workflowStates: WorkflowState[],
+  log: FileLog,
+  force: boolean
 ): Promise<void> => {
   const { id, name, label, settings = new Settings() } = hubToExport;
   let dir = outputDir;
@@ -32,8 +42,8 @@ export const processSettings = async (
 
   const uniqueFilename = dir + path.sep + file + '.json';
 
-  if (!(await promptToExportSettings(uniqueFilename))) {
-    return nothingExportedExit();
+  if (!(force || (await promptToExportSettings(uniqueFilename, log)))) {
+    return nothingExportedExit(log);
   }
 
   writeJsonToFile(uniqueFilename, {
@@ -48,15 +58,21 @@ export const processSettings = async (
     workflowStates: workflowStates
   });
 
-  process.stdout.write('Settings exported successfully! \n');
+  log.appendLine('Settings exported successfully!');
 };
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir } = argv;
+  const { dir, logFile, force } = argv;
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
   const workflowStates = await paginator(hub.related.workflowStates.list);
 
-  await processSettings(dir, hub, workflowStates);
+  await processSettings(dir, hub, workflowStates, log, force || false);
+
+  if (typeof logFile !== 'object') {
+    // Only close the log if it was opened by this handler.
+    await log.close();
+  }
 };

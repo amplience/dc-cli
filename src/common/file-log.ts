@@ -12,8 +12,10 @@ export class FileLog extends ArchiveLog {
     }
   }
 
-  public appendLine(text?: string): void {
-    console.log(text);
+  public appendLine(text = 'undefined', silent = false): void {
+    if (!silent) {
+      process.stdout.write(text + '\n');
+    }
 
     this.addComment(text as string);
   }

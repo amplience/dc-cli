@@ -8,6 +8,7 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('type', 'unarchive', platform);
@@ -82,7 +83,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   } else {
     try {
       const hub = await client.hubs.get(hubId);
-      types = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+      types = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content types to unarchive. Is your hub correct? Error: \n${e.toString()}`

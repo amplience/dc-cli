@@ -17,14 +17,19 @@ export enum LogErrorLevel {
 
 export class ArchiveLog {
   errorLevel: LogErrorLevel = LogErrorLevel.NONE;
-  items: ArchiveLogItem[] = [];
+  items: Map<string, ArchiveLogItem[]> = new Map([['_default', []]]);
 
-  constructor(public title?: string) {}
+  public accessGroup: ArchiveLogItem[];
+
+  constructor(public title?: string) {
+    this.accessGroup = this.items.get('_default') as ArchiveLogItem[];
+  }
 
   async loadFromFile(path: string): Promise<ArchiveLog> {
     const log = await promisify(readFile)(path, 'utf8');
     const logLines = log.split('\n');
-    this.items = [];
+
+    this.switchGroup('_default');
     logLines.forEach((line, index) => {
       if (line.startsWith('//')) {
         // The first comment is the title, all ones after it should be recorded as comment items.
@@ -34,6 +39,10 @@ export class ArchiveLog {
         } else {
           this.addComment(message);
         }
+        return;
+      } else if (line.startsWith('> ')) {
+        // Group start. End the active group and start building another.
+        this.switchGroup(line.substring(2));
         return;
       }
 
@@ -46,6 +55,8 @@ export class ArchiveLog {
         }
       }
     });
+
+    this.switchGroup('_default');
     return this;
   }
 
@@ -74,12 +85,18 @@ export class ArchiveLog {
   async writeToFile(path: string): Promise<boolean> {
     try {
       let log = `// ${this.title}\n`;
-      this.items.forEach(item => {
-        if (item.comment) {
-          log += `// ${item.data}\n`;
-        } else {
-          log += `${item.action} ${item.data}\n`;
+      this.items.forEach((group, groupName) => {
+        if (groupName !== '_default') {
+          log += `> ${groupName}\n`;
         }
+
+        group.forEach(item => {
+          if (item.comment) {
+            log += `// ${item.data}\n`;
+          } else {
+            log += `${item.action} ${item.data}\n`;
+          }
+        });
       });
 
       log += this.getResultCode();
@@ -123,18 +140,36 @@ export class ArchiveLog {
     this.addError(LogErrorLevel.ERROR, message, error);
   }
 
+  switchGroup(group: string): void {
+    let targetGroup = this.items.get(group);
+
+    if (!targetGroup) {
+      targetGroup = [];
+
+      this.items.set(group, targetGroup);
+    }
+
+    this.accessGroup = targetGroup;
+  }
+
   addComment(comment: string): void {
     const lines = comment.split('\n');
     lines.forEach(line => {
-      this.items.push({ comment: true, data: line });
+      this.accessGroup.push({ comment: true, data: line });
     });
   }
 
   addAction(action: string, data: string): void {
-    this.items.push({ comment: false, action: action, data: data });
+    this.accessGroup.push({ comment: false, action: action, data: data });
   }
 
-  getData(action: string): string[] {
-    return this.items.filter(item => !item.comment && item.action === action).map(item => item.data);
+  getData(action: string, group = '_default'): string[] {
+    const items = this.items.get(group);
+
+    if (!items) {
+      throw new Error(`Group ${group} was missing from the log file.`);
+    }
+
+    return items.filter(item => !item.comment && item.action === action).map(item => item.data);
   }
 }

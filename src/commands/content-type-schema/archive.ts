@@ -8,6 +8,7 @@ import { equalsOrRegex } from '../../common/filter/filter';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'archive [id]';
 
@@ -74,8 +75,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   if (id != null) {
     try {
       // Get the schema ID and use the other path, to avoid code duplication.
-      const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
-      schemas = [contentTypeSchema];
+      const schemasIds = Array.isArray(id) ? id : [id];
+      schemas = await Promise.all(schemasIds.map(id => client.contentTypeSchemas.get(id)));
     } catch (e) {
       console.log(`Fatal error: could not find schema with ID ${id}. Error: \n${e.toString()}`);
       return;
@@ -83,7 +84,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(hubId);
-      schemas = await paginator(hub.related.contentTypeSchema.list, { status: 'ACTIVE' });
+      schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ACTIVE });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content type schemas to archive. Is your hub correct? Error: \n${e.toString()}`
