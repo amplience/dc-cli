@@ -1,15 +1,27 @@
 import Yargs = require('yargs/yargs');
 
 import * as importModule from './import';
-import { command, builder, handler, storedSchemaMapper, processSchemas, doCreate, doUpdate } from './import';
+import {
+  command,
+  builder,
+  handler,
+  storedSchemaMapper,
+  processSchemas,
+  doCreate,
+  doUpdate,
+  LOG_FILENAME
+} from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentTypeSchema, ValidationLevel, Hub } from 'dc-management-sdk-js';
-import { createStream } from 'table';
+import { table } from 'table';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
+import { FileLog } from '../../common/file-log';
+import { streamTableOptions } from '../../common/table/table.consts';
+import chalk from 'chalk';
 
 jest.mock('fs');
 jest.mock('table');
@@ -37,11 +49,18 @@ describe('content-type-schema import command', (): void => {
     it('should configure yargs', () => {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
+      const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('dir', {
         describe: 'Directory containing Content Type Schema definitions',
         type: 'string'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.'
       });
     });
   });
@@ -88,13 +107,14 @@ describe('content-type-schema import command', (): void => {
   describe('doCreate', () => {
     it('should create a content type schema and report the results', async () => {
       const hub = new Hub();
+      const log = new FileLog();
 
       const contentTypeSchema = {
         body: schemaBodyJson,
         validationLevel: ValidationLevel.CONTENT_TYPE
       } as ContentTypeSchema;
       (createContentTypeSchema as jest.Mock).mockResolvedValueOnce({ ...contentTypeSchema, id: 'create-id', schemaId });
-      const result = await doCreate(hub, contentTypeSchema);
+      const result = await doCreate(hub, contentTypeSchema, log);
 
       expect(createContentTypeSchema).toHaveBeenCalledWith(
         contentTypeSchema.body,
@@ -102,10 +122,16 @@ describe('content-type-schema import command', (): void => {
         hub
       );
       expect(result).toEqual({ ...contentTypeSchema, id: 'create-id', schemaId });
+      expect(log.getData('CREATE')).toMatchInlineSnapshot(`
+        Array [
+          "create-id",
+        ]
+      `);
     });
 
     it('should throw an error when content type schema fails to create', async () => {
       const hub = new Hub();
+      const log = new FileLog();
 
       const contentTypeSchema = {
         body: schemaBodyJson,
@@ -115,7 +141,8 @@ describe('content-type-schema import command', (): void => {
         throw new Error('Error creating content type schema');
       });
 
-      await expect(doCreate(hub, contentTypeSchema)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(doCreate(hub, contentTypeSchema, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('CREATE')).toEqual([]);
     });
   });
 
@@ -131,16 +158,19 @@ describe('content-type-schema import command', (): void => {
     });
     it('should update a content type schema and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
+      const log = new FileLog();
 
       const storedContentTypeSchema = {
         id: 'stored-id',
         schemaId,
         body: schemaBodyJson,
-        validationLevel: ValidationLevel.CONTENT_TYPE
+        validationLevel: ValidationLevel.CONTENT_TYPE,
+        version: 1
       } as ContentTypeSchema;
       const mutatedContentTypeSchema = {
         ...storedContentTypeSchema,
-        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "${schemaId}",\n\n\t"title": "Test Schema 1 - updated",\n\t"description": "Test Schema 1- updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`
+        body: `{\n\t"$schema": "http://json-schema.org/draft-07/schema#",\n\t"$id": "${schemaId}",\n\n\t"title": "Test Schema 1 - updated",\n\t"description": "Test Schema 1- updated",\n\n\t"allOf": [\n\t\t{\n\t\t\t"$ref": "http://bigcontent.io/cms/schema/v1/core#/definitions/content"\n\t\t}\n\t],\n\t\n\t"type": "object",\n\t"properties": {\n\t\t\n\t},\n\t"propertyOrder": []\n}`,
+        version: 2
       } as ContentTypeSchema;
       mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
       (updateContentTypeSchema as jest.Mock).mockResolvedValueOnce({
@@ -148,7 +178,13 @@ describe('content-type-schema import command', (): void => {
         id: 'stored-id',
         schemaId
       });
-      const result = await doUpdate(client, mutatedContentTypeSchema);
+      const result = await doUpdate(client, mutatedContentTypeSchema, log);
+
+      expect(log.getData('UPDATE')).toMatchInlineSnapshot(`
+        Array [
+          "stored-id 1 2",
+        ]
+      `);
 
       expect(updateContentTypeSchema).toHaveBeenCalledWith(
         expect.objectContaining(storedContentTypeSchema),
@@ -160,15 +196,18 @@ describe('content-type-schema import command', (): void => {
 
     it('should update a content type when only the validationLevel has been updated', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
+      const log = new FileLog();
       const storedContentTypeSchema = {
         id: 'stored-id',
         schemaId,
         body: schemaBodyJson,
-        validationLevel: ValidationLevel.CONTENT_TYPE
+        validationLevel: ValidationLevel.CONTENT_TYPE,
+        version: 1
       } as ContentTypeSchema;
       const mutatedContentTypeSchema = {
         ...storedContentTypeSchema,
-        validationLevel: ValidationLevel.SLOT
+        validationLevel: ValidationLevel.SLOT,
+        version: 2
       } as ContentTypeSchema;
       mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
       (updateContentTypeSchema as jest.Mock).mockResolvedValueOnce({
@@ -176,8 +215,13 @@ describe('content-type-schema import command', (): void => {
         id: 'stored-id',
         schemaId
       });
-      const result = await doUpdate(client, mutatedContentTypeSchema);
+      const result = await doUpdate(client, mutatedContentTypeSchema, log);
 
+      expect(log.getData('UPDATE')).toMatchInlineSnapshot(`
+        Array [
+          "stored-id 1 2",
+        ]
+      `);
       expect(updateContentTypeSchema).toHaveBeenCalledWith(
         expect.objectContaining(storedContentTypeSchema),
         mutatedContentTypeSchema.body,
@@ -188,6 +232,7 @@ describe('content-type-schema import command', (): void => {
 
     it('should skip updating a content type schema when no changes detected and report the results', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
+      const log = new FileLog();
 
       const storedContentTypeSchema = {
         id: 'stored-id',
@@ -201,14 +246,16 @@ describe('content-type-schema import command', (): void => {
       } as ContentTypeSchema;
       mockGetContentTypeSchema.mockResolvedValueOnce(new ContentTypeSchema(storedContentTypeSchema));
 
-      const result = await doUpdate(client, mutatedContentTypeSchema);
+      const result = await doUpdate(client, mutatedContentTypeSchema, log);
 
+      expect(log.getData('UPDATE')).toEqual([]);
       expect(updateContentTypeSchema).toHaveBeenCalledTimes(0);
       expect(result).toEqual(expect.objectContaining({ updateStatus: UpdateStatus.SKIPPED }));
     });
 
     it('should throw an error when content type schema fails to create', async () => {
       const client = (dynamicContentClientFactory as jest.Mock)();
+      const log = new FileLog();
 
       const contentTypeSchema = {
         id: 'stored-id',
@@ -219,17 +266,17 @@ describe('content-type-schema import command', (): void => {
       mockGetContentTypeSchema.mockImplementationOnce(() => {
         throw new Error('Error getting content type schema');
       });
-      await expect(doUpdate(client, contentTypeSchema)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(doUpdate(client, contentTypeSchema, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(log.getData('UPDATE')).toEqual([]);
     });
   });
 
   describe('processSchemas', () => {
-    const mockStreamWrite = jest.fn();
+    let mockTable: jest.Mock;
 
     beforeEach(() => {
-      (createStream as jest.Mock).mockReturnValue({
-        write: mockStreamWrite
-      });
+      mockTable = table as jest.Mock;
+      mockTable.mockImplementation(jest.requireActual('table').table);
     });
 
     it('should successfully create and update a schema', async () => {
@@ -251,13 +298,20 @@ describe('content-type-schema import command', (): void => {
         .spyOn(importModule, 'doUpdate')
         .mockResolvedValueOnce({ contentTypeSchema: contentTypeSchemaToUpdate, updateStatus: UpdateStatus.UPDATED });
 
-      await processSchemas(schemasToProcess, client, hub);
+      await processSchemas(schemasToProcess, client, hub, new FileLog());
 
-      expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypeSchemaToCreate);
-      expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypeSchemaToUpdate);
-      expect(mockStreamWrite).toHaveBeenCalledTimes(3);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(2, ['new-id', schemaId, 'CREATED']);
-      expect(mockStreamWrite).toHaveBeenNthCalledWith(3, ['stored-id', schemaId, 'UPDATED']);
+      expect(importModule.doCreate).toHaveBeenCalledWith(hub, contentTypeSchemaToCreate, expect.any(FileLog));
+      expect(importModule.doUpdate).toHaveBeenCalledWith(client, contentTypeSchemaToUpdate, expect.any(FileLog));
+      expect(mockTable).toHaveBeenCalledTimes(1);
+      expect(mockTable).toHaveBeenNthCalledWith(
+        1,
+        [
+          [chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')],
+          ['new-id', schemaId, 'CREATED'],
+          ['stored-id', schemaId, 'UPDATED']
+        ],
+        streamTableOptions
+      );
     });
   });
 
@@ -316,6 +370,7 @@ describe('content-type-schema import command', (): void => {
       expect(paginator).toHaveBeenCalledWith(expect.any(Function));
       expect(processSchemasSpy).toHaveBeenCalledWith(
         [expect.objectContaining(schemaToCreate), expect.objectContaining({ ...schemaToUpdate, id: 'stored-id' })],
+        expect.any(Object),
         expect.any(Object),
         expect.any(Object)
       );

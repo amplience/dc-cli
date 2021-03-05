@@ -5,8 +5,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ImportSettingsBuilderOptions } from '../../interfaces/import-settings-builder-options.interface';
 import { WorkflowStatesMapping } from '../../common/workflowStates/workflowStates-mapping';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/log-helpers';
-import { asyncQuestion } from '../../common/archive/archive-helpers';
+import { getDefaultLogPath, asyncQuestion } from '../../common/log-helpers';
 import { join } from 'path';
 import { readFile } from 'fs';
 import { promisify } from 'util';
@@ -125,7 +124,8 @@ export const handler = async (
     if (alreadyExists.length > 0) {
       const question = !force
         ? await asyncQuestion(
-            `${alreadyExists.length} of the workflow states being imported already exist in the mapping. Would you like to update these workflow states instead of skipping them? (y/n) `
+            `${alreadyExists.length} of the workflow states being imported already exist in the mapping. Would you like to update these workflow states instead of skipping them? (y/n) `,
+            log
           )
         : answer;
 
@@ -169,7 +169,8 @@ export const handler = async (
 
     await trySaveMapping(mapFile, mapping, log);
 
-    if (log) {
+    if (typeof logFile !== 'object') {
+      // Only close the log if it was opened by this handler.
       await log.close();
     }
 

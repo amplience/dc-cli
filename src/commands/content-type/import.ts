@@ -4,16 +4,21 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentRepository, ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { isEqual } from 'lodash';
-import { createStream } from 'table';
+import { table } from 'table';
 import chalk from 'chalk';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import { streamTableOptions } from '../../common/table/table.consts';
-import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
+import { FileLog } from '../../common/file-log';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { ResourceStatus, Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'import <dir>';
 
 export const desc = 'Import Content Types';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('type', 'import', platform);
 
 export type CommandParameters = {
   sync: boolean;
@@ -29,6 +34,12 @@ export const builder = (yargs: Argv): void => {
     describe: 'Automatically sync Content Type schema',
     type: 'boolean',
     default: false
+  });
+
+  yargs.option('logFile', {
+    type: 'string',
+    default: LOG_FILENAME,
+    describe: 'Path to a log file to write to.'
   });
 };
 
@@ -79,9 +90,28 @@ export const validateNoDuplicateContentTypeUris = (importedContentTypes: {
   }
 };
 
-export const doCreate = async (hub: Hub, contentType: ContentType): Promise<ContentType> => {
+export const filterContentTypesById = (
+  idFilter: string[],
+  importedContentTypes: {
+    [filename: string]: ContentType;
+  }
+): void | never => {
+  for (const [filename, contentType] of Object.entries(importedContentTypes)) {
+    if (contentType.contentTypeUri) {
+      if (idFilter.indexOf(contentType.id as string) === -1) {
+        delete importedContentTypes[filename];
+      }
+    }
+  }
+};
+
+export const doCreate = async (hub: Hub, contentType: ContentType, log: FileLog): Promise<ContentType> => {
   try {
-    return await hub.related.contentTypes.register(new ContentType(contentType));
+    const result = await hub.related.contentTypes.register(new ContentType(contentType));
+
+    log.addAction('CREATE', `${contentType.id}`);
+
+    return result;
   } catch (err) {
     throw new Error(`Error registering content type ${contentType.contentTypeUri}: ${err.message || err}`);
   }
@@ -92,7 +122,8 @@ const equals = (a: ContentType, b: ContentType): boolean =>
 
 export const doUpdate = async (
   client: DynamicContent,
-  contentType: ContentTypeWithRepositoryAssignments
+  contentType: ContentTypeWithRepositoryAssignments,
+  log: FileLog
 ): Promise<{ contentType: ContentType; updateStatus: UpdateStatus }> => {
   let retrievedContentType: ContentType;
   try {
@@ -100,6 +131,15 @@ export const doUpdate = async (
     retrievedContentType = await client.contentTypes.get(contentType.id || '');
   } catch (err) {
     throw new Error(`Error unable to get content type ${contentType.id}: ${err.message}`);
+  }
+
+  if ((retrievedContentType as ResourceStatus).status === Status.ARCHIVED) {
+    try {
+      // Resurrect this type before updating it.
+      retrievedContentType = await retrievedContentType.related.unarchive();
+    } catch (err) {
+      throw new Error(`Error unable unarchive content type ${contentType.id}: ${err.message}`);
+    }
   }
 
   // Check if an update is required
@@ -114,6 +154,9 @@ export const doUpdate = async (
   try {
     // Update the content-type
     updatedContentType = await retrievedContentType.related.update(contentType);
+
+    log.addAction('UPDATE', `${contentType.id}`);
+
     return { contentType: updatedContentType, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
     throw new Error(`Error updating content type ${contentType.id}: ${err.message || err}`);
@@ -196,22 +239,23 @@ export const processContentTypes = async (
   contentTypes: ContentTypeWithRepositoryAssignments[],
   client: DynamicContent,
   hub: Hub,
-  sync: boolean
+  sync: boolean,
+  log: FileLog
 ): Promise<void> => {
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+  const data: string[][] = [];
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
   const namedRepositories: MappedContentRepositories = new Map<string, ContentRepository>(
     contentRepositoryList.map(value => [value.name || '', value])
   );
 
-  tableStream.write([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  data.push([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const contentType of contentTypes) {
     let status: ImportResult;
     let contentTypeResult: ContentType;
 
     if (contentType.id) {
       status = 'UP-TO-DATE';
-      const result = await doUpdate(client, contentType);
+      const result = await doUpdate(client, contentType, log);
       if (result.updateStatus === UpdateStatus.UPDATED) {
         status = 'UPDATED';
       }
@@ -224,7 +268,7 @@ export const processContentTypes = async (
         }
       }
     } else {
-      contentTypeResult = await doCreate(hub, contentType);
+      contentTypeResult = await doCreate(hub, contentType, log);
       status = 'CREATED';
     }
 
@@ -238,15 +282,17 @@ export const processContentTypes = async (
       status = contentType.id ? 'UPDATED' : 'CREATED';
     }
 
-    tableStream.write([contentTypeResult.id || 'UNKNOWN', contentType.contentTypeUri || '', status]);
+    data.push([contentTypeResult.id || 'UNKNOWN', contentType.contentTypeUri || '', status]);
   }
-  process.stdout.write('\n');
+
+  log.appendLine(table(data, streamTableOptions));
 };
 
 export const handler = async (
-  argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>
+  argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>,
+  idFilter?: string[]
 ): Promise<void> => {
-  const { dir, sync } = argv;
+  const { dir, sync, logFile } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments
@@ -256,15 +302,25 @@ export const handler = async (
   }
   validateNoDuplicateContentTypeUris(importedContentTypes);
 
+  if (idFilter) {
+    filterContentTypesById(idFilter, importedContentTypes);
+  }
+
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
 
-  const activeContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
-  const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: 'ARCHIVED' });
+  const activeContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
+  const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
   const storedContentTypes = [...activeContentTypes, ...archivedContentTypes];
 
   for (const [filename, importedContentType] of Object.entries(importedContentTypes)) {
     importedContentTypes[filename] = storedContentTypeMapper(importedContentType, storedContentTypes);
   }
-  await processContentTypes(Object.values(importedContentTypes), client, hub, sync);
+  await processContentTypes(Object.values(importedContentTypes), client, hub, sync, log);
+
+  if (typeof logFile !== 'object') {
+    // Only close the log if it was opened by this handler.
+    await log.close();
+  }
 };

@@ -22,7 +22,10 @@ jest.mock('./import-revert');
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/import/publish-queue');
 jest.mock('../../common/media/media-rewriter');
-jest.mock('../../common/log-helpers');
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 function rimraf(dir: string): Promise<Error> {
   return new Promise((resolve): void => {

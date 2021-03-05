@@ -16,6 +16,7 @@ import { ContentDependancyTree, RepositoryContentItem } from '../../common/conte
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
+import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 interface PublishedContentItem {
   lastPublishedVersion?: number;
@@ -136,7 +137,7 @@ const getContentItems = async (
     // Add content items in repo base folder. Cache the other items so we don't have to request them again.
     let newItems: ContentItem[];
     try {
-      const allItems = await paginator(repository.related.contentItems.list, { status: 'ACTIVE' });
+      const allItems = await paginator(repository.related.contentItems.list, { status: Status.ACTIVE });
 
       Array.prototype.push.apply(repoItems, allItems);
       newItems = allItems.filter(item => item.folderId == null);

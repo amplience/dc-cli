@@ -3,15 +3,17 @@ import { ConfigurationParameters } from '../configure';
 import { ContentTypeSchema, DynamicContent, Hub, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { createStream } from 'table';
+import { table } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
-import { TableStream } from '../../interfaces/table.interface';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import chalk from 'chalk';
 import { createContentTypeSchema } from './create.service';
 import { updateContentTypeSchema } from './update.service';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
+import { FileLog } from '../../common/file-log';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { ResourceStatus, Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'import <dir>';
 
@@ -21,10 +23,19 @@ export interface SchemaOptions {
   validation: ValidationLevel;
 }
 
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('schema', 'import', platform);
+
 export const builder = (yargs: Argv): void => {
   yargs.positional('dir', {
     describe: 'Directory containing Content Type Schema definitions',
     type: 'string'
+  });
+
+  yargs.option('logFile', {
+    type: 'string',
+    default: LOG_FILENAME,
+    describe: 'Path to a log file to write to.'
   });
 };
 
@@ -38,13 +49,15 @@ export const storedSchemaMapper = (
   return new ContentTypeSchema(mutatedSchema);
 };
 
-export const doCreate = async (hub: Hub, schema: ContentTypeSchema): Promise<ContentTypeSchema> => {
+export const doCreate = async (hub: Hub, schema: ContentTypeSchema, log: FileLog): Promise<ContentTypeSchema> => {
   try {
     const createdSchemaType = await createContentTypeSchema(
       schema.body || '',
       schema.validationLevel || ValidationLevel.CONTENT_TYPE,
       hub
     );
+
+    log.addAction('CREATE', `${createdSchemaType.id}`);
 
     return createdSchemaType;
   } catch (err) {
@@ -57,18 +70,31 @@ const equals = (a: ContentTypeSchema, b: ContentTypeSchema): boolean =>
 
 export const doUpdate = async (
   client: DynamicContent,
-  schema: ContentTypeSchema
+  schema: ContentTypeSchema,
+  log: FileLog
 ): Promise<{ contentTypeSchema: ContentTypeSchema; updateStatus: UpdateStatus }> => {
   try {
-    const retrievedSchema = await client.contentTypeSchemas.get(schema.id || '');
+    let retrievedSchema: ContentTypeSchema = await client.contentTypeSchemas.get(schema.id || '');
     if (equals(retrievedSchema, schema)) {
       return { contentTypeSchema: retrievedSchema, updateStatus: UpdateStatus.SKIPPED };
     }
+
+    if ((retrievedSchema as ResourceStatus).status === Status.ARCHIVED) {
+      try {
+        // Resurrect this schema before updating it.
+        retrievedSchema = await retrievedSchema.related.unarchive();
+      } catch (err) {
+        throw new Error(`Error unable unarchive content type ${schema.id}: ${err.message}`);
+      }
+    }
+
     const updatedSchema = await updateContentTypeSchema(
       retrievedSchema,
       schema.body || '',
       schema.validationLevel || ValidationLevel.CONTENT_TYPE
     );
+
+    log.addAction('UPDATE', `${retrievedSchema.id} ${retrievedSchema.version} ${updatedSchema.version}`);
 
     return { contentTypeSchema: updatedSchema, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
@@ -79,31 +105,34 @@ export const doUpdate = async (
 export const processSchemas = async (
   schemasToProcess: ContentTypeSchema[],
   client: DynamicContent,
-  hub: Hub
+  hub: Hub,
+  log: FileLog
 ): Promise<void> => {
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+  const data: string[][] = [];
 
-  tableStream.write([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  data.push([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const schema of schemasToProcess) {
     let status: ImportResult;
     let contentTypeSchema: ContentTypeSchema;
     if (schema.id) {
-      const result = await doUpdate(client, schema);
+      const result = await doUpdate(client, schema, log);
       contentTypeSchema = result.contentTypeSchema;
       status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
-      contentTypeSchema = await doCreate(hub, schema);
+      contentTypeSchema = await doCreate(hub, schema, log);
       status = 'CREATED';
     }
-    tableStream.write([contentTypeSchema.id || '', contentTypeSchema.schemaId || '', status]);
+    data.push([contentTypeSchema.id || '', contentTypeSchema.schemaId || '', status]);
   }
-  process.stdout.write('\n');
+
+  log.appendLine(table(data, streamTableOptions));
 };
 
 export const handler = async (argv: Arguments<ImportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir } = argv;
+  const { dir, logFile } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
+  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
   const schemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
   const [resolvedSchemas, resolveSchemaErrors] = await resolveSchemaBody(schemas, dir);
   if (Object.keys(resolveSchemaErrors).length > 0) {
@@ -120,5 +149,10 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
     storedSchemaMapper(resolvedSchema, storedSchemas)
   );
 
-  await processSchemas(schemasToProcess, client, hub);
+  await processSchemas(schemasToProcess, client, hub, log);
+
+  if (typeof logFile !== 'object') {
+    // Only close the log if it was opened by this handler.
+    await log.close();
+  }
 };

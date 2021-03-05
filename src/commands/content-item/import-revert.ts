@@ -4,15 +4,21 @@ import { Arguments } from 'yargs';
 import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentItem } from 'dc-management-sdk-js';
-import { asyncQuestion } from '../../common/archive/archive-helpers';
+import { asyncQuestion } from '../../common/log-helpers';
 
 export const revert = async (argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>): Promise<boolean> => {
-  const log = new FileLog();
-  try {
-    await log.loadFromFile(argv.revertLog as string);
-  } catch (e) {
-    console.log('Could not open the import log! Aborting.');
-    return false;
+  let log: FileLog;
+
+  if (typeof argv.revertLog === 'string') {
+    log = new FileLog();
+    try {
+      await log.loadFromFile(argv.revertLog as string);
+    } catch (e) {
+      console.log('Could not open the import log! Aborting.');
+      return false;
+    }
+  } else {
+    log = argv.revertLog as FileLog;
   }
 
   // We just need to access the destination repo to undo a import.
