@@ -249,8 +249,6 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     }
   }
 
-  await rimraf(tempFolder);
-
   if (typeof logFile !== 'object') {
     await log.close();
   }

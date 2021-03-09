@@ -27,6 +27,7 @@ export class SettingsCloneStep implements CloneHubStep {
         ...state.from
       });
     } catch (e) {
+      state.logFile.appendLine(`ERROR: Could not export settings. \n${e}`);
       return false;
     }
 
@@ -57,6 +58,7 @@ export class SettingsCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
+      state.logFile.appendLine(`ERROR: Could not import settings. \n${e}`);
       return false;
     }
 
@@ -79,6 +81,7 @@ export class SettingsCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
+      state.logFile.appendLine(`ERROR: Could not import old settings. \n${e}`);
       return false;
     }
 

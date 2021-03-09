@@ -421,7 +421,7 @@ describe('hub clone command', () => {
       hubId: 'hub-id'
     };
 
-    beforeEach(async () => {
+    function reset(): void {
       jest.resetAllMocks();
       jest.mock('readline');
 
@@ -430,6 +430,10 @@ describe('hub clone command', () => {
       mockContent.registerContentType('http://type', 'type', 'targetRepo');
       mockContent.registerContentType('http://type2', 'type2', 'targetRepo');
       mockContent.registerContentType('http://type3', 'type3', 'targetRepo');
+    }
+
+    beforeEach(async () => {
+      reset();
     });
 
     beforeAll(async () => {
@@ -457,7 +461,7 @@ describe('hub clone command', () => {
     }
 
     async function prepareFakeLog(path: string): Promise<void> {
-      const fakeLog = new FileLog(path + 'steps.log');
+      const fakeLog = new FileLog(path);
       fakeLog.switchGroup('Clone Content Types');
       fakeLog.addAction('CREATE', 'type');
       fakeLog.addAction('UPDATE', 'type2 0 1');
@@ -473,7 +477,7 @@ describe('hub clone command', () => {
 
       copierAny.setForceFail(false);
 
-      await prepareFakeLog('temp/clone-revert/');
+      await prepareFakeLog('temp/clone-revert/steps.log');
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
@@ -547,47 +551,45 @@ describe('hub clone command', () => {
 
       copierAny.setForceFail(false);
 
-      for (let i = 1; i <= 7; i++) {
-        jest.resetAllMocks();
+      await ensureDirectoryExists('temp/clone-revert/stepExcept/settings');
+      await prepareFakeLog('temp/clone-revert/stepExcept.log');
+      writeFileSync('temp/clone-revert/stepExcept/settings/hub-hub2-id-test.json', '{}');
+
+      await ensureDirectoryExists('temp/clone-revert/steps/oldType');
+
+      for (let i = 1; i <= 5; i++) {
+        reset();
         copyCalls.splice(0, copyCalls.length);
 
-        copierAny.setForceFail(i == 7);
-
-        succeedOrFail(settingsExport.handler, i != 1);
-        succeedOrFail(settingsImport.handler, i != 2);
-
-        succeedOrFail(schemaExport.handler, i != 3);
-        succeedOrFail(schemaImport.handler, i != 4);
-
-        succeedOrFail(typeExport.handler, i != 5);
-        succeedOrFail(typeImport.handler, i != 6);
+        succeedOrFail(settingsImport.handler, i != 1);
+        mockContent.failSchemaActions = i == 2 ? 'all' : null;
+        mockContent.failTypeActions = i == 3 || i == 2 ? 'all' : null;
+        succeedOrFail(typeImport.handler, i != 4);
+        copierAny.setForceFail(i == 5);
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
           ...config,
 
-          dir: 'temp/clone/stepExcept',
+          dir: 'temp/clone-revert/stepExcept',
+          revertLog: 'temp/clone-revert/stepExcept.log',
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret'
         };
 
-        await ensureDirectoryExists('temp/clone/stepExcept/settings');
-        writeFileSync('temp/clone/stepExcept/settings/hub-hub-id-test.json', '{}');
-
         await handler(argv);
 
-        expect(settingsExport.handler).toHaveBeenCalledTimes(i == 1 ? 1 : 2);
-        expect(settingsImport.handler).toHaveBeenCalledTimes(i >= 2 ? 1 : 0);
+        expect(settingsImport.handler).toHaveBeenCalledTimes(i >= 1 ? 1 : 0);
 
-        expect(schemaExport.handler).toHaveBeenCalledTimes(i >= 3 ? 1 : 0);
-        expect(schemaImport.handler).toHaveBeenCalledTimes(i >= 4 ? 1 : 0);
+        process.stdout.write(i.toString());
 
-        expect(typeExport.handler).toHaveBeenCalledTimes(i == 5 ? 1 : i > 5 ? 2 : 0);
-        expect(typeImport.handler).toHaveBeenCalledTimes(i >= 6 ? 1 : 0);
+        expectTypeSchemaRevert(i > 2, i > 3);
 
-        expect(copyCalls.length).toEqual(i >= 7 ? 1 : 0);
+        expect(typeImport.handler).toHaveBeenCalledTimes(i >= 4 ? 1 : 0);
+
+        expect(copyCalls.length).toEqual(i >= 5 ? 1 : 0);
       }
     });
 
