@@ -5,6 +5,7 @@ import { readdirSync } from 'fs';
 
 import { handler as exportSettings } from '../../settings/export';
 import { handler as importSettings } from '../../settings/import';
+import { ensureDirectoryExists } from '../../../common/import/directory-utils';
 
 export class SettingsCloneStep implements CloneHubStep {
   getName(): string {
@@ -20,6 +21,7 @@ export class SettingsCloneStep implements CloneHubStep {
 
   async run(state: CloneHubState): Promise<boolean> {
     try {
+      await ensureDirectoryExists(join(state.path, 'settings'));
       await exportSettings({
         dir: join(state.path, 'settings'),
         logFile: state.logFile,
