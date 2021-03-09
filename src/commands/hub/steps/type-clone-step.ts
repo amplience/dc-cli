@@ -22,6 +22,7 @@ export class TypeCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
+      state.logFile.appendLine(`ERROR: Could not export existing destination types. \n${e}`);
       return false;
     }
 
@@ -33,6 +34,7 @@ export class TypeCloneStep implements CloneHubStep {
         ...state.from
       });
     } catch (e) {
+      state.logFile.appendLine(`ERROR: Could not export types. \n${e}`);
       return false;
     }
 
@@ -44,6 +46,7 @@ export class TypeCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
+      state.logFile.appendLine(`ERROR: Could not import types. \n${e}`);
       return false;
     }
 
@@ -62,21 +65,26 @@ export class TypeCloneStep implements CloneHubStep {
         await type.related.archive();
         state.logFile.addAction('ARCHIVE', toArchive[i]);
       } catch (e) {
-        state.logFile.appendLine(`Couldn't archive content type ${toArchive[i]}. Continuing.`);
+        state.logFile.appendLine(`Couldn't archive content type ${toArchive[i]}. Continuing...`);
       }
     }
 
     // Update using the oldType folder.
     if (toUpdate.length > 0 && existsSync(join(state.path, 'oldType'))) {
-      await importType(
-        {
-          dir: join(state.path, 'oldType'),
-          sync: true,
-          logFile: state.logFile,
-          ...state.to
-        },
-        toUpdate.map(item => item.split(' ')[0])
-      );
+      try {
+        await importType(
+          {
+            dir: join(state.path, 'oldType'),
+            sync: true,
+            logFile: state.logFile,
+            ...state.to
+          },
+          toUpdate.map(item => item.split(' ')[0])
+        );
+      } catch (e) {
+        state.logFile.appendLine(`ERROR: Could not import old types. \n${e}`);
+        return false;
+      }
     }
 
     return true;
