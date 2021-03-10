@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { ContentType } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ArchiveLog } from '../../common/archive/archive-log';
+import { LogErrorLevel, ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { equalsOrRegex } from '../../common/filter/filter';
 
@@ -152,9 +152,9 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(`Failed to archive ${label}, continuing. Error: \n${e.toString()}`);
+        log.addError(LogErrorLevel.WARNING, `Failed to archive ${label}, continuing.`, e);
       } else {
-        console.log(`Failed to archive ${label}, aborting. Error: \n${e.toString()}`);
+        log.addError(LogErrorLevel.ERROR, `Failed to archive ${label}, aborting.`, e);
         break;
       }
     }

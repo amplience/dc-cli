@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { ContentType } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ArchiveLog } from '../../common/archive/archive-log';
+import { LogErrorLevel, ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
@@ -149,9 +149,9 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(`Failed to unarchive ${label}, continuing. Error: \n${e.toString()}`);
+        log.addError(LogErrorLevel.WARNING, `Failed to unarchive ${label}, continuing.`, e);
       } else {
-        console.log(`Failed to unarchive ${label}, aborting. Error: \n${e.toString()}`);
+        log.addError(LogErrorLevel.ERROR, `Failed to unarchive ${label}, aborting.`, e);
         break;
       }
     }

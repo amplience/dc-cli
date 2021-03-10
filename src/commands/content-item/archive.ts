@@ -1,7 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ArchiveLog } from '../../common/archive/archive-log';
+import { LogErrorLevel, ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
@@ -265,12 +265,16 @@ export const processItems = async ({
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(
-          `Failed to archive ${contentItems[i].label} (${contentItems[i].id}), continuing. Error: \n${e.toString()}`
+        log.addError(
+          LogErrorLevel.WARNING,
+          `Failed to archive ${contentItems[i].label} (${contentItems[i].id}), continuing.`,
+          e
         );
       } else {
-        console.log(
-          `Failed to archive ${contentItems[i].label} (${contentItems[i].id}), aborting. Error: \n${e.toString()}`
+        log.addError(
+          LogErrorLevel.ERROR,
+          `Failed to archive ${contentItems[i].label} (${contentItems[i].id}), aborting.`,
+          e
         );
         break;
       }

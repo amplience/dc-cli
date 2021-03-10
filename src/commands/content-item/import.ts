@@ -31,6 +31,7 @@ import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
+import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -332,7 +333,7 @@ const prepareContentForImport = async (
         }
       }
     } catch (e) {
-      log.appendLine(`Could not get base folders for repository ${repo.label}: ${e.toString()}`);
+      log.addError(LogErrorLevel.ERROR, `Could not get base folders for repository ${repo.label}: `, e);
       return null;
     }
 
@@ -402,7 +403,7 @@ const prepareContentForImport = async (
     types = await paginator(hub.related.contentTypes.list);
     schemas = await paginator(hub.related.contentTypeSchema.list);
   } catch (e) {
-    console.error(`Could not load content types: ${e.toString()}`);
+    log.addError(LogErrorLevel.ERROR, 'Could not load content types:', e);
     return null;
   }
 
@@ -500,7 +501,7 @@ const prepareContentForImport = async (
         missingRepoAssignments.map(([repo, type]) => repo.related.contentTypes.assign(type.id as string))
       );
     } catch (e) {
-      log.appendLine(`Failed creating repo assignments. Error: ${e.toString()}`);
+      log.addError(LogErrorLevel.ERROR, 'Failed creating repo assignments:', e);
       return null;
     }
   }
@@ -534,7 +535,7 @@ const prepareContentForImport = async (
     tree.removeContent(affectedContentItems);
 
     if (tree.all.length === 0) {
-      log.appendLine('No content remains after removing those with missing content type schemas. Aborting.');
+      log.addError(LogErrorLevel.ERROR, 'No content remains after removing those with missing content type schemas. Aborting.');
       return null;
     }
 
@@ -679,7 +680,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        log.appendLine(`Failed creating ${content.label}.`);
+        log.addError(LogErrorLevel.ERROR, `Failed creating ${content.label}:`, e);
         abort(e);
         return false;
       }
@@ -754,7 +755,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        log.appendLine(`Failed creating ${content.label}.`);
+        log.addError(LogErrorLevel.ERROR, `Failed creating ${content.label}:`, e);
         abort(e);
         return false;
       }
@@ -831,7 +832,7 @@ export const handler = async (
   try {
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
-    console.error(`Couldn't get hub: ${e.toString()}`);
+    log.addError(LogErrorLevel.ERROR, `Couldn't get hub:`, e);
     closeLog();
     return false;
   }
@@ -865,7 +866,7 @@ export const handler = async (
       repo = await bFolder.related.contentRepository();
       folder = bFolder;
     } catch (e) {
-      console.error(`Couldn't get base folder: ${e.toString()}`);
+      log.addError(LogErrorLevel.ERROR, `Couldn't get base folder:`, e);
       closeLog();
       return false;
     }
@@ -875,7 +876,7 @@ export const handler = async (
     try {
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
-      console.error(`Couldn't get base repository: ${e.toString()}`);
+      log.addError(LogErrorLevel.ERROR, `Couldn't get base repository:`, e);
       closeLog();
       return false;
     }
@@ -886,7 +887,7 @@ export const handler = async (
     try {
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
-      log.appendLine(`Couldn't get repositories: ${e.toString()}`);
+      log.addError(LogErrorLevel.ERROR, `Couldn't get repositories:`, e);
       closeLog();
       return false;
     }
@@ -930,7 +931,7 @@ export const handler = async (
     }
 
     if (importRepos.length == 0) {
-      log.appendLine('Could not find any matching repositories to import into, aborting.');
+      log.addError(LogErrorLevel.ERROR, 'Could not find any matching repositories to import into, aborting.');
       closeLog();
       return false;
     }

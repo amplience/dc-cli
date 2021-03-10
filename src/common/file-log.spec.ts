@@ -35,7 +35,7 @@ describe('file-log', () => {
       expect(await promisify(readFile)('temp/FileWithDate-1234.log', { encoding: 'utf-8' })).toMatchInlineSnapshot(`
         "// temp/FileWithDate-1234.log
         // Test Message
-        "
+        SUCCESS"
       `);
 
       await promisify(unlink)('temp/FileWithDate-1234.log');
