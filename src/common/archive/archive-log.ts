@@ -1,6 +1,7 @@
-import { readFile, writeFile, exists, mkdir } from 'fs';
+import { readFile, writeFile } from 'fs';
 import { dirname } from 'path';
 import { promisify } from 'util';
+import { ensureDirectoryExists } from '../import/directory-utils';
 
 export interface ArchiveLogItem {
   comment: boolean;
@@ -84,9 +85,8 @@ export class ArchiveLog {
       log += this.getResultCode();
 
       const dir = dirname(path);
-      if (!(await promisify(exists)(dir))) {
-        await promisify(mkdir)(dir);
-      }
+      await ensureDirectoryExists(dir);
+
       await promisify(writeFile)(path, log);
       console.log(`Log written to "${path}".`);
       return true;
@@ -104,12 +104,14 @@ export class ArchiveLog {
     this.addAction(LogErrorLevel[level], '');
     this.addComment(LogErrorLevel[level] + ': ' + message);
 
-    console.error(LogErrorLevel[level] + ': ' + message);
+    const errorLog = level == LogErrorLevel.ERROR ? console.error : console.warn;
+
+    errorLog(LogErrorLevel[level] + ': ' + message);
 
     if (error) {
       this.addComment(error.toString());
 
-      console.error(error.toString());
+      errorLog(error.toString());
     }
   }
 
