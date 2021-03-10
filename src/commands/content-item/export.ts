@@ -193,11 +193,7 @@ const getContentItems = async (
           const subfolders = await paginator(folder.related.folders.list);
           Array.prototype.push.apply(nextFolders, subfolders);
         } catch (e) {
-          log.addError(
-            LogErrorLevel.WARNING,
-            `Could not get subfolders from folder ${folder.name} (${folder.id})`,
-            e
-          );
+          log.addError(LogErrorLevel.WARNING, `Could not get subfolders from folder ${folder.name} (${folder.id})`, e);
         }
       }
     );
@@ -338,11 +334,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
         log.appendLine(JSON.stringify(errors, null, 2));
       }
     } catch (e) {
-      log.addError(
-        LogErrorLevel.WARNING,
-        `Could not validate ${item.label} as there is a problem with the schema:`,
-        e
-      );
+      log.addError(LogErrorLevel.WARNING, `Could not validate ${item.label} as there is a problem with the schema:`, e);
     }
 
     let resolvedPath: string;

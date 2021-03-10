@@ -434,6 +434,8 @@ const prepareContentForImport = async (
         return null;
       }
 
+      log.addError(LogErrorLevel.WARNING, `Creating ${existing.length} missing content types.`);
+
       // Create the content types
 
       for (let i = 0; i < existing.length; i++) {
@@ -496,6 +498,8 @@ const prepareContentForImport = async (
       return null;
     }
 
+    log.addError(LogErrorLevel.WARNING, `Creating ${missingRepoAssignments.length} missing repo assignments.`);
+
     try {
       await Promise.all(
         missingRepoAssignments.map(([repo, type]) => repo.related.contentTypes.assign(type.id as string))
@@ -535,7 +539,10 @@ const prepareContentForImport = async (
     tree.removeContent(affectedContentItems);
 
     if (tree.all.length === 0) {
-      log.addError(LogErrorLevel.ERROR, 'No content remains after removing those with missing content type schemas. Aborting.');
+      log.addError(
+        LogErrorLevel.ERROR,
+        'No content remains after removing those with missing content type schemas. Aborting.'
+      );
       return null;
     }
 
@@ -547,6 +554,11 @@ const prepareContentForImport = async (
     if (!ignore) {
       return null;
     }
+
+    log.addError(
+      LogErrorLevel.WARNING,
+      `Skipping ${missingRepoAssignments.length} content items due to missing schemas.`
+    );
   }
 
   // Do all the content items that we depend on exist either in the mapping or in the items we're importing?
@@ -621,6 +633,11 @@ const prepareContentForImport = async (
     if (!ignore) {
       return null;
     }
+
+    log.addError(
+      LogErrorLevel.WARNING,
+      `${invalidContentItems.length} content items ${action} due to missing references.`
+    );
   }
 
   log.appendLine(
@@ -927,6 +944,8 @@ export const handler = async (
           closeLog();
           return false;
         }
+
+        log.addError(LogErrorLevel.WARNING, `${missingRepos.length} repositories skipped.`);
       }
     }
 
