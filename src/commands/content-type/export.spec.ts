@@ -449,16 +449,9 @@ describe('content-type export command', (): void => {
     it('should output a message if no content types to export from hub', async () => {
       jest.spyOn(exportModule, 'getContentTypeExports').mockReturnValueOnce([[], []]);
 
-      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
-      jest.spyOn(process, 'exit').mockImplementation(() => {
-        throw exitError;
-      });
-
       const previouslyExportedContentTypes = {};
 
-      await expect(
-        processContentTypes('export-dir', previouslyExportedContentTypes, [], new FileLog(), false)
-      ).rejects.toThrowError(exitError);
+      await processContentTypes('export-dir', previouslyExportedContentTypes, [], new FileLog(), false);
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(0);
@@ -602,10 +595,6 @@ describe('content-type export command', (): void => {
         settings: { label: 'content type 2 - mutated label' }
       });
 
-      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
-      jest.spyOn(process, 'exit').mockImplementation(() => {
-        throw exitError;
-      });
       jest.spyOn(exportServiceModule, 'promptToOverwriteExports').mockResolvedValueOnce(false);
       jest.spyOn(exportModule, 'getContentTypeExports').mockReturnValueOnce([
         [
@@ -637,9 +626,13 @@ describe('content-type export command', (): void => {
         'export-dir/export-filename-2.json': new ContentType(exportedContentTypes[1])
       };
 
-      await expect(
-        processContentTypes('export-dir', previouslyExportedContentTypes, mutatedContentTypes, new FileLog(), false)
-      ).rejects.toThrowError(exitError);
+      await processContentTypes(
+        'export-dir',
+        previouslyExportedContentTypes,
+        mutatedContentTypes,
+        new FileLog(),
+        false
+      );
 
       expect(exportModule.getContentTypeExports).toHaveBeenCalledTimes(1);
       expect(exportModule.getContentTypeExports).toHaveBeenCalledWith(
@@ -651,7 +644,6 @@ describe('content-type export command', (): void => {
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportServiceModule.writeJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockTable).toHaveBeenCalledTimes(0);
-      expect(process.exit).toHaveBeenCalled();
     });
   });
 

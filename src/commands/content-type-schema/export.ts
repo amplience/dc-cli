@@ -221,6 +221,7 @@ export const processContentTypeSchemas = async (
 ): Promise<void> => {
   if (storedContentTypeSchemas.length === 0) {
     nothingExportedExit(log, 'No content type schemas to export from this hub, exiting.');
+    return;
   }
 
   const [allExports, updatedExportsMap] = getContentTypeSchemaExports(
@@ -233,6 +234,7 @@ export const processContentTypeSchemas = async (
     (Object.keys(updatedExportsMap).length > 0 && !(force || (await promptToOverwriteExports(updatedExportsMap, log))))
   ) {
     nothingExportedExit(log);
+    return;
   }
 
   await ensureDirectoryExists(outputDir);

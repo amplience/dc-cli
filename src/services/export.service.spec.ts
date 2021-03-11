@@ -145,15 +145,10 @@ describe('export service tests', () => {
   describe('nothingExportedExit', () => {
     it('should exit with an export message', () => {
       const writeSpy = jest.spyOn(process.stdout, 'write');
-      const exitSpy = jest.spyOn(process, 'exit');
-      const exitError = new Error('PROCESS EXIT INVOKED FOR TEST');
 
       writeSpy.mockImplementation();
-      exitSpy.mockImplementation(() => {
-        throw exitError;
-      });
 
-      expect(() => nothingExportedExit(new FileLog())).toThrowError(exitError);
+      nothingExportedExit(new FileLog());
       expect(writeSpy.mock.calls).toMatchSnapshot();
     });
   });

@@ -295,10 +295,6 @@ describe('content-type-schema export command', (): void => {
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
-      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
-      jest.spyOn(process, 'exit').mockImplementation(() => {
-        throw exitError;
-      });
       const stdoutSpy = jest.spyOn(process.stdout, 'write');
       stdoutSpy.mockImplementation();
 
@@ -333,15 +329,13 @@ describe('content-type-schema export command', (): void => {
         'export-dir/export-filename-3.json': contentTypeSchemasToProcess[2]
       };
 
-      await expect(
-        processContentTypeSchemas(
-          'export-dir',
-          previouslyExportedContentTypeSchemas,
-          mutatedContentTypeSchemas,
-          new FileLog(),
-          false
-        )
-      ).rejects.toThrowError(exitError);
+      await processContentTypeSchemas(
+        'export-dir',
+        previouslyExportedContentTypeSchemas,
+        mutatedContentTypeSchemas,
+        new FileLog(),
+        false
+      );
 
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
@@ -355,20 +349,13 @@ describe('content-type-schema export command', (): void => {
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
       expect(mockTable).toHaveBeenCalledTimes(0);
-      expect(process.exit).toHaveBeenCalled();
     });
 
     it('should not do anything if the list of schemas to export is empty', async () => {
-      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
-      jest.spyOn(process, 'exit').mockImplementation(() => {
-        throw exitError;
-      });
       const stdoutSpy = jest.spyOn(process.stdout, 'write');
       stdoutSpy.mockImplementation();
 
-      await expect(processContentTypeSchemas('export-dir', {}, [], new FileLog(), false)).rejects.toThrowError(
-        exitError
-      );
+      expect(processContentTypeSchemas('export-dir', {}, [], new FileLog(), false));
 
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(0);
@@ -377,7 +364,6 @@ describe('content-type-schema export command', (): void => {
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
       expect(mockTable).toHaveBeenCalledTimes(0);
-      expect(process.exit).toHaveBeenCalled();
     });
   });
 
