@@ -159,6 +159,7 @@ export const processContentTypes = async (
 ): Promise<void> => {
   if (contentTypesBeingExported.length === 0) {
     nothingExportedExit(log, 'No content types to export from this hub, exiting.');
+    return;
   }
 
   const [allExports, updatedExportsMap] = getContentTypeExports(
@@ -171,6 +172,7 @@ export const processContentTypes = async (
     (Object.keys(updatedExportsMap).length > 0 && !(force || (await promptToOverwriteExports(updatedExportsMap, log))))
   ) {
     nothingExportedExit(log);
+    return;
   }
 
   await ensureDirectoryExists(outputDir);

@@ -60,5 +60,4 @@ export const promptToExportSettings = (filename: string, log: FileLog): Promise<
 
 export const nothingExportedExit = (log: FileLog, msg = 'Nothing was exported, exiting.'): void => {
   log.appendLine(msg);
-  process.exit(1);
 };
