@@ -1,7 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { LogErrorLevel, ArchiveLog } from '../../common/archive/archive-log';
+import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';

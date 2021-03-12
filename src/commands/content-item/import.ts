@@ -31,7 +31,6 @@ import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
-import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(

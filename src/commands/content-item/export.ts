@@ -16,7 +16,6 @@ import { ContentDependancyTree, RepositoryContentItem } from '../../common/conte
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
-import { LogErrorLevel } from '../../common/archive/archive-log';
 
 interface PublishedContentItem {
   lastPublishedVersion?: number;

@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import { ContentType } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { LogErrorLevel, ArchiveLog } from '../../common/archive/archive-log';
+import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
