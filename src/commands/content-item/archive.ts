@@ -265,17 +265,9 @@ export const processItems = async ({
       log.addComment(e.toString());
 
       if (ignoreError) {
-        log.addError(
-          LogErrorLevel.WARNING,
-          `Failed to archive ${contentItems[i].label} (${contentItems[i].id}), continuing.`,
-          e
-        );
+        log.warn(`Failed to archive ${contentItems[i].label} (${contentItems[i].id}), continuing.`, e);
       } else {
-        log.addError(
-          LogErrorLevel.ERROR,
-          `Failed to archive ${contentItems[i].label} (${contentItems[i].id}), aborting.`,
-          e
-        );
+        log.error(`Failed to archive ${contentItems[i].label} (${contentItems[i].id}), aborting.`, e);
         break;
       }
     }

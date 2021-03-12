@@ -333,7 +333,7 @@ const prepareContentForImport = async (
         }
       }
     } catch (e) {
-      log.addError(LogErrorLevel.ERROR, `Could not get base folders for repository ${repo.label}: `, e);
+      log.error(`Could not get base folders for repository ${repo.label}: `, e);
       return null;
     }
 
@@ -403,7 +403,7 @@ const prepareContentForImport = async (
     types = await paginator(hub.related.contentTypes.list);
     schemas = await paginator(hub.related.contentTypeSchema.list);
   } catch (e) {
-    log.addError(LogErrorLevel.ERROR, 'Could not load content types:', e);
+    log.error('Could not load content types:', e);
     return null;
   }
 
@@ -434,7 +434,7 @@ const prepareContentForImport = async (
         return null;
       }
 
-      log.addError(LogErrorLevel.WARNING, `Creating ${existing.length} missing content types.`);
+      log.warn(`Creating ${existing.length} missing content types.`);
 
       // Create the content types
 
@@ -498,14 +498,14 @@ const prepareContentForImport = async (
       return null;
     }
 
-    log.addError(LogErrorLevel.WARNING, `Creating ${missingRepoAssignments.length} missing repo assignments.`);
+    log.warn(`Creating ${missingRepoAssignments.length} missing repo assignments.`);
 
     try {
       await Promise.all(
         missingRepoAssignments.map(([repo, type]) => repo.related.contentTypes.assign(type.id as string))
       );
     } catch (e) {
-      log.addError(LogErrorLevel.ERROR, 'Failed creating repo assignments:', e);
+      log.error('Failed creating repo assignments:', e);
       return null;
     }
   }
@@ -539,10 +539,7 @@ const prepareContentForImport = async (
     tree.removeContent(affectedContentItems);
 
     if (tree.all.length === 0) {
-      log.addError(
-        LogErrorLevel.ERROR,
-        'No content remains after removing those with missing content type schemas. Aborting.'
-      );
+      log.error('No content remains after removing those with missing content type schemas. Aborting.');
       return null;
     }
 
@@ -555,10 +552,7 @@ const prepareContentForImport = async (
       return null;
     }
 
-    log.addError(
-      LogErrorLevel.WARNING,
-      `Skipping ${missingRepoAssignments.length} content items due to missing schemas.`
-    );
+    log.warn(`Skipping ${missingRepoAssignments.length} content items due to missing schemas.`);
   }
 
   // Do all the content items that we depend on exist either in the mapping or in the items we're importing?
@@ -634,10 +628,7 @@ const prepareContentForImport = async (
       return null;
     }
 
-    log.addError(
-      LogErrorLevel.WARNING,
-      `${invalidContentItems.length} content items ${action} due to missing references.`
-    );
+    log.warn(`${invalidContentItems.length} content items ${action} due to missing references.`);
   }
 
   log.appendLine(
@@ -697,7 +688,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        log.addError(LogErrorLevel.ERROR, `Failed creating ${content.label}:`, e);
+        log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
       }
@@ -772,7 +763,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        log.addError(LogErrorLevel.ERROR, `Failed creating ${content.label}:`, e);
+        log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
       }
@@ -849,7 +840,7 @@ export const handler = async (
   try {
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
-    log.addError(LogErrorLevel.ERROR, `Couldn't get hub:`, e);
+    log.error(`Couldn't get hub:`, e);
     closeLog();
     return false;
   }
@@ -883,7 +874,7 @@ export const handler = async (
       repo = await bFolder.related.contentRepository();
       folder = bFolder;
     } catch (e) {
-      log.addError(LogErrorLevel.ERROR, `Couldn't get base folder:`, e);
+      log.error(`Couldn't get base folder:`, e);
       closeLog();
       return false;
     }
@@ -893,7 +884,7 @@ export const handler = async (
     try {
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
-      log.addError(LogErrorLevel.ERROR, `Couldn't get base repository:`, e);
+      log.error(`Couldn't get base repository:`, e);
       closeLog();
       return false;
     }
@@ -904,7 +895,7 @@ export const handler = async (
     try {
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
-      log.addError(LogErrorLevel.ERROR, `Couldn't get repositories:`, e);
+      log.error(`Couldn't get repositories:`, e);
       closeLog();
       return false;
     }
@@ -945,12 +936,12 @@ export const handler = async (
           return false;
         }
 
-        log.addError(LogErrorLevel.WARNING, `${missingRepos.length} repositories skipped.`);
+        log.warn(`${missingRepos.length} repositories skipped.`);
       }
     }
 
     if (importRepos.length == 0) {
-      log.addError(LogErrorLevel.ERROR, 'Could not find any matching repositories to import into, aborting.');
+      log.error('Could not find any matching repositories to import into, aborting.');
       closeLog();
       return false;
     }

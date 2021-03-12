@@ -147,9 +147,9 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       log.addComment(e.toString());
 
       if (ignoreError) {
-        log.addError(LogErrorLevel.WARNING, `Failed to unarchive ${schemas[i].schemaId}, continuing.`, e);
+        log.warn(`Failed to unarchive ${schemas[i].schemaId}, continuing.`, e);
       } else {
-        log.addError(LogErrorLevel.ERROR, `Failed to unarchive ${schemas[i].schemaId}, aborting.`, e);
+        log.error(`Failed to unarchive ${schemas[i].schemaId}, aborting.`, e);
         break;
       }
     }

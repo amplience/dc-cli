@@ -96,7 +96,7 @@ export class ArchiveLog {
     }
   }
 
-  addError(level: LogErrorLevel, message: string, error?: Error): void {
+  private addError(level: LogErrorLevel, message: string, error?: Error): void {
     if (level > this.errorLevel) {
       this.errorLevel = level;
     }
@@ -113,6 +113,14 @@ export class ArchiveLog {
 
       errorLog(error.toString());
     }
+  }
+
+  warn(message: string, error?: Error): void {
+    this.addError(LogErrorLevel.WARNING, message, error);
+  }
+
+  error(message: string, error?: Error): void {
+    this.addError(LogErrorLevel.ERROR, message, error);
   }
 
   addComment(comment: string): void {

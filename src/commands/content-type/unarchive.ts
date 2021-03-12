@@ -149,9 +149,9 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       log.addComment(e.toString());
 
       if (ignoreError) {
-        log.addError(LogErrorLevel.WARNING, `Failed to unarchive ${label}, continuing.`, e);
+        log.warn(`Failed to unarchive ${label}, continuing.`, e);
       } else {
-        log.addError(LogErrorLevel.ERROR, `Failed to unarchive ${label}, aborting.`, e);
+        log.error(`Failed to unarchive ${label}, aborting.`, e);
         break;
       }
     }
