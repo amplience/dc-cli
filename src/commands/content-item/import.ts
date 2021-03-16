@@ -332,7 +332,7 @@ const prepareContentForImport = async (
         }
       }
     } catch (e) {
-      log.appendLine(`Could not get base folders for repository ${repo.label}: ${e.toString()}`);
+      log.error(`Could not get base folders for repository ${repo.label}: `, e);
       return null;
     }
 
@@ -402,7 +402,7 @@ const prepareContentForImport = async (
     types = await paginator(hub.related.contentTypes.list);
     schemas = await paginator(hub.related.contentTypeSchema.list);
   } catch (e) {
-    console.error(`Could not load content types: ${e.toString()}`);
+    log.error('Could not load content types:', e);
     return null;
   }
 
@@ -432,6 +432,8 @@ const prepareContentForImport = async (
       if (!create) {
         return null;
       }
+
+      log.warn(`Creating ${existing.length} missing content types.`);
 
       // Create the content types
 
@@ -495,12 +497,14 @@ const prepareContentForImport = async (
       return null;
     }
 
+    log.warn(`Creating ${missingRepoAssignments.length} missing repo assignments.`);
+
     try {
       await Promise.all(
         missingRepoAssignments.map(([repo, type]) => repo.related.contentTypes.assign(type.id as string))
       );
     } catch (e) {
-      log.appendLine(`Failed creating repo assignments. Error: ${e.toString()}`);
+      log.error('Failed creating repo assignments:', e);
       return null;
     }
   }
@@ -534,7 +538,7 @@ const prepareContentForImport = async (
     tree.removeContent(affectedContentItems);
 
     if (tree.all.length === 0) {
-      log.appendLine('No content remains after removing those with missing content type schemas. Aborting.');
+      log.error('No content remains after removing those with missing content type schemas. Aborting.');
       return null;
     }
 
@@ -546,6 +550,8 @@ const prepareContentForImport = async (
     if (!ignore) {
       return null;
     }
+
+    log.warn(`Skipping ${missingRepoAssignments.length} content items due to missing schemas.`);
   }
 
   // Do all the content items that we depend on exist either in the mapping or in the items we're importing?
@@ -620,6 +626,8 @@ const prepareContentForImport = async (
     if (!ignore) {
       return null;
     }
+
+    log.warn(`${invalidContentItems.length} content items ${action} due to missing references.`);
   }
 
   log.appendLine(
@@ -679,7 +687,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        log.appendLine(`Failed creating ${content.label}.`);
+        log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
       }
@@ -754,7 +762,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        log.appendLine(`Failed creating ${content.label}.`);
+        log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
       }
@@ -831,7 +839,7 @@ export const handler = async (
   try {
     hub = await client.hubs.get(argv.hubId);
   } catch (e) {
-    console.error(`Couldn't get hub: ${e.toString()}`);
+    log.error(`Couldn't get hub:`, e);
     closeLog();
     return false;
   }
@@ -865,7 +873,7 @@ export const handler = async (
       repo = await bFolder.related.contentRepository();
       folder = bFolder;
     } catch (e) {
-      console.error(`Couldn't get base folder: ${e.toString()}`);
+      log.error(`Couldn't get base folder:`, e);
       closeLog();
       return false;
     }
@@ -875,7 +883,7 @@ export const handler = async (
     try {
       repo = await client.contentRepositories.get(baseRepo);
     } catch (e) {
-      console.error(`Couldn't get base repository: ${e.toString()}`);
+      log.error(`Couldn't get base repository:`, e);
       closeLog();
       return false;
     }
@@ -886,7 +894,7 @@ export const handler = async (
     try {
       repos = await paginator(hub.related.contentRepositories.list);
     } catch (e) {
-      log.appendLine(`Couldn't get repositories: ${e.toString()}`);
+      log.error(`Couldn't get repositories:`, e);
       closeLog();
       return false;
     }
@@ -926,11 +934,13 @@ export const handler = async (
           closeLog();
           return false;
         }
+
+        log.warn(`${missingRepos.length} repositories skipped.`);
       }
     }
 
     if (importRepos.length == 0) {
-      log.appendLine('Could not find any matching repositories to import into, aborting.');
+      log.error('Could not find any matching repositories to import into, aborting.');
       closeLog();
       return false;
     }

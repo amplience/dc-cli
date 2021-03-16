@@ -141,7 +141,7 @@ const getContentItems = async (
       Array.prototype.push.apply(repoItems, allItems);
       newItems = allItems.filter(item => item.folderId == null);
     } catch (e) {
-      console.error(`Error getting items from repository ${repository.name} (${repository.id}): ${e.toString()}`);
+      log.warn(`Could not get items from repository ${repository.name} (${repository.id})`, e);
       continue;
     }
 
@@ -178,7 +178,7 @@ const getContentItems = async (
           try {
             newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
           } catch (e) {
-            console.error(`Error getting items from folder ${folder.name} (${folder.id}): ${e.toString()}`);
+            log.warn(`Could not get items from folder ${folder.name} (${folder.id})`, e);
             return;
           }
         }
@@ -188,7 +188,7 @@ const getContentItems = async (
           const subfolders = await paginator(folder.related.folders.list);
           Array.prototype.push.apply(nextFolders, subfolders);
         } catch (e) {
-          console.error(`Error getting subfolders from folder ${folder.name} (${folder.id}): ${e.toString()}`);
+          log.warn(`Could not get subfolders from folder ${folder.name} (${folder.id})`, e);
         }
       }
     );
@@ -322,13 +322,11 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     try {
       const errors = await validator.validate(item.body);
       if (errors.length > 0) {
-        log.appendLine(
-          `WARNING: ${item.label} does not validate under the available schema. It may not import correctly.`
-        );
+        log.warn(`${item.label} does not validate under the available schema. It may not import correctly.`);
         log.appendLine(JSON.stringify(errors, null, 2));
       }
     } catch (e) {
-      log.appendLine(`WARNING: Could not validate ${item.label} as there is a problem with the schema: ${e}`);
+      log.warn(`Could not validate ${item.label} as there is a problem with the schema:`, e);
     }
 
     let resolvedPath: string;

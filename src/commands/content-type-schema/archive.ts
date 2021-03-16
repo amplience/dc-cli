@@ -147,9 +147,9 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(`Failed to archive ${schemas[i].schemaId}, continuing. Error: \n${e.toString()}`);
+        log.warn(`Failed to archive ${schemas[i].schemaId}, continuing.`, e);
       } else {
-        console.log(`Failed to archive ${schemas[i].schemaId}, aborting. Error: \n${e.toString()}`);
+        log.error(`Failed to archive ${schemas[i].schemaId}, aborting.`, e);
         break;
       }
     }

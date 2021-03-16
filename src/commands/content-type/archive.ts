@@ -152,9 +152,9 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(`Failed to archive ${label}, continuing. Error: \n${e.toString()}`);
+        log.warn(`Failed to archive ${label}, continuing.`, e);
       } else {
-        console.log(`Failed to archive ${label}, aborting. Error: \n${e.toString()}`);
+        log.error(`Failed to archive ${label}, aborting.`, e);
         break;
       }
     }

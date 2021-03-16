@@ -14,6 +14,7 @@ import readline from 'readline';
 import rmdir from 'rimraf';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { MockContent, ItemTemplate } from '../../common/dc-management-sdk-js/mock-content';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('readline');
 jest.mock('./import-revert');
@@ -914,6 +915,8 @@ describe('content-item import command', () => {
 
       mockContent.metrics.reset();
 
+      const log = new FileLog();
+
       const argv = {
         ...yargArgs,
         ...config,
@@ -921,7 +924,8 @@ describe('content-item import command', () => {
         skipIncomplete: true, // Make it easier to detect that "yes" was said to the dependancy question
 
         dir: 'temp/import/force/',
-        mapFile: 'temp/import/force.json'
+        mapFile: 'temp/import/force.json',
+        logFile: log
       };
       await handler(argv);
 
@@ -938,6 +942,9 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsCreated).toEqual(4);
       expect(mockContent.metrics.itemsUpdated).toEqual(2);
       expect(mockContent.metrics.typesCreated).toEqual(1);
+
+      // Warns for each condition, except for overwrite.
+      expect(log.getData('WARNING').length).toEqual(4);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.

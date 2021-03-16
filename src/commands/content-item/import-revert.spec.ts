@@ -57,7 +57,7 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/createOnly.txt', 'CREATE id1\nCREATE id2\nCREATE id3');
+    await createLog('temp/revert/createOnly.txt', 'CREATE id1\nCREATE id2\nCREATE id3\nSUCCESS');
 
     // Create content to import
 
@@ -90,7 +90,7 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/createImport.txt', 'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3');
+    await createLog('temp/revert/createImport.txt', 'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS');
 
     // Create content to import
 
@@ -127,7 +127,7 @@ describe('revert tests', function() {
 
     await createLog(
       'temp/revert/createWarn.txt',
-      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nUPDATE id4 3 4\nCREATE id5'
+      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nUPDATE id4 3 4\nCREATE id5\nSUCCESS'
     );
 
     // Create content to import
@@ -191,7 +191,7 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses(['n']);
 
-    await createLog('temp/revert/revertAbort.txt', 'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3');
+    await createLog('temp/revert/revertAbort.txt', 'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS');
 
     // Create content to import
 
@@ -236,7 +236,7 @@ describe('revert tests', function() {
 
     await createLog(
       'temp/revert/revertSkip.txt',
-      '// Title\n// Comment\nUPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nUPDATE id8 1 1\nUPDATE id9 0 1 invalid'
+      '// Title\n// Comment\nUPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nUPDATE id8 1 1\nUPDATE id9 0 1 invalid\nSUCCESS'
     );
 
     // Create content to import
@@ -310,7 +310,7 @@ describe('revert tests', function() {
 
     await createLog(
       'temp/revert/revertSkip.txt',
-      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24'
+      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nSUCCESS'
     );
 
     // Create content to import
@@ -349,7 +349,7 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/revertSkip2.txt', 'UPDATE id1 1 2');
+    await createLog('temp/revert/revertSkip2.txt', 'UPDATE id1 1 2\nSUCCESS');
 
     // Create content to import
 

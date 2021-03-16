@@ -265,13 +265,9 @@ export const processItems = async ({
       log.addComment(e.toString());
 
       if (ignoreError) {
-        console.log(
-          `Failed to unarchive ${contentItems[i].label} (${contentItems[i].id}), continuing. Error: \n${e.toString()}`
-        );
+        log.warn(`Failed to unarchive ${contentItems[i].label} (${contentItems[i].id}), continuing.`, e);
       } else {
-        console.log(
-          `Failed to unarchive ${contentItems[i].label} (${contentItems[i].id}), aborting. Error: \n${e.toString()}`
-        );
+        log.error(`Failed to unarchive ${contentItems[i].label} (${contentItems[i].id}), aborting.`, e);
         break;
       }
     }
