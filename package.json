@@ -20,9 +20,9 @@
     "prereleaseas": "npm run reset",
     "releaseas": "standard-version --release-as ",
     "clean": "rimraf dist packages",
-    "build": "npm run clean && tsc",
-    "build:man": "./build_man.sh",
-    "build:package": "npm run build && npm run build:man && pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 --out-dir packages .",
+    "build": "npm run clean && tsc && cp HOW_TO_USE.1 dist/dc-cli.1",
+    "update:man": "./update_man.sh",
+    "build:package": "npm run build && pkg --targets node8-macos-x64,node8-linux-x64,node8-win-x64 --out-dir packages .",
     "build:compress": "npm run build:package && scripts/compress",
     "dev": "ts-node ./src/index.ts"
   },
