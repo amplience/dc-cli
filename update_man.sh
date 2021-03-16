@@ -5,4 +5,4 @@ if ! [ -x "$(command -v ronn)" ]; then
   exit 1
 fi
 
-ronn -r HOW_TO_USE.md && mv HOW_TO_USE.1 dist/dc-cli.1
+ronn -r HOW_TO_USE.md
