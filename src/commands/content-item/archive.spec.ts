@@ -687,7 +687,7 @@ describe('content-item archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const logFileName = 'temp/content-item-unrachive.log';
+      const logFileName = 'temp/content-item-unarchive.log';
       const log = '// Type log test file\n' + 'UNARCHIVE 1\n' + 'UNARCHIVE 2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -740,7 +740,7 @@ describe('content-item archive command', () => {
         await promisify(unlink)('temp/content-item-unarchive.log');
       }
 
-      const logFileName = 'temp/content-item-unrachive.log';
+      const logFileName = 'temp/content-item-unarchive.log';
       const log = '// Type log test file\n' + 'UNARCHIVE 1\n' + 'UNARCHIVE 2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);

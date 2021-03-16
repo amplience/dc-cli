@@ -21,6 +21,7 @@ jest.mock('readline');
 jest.mock('./import-revert');
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/import/publish-queue');
+jest.mock('../../common/media/media-rewriter');
 jest.mock('../../common/log-helpers');
 
 function rimraf(dir: string): Promise<Error> {
