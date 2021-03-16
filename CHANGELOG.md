@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.10.0](https://www.github.com/amplience/dc-cli/compare/v0.9.0...v0.10.0) (2021-03-16)
+
+
+### Features
+
+* **log:** log errors in a more consistent fashion ([#72](https://www.github.com/amplience/dc-cli/issues/72)) ([db7067c](https://www.github.com/amplience/dc-cli/commit/db7067c88c2b89618e2c7ab5db2cc9ec8ba03d52))
+
 ## [0.9.0](https://github.com/amplience/dc-cli/compare/v0.8.1...v0.9.0) (2020-12-17)
 
 
