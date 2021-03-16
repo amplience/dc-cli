@@ -11,7 +11,7 @@ import { ResourceStatus, Status } from '../../../common/dc-management-sdk-js/res
 
 export class SchemaCloneStep implements CloneHubStep {
   getName(): string {
-    return 'Clone Content Type Schema';
+    return 'Clone Content Type Schemas';
   }
 
   async run(state: CloneHubState): Promise<boolean> {
@@ -23,7 +23,7 @@ export class SchemaCloneStep implements CloneHubStep {
         ...state.from
       });
     } catch (e) {
-      state.logFile.appendLine(`ERROR: Could not export schema. \n${e}`);
+      state.logFile.appendLine(`ERROR: Could not export schemas. \n${e}`);
       return false;
     }
 
@@ -34,7 +34,7 @@ export class SchemaCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
-      state.logFile.appendLine(`ERROR: Could not import schema. \n${e}`);
+      state.logFile.appendLine(`ERROR: Could not import schemas. \n${e}`);
       return false;
     }
 

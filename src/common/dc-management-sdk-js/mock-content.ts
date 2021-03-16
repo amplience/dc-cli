@@ -455,7 +455,7 @@ export class MockContent {
           cachedSchema: { ...body, $id: schemaName }
         });
 
-        this.metrics.typesSynced;
+        this.metrics.typesSynced++;
 
         return Promise.resolve(cached);
       });

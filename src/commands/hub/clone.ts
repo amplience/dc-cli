@@ -2,7 +2,6 @@ import { getDefaultLogPath } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { join } from 'path';
 import { ConfigurationParameters } from '../configure';
-import rmdir from 'rimraf';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
@@ -14,7 +13,6 @@ import { SchemaCloneStep } from './steps/schema-clone-step';
 import { SettingsCloneStep } from './steps/settings-clone-step';
 import { TypeCloneStep } from './steps/type-clone-step';
 import { CloneHubState } from './model/clone-hub-state';
-import { revert } from '../content-item/import-revert';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -146,12 +144,6 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-function rimraf(dir: string): Promise<Error> {
-  return new Promise((resolve): void => {
-    rmdir(dir, resolve);
-  });
-}
-
 const steps = [new SettingsCloneStep(), new SchemaCloneStep(), new TypeCloneStep(), new ContentCloneStep()];
 
 export const handler = async (argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters>): Promise<void> => {
@@ -210,7 +202,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     if (loaded) {
       state.revertLog = revertLog;
 
-      for (let i = (argv.step || 1) - 1; i < steps.length; i++) {
+      for (let i = argv.step || 0; i < steps.length; i++) {
         const step = steps[i];
 
         log.switchGroup(step.getName());
@@ -230,7 +222,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
       }
     }
   } else {
-    for (let i = (argv.step || 1) - 1; i < steps.length; i++) {
+    for (let i = argv.step || 0; i < steps.length; i++) {
       const step = steps[i];
 
       log.switchGroup(step.getName());
