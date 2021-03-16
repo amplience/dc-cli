@@ -31,6 +31,7 @@ import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
+import { MediaRewriter } from '../../common/media/media-rewriter';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -279,7 +280,7 @@ const prepareContentForImport = async (
   folder: Folder | null,
   mapping: ContentMapping,
   log: FileLog,
-  argv: ImportItemBuilderOptions
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<ContentDependancyTree | null> => {
   // traverse folder structure and find content items
   // replicate relative path string in target repo/folder (create if does not exist)
