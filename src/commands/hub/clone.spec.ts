@@ -12,6 +12,11 @@ import * as typeImport from '../content-type/import';
 import * as typeExport from '../content-type/export';
 import * as copier from '../content-item/copy';
 
+import * as content from './steps/content-clone-step';
+import * as settings from './steps/settings-clone-step';
+import * as schema from './steps/schema-clone-step';
+import * as type from './steps/type-clone-step';
+
 import rmdir from 'rimraf';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
 import { ConfigurationParameters } from '../configure';
@@ -20,17 +25,44 @@ import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-optio
 import { FileLog } from '../../common/file-log';
 import { MockContent } from '../../common/dc-management-sdk-js/mock-content';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { CloneHubState } from './model/clone-hub-state';
 
 jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../settings/import');
-jest.mock('../settings/export');
-jest.mock('../content-type-schema/import');
-jest.mock('../content-type-schema/export');
-jest.mock('../content-type/import');
-jest.mock('../content-type/export');
-jest.mock('../content-item/copy');
+
+let success = [true, true, true, true];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
+  mock.mockImplementation(() => Promise.resolve(succeed()));
+  /*
+  mock.mockImplementation(() => {
+    if (succeed()) {
+      return Promise.resolve(true);
+    } else {
+      return Promise.reject(false);
+    }
+  });
+  */
+  return mock;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mockStep(name: string, success: () => boolean): any {
+  return jest.fn().mockImplementation(() => ({
+    run: succeedOrFail(jest.fn(), success),
+    revert: succeedOrFail(jest.fn(), success),
+    getName: jest.fn().mockReturnValue(name)
+  }));
+}
+
+jest.mock('./steps/settings-clone-step', () => ({ SettingsCloneStep: mockStep('Clone Settings', () => success[0]) }));
+jest.mock('./steps/schema-clone-step', () => ({
+  SchemaCloneStep: mockStep('Clone Content Type Schemas', () => success[1])
+}));
+jest.mock('./steps/type-clone-step', () => ({ TypeCloneStep: mockStep('Clone Content Types', () => success[2]) }));
+jest.mock('./steps/content-clone-step', () => ({ ContentCloneStep: mockStep('Clone Content', () => success[3]) }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const copierAny = copier as any;
@@ -46,13 +78,25 @@ function rimraf(dir: string): Promise<Error> {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function succeedOrFail(mock: any, succeed: boolean): void {
-  if (succeed) {
-    mock.mockResolvedValue(true);
-  } else {
-    mock.mockRejectedValue(false);
-  }
+function getMocks(): jest.Mock[] {
+  return [
+    settings.SettingsCloneStep as jest.Mock,
+    schema.SchemaCloneStep as jest.Mock,
+    type.TypeCloneStep as jest.Mock,
+    content.ContentCloneStep as jest.Mock
+  ];
+}
+
+function clearMocks(): void {
+  const mocks = getMocks();
+
+  mocks.forEach(mock => {
+    mock.mock.results.forEach(obj => {
+      const instance = obj.value;
+      (instance.run as jest.Mock).mockClear();
+      (instance.revert as jest.Mock).mockClear();
+    });
+  });
 }
 
 describe('hub clone command', () => {
@@ -192,11 +236,6 @@ describe('hub clone command', () => {
       hubId: 'hub-id'
     };
 
-    beforeEach(async () => {
-      jest.mock('readline');
-      jest.mock('../../services/dynamic-content-client-factory');
-    });
-
     beforeAll(async () => {
       await rimraf('temp/clone/');
     });
@@ -205,11 +244,29 @@ describe('hub clone command', () => {
       await rimraf('temp/clone/');
     });
 
-    it('should call all steps in order with given parameters', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
-      copyCalls.splice(0, copyCalls.length);
+    function makeState(argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters>): CloneHubState {
+      return {
+        argv: argv,
+        from: {
+          clientId: argv.clientId as string,
+          clientSecret: argv.clientSecret as string,
+          hubId: argv.hubId as string,
+          ...yargArgs
+        },
+        to: {
+          clientId: argv.dstClientId as string,
+          clientSecret: argv.dstSecret as string,
+          hubId: argv.dstHubId as string,
+          ...yargArgs
+        },
+        path: argv.dir,
+        logFile: expect.any(FileLog)
+      };
+    }
 
-      copierAny.setForceFail(false);
+    it('should call all steps in order with given parameters', async () => {
+      clearMocks();
+      success = [true, true, true, true];
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
@@ -220,196 +277,124 @@ describe('hub clone command', () => {
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
+        logFile: 'temp/clone/steps/all.log',
 
-        mapFile: 'map.json',
         force: false,
         validate: false,
         skipIncomplete: false,
         media: true
       };
 
-      const configImport = {
-        hubId: 'hub2-id',
-        clientId: 'acc2-id',
-        clientSecret: 'acc2-secret'
-      };
-
-      await ensureDirectoryExists('temp/clone/steps/settings');
-      writeFileSync('temp/clone/steps/settings/hub-hub-id-test.json', '{}');
+      const stepConfig = makeState(argv);
 
       await handler(argv);
 
-      expect(settingsExport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...config,
-        dir: 'temp/clone/steps/settings',
-        logFile: expect.any(FileLog),
-        force: false
-      });
-      // Also backs up the destination settings.
-      expect(settingsExport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...configImport,
-        dir: 'temp/clone/steps/settings',
-        logFile: expect.any(FileLog),
-        force: false
-      });
-      expect(settingsImport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...configImport,
-        filePath: 'temp/clone/steps/settings/hub-hub-id-test.json',
-        logFile: expect.any(FileLog),
-        mapFile: 'map.json',
-        force: false
-      });
-      expect(schemaExport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...config,
-        dir: 'temp/clone/steps/schema',
-        logFile: expect.any(FileLog),
-        force: false
-      });
-      expect(schemaImport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...configImport,
-        dir: 'temp/clone/steps/schema',
-        logFile: expect.any(FileLog)
-      });
-      expect(typeExport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...config,
-        dir: 'temp/clone/steps/type',
-        logFile: expect.any(FileLog),
-        force: false
-      });
-      expect(typeImport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...configImport,
-        dir: 'temp/clone/steps/type',
-        sync: true,
-        logFile: expect.any(FileLog)
+      stepConfig.argv.mapFile = expect.any(String);
+
+      const mocks = getMocks();
+
+      mocks.forEach(mock => {
+        const instance = mock.mock.results[0].value;
+
+        expect(instance.run).toHaveBeenCalledWith(stepConfig);
       });
 
-      expect(copyCalls.length).toEqual(1);
-
-      expect(copyCalls[0].clientId).toEqual(config.clientId);
-      expect(copyCalls[0].clientSecret).toEqual(config.clientSecret);
-      expect(copyCalls[0].hubId).toEqual(config.hubId);
-      expect(copyCalls[0].schemaId).toEqual(argv.schemaId);
-      expect(copyCalls[0].name).toEqual(argv.name);
-      expect(copyCalls[0].srcRepo).toEqual(argv.srcRepo);
-      expect(copyCalls[0].dstRepo).toEqual(argv.dstRepo);
-      expect(copyCalls[0].dstHubId).toEqual(argv.dstHubId);
-      expect(copyCalls[0].dstSecret).toEqual(argv.dstSecret);
-
-      expect(copyCalls[0].force).toEqual(argv.force);
-      expect(copyCalls[0].validate).toEqual(argv.validate);
-      expect(copyCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
-      expect(copyCalls[0].media).toEqual(argv.media);
+      const loadLog = new FileLog();
+      await loadLog.loadFromFile('temp/clone/steps/all.log');
     });
 
-    it('should handle exceptions from each of the steps by stopping the process', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
-
-      copierAny.setForceFail(false);
-
-      for (let i = 1; i <= 7; i++) {
-        jest.resetAllMocks();
-        copyCalls.splice(0, copyCalls.length);
-
-        copierAny.setForceFail(i == 7);
-
-        succeedOrFail(settingsExport.handler, i != 1);
-        succeedOrFail(settingsImport.handler, i != 2);
-
-        succeedOrFail(schemaExport.handler, i != 3);
-        succeedOrFail(schemaImport.handler, i != 4);
-
-        succeedOrFail(typeExport.handler, i != 5);
-        succeedOrFail(typeImport.handler, i != 6);
+    it('should handle false returns from each of the steps by stopping the process', async () => {
+      for (let i = 0; i < 4; i++) {
+        clearMocks();
+        success = [i != 0, i != 1, i != 2, i != 3];
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
           ...config,
 
-          dir: 'temp/clone/stepExcept',
-
-          dstHubId: 'hub2-id',
-          dstClientId: 'acc2-id',
-          dstSecret: 'acc2-secret'
-        };
-
-        await ensureDirectoryExists('temp/clone/stepExcept/settings');
-        writeFileSync('temp/clone/stepExcept/settings/hub-hub-id-test.json', '{}');
-
-        await handler(argv);
-
-        expect(settingsExport.handler).toHaveBeenCalledTimes(i == 1 ? 1 : 2);
-        expect(settingsImport.handler).toHaveBeenCalledTimes(i >= 2 ? 1 : 0);
-
-        expect(schemaExport.handler).toHaveBeenCalledTimes(i >= 3 ? 1 : 0);
-        expect(schemaImport.handler).toHaveBeenCalledTimes(i >= 4 ? 1 : 0);
-
-        expect(typeExport.handler).toHaveBeenCalledTimes(i == 5 ? 1 : i > 5 ? 2 : 0);
-        expect(typeImport.handler).toHaveBeenCalledTimes(i >= 6 ? 1 : 0);
-
-        expect(copyCalls.length).toEqual(i >= 7 ? 1 : 0);
-      }
-    });
-
-    it('should start from the step given as a parameter', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
-
-      succeedOrFail(settingsExport.handler, true);
-      succeedOrFail(settingsImport.handler, true);
-
-      succeedOrFail(schemaExport.handler, true);
-      succeedOrFail(schemaImport.handler, true);
-
-      succeedOrFail(typeExport.handler, true);
-      succeedOrFail(typeImport.handler, true);
-
-      copierAny.setForceFail(false);
-
-      for (let i = 1; i <= 4; i++) {
-        jest.resetAllMocks();
-        copyCalls.splice(0, copyCalls.length);
-
-        const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
-          ...yargArgs,
-          ...config,
-
-          dir: 'temp/clone/stepStart',
+          dir: 'temp/clone/steps',
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
+          logFile: 'temp/clone/steps/fail' + i + '.log',
 
-          step: i
+          mapFile: 'temp/clone/steps/fail' + i + '.json',
+          force: false,
+          validate: false,
+          skipIncomplete: false,
+          media: true
         };
 
-        await ensureDirectoryExists('temp/clone/stepStart/settings');
-        writeFileSync('temp/clone/stepStart/settings/hub-hub-id-test.json', '{}');
+        const stepConfig = makeState(argv);
 
         await handler(argv);
 
-        expect(settingsExport.handler).toHaveBeenCalledTimes(i <= 1 ? 2 : 0);
-        expect(settingsImport.handler).toHaveBeenCalledTimes(i <= 1 ? 1 : 0);
+        const mocks = getMocks();
 
-        expect(schemaExport.handler).toHaveBeenCalledTimes(i <= 2 ? 1 : 0);
-        expect(schemaImport.handler).toHaveBeenCalledTimes(i <= 2 ? 1 : 0);
+        mocks.forEach((mock, index) => {
+          const instance = mock.mock.results[0].value;
 
-        expect(typeExport.handler).toHaveBeenCalledTimes(i <= 3 ? 2 : 0);
-        expect(typeImport.handler).toHaveBeenCalledTimes(i <= 3 ? 1 : 0);
+          if (index > i) {
+            expect(instance.run).not.toHaveBeenCalled();
+          } else {
+            expect(instance.run).toHaveBeenCalledWith(stepConfig);
+          }
+        });
 
-        expect(copyCalls.length).toEqual(1);
+        const loadLog = new FileLog();
+        await loadLog.loadFromFile('temp/clone/steps/fail' + i + '.log');
+      }
+    });
+
+    it('should start from the step given as a parameter', async () => {
+      for (let i = 0; i < 4; i++) {
+        clearMocks();
+        success = [true, true, true, true];
+
+        const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
+          ...yargArgs,
+          ...config,
+
+          step: i,
+
+          dir: 'temp/clone/steps',
+
+          dstHubId: 'hub2-id',
+          dstClientId: 'acc2-id',
+          dstSecret: 'acc2-secret',
+          logFile: 'temp/clone/steps/step' + i + '.log',
+
+          mapFile: 'temp/clone/steps/step' + i + '.json',
+          force: false,
+          validate: false,
+          skipIncomplete: false,
+          media: true
+        };
+
+        const stepConfig = makeState(argv);
+
+        await handler(argv);
+
+        const mocks = getMocks();
+
+        mocks.forEach((mock, index) => {
+          const instance = mock.mock.results[0].value;
+
+          if (index < i) {
+            expect(instance.run).not.toHaveBeenCalled();
+          } else {
+            expect(instance.run).toHaveBeenCalledWith(stepConfig);
+          }
+        });
+
+        const loadLog = new FileLog();
+        await loadLog.loadFromFile('temp/clone/steps/step' + i + '.log');
       }
     });
   });
 
   describe('revert tests', function() {
-    let mockContent: MockContent;
-
     const yargArgs = {
       $0: 'test',
       _: ['test']
@@ -421,21 +406,6 @@ describe('hub clone command', () => {
       hubId: 'hub-id'
     };
 
-    function reset(): void {
-      jest.resetAllMocks();
-      jest.mock('readline');
-
-      mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
-      mockContent.createMockRepository('targetRepo');
-      mockContent.registerContentType('http://type', 'type', 'targetRepo');
-      mockContent.registerContentType('http://type2', 'type2', 'targetRepo');
-      mockContent.registerContentType('http://type3', 'type3', 'targetRepo');
-    }
-
-    beforeEach(async () => {
-      reset();
-    });
-
     beforeAll(async () => {
       await rimraf('temp/clone-revert/');
     });
@@ -443,22 +413,6 @@ describe('hub clone command', () => {
     afterAll(async () => {
       await rimraf('temp/clone-revert/');
     });
-
-    function expectTypeSchemaRevert(schemaArchived: boolean, typeArchived: boolean): void {
-      if (schemaArchived) {
-        expect(mockContent.metrics.typeSchemasArchived).toEqual(1);
-        expect(mockContent.metrics.typeSchemasUpdated).toEqual(1);
-      } else {
-        expect(mockContent.metrics.typeSchemasArchived).toEqual(0);
-        expect(mockContent.metrics.typeSchemasUpdated).toEqual(0);
-      }
-
-      if (typeArchived) {
-        expect(mockContent.metrics.typesArchived).toEqual(1);
-      } else {
-        expect(mockContent.metrics.typesArchived).toEqual(0);
-      }
-    }
 
     async function prepareFakeLog(path: string): Promise<void> {
       const fakeLog = new FileLog(path);
@@ -471,12 +425,31 @@ describe('hub clone command', () => {
       await fakeLog.close();
     }
 
-    it('should call revert all steps in order with given parameters', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
-      copyCalls.splice(0, copyCalls.length);
+    function makeState(argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters>): CloneHubState {
+      return {
+        argv: argv,
+        from: {
+          clientId: argv.clientId as string,
+          clientSecret: argv.clientSecret as string,
+          hubId: argv.hubId as string,
+          ...yargArgs
+        },
+        to: {
+          clientId: argv.dstClientId as string,
+          clientSecret: argv.dstSecret as string,
+          hubId: argv.dstHubId as string,
+          ...yargArgs
+        },
+        path: argv.dir,
+        logFile: expect.any(FileLog),
+        revertLog: expect.any(FileLog)
+      };
+    }
 
-      copierAny.setForceFail(false);
-
+    it('should revert all steps in order with given parameters', async () => {
+      clearMocks();
+      success = [true, true, true, true];
+      await ensureDirectoryExists('temp/clone-revert/');
       await prepareFakeLog('temp/clone-revert/steps.log');
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
@@ -488,111 +461,165 @@ describe('hub clone command', () => {
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
+        logFile: 'temp/clone-revert/steps/all.log',
+        revertLog: 'temp/clone-revert/steps.log',
 
-        mapFile: 'map.json',
+        mapFile: 'temp/clone-revert/steps/all.json',
         force: false,
-
-        revertLog: 'temp/clone-revert/steps.log'
+        validate: false,
+        skipIncomplete: false,
+        media: true
       };
 
-      const configImport = {
-        hubId: 'hub2-id',
-        clientId: 'acc2-id',
-        clientSecret: 'acc2-secret'
-      };
-
-      await ensureDirectoryExists('temp/clone-revert/steps/settings');
-      writeFileSync('temp/clone-revert/steps/settings/hub-hub2-id-test.json', '{}');
-
-      await ensureDirectoryExists('temp/clone-revert/steps/oldType');
+      const stepConfig = makeState(argv);
 
       await handler(argv);
 
-      expect(settingsImport.handler).toHaveBeenCalledWith({
-        ...yargArgs,
-        ...configImport,
-        filePath: 'temp/clone-revert/steps/settings/hub-hub2-id-test.json',
-        logFile: expect.any(FileLog),
-        mapFile: 'map.json',
-        force: false
+      const mocks = getMocks();
+
+      mocks.forEach(mock => {
+        const instance = mock.mock.results[0].value;
+
+        expect(instance.revert).toHaveBeenCalledWith(stepConfig);
       });
 
-      expect(typeImport.handler).toHaveBeenCalledWith(
-        {
-          ...yargArgs,
-          ...configImport,
-          dir: 'temp/clone-revert/steps/oldType',
-          sync: true,
-          logFile: expect.any(FileLog)
-        },
-        ['type2']
-      );
-
-      expectTypeSchemaRevert(true, true);
-
-      expect(copyCalls.length).toEqual(1);
-
-      expect(copyCalls[0].revertLog).toEqual(expect.any(FileLog));
-      expect(copyCalls[0].clientId).toEqual(config.clientId);
-      expect(copyCalls[0].clientSecret).toEqual(config.clientSecret);
-      expect(copyCalls[0].hubId).toEqual(config.hubId);
-      expect(copyCalls[0].schemaId).toEqual(argv.schemaId);
-      expect(copyCalls[0].name).toEqual(argv.name);
-      expect(copyCalls[0].srcRepo).toEqual(argv.srcRepo);
-      expect(copyCalls[0].dstRepo).toEqual(argv.dstRepo);
-      expect(copyCalls[0].dstHubId).toEqual(argv.dstHubId);
-      expect(copyCalls[0].dstSecret).toEqual(argv.dstSecret);
-
-      expect(copyCalls[0].force).toEqual(argv.force);
+      const loadLog = new FileLog();
+      await loadLog.loadFromFile('temp/clone-revert/steps/all.log');
     });
 
     it('should handle exceptions from each of the revert steps by stopping the process', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
+      for (let i = 0; i < 4; i++) {
+        clearMocks();
+        success = [i != 0, i != 1, i != 2, i != 3];
 
-      copierAny.setForceFail(false);
-
-      await ensureDirectoryExists('temp/clone-revert/stepExcept/settings');
-      await prepareFakeLog('temp/clone-revert/stepExcept.log');
-      writeFileSync('temp/clone-revert/stepExcept/settings/hub-hub2-id-test.json', '{}');
-
-      await ensureDirectoryExists('temp/clone-revert/steps/oldType');
-
-      for (let i = 1; i <= 5; i++) {
-        reset();
-        copyCalls.splice(0, copyCalls.length);
-
-        succeedOrFail(settingsImport.handler, i != 1);
-        mockContent.failSchemaActions = i == 2 ? 'all' : null;
-        mockContent.failTypeActions = i == 3 || i == 2 ? 'all' : null;
-        succeedOrFail(typeImport.handler, i != 4);
-        copierAny.setForceFail(i == 5);
+        await ensureDirectoryExists('temp/clone-revert/');
+        await prepareFakeLog('temp/clone-revert/fail.log');
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
           ...config,
 
-          dir: 'temp/clone-revert/stepExcept',
-          revertLog: 'temp/clone-revert/stepExcept.log',
+          dir: 'temp/clone-revert/fail',
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
-          dstSecret: 'acc2-secret'
+          dstSecret: 'acc2-secret',
+          logFile: 'temp/clone-revert/fail/fail' + i + '.log',
+          revertLog: 'temp/clone-revert/fail.log',
+
+          mapFile: 'temp/clone-revert/fail/fail' + i + '.json',
+          force: false,
+          validate: false,
+          skipIncomplete: false,
+          media: true
         };
+
+        const stepConfig = makeState(argv);
 
         await handler(argv);
 
-        expect(settingsImport.handler).toHaveBeenCalledTimes(i >= 1 ? 1 : 0);
+        const mocks = getMocks();
 
-        process.stdout.write(i.toString());
+        mocks.forEach((mock, index) => {
+          const instance = mock.mock.results[0].value;
 
-        expectTypeSchemaRevert(i > 2, i > 3);
+          if (index > i) {
+            expect(instance.revert).not.toHaveBeenCalled();
+          } else {
+            expect(instance.revert).toHaveBeenCalledWith(stepConfig);
+          }
+        });
 
-        expect(typeImport.handler).toHaveBeenCalledTimes(i >= 4 ? 1 : 0);
-
-        expect(copyCalls.length).toEqual(i >= 5 ? 1 : 0);
+        const loadLog = new FileLog();
+        await loadLog.loadFromFile('temp/clone-revert/fail/fail' + i + '.log');
       }
     });
 
-    it('should start reverting from the step given as a parameter (steps in decreasing order)', async () => {});
+    it('should exit early if revert log cannot be read', async () => {
+      clearMocks();
+      success = [true, true, true, true];
+      await ensureDirectoryExists('temp/clone-revert/');
+
+      const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
+        ...yargArgs,
+        ...config,
+
+        dir: 'temp/clone-revert/steps',
+
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+        logFile: 'temp/clone-revert/steps/early.log',
+        revertLog: 'temp/clone-revert/missing.log',
+
+        mapFile: 'temp/clone-revert/steps/all.json',
+        force: false,
+        validate: false,
+        skipIncomplete: false,
+        media: true
+      };
+      await handler(argv);
+
+      const mocks = getMocks();
+
+      mocks.forEach(mock => {
+        const instance = mock.mock.results[0].value;
+
+        expect(instance.revert).not.toHaveBeenCalled();
+      });
+
+      const loadLog = new FileLog();
+      await loadLog.loadFromFile('temp/clone-revert/steps/early.log');
+    });
+
+    it('should start reverting from the step given as a parameter (steps in decreasing order)', async () => {
+      for (let i = 0; i < 4; i++) {
+        clearMocks();
+        success = [true, true, true, true];
+
+        await ensureDirectoryExists('temp/clone-revert/');
+        await prepareFakeLog('temp/clone-revert/step.log');
+
+        const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
+          ...yargArgs,
+          ...config,
+
+          step: i,
+
+          dir: 'temp/clone-revert/step',
+
+          dstHubId: 'hub2-id',
+          dstClientId: 'acc2-id',
+          dstSecret: 'acc2-secret',
+          logFile: 'temp/clone-revert/step/step' + i + '.log',
+          revertLog: 'temp/clone-revert/step.log',
+
+          mapFile: 'temp/clone-revert/step/step' + i + '.json',
+          force: false,
+          validate: false,
+          skipIncomplete: false,
+          media: true
+        };
+
+        const stepConfig = makeState(argv);
+
+        await handler(argv);
+
+        const mocks = getMocks();
+
+        mocks.forEach((mock, index) => {
+          const instance = mock.mock.results[0].value;
+
+          if (index < i) {
+            expect(instance.revert).not.toHaveBeenCalled();
+          } else {
+            expect(instance.revert).toHaveBeenCalledWith(stepConfig);
+          }
+        });
+
+        const loadLog = new FileLog();
+        await loadLog.loadFromFile('temp/clone-revert/step/step' + i + '.log');
+      }
+    });
   });
 });
