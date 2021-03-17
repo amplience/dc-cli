@@ -18,7 +18,7 @@ export class SchemaCloneStep implements CloneHubStep {
     try {
       await exportSchema({
         dir: join(state.path, 'schema'),
-        force: state.argv.force,
+        force: true,
         logFile: state.logFile,
         ...state.from
       });

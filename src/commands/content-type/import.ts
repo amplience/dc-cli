@@ -109,7 +109,7 @@ export const doCreate = async (hub: Hub, contentType: ContentType, log: FileLog)
   try {
     const result = await hub.related.contentTypes.register(new ContentType(contentType));
 
-    log.addAction('CREATE', `${contentType.id}`);
+    log.addAction('CREATE', `${result.id}`);
 
     return result;
   } catch (err) {

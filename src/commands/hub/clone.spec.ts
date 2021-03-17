@@ -1,15 +1,8 @@
 import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './clone';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { writeFileSync } from 'fs';
 import Yargs from 'yargs/yargs';
 
-import * as settingsImport from '../settings/import';
-import * as settingsExport from '../settings/export';
-import * as schemaImport from '../content-type-schema/import';
-import * as schemaExport from '../content-type-schema/export';
-import * as typeImport from '../content-type/import';
-import * as typeExport from '../content-type/export';
 import * as copier from '../content-item/copy';
 
 import * as content from './steps/content-clone-step';
@@ -21,10 +14,7 @@ import rmdir from 'rimraf';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
 import { ConfigurationParameters } from '../configure';
 import { Arguments } from 'yargs';
-import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-options.interface';
 import { FileLog } from '../../common/file-log';
-import { MockContent } from '../../common/dc-management-sdk-js/mock-content';
-import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { CloneHubState } from './model/clone-hub-state';
 
 jest.mock('readline');
@@ -36,15 +26,6 @@ let success = [true, true, true, true];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
   mock.mockImplementation(() => Promise.resolve(succeed()));
-  /*
-  mock.mockImplementation(() => {
-    if (succeed()) {
-      return Promise.resolve(true);
-    } else {
-      return Promise.reject(false);
-    }
-  });
-  */
   return mock;
 }
 

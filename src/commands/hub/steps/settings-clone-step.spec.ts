@@ -89,7 +89,7 @@ describe('settings clone step', () => {
     expect(settingsExport.handler).toHaveBeenNthCalledWith(1, {
       dir: join(state.path, 'settings'),
       logFile: state.logFile,
-      force: state.argv.force,
+      force: true,
       ...state.from
     });
 
@@ -97,7 +97,7 @@ describe('settings clone step', () => {
     expect(settingsExport.handler).toHaveBeenNthCalledWith(2, {
       dir: join(state.path, 'settings'),
       logFile: state.logFile,
-      force: state.argv.force,
+      force: true,
       ...state.to
     });
 

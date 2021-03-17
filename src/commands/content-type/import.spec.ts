@@ -118,7 +118,7 @@ describe('content-type import command', (): void => {
 
       expect(log.getData('CREATE')).toMatchInlineSnapshot(`
         Array [
-          "undefined",
+          "created-id",
         ]
       `);
       expect(mockRegister).toHaveBeenCalledWith(expect.objectContaining(contentType));
