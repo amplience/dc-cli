@@ -107,7 +107,7 @@ describe('type clone step', () => {
     // Backup
     expect(typeExport.handler).toHaveBeenNthCalledWith(1, {
       dir: join(state.path, 'oldType'),
-      force: state.argv.force,
+      force: true,
       logFile: state.logFile,
       ...state.to
     });
@@ -115,7 +115,7 @@ describe('type clone step', () => {
     // Export
     expect(typeExport.handler).toHaveBeenNthCalledWith(2, {
       dir: join(state.path, 'type'),
-      force: state.argv.force,
+      force: true,
       logFile: state.logFile,
       ...state.from
     });

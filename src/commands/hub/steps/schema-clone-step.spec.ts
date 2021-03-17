@@ -107,7 +107,7 @@ describe('schema clone step', () => {
 
     expect(schemaExport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'schema'),
-      force: state.argv.force,
+      force: true,
       logFile: state.logFile,
       ...state.from
     });

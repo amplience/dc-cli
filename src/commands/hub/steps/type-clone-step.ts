@@ -17,7 +17,7 @@ export class TypeCloneStep implements CloneHubStep {
     try {
       await exportType({
         dir: join(state.path, 'oldType'),
-        force: state.argv.force,
+        force: true,
         logFile: state.logFile,
         ...state.to
       });
@@ -29,7 +29,7 @@ export class TypeCloneStep implements CloneHubStep {
     try {
       await exportType({
         dir: join(state.path, 'type'),
-        force: state.argv.force,
+        force: true,
         logFile: state.logFile,
         ...state.from
       });
