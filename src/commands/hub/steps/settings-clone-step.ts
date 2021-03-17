@@ -25,7 +25,7 @@ export class SettingsCloneStep implements CloneHubStep {
       await exportSettings({
         dir: join(state.path, 'settings'),
         logFile: state.logFile,
-        force: state.argv.force,
+        force: true,
         ...state.from
       });
     } catch (e) {
@@ -39,7 +39,7 @@ export class SettingsCloneStep implements CloneHubStep {
         await exportSettings({
           dir: join(state.path, 'settings'),
           logFile: state.logFile,
-          force: state.argv.force,
+          force: true,
           ...state.to
         });
       } catch (e) {
