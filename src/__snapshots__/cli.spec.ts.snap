@@ -10,6 +10,7 @@ Commands:
   dc-cli content-type-schema  Content Type Schema
   dc-cli content-type         Content Type
   dc-cli event                Event
+  dc-cli hub                  Hub
   dc-cli settings             Settings
 
 Options:
