@@ -132,7 +132,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   }
 
   const timestamp = Date.now().toString();
-  const log = new ArchiveLog(`Content Type Schema Archive Log - ${timestamp}\n`);
+  const log =
+    typeof logFile === 'object' ? logFile : new ArchiveLog(`Content Type Schema Archive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
@@ -155,7 +156,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
-  if (!silent && logFile) {
+  if (!silent && typeof logFile === 'string') {
     await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 

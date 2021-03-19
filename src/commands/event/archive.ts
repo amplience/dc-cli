@@ -8,6 +8,7 @@ import ArchiveOptions from '../../common/archive/archive-options';
 import { Edition, Event, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 const maxAttempts = 30;
 
 export const command = 'archive [id]';
@@ -157,7 +158,7 @@ export const processItems = async ({
   }[];
   force?: boolean;
   silent?: boolean;
-  logFile?: string;
+  logFile?: string | FileLog;
   missingContent: boolean;
   ignoreError?: boolean;
 }): Promise<void> => {
@@ -204,7 +205,7 @@ export const processItems = async ({
     }
 
     const timestamp = Date.now().toString();
-    const log = new ArchiveLog(`Events Archive Log - ${timestamp}\n`);
+    const log = typeof logFile === 'object' ? logFile : new ArchiveLog(`Events Archive Log - ${timestamp}\n`);
 
     let successCount = 0;
 
@@ -245,7 +246,7 @@ export const processItems = async ({
       }
     }
 
-    if (!silent && logFile) {
+    if (!silent && typeof logFile === 'string') {
       await log.writeToFile(logFile.replace('<DATE>', timestamp));
     }
 
