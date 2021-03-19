@@ -141,7 +141,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     try {
       await schemas[i].related.archive();
 
-      log.addAction('ARCHIVE', `${schemas[i].schemaId}\n`);
+      log.addAction('ARCHIVE', `${schemas[i].schemaId}`);
       successCount++;
     } catch (e) {
       log.addComment(`ARCHIVE FAILED: ${schemas[i].schemaId}`);
