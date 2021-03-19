@@ -53,6 +53,7 @@ export const handler = async (argv: Arguments<CleanHubBuilderOptions & Configura
   for (let i = argv.step || 0; i < steps.length; i++) {
     const step = steps[i];
 
+    log.switchGroup(step.getName());
     log.appendLine(`=== Running Step ${i} - ${step.getName()} ===`);
 
     const success = await step.run(argv);
