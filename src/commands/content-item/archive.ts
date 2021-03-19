@@ -268,7 +268,7 @@ export const processItems = async ({
       }
       await contentItems[i].related.archive();
 
-      log.addAction('ARCHIVE', `${args}\n`);
+      log.addAction('ARCHIVE', `${args}`);
       successCount++;
     } catch (e) {
       log.addComment(`ARCHIVE FAILED: ${contentItems[i].id}`);
