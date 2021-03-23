@@ -243,7 +243,7 @@ const createOrUpdateContent = async (
   // It's possible to get a LOCALE_IMMUTABLE error if a locale is present in the created item.
   // The locale will be set after creation.
 
-  const locale = item.locale;
+  let locale = item.locale;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (item as any).locale = undefined;
 
@@ -260,7 +260,7 @@ const createOrUpdateContent = async (
   }
 
   if (locale != null && result.newItem.locale != locale) {
-    await result.newItem.related.setLocale(locale);
+    locale = (await result.newItem.related.setLocale(locale)).locale;
   }
 
   item.locale = locale;
