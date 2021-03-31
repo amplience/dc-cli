@@ -22,6 +22,10 @@ export interface ContentDependancyInfo {
   resolved?: ItemContentDependancies;
   dependancy: ContentDependancy;
   owner: RepositoryContentItem;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parent: any;
+  index: string | number;
 }
 
 export interface ItemContentDependancies {
@@ -38,6 +42,12 @@ export const referenceTypes = [
   'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link',
   'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'
 ];
+
+enum CircularDependencyStage {
+  Standalone = 0,
+  Intertwined,
+  Parent
+}
 
 type RecursiveSearchStep = Body | ContentDependancy | Array<Body>;
 
@@ -96,8 +106,40 @@ export class ContentDependancyTree {
 
     // Remaining items in the info array are connected to circular dependancies, so must be resolved via rewriting.
 
+    // Create dependency layers for circular dependencies
+
+    const circularStages: ItemContentDependancies[][] = [];
+    while (unresolvedCount > 0) {
+      const stage: ItemContentDependancies[] = [];
+
+      // To be in this stage, the circular dependency must contain no other circular dependencies (before self-loop).
+      // The circular dependencies that appear before self loop are
+      const lastUnresolvedCount = unresolvedCount;
+      const circularLevels = info.map(item => this.topLevelCircular(item, info));
+
+      const chosenLevel = Math.min(...circularLevels) as CircularDependencyStage;
+
+      for (let i = 0; i < info.length; i++) {
+        const item = info[i];
+        if (circularLevels[i] === chosenLevel) {
+          stage.push(item);
+          circularLevels.splice(i, 1);
+          info.splice(i--, 1);
+        }
+      }
+
+      unresolvedCount = info.length;
+      if (unresolvedCount === lastUnresolvedCount) {
+        break;
+      }
+
+      circularStages.push(stage);
+    }
+
     this.levels = stages;
-    this.circularLinks = info;
+    this.circularLinks = [];
+    circularStages.forEach(stage => this.circularLinks.push(...stage));
+
     this.all = allInfo;
     this.byId = new Map(allInfo.map(info => [info.owner.content.id as string, info]));
     this.requiredSchema = Array.from(requiredSchema);
@@ -106,11 +148,13 @@ export class ContentDependancyTree {
   private searchObjectForContentDependancies(
     item: RepositoryContentItem,
     body: RecursiveSearchStep,
-    result: ContentDependancyInfo[]
+    result: ContentDependancyInfo[],
+    parent: RecursiveSearchStep | null,
+    index: string | number
   ): void {
     if (Array.isArray(body)) {
-      body.forEach(contained => {
-        this.searchObjectForContentDependancies(item, contained, result);
+      body.forEach((contained, index) => {
+        this.searchObjectForContentDependancies(item, contained, result, body, index);
       });
     } else if (body != null) {
       const allPropertyNames = Object.getOwnPropertyNames(body);
@@ -121,14 +165,14 @@ export class ContentDependancyTree {
         typeof body.contentType === 'string' &&
         typeof body.id === 'string'
       ) {
-        result.push({ dependancy: body as ContentDependancy, owner: item });
+        result.push({ dependancy: body as ContentDependancy, owner: item, parent, index });
         return;
       }
 
       allPropertyNames.forEach(propName => {
         const prop = (body as Body)[propName];
         if (typeof prop === 'object') {
-          this.searchObjectForContentDependancies(item, prop, result);
+          this.searchObjectForContentDependancies(item, prop, result, body, propName);
         }
       });
     }
@@ -161,10 +205,76 @@ export class ContentDependancyTree {
     }
   }
 
+  private topLevelCircular(
+    top: ItemContentDependancies,
+    unresolved: ItemContentDependancies[]
+  ): CircularDependencyStage {
+    let selfLoop = false;
+    let intertwinedLoop = false;
+    const seenBefore = new Set<ItemContentDependancies>();
+
+    const traverse = (
+      top: ItemContentDependancies,
+      item: ItemContentDependancies | undefined,
+      depth: number,
+      unresolved: ItemContentDependancies[],
+      seenBefore: Set<ItemContentDependancies>,
+      intertwined: boolean
+    ): boolean => {
+      let hasCircular = false;
+
+      if (item == null) {
+        return false;
+      } else if (top === item && depth > 0) {
+        selfLoop = true;
+        return false;
+      } else if (top !== item && unresolved.indexOf(item) !== -1) {
+        // Contains a circular dependency.
+
+        if (!intertwined) {
+          // Does it loop back to the parent?
+          const storedSelfLoop = selfLoop;
+          intertwinedLoop = traverse(item, item, 0, [top], new Set<ItemContentDependancies>(), true);
+          selfLoop = storedSelfLoop;
+        }
+
+        hasCircular = true;
+      }
+
+      if (seenBefore.has(item)) {
+        return false;
+      }
+
+      seenBefore.add(item);
+
+      item.dependancies.forEach(dep => {
+        hasCircular = traverse(top, dep.resolved, depth++, unresolved, seenBefore, intertwined) || hasCircular;
+      });
+
+      return hasCircular;
+    };
+
+    const hasCircular = traverse(top, top, 0, unresolved, seenBefore, false);
+
+    if (hasCircular) {
+      if (intertwinedLoop) {
+        if (selfLoop) {
+          return CircularDependencyStage.Intertwined;
+        } else {
+          return CircularDependencyStage.Parent;
+        }
+      } else {
+        return CircularDependencyStage.Parent;
+      }
+    } else {
+      return CircularDependencyStage.Standalone;
+    }
+  }
+
   private identifyContentDependancies(items: RepositoryContentItem[]): ItemContentDependancies[] {
     return items.map(item => {
       const result: ContentDependancyInfo[] = [];
-      this.searchObjectForContentDependancies(item, item.content.body, result);
+      this.searchObjectForContentDependancies(item, item.content.body, result, null, 0);
 
       // Hierarchy parent is also a dependancy.
       if (item.content.body._meta.hierarchy && item.content.body._meta.hierarchy.parentId) {
@@ -176,7 +286,9 @@ export class ContentDependancyTree {
             id: item.content.body._meta.hierarchy.parentId,
             contentType: ''
           },
-          owner: item
+          owner: item,
+          parent: null,
+          index: 0
         });
       }
 
@@ -198,7 +310,13 @@ export class ContentDependancyTree {
         const target = idMap.get(dep.dependancy.id as string);
         dep.resolved = target;
         if (target) {
-          target.dependants.push({ owner: target.owner, resolved: item, dependancy: dep.dependancy });
+          target.dependants.push({
+            owner: target.owner,
+            resolved: item,
+            dependancy: dep.dependancy,
+            parent: dep.parent,
+            index: dep.index
+          });
           resolve(target);
         }
       });
