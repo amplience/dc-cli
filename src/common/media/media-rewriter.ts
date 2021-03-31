@@ -1,7 +1,8 @@
-import { Asset, DAM } from 'dam-management-sdk-js';
-import { DiSettingsEndpoint } from 'dam-management-sdk-js/build/main/lib/model/Settings';
+import { ContentHub } from '../ch-api/ContentHub';
+import { Asset } from '../ch-api/model/Asset';
+import { DiSettingsEndpoint } from '../ch-api/model/Settings';
 import { ConfigurationParameters } from '../../commands/configure';
-import damClientFactory from '../../services/dam-client-factory';
+import chClientFactory from '../../services/ch-client-factory';
 import { RepositoryContentItem } from '../content-item/content-dependancy-tree';
 import { MediaLinkInjector } from '../content-item/media-link-injector';
 
@@ -11,7 +12,7 @@ import { MediaLinkInjector } from '../content-item/media-link-injector';
  */
 export class MediaRewriter {
   private injector: MediaLinkInjector;
-  private dam: DAM;
+  private dam: ContentHub;
 
   private endpoint: string;
   private defaultHost: string;
@@ -25,7 +26,7 @@ export class MediaRewriter {
   }
 
   private connectDam(): void {
-    this.dam = damClientFactory(this.config);
+    this.dam = chClientFactory(this.config);
   }
 
   private async getEndpoint(): Promise<void> {
@@ -112,7 +113,6 @@ export class MediaRewriter {
 
     let requestBuilder = 'name:/';
     let requestCount = 0;
-    let totalFound = 0;
 
     for (let i = 0; i < allNames.size; i++) {
       const additionalRequest = `${this.escapeForRegex(names[i])}`;
@@ -130,14 +130,14 @@ export class MediaRewriter {
         } else {
           // If the query is too big, batch out what we have and start over.
 
-          totalFound += await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+          await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
           requestBuilder = 'name:/' + additionalRequest;
         }
       }
     }
 
     if (requestBuilder.length > 0) {
-      totalFound += await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+      await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
     }
 
     // Replace media link assets with ones that we found with matching names.

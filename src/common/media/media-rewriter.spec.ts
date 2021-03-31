@@ -1,11 +1,11 @@
 import { ContentItem, ContentRepository } from 'dc-management-sdk-js';
-import damClientFactory from '../../services/dam-client-factory';
+import chClientFactory from '../../services/ch-client-factory';
 import { RepositoryContentItem } from '../content-item/content-dependancy-tree';
 import { MediaLinkInjector } from '../content-item/media-link-injector';
 import { MediaRewriter } from './media-rewriter';
-import { MockDAM } from './mock-dam';
+import { MockContentHub } from './mock-ch';
 
-jest.mock('../../services/dam-client-factory');
+jest.mock('../../services/ch-client-factory');
 
 let exampleLinks: RepositoryContentItem[] = [];
 
@@ -13,11 +13,11 @@ describe('media-link-injector', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    MockDAM.missingAssetList = false;
-    MockDAM.throwOnGetSettings = false;
-    MockDAM.returnNullEndpoint = false;
-    MockDAM.throwOnAssetList = false;
-    MockDAM.requests = [];
+    MockContentHub.missingAssetList = false;
+    MockContentHub.throwOnGetSettings = false;
+    MockContentHub.returnNullEndpoint = false;
+    MockContentHub.throwOnAssetList = false;
+    MockContentHub.requests = [];
 
     exampleLinks = [
       {
@@ -76,7 +76,7 @@ describe('media-link-injector', () => {
       }
     ];
 
-    (damClientFactory as jest.Mock).mockReturnValue(new MockDAM());
+    (chClientFactory as jest.Mock).mockReturnValue(new MockContentHub());
   });
 
   describe('Media Link Injector', () => {
@@ -87,7 +87,7 @@ describe('media-link-injector', () => {
 
       expect(missing.size).toEqual(0); // 0 assets missing
 
-      expect(MockDAM.requests).toMatchInlineSnapshot(`
+      expect(MockContentHub.requests).toMatchInlineSnapshot(`
         Array [
           Object {
             "n": 4,
@@ -112,18 +112,18 @@ describe('media-link-injector', () => {
 
       expect(missing.size).toEqual(0); // 0 assets missing
 
-      expect(MockDAM.requests.length).toEqual(0);
+      expect(MockContentHub.requests.length).toEqual(0);
     });
 
     it('should ignore media links where content with a matching name does not exist on DAM', async () => {
-      MockDAM.missingAssetList = true;
+      MockContentHub.missingAssetList = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, exampleLinks);
 
       const results = await rewriter.rewrite();
 
       expect(results.size).toEqual(4); // All 4 assets missing
 
-      expect(MockDAM.requests).toMatchInlineSnapshot(`
+      expect(MockContentHub.requests).toMatchInlineSnapshot(`
         Array [
           Object {
             "n": 4,
@@ -134,7 +134,7 @@ describe('media-link-injector', () => {
     });
 
     it('should fail when the settings endpoint throws', async () => {
-      MockDAM.throwOnGetSettings = true;
+      MockContentHub.throwOnGetSettings = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, []);
 
       let throws = false;
@@ -148,7 +148,7 @@ describe('media-link-injector', () => {
     });
 
     it('should fail when the settings do not contain a default endpoint', async () => {
-      MockDAM.returnNullEndpoint = true;
+      MockContentHub.returnNullEndpoint = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, []);
 
       let throws = false;
@@ -162,7 +162,7 @@ describe('media-link-injector', () => {
     });
 
     it('should fail when getting assets does not work a certain number of times in a row', async () => {
-      MockDAM.throwOnAssetList = true;
+      MockContentHub.throwOnAssetList = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, exampleLinks);
 
       let throws = false;
@@ -174,7 +174,7 @@ describe('media-link-injector', () => {
 
       expect(throws).toBeTruthy();
 
-      expect(MockDAM.requests).toMatchInlineSnapshot(`
+      expect(MockContentHub.requests).toMatchInlineSnapshot(`
         Array [
           Object {
             "n": 4,
@@ -222,7 +222,7 @@ describe('media-link-injector', () => {
 
       expect(missing.size).toEqual(0); // 0 assets missing
 
-      expect(MockDAM.requests.length).toEqual(expectedRequests); // 3 requests
+      expect(MockContentHub.requests.length).toEqual(expectedRequests); // 3 requests
     });
   });
 });

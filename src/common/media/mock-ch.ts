@@ -1,7 +1,8 @@
-import { DefaultApiClient, ApiClient, AssetListRequest } from 'dam-management-sdk-js';
-import { AssetsList } from 'dam-management-sdk-js/build/main/lib/model/Asset';
+import { DefaultApiClient, ApiClient } from '../ch-api/api/services/ApiClient';
+import { AssetsList } from '../ch-api/model/Asset';
+import { AssetListRequest } from '../ch-api/model/AssetListRequest';
 
-export class MockDAM {
+export class MockContentHub {
   static throwOnGetSettings = false;
   static returnNullEndpoint = false;
   static throwOnAssetList = false;
@@ -14,11 +15,11 @@ export class MockDAM {
   settings = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get: (): Promise<any> => {
-      if (MockDAM.throwOnGetSettings) {
+      if (MockContentHub.throwOnGetSettings) {
         throw new Error('Simulated settings error.');
       }
 
-      if (MockDAM.returnNullEndpoint) {
+      if (MockContentHub.returnNullEndpoint) {
         return Promise.resolve({
           di: {
             endpoints: [],
@@ -45,15 +46,15 @@ export class MockDAM {
   assets = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     list: (query: AssetListRequest): Promise<AssetsList> => {
-      MockDAM.requests.push(query);
+      MockContentHub.requests.push(query);
 
-      if (MockDAM.throwOnAssetList) {
+      if (MockContentHub.throwOnAssetList) {
         throw new Error('Simulated asset list error.');
       }
 
       let list: AssetsList;
 
-      if (MockDAM.missingAssetList) {
+      if (MockContentHub.missingAssetList) {
         list = new AssetsList({
           data: [],
           count: 0

@@ -1,0 +1,52 @@
+{
+  "content": {
+    "data": [
+      {
+        "srcName": "AlltheLook1.jpg",
+        "revisionNumber": 5,
+        "bucketID": "b0d42ebb-679b-4010-ae20-9ce989837481",
+        "label": "AlltheLook1.jpg",
+        "mimeType": "image/jpeg",
+        "type": "image",
+        "locale": "en-GB",
+        "thumbFile": "74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "folderID": "00000000-0000-0000-0000-000000000000",
+        "file": "74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "createdDate": 1606739632488,
+        "name": "AlltheLook1",
+        "subType": null,
+        "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+        "thumbURL": "https://thumbs.amplience.net/r/74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "publishStatus": "PUBLISHED",
+        "status": "active",
+        "workflow": {},
+        "timestamp": 1610120563111
+      },
+      {
+        "srcName": "1.png",
+        "revisionNumber": 3,
+        "bucketID": "b0d42ebb-679b-4010-ae20-9ce989837481",
+        "label": "1.png",
+        "mimeType": "image/png",
+        "type": "image",
+        "locale": "en-GB",
+        "thumbFile": "2af0bde1-473c-455a-afb5-17f90da7c2f9",
+        "folderID": "00000000-0000-0000-0000-000000000000",
+        "file": "2af0bde1-473c-455a-afb5-17f90da7c2f9",
+        "createdDate": 1414750113914,
+        "name": "1",
+        "subType": null,
+        "id": "4a0bcaed-ee57-481f-98d3-4b73aad49e68",
+        "thumbURL": "https://thumbs.amplience.net/r/2af0bde1-473c-455a-afb5-17f90da7c2f9",
+        "publishStatus": "NOT_PUBLISHED",
+        "status": "active",
+        "timestamp": 1607622717672
+      }
+    ],
+    "numFound": 2,
+    "start": 0,
+    "count": 2,
+    "pageSize": 20
+  },
+  "status": "success"
+}

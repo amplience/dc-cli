@@ -1,0 +1,69 @@
+{
+  "content": {
+    "metadata": [
+      {
+        "schema": "exif",
+        "schemaID": "cf9303dc-7b01-46e3-ba34-072390a4684d",
+        "variants": [
+          {
+            "values": {
+              "software": "Adobe Photoshop CC 2014 (Macintosh)",
+              "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+            },
+            "variantID": "3e8a4d62-8058-46d9-a75d-bb735537e85c",
+            "variantName": "*"
+          }
+        ],
+        "PK": {
+          "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+        }
+      },
+      {
+        "schema": "file",
+        "schemaID": "590ec5d8-d2f1-4df3-b52c-32df6e166d0f",
+        "variants": [
+          {
+            "values": {
+              "size": 1109425,
+              "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+              "type": "JPEG"
+            },
+            "variantID": "3e8a4d62-8058-46d9-a75d-bb735537e85c",
+            "variantName": "*"
+          }
+        ],
+        "PK": {
+          "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+        }
+      },
+      {
+        "schema": "image",
+        "schemaID": "4e357e14-5141-4153-979e-125e4bdb9c97",
+        "variants": [
+          {
+            "values": {
+              "colorSpace": "rgb",
+              "resolutionY": 0,
+              "valid": true,
+              "resolutionX": 0,
+              "depth": 8,
+              "alpha": false,
+              "format": "JPEG",
+              "width": 1289,
+              "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+              "height": 1400,
+              "resolutionUnits": 0
+            },
+            "variantID": "3e8a4d62-8058-46d9-a75d-bb735537e85c",
+            "variantName": "*"
+          }
+        ],
+        "PK": {
+          "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+        }
+      }
+    ],
+    "assetId": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+  },
+  "status": "success"
+}
