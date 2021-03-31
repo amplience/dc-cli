@@ -1,0 +1,53 @@
+{
+  "content": {
+    "companyId": 1,
+    "companyClassificationType": "Demo",
+    "system": {
+      "auth-api-url": "https://auth.amplience.net/",
+      "publishing-service": "https://publishing-service.amplience.net/",
+      "im-api-url": "https://im-api.adis.ws/",
+      "virtual-staging-service": "https://virtual-staging.adis.ws/",
+      "dam-mixpanel-token": "",
+      "analytics-beacon-url": "https://a1.adis.ws/",
+      "analytics-query-api-url": "https://analytics.adis.ws/",
+      "dam-version": "jenkins-release-1.50.0/3",
+      "stream-api-url": "https://download-api.amplience.net/",
+      "ca-mixpanel-token": "",
+      "access-service": "https://access.adis.ws/",
+      "cms-api-url": "https://content-authoring-api.amplience.net/",
+      "provisioning-api": "https://provisioning-api.amplience.net/",
+      "identity-service": "https://identity.adis.ws/",
+      "media-graphics-host": "x1.adis.ws/v1/media/graphics"
+    },
+    "di": {
+      "endpoints": [
+        {
+          "path": "example",
+          "staticHost": "s1.adis.ws",
+          "textProtocols": [
+            "http",
+            "https"
+          ],
+          "schemaIds": [
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeffffff"
+          ],
+          "dynamicHost": "i1.adis.ws",
+          "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeffffff",
+          "staticProtocols": [
+            "http",
+            "https"
+          ],
+          "serviceId": "",
+          "textHost": "c1.adis.ws",
+          "dynamicProtocols": [
+            "http",
+            "https"
+          ]
+        }
+      ],
+      "defaultEndpoint": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeffffff",
+      "enabled": true
+    }
+  },
+  "status": "success"
+}

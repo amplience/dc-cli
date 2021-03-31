@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { DAM } from 'dam-management-sdk-js';
+import { ContentHub } from '../common/ch-api/ContentHub';
 import { ConfigurationParameters } from '../commands/configure';
 
-const damClientFactory = (config: ConfigurationParameters): DAM =>
-  new DAM(
+const chClientFactory = (config: ConfigurationParameters): ContentHub =>
+  new ContentHub(
     {
       client_id: config.clientId,
       client_secret: config.clientSecret
@@ -14,4 +14,4 @@ const damClientFactory = (config: ConfigurationParameters): DAM =>
     }
   );
 
-export default damClientFactory;
+export default chClientFactory;
