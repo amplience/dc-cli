@@ -99,6 +99,131 @@ const prepareContentForTree = async (
   return new ContentDependancyTree(contentItems, new ContentMapping());
 };
 
+type CircularLink = [number, number];
+interface ParentReference {
+  item: ItemContentDependancies;
+  line: number;
+}
+
+const firstSecondThird = (index: number, total: number): number => {
+  return index === 0 ? 0 : index == total - 1 ? 2 : 1;
+};
+
+const fstPipes = ['├', '├', '└'];
+const circularPipes = ['╗', '║', '╝'];
+const circularLine = '═';
+
+const printDependency = (
+  item: ItemContentDependancies,
+  evaluated: Set<ItemContentDependancies>,
+  lines: string[],
+  circularLinks: CircularLink[],
+  evalThis: ParentReference[],
+  fst: number,
+  prefix: string
+): boolean => {
+  const depth = evalThis.length - 1;
+  const pipe = depth < 0 ? '' : fstPipes[fst] + '─ ';
+
+  const circularMatch = evalThis.find(parent => parent.item == item);
+  if (circularMatch) {
+    lines.push(`${prefix}${pipe}*** (${item.owner.content.label})`);
+    circularLinks.push([circularMatch.line, lines.length - 1]);
+    return false;
+  } else if (evaluated.has(item)) {
+    if (depth > -1) {
+      lines.push(`${prefix}${pipe}(${item.owner.content.label})`);
+    }
+    return false;
+  } else {
+    lines.push(`${prefix}${pipe}${item.owner.content.label}`);
+  }
+
+  evalThis.push({ item, line: lines.length - 1 });
+  evaluated.add(item);
+
+  const filteredItems = item.dependancies.filter(dep => dep.resolved);
+  filteredItems.forEach((dep, index) => {
+    if (dep.resolved) {
+      const subFst = firstSecondThird(index, filteredItems.length);
+      const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
+      printDependency(dep.resolved, evaluated, lines, circularLinks, [...evalThis], subFst, prefix + subPrefix);
+    }
+  });
+  return true;
+};
+
+const fillWhitespace = (original: string, current: string, char: string, targetLength: number): string => {
+  if (current.length < original.length + 1) {
+    current += ' ';
+  }
+
+  let position = original.length + 1;
+  let repeats = targetLength - (original.length + 1);
+
+  // Replace existing whitespace characters
+  while (position < current.length && repeats > 0) {
+    if (current[position] != char && current[position] == ' ') {
+      current = current.slice(0, position) + char + current.slice(position + 1);
+    }
+
+    position++;
+    repeats--;
+  }
+
+  if (repeats > 0) {
+    current += char.repeat(repeats);
+  }
+
+  return current;
+};
+
+const printTree = (item: ItemContentDependancies, evaluated: Set<ItemContentDependancies>): boolean => {
+  const lines: string[] = [];
+  const circularLinks: CircularLink[] = [];
+
+  const result = printDependency(item, evaluated, lines, circularLinks, [], 0, '');
+
+  if (!result) return false;
+
+  const modifiedLines = [...lines];
+
+  // Render circular references.
+  // These are drawn as pipes on the right hand side, from a start line to an end line.
+
+  const maxWidth = Math.max(...lines.map(x => x.length));
+
+  for (let i = 0; i < circularLinks.length; i++) {
+    const link = circularLinks[i];
+    let linkDist = maxWidth + 2;
+
+    // Find overlapping circular links. Push the link out further if a previously drawn line is there.
+    for (let j = 0; j < i; j++) {
+      const link2 = circularLinks[j];
+      if (link[0] <= link2[1] && link[1] >= link2[0]) {
+        linkDist += 2;
+      }
+    }
+
+    // Write the circular dependency lines into the tree.
+
+    for (let ln = link[0]; ln <= link[1]; ln++) {
+      const end = ln == link[0] || ln == link[1];
+      const original = lines[ln];
+      let current = modifiedLines[ln];
+
+      current = fillWhitespace(original, current, end ? circularLine : ' ', linkDist);
+      current += circularPipes[firstSecondThird(ln - link[0], link[1] - link[0] + 1)];
+
+      modifiedLines[ln] = current;
+    }
+  }
+
+  modifiedLines.forEach(line => console.log(line));
+  console.log('');
+  return true;
+};
+
 export const handler = async (argv: Arguments<TreeOptions & ConfigurationParameters>): Promise<void> => {
   const dir = argv.dir;
 
@@ -122,62 +247,21 @@ export const handler = async (argv: Arguments<TreeOptions & ConfigurationParamet
   if (tree == null) return;
 
   const evaluated = new Set<ItemContentDependancies>();
-  const firstSecondThird = (index: number, total: number): number => {
-    return index === 0 ? 0 : index == total - 1 ? 2 : 1;
-  };
-
-  const fstPipes = ['├', '├', '└'];
-
-  const printDependency = (
-    item: ItemContentDependancies,
-    depth: number,
-    evalThis: ItemContentDependancies[],
-    fst: number,
-    prefix: string
-  ): boolean => {
-    const pipe = depth < 0 ? '' : fstPipes[fst] + '─ ';
-
-    if (evalThis.indexOf(item) !== -1) {
-      console.log(`${prefix}${pipe}*** (${item.owner.content.label})`);
-      return false;
-    } else if (evaluated.has(item)) {
-      if (depth > 0) {
-        console.log(`${prefix}${pipe}(${item.owner.content.label})`);
-      }
-      return false;
-    } else {
-      console.log(`${prefix}${pipe}${item.owner.content.label}`);
-    }
-
-    evalThis.push(item);
-    evaluated.add(item);
-
-    item.dependancies.forEach((dep, index) => {
-      if (dep.resolved) {
-        const subFst = firstSecondThird(index, item.dependancies.length);
-        const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
-        printDependency(dep.resolved, depth + 1, [...evalThis], subFst, prefix + subPrefix);
-      }
-    });
-    return true;
-  };
 
   for (let i = tree.levels.length - 1; i >= 0; i--) {
     const level = tree.levels[i];
     console.log(`=== LEVEL ${i + 1} (${level.items.length}) ===`);
 
     level.items.forEach(item => {
-      printDependency(item, -1, [], 0, '');
-      console.log('');
+      printTree(item, evaluated);
     });
   }
 
   console.log(`=== CIRCULAR (${tree.circularLinks.length}) ===`);
   let topLevelPrints = 0;
   tree.circularLinks.forEach(item => {
-    if (printDependency(item, -1, [], 0, '')) {
+    if (printTree(item, evaluated)) {
       topLevelPrints++;
-      console.log('');
     }
   });
 
