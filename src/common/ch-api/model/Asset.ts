@@ -3,11 +3,8 @@ import { ApiResource } from '../api/model/ApiResource';
 import { PublishActivitySummary } from './PublishActivitySummary';
 import { Page } from './Page';
 import { ResourceList } from './ResourceList';
-import { AssetMetadata, AssetRelationships } from './AssetMetadata';
-import { StringList } from './StringList';
-import { AssetText } from './AssetText';
+import { AssetRelationships } from './AssetMetadata';
 import { WorkflowSummary } from './WorkflowSummary';
-import { AssetPutResult } from './AssetPutResult';
 
 export class Asset extends ApiResource {
   /**
@@ -149,68 +146,7 @@ export class Asset extends ApiResource {
   /**
    * Resources and actions related to a Content Item
    */
-  public readonly related = {
-    /**
-     * Delete this asset.
-     */
-    delete: (): Promise<void> => this.client.endpoints.assets.delete(this.id),
-
-    /**
-     * Retrieves all versions for this asset.
-     */
-    versions: (): Promise<AssetsList> => this.client.endpoints.assets.versions(this.id),
-
-    /**
-     * Retrieves a specific version for this asset.
-     */
-    version: (version: number): Promise<Asset> => this.client.endpoints.assets.version(this.id, version),
-
-    /**
-     * Retrieves all metadata for this asset.
-     */
-    metadata: (): Promise<AssetMetadata> => this.client.endpoints.assets.metadata(this.id),
-
-    /**
-     * Retrieves a download URL for this asset.
-     */
-    download: (): Promise<string> => this.client.endpoints.assets.download(this.id),
-
-    /**
-     * Retrieves a download URL for this asset, with the given version.
-     */
-    downloadVersion: (version: number): Promise<string> =>
-      this.client.endpoints.assets.downloadVersion(this.id, version),
-
-    /**
-     * Retrieves a download URL for this asset, with the given version.
-     */
-    text: (): Promise<AssetText> => this.client.endpoints.assets.text(this.id),
-
-    /**
-     * Publishes only this asset.
-     */
-    publish: (mode?: string): Promise<StringList> => this.client.endpoints.assets.publish([this.id], mode),
-
-    /**
-     * Validates publish for only this asset. Throws if not successful.
-     */
-    validatePublish: (mode?: string): Promise<StringList> =>
-      this.client.endpoints.assets.validatePublish([this.id], mode),
-
-    /**
-     * Unpublishes only this asset.
-     */
-    unpublish: (mode?: string): Promise<StringList> => this.client.endpoints.assets.unpublish([this.id], mode),
-
-    /**
-     * Updates only this asset.
-     */
-    update: async (): Promise<AssetPutResult> => {
-      const results = await this.client.endpoints.assets.putAsset('overwrite', [this]);
-
-      return results.results[0];
-    }
-  };
+  public readonly related = {};
 }
 
 /**
