@@ -23,33 +23,7 @@ export interface ApiClient {
     resourceConstructor: ApiResourceConstructor<T>
   ): Promise<T>;
 
-  createResource<T extends ApiResource>(
-    path: string,
-    resource: T,
-    params: ApiParameters,
-    resourceConstructor: ApiResourceConstructor<T>
-  ): Promise<T>;
-
-  updateResource<T extends ApiResource>(
-    path: string,
-    resource: T,
-    params: ApiParameters,
-    resourceConstructor: ApiResourceConstructor<T>
-  ): Promise<T>;
-
-  genericRequest<T extends ApiResource>(
-    path: string,
-    method: HttpMethod,
-    body: any,
-    params: ApiParameters,
-    resourceConstructor?: ApiResourceConstructor<T>
-  ): Promise<T>;
-
   parse<T extends ApiResource>(data: any, resourceConstructor: ApiResourceConstructor<T>): T;
-
-  serialize<T>(data: T): any;
-
-  deleteResource(path: string, params: ApiParameters): Promise<void>;
 }
 
 /**
@@ -90,69 +64,10 @@ export class DefaultApiClient implements ApiClient {
     return this.parse(data, resourceConstructor);
   }
 
-  public async createResource<T extends ApiResource>(
-    path: string,
-    resource: T,
-    params: ApiParameters,
-    resourceConstructor: ApiResourceConstructor<T>
-  ): Promise<T> {
-    path = CURIEs.expand(path, params.query);
-    const response = await this.invoke({
-      data: this.serialize(resource),
-      method: HttpMethod.POST,
-      url: path
-    });
-    return this.parse(response.data, resourceConstructor);
-  }
-
-  public async updateResource<T extends ApiResource>(
-    path: string,
-    resource: T,
-    params: ApiParameters,
-    resourceConstructor: ApiResourceConstructor<T>
-  ): Promise<T> {
-    path = CURIEs.expand(path, params.query);
-    const response = await this.invoke({
-      data: this.serialize(resource),
-      method: HttpMethod.PATCH,
-      url: path
-    });
-    return this.parse(response.data, resourceConstructor);
-  }
-
-  public async genericRequest<T extends ApiResource>(
-    path: string,
-    method: HttpMethod,
-    body: any,
-    params: ApiParameters,
-    resourceConstructor: ApiResourceConstructor<T>
-  ): Promise<T> {
-    path = CURIEs.expand(path, params.query);
-    const response = await this.invoke({
-      data: body,
-      method,
-      url: path
-    });
-    return this.parse(response.data, resourceConstructor);
-  }
-
-  public async deleteResource(path: string, params: ApiParameters): Promise<void> {
-    path = CURIEs.expand(path, params.query);
-    await this.invoke({
-      method: HttpMethod.DELETE,
-      url: path
-    });
-    return Promise.resolve();
-  }
-
   public parse<T extends ApiResource>(data: any, resourceConstructor: ApiResourceConstructor<T>): T {
     const instance: T = new resourceConstructor(data);
     instance.setClient(this);
     return instance;
-  }
-
-  public serialize<T>(data: T): any {
-    return JSON.parse(JSON.stringify(data));
   }
 
   protected transformDamResponse(data: any): any {
