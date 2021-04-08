@@ -211,7 +211,12 @@ export class ContentDependancyTree {
   ): CircularDependencyStage {
     let selfLoop = false;
     let intertwinedLoop = false;
+    let isParent = false;
     const seenBefore = new Set<ItemContentDependancies>();
+
+    if (top.owner.content.label == 'item5') {
+      console.log('test');
+    }
 
     const traverse = (
       top: ItemContentDependancies,
@@ -234,8 +239,15 @@ export class ContentDependancyTree {
         if (!intertwined) {
           // Does it loop back to the parent?
           const storedSelfLoop = selfLoop;
-          intertwinedLoop = traverse(item, item, 0, [top], new Set<ItemContentDependancies>(), true);
+          const childIntertwined = traverse(item, item, 0, [top], new Set<ItemContentDependancies>(), true);
           selfLoop = storedSelfLoop;
+
+          if (childIntertwined) {
+            intertwinedLoop = true;
+          } else {
+            // We're the parent of a non-intertwined circular loop.
+            isParent = true;
+          }
         }
 
         hasCircular = true;
@@ -248,7 +260,7 @@ export class ContentDependancyTree {
       seenBefore.add(item);
 
       item.dependancies.forEach(dep => {
-        hasCircular = traverse(top, dep.resolved, depth++, unresolved, seenBefore, intertwined) || hasCircular;
+        hasCircular = traverse(top, dep.resolved, depth + 1, unresolved, seenBefore, intertwined) || hasCircular;
       });
 
       return hasCircular;
@@ -256,9 +268,13 @@ export class ContentDependancyTree {
 
     const hasCircular = traverse(top, top, 0, unresolved, seenBefore, false);
 
+    if (top.owner.content.label == 'item5') {
+      console.log('test');
+    }
+
     if (hasCircular) {
       if (intertwinedLoop) {
-        if (selfLoop) {
+        if (selfLoop && !isParent) {
           return CircularDependencyStage.Intertwined;
         } else {
           return CircularDependencyStage.Parent;

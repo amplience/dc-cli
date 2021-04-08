@@ -1,0 +1,90 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`content-item tree command handler tests should detect and print circular dependencies with a double line indicator 1`] = `
+"=== LEVEL 2 (1) ===
+item6 
+└─ item5 
+
+=== LEVEL 1 (3) ===
+item3 
+
+item7 
+
+=== CIRCULAR (3) ===
+item1 ═════════════════╗
+├─ item2               ║
+│  └─ item4            ║
+│     └─ *** (item1) ══╝
+└─ (item3) 
+
+Finished. Circular Dependencies printed: 1"
+`;
+
+exports[`content-item tree command handler tests should detect intertwined circular dependencies with multiple lines with different position 1`] = `
+"test
+test
+=== CIRCULAR (6) ===
+item5 ══════════════╗
+└─ item6            ║
+   └─ *** (item5) ══╝
+
+item1 ══════════════════════╗
+└─ item2 ═════════════════╗ ║
+   └─ item3               ║ ║
+      ├─ *** (item2) ═════╝ ║
+      └─ item4              ║
+         ├─ *** (item1) ════╝
+         └─ (item5) 
+
+Finished. Circular Dependencies printed: 2"
+`;
+
+exports[`content-item tree command handler tests should print a single content item by itself 1`] = `
+"=== LEVEL 1 (1) ===
+item1 
+
+Finished. Circular Dependencies printed: 0"
+`;
+
+exports[`content-item tree command handler tests should print a tree of content items 1`] = `
+"=== LEVEL 4 (1) ===
+item1 
+├─ item2 
+│  ├─ item4 
+│  └─ item6 
+│     └─ item5 
+└─ item3 
+
+=== LEVEL 3 (1) ===
+=== LEVEL 2 (1) ===
+=== LEVEL 1 (3) ===
+Finished. Circular Dependencies printed: 0"
+`;
+
+exports[`content-item tree command handler tests should print an error when invalid json is found 1`] = `
+"=== LEVEL 1 (1) ===
+item1 
+
+Finished. Circular Dependencies printed: 0"
+`;
+
+exports[`content-item tree command handler tests should print an error when invalid json is found 2`] = `"Couldn't read content item at '/Users/rhys/Documents/amplience/dc-cli/temp/tree/invalud/repo1/badfile.json': SyntaxError: Unexpected token o in JSON at position 1"`;
+
+exports[`content-item tree command handler tests should print multiple disjoint trees of content items 1`] = `
+"=== LEVEL 3 (1) ===
+item1 
+├─ item2 
+│  └─ item4 
+└─ item3 
+
+=== LEVEL 2 (2) ===
+item6 
+└─ item5 
+
+=== LEVEL 1 (4) ===
+item7 
+
+Finished. Circular Dependencies printed: 0"
+`;
+
+exports[`content-item tree command handler tests should print nothing if no content is present 1`] = `"Finished. Circular Dependencies printed: 0"`;
