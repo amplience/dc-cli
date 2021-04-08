@@ -13,10 +13,6 @@ import {
 } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
 
-export function getTempFolder(name: string, platform: string = process.platform): string {
-  return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
-}
-
 export const command = 'tree <dir>';
 
 export const desc = 'Print a content dependency tree from content in the given folder.';
@@ -27,7 +23,7 @@ export const LOG_FILENAME = (platform: string = process.platform): string =>
 export const builder = (yargs: Argv): void => {
   yargs.positional('dir', {
     type: 'string',
-    describe: 'Path to the content items to build a tree from.. Should be in the same format as an export.'
+    describe: 'Path to the content items to build a tree from. Should be in the same format as an export.'
   });
 };
 
@@ -35,8 +31,10 @@ interface TreeOptions {
   dir: string;
 }
 
-const traverseRecursive = async (path: string, action: (path: string) => Promise<void>): Promise<void> => {
+export const traverseRecursive = async (path: string, action: (path: string) => Promise<void>): Promise<void> => {
   const dir = await promisify(readdir)(path);
+
+  dir.sort();
 
   await Promise.all(
     dir.map(async (contained: string) => {
@@ -47,54 +45,33 @@ const traverseRecursive = async (path: string, action: (path: string) => Promise
   );
 };
 
-const prepareContentForTree = async (
-  repos: { basePath: string; repo: ContentRepository }[],
+export const prepareContentForTree = async (
+  repo: { basePath: string; repo: ContentRepository },
   argv: Arguments<TreeOptions & ConfigurationParameters>
-): Promise<ContentDependancyTree | null> => {
+): Promise<ContentDependancyTree> => {
   const contentItems: RepositoryContentItem[] = [];
   const schemaNames = new Set<string>();
 
-  for (let i = 0; i < repos.length; i++) {
-    const repo = repos[i].repo;
+  await traverseRecursive(resolve(repo.basePath), async path => {
+    // Is this valid content? Must have extension .json to be considered, for a start.
+    if (extname(path) !== '.json') {
+      return;
+    }
 
-    await traverseRecursive(resolve(repos[i].basePath), async path => {
-      // Is this valid content? Must have extension .json to be considered, for a start.
-      if (extname(path) !== '.json') {
-        return;
-      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let contentJSON: any;
+    try {
+      const contentText = await promisify(readFile)(path, { encoding: 'utf8' });
+      contentJSON = JSON.parse(contentText);
+    } catch (e) {
+      console.error(`Couldn't read content item at '${path}': ${e.toString()}`);
+      return;
+    }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let contentJSON: any;
-      try {
-        const contentText = await promisify(readFile)(path, { encoding: 'utf8' });
-        contentJSON = JSON.parse(contentText);
-      } catch (e) {
-        console.error(`Couldn't read content item at '${path}': ${e.toString()}`);
-        return;
-      }
+    schemaNames.add(contentJSON.body._meta.schema);
 
-      // Get the folder id via the mapping.
-
-      // Only filter relevant information - for example status and previous content repo are not useful.
-      const filteredContent = {
-        id: contentJSON.id,
-        label: contentJSON.label,
-        locale: contentJSON.locale,
-        body: contentJSON.body,
-        deliveryId: contentJSON.deliveryId == contentJSON.Id || argv.excludeKeys ? undefined : contentJSON.deliveryId,
-        folderId: null,
-        publish: contentJSON.lastPublishedVersion != null
-      };
-
-      if (argv.excludeKeys) {
-        delete filteredContent.body._meta.deliveryKey;
-      }
-
-      schemaNames.add(contentJSON.body._meta.schema);
-
-      contentItems.push({ repo: repo, content: new ContentItem(filteredContent) });
-    });
-  }
+    contentItems.push({ repo: repo.repo, content: new ContentItem(contentJSON) });
+  });
 
   return new ContentDependancyTree(contentItems, new ContentMapping());
 };
@@ -105,15 +82,15 @@ interface ParentReference {
   line: number;
 }
 
-const firstSecondThird = (index: number, total: number): number => {
-  return index === 0 ? 0 : index == total - 1 ? 2 : 1;
+export const firstSecondThird = (index: number, total: number): number => {
+  return index == total - 1 ? 2 : index === 0 ? 0 : 1;
 };
 
 const fstPipes = ['├', '├', '└'];
 const circularPipes = ['╗', '║', '╝'];
 const circularLine = '═';
 
-const printDependency = (
+export const printDependency = (
   item: ItemContentDependancies,
   evaluated: Set<ItemContentDependancies>,
   lines: string[],
@@ -144,22 +121,24 @@ const printDependency = (
 
   const filteredItems = item.dependancies.filter(dep => dep.resolved);
   filteredItems.forEach((dep, index) => {
-    if (dep.resolved) {
-      const subFst = firstSecondThird(index, filteredItems.length);
-      const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
-      printDependency(dep.resolved, evaluated, lines, circularLinks, [...evalThis], subFst, prefix + subPrefix);
-    }
+    const subFst = firstSecondThird(index, filteredItems.length);
+    const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
+    printDependency(
+      dep.resolved as ItemContentDependancies,
+      evaluated,
+      lines,
+      circularLinks,
+      [...evalThis],
+      subFst,
+      prefix + subPrefix
+    );
   });
   return true;
 };
 
-const fillWhitespace = (original: string, current: string, char: string, targetLength: number): string => {
-  if (current.length < original.length + 1) {
-    current += ' ';
-  }
-
-  let position = original.length + 1;
-  let repeats = targetLength - (original.length + 1);
+export const fillWhitespace = (original: string, current: string, char: string, targetLength: number): string => {
+  let position = original.length;
+  let repeats = targetLength - original.length;
 
   // Replace existing whitespace characters
   while (position < current.length && repeats > 0) {
@@ -178,14 +157,15 @@ const fillWhitespace = (original: string, current: string, char: string, targetL
   return current;
 };
 
-const printTree = (item: ItemContentDependancies, evaluated: Set<ItemContentDependancies>): boolean => {
-  const lines: string[] = [];
+export const printTree = (item: ItemContentDependancies, evaluated: Set<ItemContentDependancies>): boolean => {
+  let lines: string[] = [];
   const circularLinks: CircularLink[] = [];
 
   const result = printDependency(item, evaluated, lines, circularLinks, [], 0, '');
 
   if (!result) return false;
 
+  lines = lines.map(line => line + ' ');
   const modifiedLines = [...lines];
 
   // Render circular references.
@@ -227,24 +207,11 @@ const printTree = (item: ItemContentDependancies, evaluated: Set<ItemContentDepe
 export const handler = async (argv: Arguments<TreeOptions & ConfigurationParameters>): Promise<void> => {
   const dir = argv.dir;
 
-  const baseDirContents = await promisify(readdir)(dir);
-  const importRepos: { basePath: string; repo: ContentRepository }[] = [];
-  for (let i = 0; i < baseDirContents.length; i++) {
-    const name = baseDirContents[i];
-    const path = join(dir, name);
-    const status = await promisify(lstat)(path);
-    if (status.isDirectory()) {
-      importRepos.push({ basePath: path, repo: new ContentRepository() });
-    }
-  }
-
-  const tree = await prepareContentForTree(importRepos, argv);
+  const tree = await prepareContentForTree({ basePath: dir, repo: new ContentRepository() }, argv);
 
   // Print the items in the tree.
   // Keep a set of all items that have already been printed.
   // Starting at the highest level, print all dependencies on the tree.
-
-  if (tree == null) return;
 
   const evaluated = new Set<ItemContentDependancies>();
 
@@ -257,13 +224,17 @@ export const handler = async (argv: Arguments<TreeOptions & ConfigurationParamet
     });
   }
 
-  console.log(`=== CIRCULAR (${tree.circularLinks.length}) ===`);
   let topLevelPrints = 0;
-  tree.circularLinks.forEach(item => {
-    if (printTree(item, evaluated)) {
-      topLevelPrints++;
-    }
-  });
+
+  if (tree.circularLinks.length > 0) {
+    console.log(`=== CIRCULAR (${tree.circularLinks.length}) ===`);
+
+    tree.circularLinks.forEach(item => {
+      if (printTree(item, evaluated)) {
+        topLevelPrints++;
+      }
+    });
+  }
 
   console.log(`Finished. Circular Dependencies printed: ${topLevelPrints}`);
 };
