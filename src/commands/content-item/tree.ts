@@ -36,13 +36,16 @@ export const traverseRecursive = async (path: string, action: (path: string) => 
 
   dir.sort();
 
-  await Promise.all(
-    dir.map(async (contained: string) => {
-      contained = join(path, contained);
-      const stat = await promisify(lstat)(contained);
-      return await (stat.isDirectory() ? traverseRecursive(contained, action) : action(contained));
-    })
-  );
+  for (let i = 0; i < dir.length; i++) {
+    let contained = dir[i];
+    contained = join(path, contained);
+    const stat = await promisify(lstat)(contained);
+    if (stat.isDirectory()) {
+      await traverseRecursive(contained, action);
+    } else {
+      await action(contained);
+    }
+  }
 };
 
 export const prepareContentForTree = async (
