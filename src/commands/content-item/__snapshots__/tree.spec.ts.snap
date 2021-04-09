@@ -21,9 +21,7 @@ Finished. Circular Dependencies printed: 1"
 `;
 
 exports[`content-item tree command handler tests should detect intertwined circular dependencies with multiple lines with different position 1`] = `
-"test
-test
-=== CIRCULAR (6) ===
+"=== CIRCULAR (6) ===
 item5 ══════════════╗
 └─ item6            ║
    └─ *** (item5) ══╝

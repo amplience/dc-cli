@@ -214,10 +214,6 @@ export class ContentDependancyTree {
     let isParent = false;
     const seenBefore = new Set<ItemContentDependancies>();
 
-    if (top.owner.content.label == 'item5') {
-      console.log('test');
-    }
-
     const traverse = (
       top: ItemContentDependancies,
       item: ItemContentDependancies | undefined,
@@ -267,10 +263,6 @@ export class ContentDependancyTree {
     };
 
     const hasCircular = traverse(top, top, 0, unresolved, seenBefore, false);
-
-    if (top.owner.content.label == 'item5') {
-      console.log('test');
-    }
 
     if (hasCircular) {
       if (intertwinedLoop) {
