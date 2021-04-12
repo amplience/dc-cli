@@ -30,7 +30,7 @@ describe('configure command', function() {
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
-    handler({ ...yargArgs, ...configFixture });
+    handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
     expect(fs.mkdirSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/), { recursive: true });
@@ -48,12 +48,30 @@ describe('configure command', function() {
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
-    handler({ ...yargArgs, ...configFixture });
+    handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
     expect(fs.mkdirSync).not.toHaveBeenCalled();
     expect(fs.writeFileSync).toHaveBeenCalledWith(
       expect.stringMatching(new RegExp('.amplience/dc-cli-config.json$')),
+      JSON.stringify(configFixture)
+    );
+  });
+
+  it('should write a config file and use the specified file', () => {
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
+    jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
+
+    handler({ ...yargArgs, ...configFixture, config: 'subdirectory/custom-config.json' });
+
+    expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/subdirectory$/));
+    expect(fs.mkdirSync).toHaveBeenCalledWith(expect.stringMatching(/subdirectory$/), { recursive: true });
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp('subdirectory/custom-config.json$')),
       JSON.stringify(configFixture)
     );
   });
@@ -69,7 +87,7 @@ describe('configure command', function() {
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
     expect(() => {
-      handler({ ...yargArgs, ...configFixture });
+      handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
     }).toThrowError(/^Unable to create dir ".*". Reason: .*/);
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
@@ -88,7 +106,7 @@ describe('configure command', function() {
     });
 
     expect(() => {
-      handler({ ...yargArgs, ...configFixture });
+      handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
     }).toThrowError(/^Unable to write config file ".*". Reason: .*/);
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
@@ -104,7 +122,7 @@ describe('configure command', function() {
     jest.spyOn(fs, 'readFileSync').mockReturnValueOnce(JSON.stringify(configFixture));
     jest.spyOn(fs, 'writeFileSync');
 
-    handler({ ...yargArgs, ...configFixture });
+    handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
 
     expect(fs.writeFileSync).not.toHaveBeenCalled();
   });
