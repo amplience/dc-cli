@@ -137,42 +137,27 @@ describe('media-link-injector', () => {
       MockContentHub.throwOnGetSettings = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, []);
 
-      let throws = false;
-      try {
-        await rewriter.rewrite();
-      } catch {
-        throws = true;
-      }
-
-      expect(throws).toBeTruthy();
+      await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"Could not obtain settings from DAM. Make sure you have the required permissions. Error: Simulated settings error."`
+      );
     });
 
     it('should fail when the settings do not contain a default endpoint', async () => {
       MockContentHub.returnNullEndpoint = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, []);
 
-      let throws = false;
-      try {
-        await rewriter.rewrite();
-      } catch {
-        throws = true;
-      }
-
-      expect(throws).toBeTruthy();
+      await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"Could not find the default endpoint."`
+      );
     });
 
     it('should fail when getting assets does not work a certain number of times in a row', async () => {
       MockContentHub.throwOnAssetList = true;
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, exampleLinks);
 
-      let throws = false;
-      try {
-        await rewriter.rewrite();
-      } catch {
-        throws = true;
-      }
-
-      expect(throws).toBeTruthy();
+      await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"Request for assets failed after 3 attempts."`
+      );
 
       expect(MockContentHub.requests).toMatchInlineSnapshot(`
         Array [
