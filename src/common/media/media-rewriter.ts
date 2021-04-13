@@ -75,18 +75,7 @@ export class MediaRewriter {
     throw new Error(`Request for assets failed after ${attempts} attempts.`);
   }
 
-  async rewrite(): Promise<Set<string>> {
-    this.connectDam();
-
-    await this.getEndpoint();
-
-    // Steps:
-    // identify existing assets by name (unique, case sensitive)
-    //   - content item media dependancies, flush them all into a set
-    //   - try do a few batch requests for assets with matching name (arbitrary limit: 3000 characters)
-    //   - replace media link assets with ones that we found with matching names
-    //   - return non-matching assets
-
+  private getLinkNames(): Set<string> {
     const allNames = new Set<string>();
 
     const itemLinks = this.injector.all;
@@ -102,43 +91,11 @@ export class MediaRewriter {
       }
     }
 
+    return allNames;
+  }
+
+  private replaceLinks(assetsByName: Map<string, Asset>): Set<string> {
     const missingAssets = new Set<string>();
-
-    if (allNames.size == 0) {
-      return missingAssets;
-    }
-
-    const assetsByName = new Map<string, Asset>();
-    const names = Array.from(allNames);
-
-    let requestBuilder = 'name:/';
-    let requestCount = 0;
-
-    for (let i = 0; i < allNames.size; i++) {
-      const additionalRequest = `${this.escapeForRegex(names[i])}`;
-
-      const lengthSoFar = requestBuilder.length;
-      if (lengthSoFar == 6) {
-        // First entry?
-        requestBuilder += additionalRequest;
-        requestCount++;
-      } else {
-        if (lengthSoFar + 4 + additionalRequest.length < 3000) {
-          // <existing> OR <new>
-          requestBuilder += '|' + additionalRequest;
-          requestCount++;
-        } else {
-          // If the query is too big, batch out what we have and start over.
-
-          await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
-          requestBuilder = 'name:/' + additionalRequest;
-        }
-      }
-    }
-
-    if (requestBuilder.length > 0) {
-      await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
-    }
 
     // Replace media link assets with ones that we found with matching names.
     this.injector.all.forEach(links => {
@@ -156,5 +113,61 @@ export class MediaRewriter {
     });
 
     return missingAssets;
+  }
+
+  async rewrite(): Promise<Set<string>> {
+    this.connectDam();
+
+    await this.getEndpoint();
+
+    // Steps:
+    // identify existing assets by name (unique, case sensitive)
+    //   - content item media dependancies, flush them all into a set
+    //   - try do a few batch requests for assets with matching name (arbitrary limit: 3000 characters)
+    //   - replace media link assets with ones that we found with matching names
+    //   - return non-matching assets
+
+    const allNames = this.getLinkNames();
+
+    if (allNames.size == 0) {
+      return new Set<string>();
+    }
+
+    const maxQueryLength = 3000;
+    const assetsByName = new Map<string, Asset>();
+    const names = Array.from(allNames);
+
+    let requestBuilder = 'name:/';
+    let first = true;
+    let requestCount = 0;
+
+    for (let i = 0; i < allNames.size; i++) {
+      const additionalRequest = `${this.escapeForRegex(names[i])}`;
+
+      const lengthSoFar = requestBuilder.length;
+      if (first) {
+        // First entry?
+        requestBuilder += additionalRequest;
+        requestCount++;
+        first = false;
+      } else {
+        if (lengthSoFar + 1 + additionalRequest.length < maxQueryLength) {
+          // <existing>|<new>
+          requestBuilder += '|' + additionalRequest;
+          requestCount++;
+        } else {
+          // If the query is too big, batch out what we have and start over.
+
+          await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+          requestBuilder = 'name:/' + additionalRequest;
+        }
+      }
+    }
+
+    if (requestBuilder.length > 0) {
+      await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+    }
+
+    return this.replaceLinks(assetsByName);
   }
 }
