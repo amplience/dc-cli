@@ -201,7 +201,7 @@ export const getContentItems = async ({
           folders.map(async source => {
             const items = await paginator(source.related.contentItems.list, { status: 'ARCHIVED' });
 
-            contentItems.push(...items.filter(item => item.status !== 'ACTIVE'));
+            contentItems.push(...items);
           })
         )
       : await Promise.all(
