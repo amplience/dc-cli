@@ -43,7 +43,7 @@ const steps = [new ContentCleanStep(), new TypeCleanStep(), new SchemaCleanStep(
 
 export const handler = async (argv: Arguments<CleanHubBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const logFile = argv.logFile;
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile instanceof FileLog ? logFile : new FileLog(logFile);
 
   argv.logFile = log;
 
@@ -68,7 +68,7 @@ export const handler = async (argv: Arguments<CleanHubBuilderOptions & Configura
     }
   }
 
-  if (typeof logFile !== 'object') {
+  if (!(logFile instanceof FileLog)) {
     await log.close();
   }
 };

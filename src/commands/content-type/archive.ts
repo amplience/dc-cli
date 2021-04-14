@@ -9,6 +9,7 @@ import { equalsOrRegex } from '../../common/filter/filter';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 
 export const command = 'archive [id]';
 
@@ -135,7 +136,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
 
   const timestamp = Date.now().toString();
 
-  const log = typeof logFile === 'object' ? logFile : new ArchiveLog(`Content Type Archive Log - ${timestamp}\n`);
+  const log = logFile instanceof FileLog ? logFile : new ArchiveLog(`Content Type Archive Log - ${timestamp}\n`);
 
   let successCount = 0;
 

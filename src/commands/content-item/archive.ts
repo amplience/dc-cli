@@ -251,7 +251,7 @@ export const processItems = async ({
   }
 
   const timestamp = Date.now().toString();
-  const log = typeof logFile === 'object' ? logFile : new ArchiveLog(`Content Items Archive Log - ${timestamp}\n`);
+  const log = logFile instanceof FileLog ? logFile : new ArchiveLog(`Content Items Archive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
