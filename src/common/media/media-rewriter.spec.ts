@@ -7,6 +7,14 @@ import { MockContentHub } from './mock-ch';
 
 jest.mock('../../services/ch-client-factory');
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+jest.mock('promise-retry', () => (fn: unknown, options: any): unknown => {
+  const retryActual = jest.requireActual('promise-retry');
+  options.minTimeout = 0;
+  options.maxTimeout = 0;
+  return retryActual(fn, options);
+});
+
 let exampleLinks: RepositoryContentItem[] = [];
 
 describe('media-link-injector', () => {

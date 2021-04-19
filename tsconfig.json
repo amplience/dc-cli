@@ -2,7 +2,7 @@
   "compilerOptions": {
     "typeRoots" : ["./node_modules/@types", "./definitions"],
     "module": "commonjs",
-    "target": "es2018",
+    "target": "es2019",
     "outDir": "dist",
     "noImplicitAny": true,
     "removeComments": true,
