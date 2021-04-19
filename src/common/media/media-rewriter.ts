@@ -5,6 +5,7 @@ import { ConfigurationParameters } from '../../commands/configure';
 import chClientFactory from '../../services/ch-client-factory';
 import { RepositoryContentItem } from '../content-item/content-dependancy-tree';
 import { MediaLinkInjector } from '../content-item/media-link-injector';
+import promiseRetry from 'promise-retry';
 
 /**
  * Exports media related to given content items from an existing repository.
@@ -50,48 +51,40 @@ export class MediaRewriter {
   }
 
   private async queryAndAdd(query: string, count: number, assets: Map<string, Asset>): Promise<number> {
-    const attempts = 3;
+    let attemptCount = 0;
 
-    for (let i = 0; i < attempts; i++) {
-      try {
-        const result = await this.dam.assets.list({
-          q: '(' + query + ')',
-          n: count
-        });
+    try {
+      return await promiseRetry(
+        async (retry, attempt) => {
+          try {
+            const result = await this.dam.assets.list({
+              q: '(' + query + ')',
+              n: count
+            });
 
-        const items = result.getItems();
+            const items = result.getItems();
 
-        items.forEach(asset => {
-          assets.set(asset.name as string, asset);
-        });
+            items.forEach(asset => {
+              assets.set(asset.name as string, asset);
+            });
 
-        return items.length;
-      } catch (e) {
-        // Retry
-      }
+            return items.length;
+          } catch (e) {
+            attemptCount = attempt;
+            retry(e);
+            return 0;
+          }
+        },
+        { retries: 2 }
+      );
+    } catch (e) {
+      // Too many retries, fail the request.
+      throw new Error(`Request for assets failed after ${attemptCount} attempts.`);
     }
-
-    // Too many retries, fail the request.
-    throw new Error(`Request for assets failed after ${attempts} attempts.`);
   }
 
   private getLinkNames(): Set<string> {
-    const allNames = new Set<string>();
-
-    const itemLinks = this.injector.all;
-
-    for (let i = 0; i < itemLinks.length; i++) {
-      const item = itemLinks[i];
-
-      const links = item.links;
-      for (let j = 0; j < links.length; j++) {
-        const link = links[j];
-
-        allNames.add(link.link.name);
-      }
-    }
-
-    return allNames;
+    return new Set<string>(this.injector.all.flatMap(links => links.links.map(link => link.link.name)));
   }
 
   private replaceLinks(assetsByName: Map<string, Asset>): Set<string> {
@@ -137,35 +130,37 @@ export class MediaRewriter {
     const assetsByName = new Map<string, Asset>();
     const names = Array.from(allNames);
 
-    let requestBuilder = 'name:/';
-    let first = true;
-    let requestCount = 0;
+    if (names.length > 0) {
+      let requestBuilder = 'name:/';
+      let first = true;
+      let requestCount = 0;
 
-    for (let i = 0; i < allNames.size; i++) {
-      const additionalRequest = `${this.escapeForRegex(names[i])}`;
+      for (const name of names) {
+        const additionalRequest = `${this.escapeForRegex(name)}`;
 
-      const lengthSoFar = requestBuilder.length;
-      if (first) {
-        // First entry?
-        requestBuilder += additionalRequest;
-        requestCount++;
-        first = false;
-      } else {
-        if (lengthSoFar + 1 + additionalRequest.length < maxQueryLength) {
-          // <existing>|<new>
-          requestBuilder += '|' + additionalRequest;
+        const lengthSoFar = requestBuilder.length;
+        if (first) {
+          // First entry?
+          requestBuilder += additionalRequest;
           requestCount++;
+          first = false;
         } else {
-          // If the query is too big, batch out what we have and start over.
+          if (lengthSoFar + 1 + additionalRequest.length < maxQueryLength) {
+            // <existing>|<new>
+            requestBuilder += '|' + additionalRequest;
+            requestCount++;
+          } else {
+            // If the query is too big, batch out what we have and start over.
 
-          await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
-          requestBuilder = 'name:/' + additionalRequest;
+            await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+            requestBuilder = 'name:/' + additionalRequest;
+          }
         }
       }
-    }
 
-    if (requestBuilder.length > 0) {
-      await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+      if (requestBuilder.length > 0) {
+        await this.queryAndAdd(requestBuilder + '/', requestCount, assetsByName);
+      }
     }
 
     return this.replaceLinks(assetsByName);
