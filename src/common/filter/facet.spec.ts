@@ -155,8 +155,8 @@ describe('facet', () => {
     });
   });
 
-  const schemaContentItem = (schemaId: string, label?: string): ContentItem => {
-    return new ContentItem({ body: { _meta: { schemaId } }, label });
+  const schemaContentItem = (schema: string, label?: string): ContentItem => {
+    return new ContentItem({ body: { _meta: { schema } }, label });
   };
 
   describe('applyFilter tests', () => {

@@ -3,7 +3,6 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
 import { join } from 'path';
-import { equalsOrRegex } from '../../common/filter/filter';
 import sanitize from 'sanitize-filename';
 import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.service';
 
@@ -16,6 +15,7 @@ import { ContentDependancyTree, RepositoryContentItem } from '../../common/conte
 import { ContentMapping } from '../../common/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
+import { applyFacet } from '../../common/filter/facet';
 
 interface PublishedContentItem {
   lastPublishedVersion?: number;
@@ -46,15 +46,10 @@ export const builder = (yargs: Argv): void => {
       describe:
         'Export content from within a given folder. Directory structure will start at the specified folder. Can be used in addition to repoId.'
     })
-    .option('schemaId', {
+    .option('facet', {
       type: 'string',
       describe:
-        'Export content with a given or matching Schema ID. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
-    })
-    .option('name', {
-      type: 'string',
-      describe:
-        'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
+        "Export content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
     })
     .option('publish', {
       type: 'boolean',
@@ -216,7 +211,7 @@ const getContentItems = async (
 };
 
 export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, repoId, folderId, schemaId, name, logFile, publish } = argv;
+  const { dir, repoId, folderId, facet, logFile, publish } = argv;
 
   const dummyRepo = new ContentRepository();
 
@@ -228,18 +223,13 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   log.appendLine('Retrieving content items, please wait.');
   let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId, publish);
 
-  // Filter using the schemaId and name, if present.
-  if (schemaId != null) {
-    const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
-    items = items.filter(
-      ({ item }: { item: ContentItem }) => schemaIds.findIndex(id => equalsOrRegex(item.body._meta.schema, id)) !== -1
-    );
-  }
-  if (name != null) {
-    const names: string[] = Array.isArray(name) ? name : [name];
-    items = items.filter(
-      ({ item }: { item: ContentItem }) => names.findIndex(name => equalsOrRegex(item.label as string, name)) !== -1
-    );
+  // Filter using the faced, if present.
+  if (facet) {
+    const newItems = applyFacet(items.map(item => item.item), facet);
+
+    if (newItems.length !== items.length) {
+      items = newItems.map(newItem => items.find(item => item.item === newItem) as { item: ContentItem; path: string });
+    }
   }
 
   log.appendLine('Scanning for dependancies.');

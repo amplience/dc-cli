@@ -124,9 +124,9 @@ export function applyFacet(items: ContentItem[], facetOrString: Facet | string):
   }
 
   return items.filter(item => {
-    if (facet.locale && !equalsOrRegex(item.locale, facet.locale)) return false;
+    if (facet.locale && (!item.locale || !equalsOrRegex(item.locale, facet.locale))) return false;
     if (facet.name && !equalsOrRegex(item.label, facet.name)) return false;
-    if (facet.schema && !equalsOrRegex(item.body._meta.schemaId, facet.schema)) return false;
+    if (facet.schema && !equalsOrRegex(item.body._meta.schema, facet.schema)) return false;
     if (facet.status && !equalsOrRegex(item.status, facet.status)) return false;
 
     // Date range checks.
