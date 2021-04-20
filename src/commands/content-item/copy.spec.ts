@@ -95,6 +95,12 @@ describe('content-item copy command', () => {
         describe: "Destination account's secret. Must be used alongside dstClientId."
       });
 
+      expect(spyOption).toHaveBeenCalledWith('facet', {
+        type: 'string',
+        describe:
+          "Copy content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+      });
+
       expect(spyOption).toHaveBeenCalledWith('mapFile', {
         type: 'string',
         describe:
@@ -230,8 +236,7 @@ describe('content-item copy command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        schemaId: '/./',
-        name: '/./',
+        facet: 'name:/./,schema:/./',
 
         mapFile: 'map.json',
         force: false,
@@ -253,8 +258,7 @@ describe('content-item copy command', () => {
       expect(exportCalls[0].clientId).toEqual(config.clientId);
       expect(exportCalls[0].clientSecret).toEqual(config.clientSecret);
       expect(exportCalls[0].hubId).toEqual(config.hubId);
-      expect(exportCalls[0].schemaId).toEqual(argv.schemaId);
-      expect(exportCalls[0].name).toEqual(argv.name);
+      expect(exportCalls[0].facet).toEqual(argv.facet);
       expect(exportCalls[0].repoId).toEqual(argv.srcRepo);
       expect(exportCalls[0].publish).toEqual(argv.lastPublish);
 
@@ -350,8 +354,7 @@ describe('content-item copy command', () => {
         clientId: 'acc2-id',
         clientSecret: 'acc2-secret',
 
-        schemaId: '/./',
-        name: '/./',
+        facet: 'name:/./,schema:/./',
 
         mapFile: 'map.json',
         force: false,
@@ -433,8 +436,7 @@ describe('content-item copy command', () => {
 
         copyConfig: copyConfig,
 
-        schemaId: '/./',
-        name: '/./',
+        facet: 'name:/./,schema:/./',
 
         mapFile: 'map.json',
         force: false,
@@ -449,8 +451,7 @@ describe('content-item copy command', () => {
       expect(exportCalls[0].clientId).toEqual(copyConfig.srcClientId);
       expect(exportCalls[0].clientSecret).toEqual(copyConfig.srcSecret);
       expect(exportCalls[0].hubId).toEqual(copyConfig.srcHubId);
-      expect(exportCalls[0].schemaId).toEqual(argv.schemaId);
-      expect(exportCalls[0].name).toEqual(argv.name);
+      expect(exportCalls[0].facet).toEqual(argv.facet);
       expect(exportCalls[0].repoId).toEqual(argv.srcRepo);
 
       expect(importCalls[0].clientId).toEqual(copyConfig.dstClientId);
