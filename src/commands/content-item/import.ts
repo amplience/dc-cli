@@ -791,7 +791,7 @@ const importTree = async (
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping, true);
+        rewriteDependancy(dep, mapping, pass === 0);
       });
 
       const originalId = content.id;
