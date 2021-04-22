@@ -165,12 +165,6 @@ describe('hub clone command', () => {
         describe: 'Skip any content item that has one or more missing dependancy.'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('copyConfig', {
-        type: 'string',
-        describe:
-          'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-      });
-
       expect(spyOption).toHaveBeenCalledWith('lastPublish', {
         type: 'boolean',
         boolean: true,

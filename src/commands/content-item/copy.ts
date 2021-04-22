@@ -9,7 +9,6 @@ import { handler as exporter } from './export';
 import { handler as importer } from './import';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { revert } from './import-revert';
-import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 import { LogErrorLevel } from '../../common/archive/archive-log';
 import { withOldFilters } from '../../common/filter/facet';
@@ -106,12 +105,6 @@ export const builder = (yargs: Argv): void => {
       describe: 'Skip any content item that has one or more missing dependancy.'
     })
 
-    .option('copyConfig', {
-      type: 'string',
-      describe:
-        'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-    })
-
     .option('lastPublish', {
       type: 'boolean',
       boolean: true,
@@ -180,13 +173,11 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   let result = false;
 
-  const copyConfig = typeof argv.copyConfig !== 'object' ? await loadCopyConfig(argv, log) : argv.copyConfig;
+  const { hubId, clientId, clientSecret } = argv;
 
-  if (copyConfig == null) {
-    return false;
-  }
-
-  const { srcHubId, srcClientId, srcSecret, dstHubId, dstClientId, dstSecret } = copyConfig;
+  const dstHubId = argv.dstHubId || hubId;
+  const dstClientId = argv.dstClientId || clientId;
+  const dstSecret = argv.dstSecret || clientSecret;
 
   const revertLog = await argv.revertLog;
 
@@ -217,9 +208,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       await exporter({
         ...yargArgs,
-        hubId: srcHubId,
-        clientId: srcClientId,
-        clientSecret: srcSecret,
+        hubId: hubId,
+        clientId: clientId,
+        clientSecret: clientSecret,
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,

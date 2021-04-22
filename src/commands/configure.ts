@@ -15,6 +15,10 @@ export type ConfigurationParameters = {
   clientId: string;
   clientSecret: string;
   hubId: string;
+
+  dstClientId?: string;
+  dstSecret?: string;
+  dstHubId?: string;
 };
 
 type ConfigArgument = {
@@ -69,10 +73,16 @@ export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument
   const { clientId, clientSecret, hubId } = argv;
   const storedConfig = readConfigFile(argv.config);
 
-  if (isEqual(storedConfig, { clientId, clientSecret, hubId })) {
+  const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId };
+
+  if (argv.dstClientId) newConfig.dstClientId = argv.dstClientId;
+  if (argv.dstSecret) newConfig.dstSecret = argv.dstSecret;
+  if (argv.dstHubId) newConfig.dstHubId = argv.dstHubId;
+
+  if (isEqual(storedConfig, newConfig)) {
     console.log('Config file up-to-date.  Please use `--help` for command usage.');
     return;
   }
-  writeConfigFile(argv.config, { clientId, clientSecret, hubId });
+  writeConfigFile(argv.config, newConfig);
   console.log('Config file updated.');
 };
