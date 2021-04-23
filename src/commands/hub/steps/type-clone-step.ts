@@ -15,6 +15,7 @@ export class TypeCloneStep implements CloneHubStep {
 
   async run(state: CloneHubState): Promise<boolean> {
     try {
+      state.logFile.appendLine(`Exporting existing types from destination.`);
       await exportType({
         dir: join(state.path, 'oldType'),
         force: true,
@@ -27,6 +28,7 @@ export class TypeCloneStep implements CloneHubStep {
     }
 
     try {
+      state.logFile.appendLine(`Exporting types from source.`);
       await exportType({
         dir: join(state.path, 'type'),
         force: true,
