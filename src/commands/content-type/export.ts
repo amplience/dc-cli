@@ -62,14 +62,14 @@ export const builder = (yargs: Argv): void => {
 const equals = (a: ContentType, b: ContentType): boolean =>
   a.contentTypeUri === b.contentTypeUri && isEqual(a.settings, b.settings);
 
-interface ContentTypeExtended extends ContentType {
+interface ContentTypeWithRepositories extends ContentType {
   repositories?: string[];
 }
 
 interface ExportRecord {
   readonly filename: string;
   readonly status: ExportResult;
-  readonly contentType: ContentTypeExtended;
+  readonly contentType: ContentTypeWithRepositories;
 }
 
 export const filterContentTypesByUri = (listToFilter: ContentType[], contentTypeUriList: string[]): ContentType[] => {
@@ -109,7 +109,7 @@ export const getReposNamesForContentType = (
 };
 
 export const getExportRecordForContentType = (
-  contentType: ContentTypeExtended,
+  contentType: ContentTypeWithRepositories,
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
   repositories?: ContentRepository[]
