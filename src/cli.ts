@@ -4,6 +4,10 @@ import { configureCommandOptions, readConfigFile } from './commands/configure';
 import { Arguments, Argv } from 'yargs';
 import errorHandler from './error-handler';
 
+const readConfig = (configFile: string): object => {
+  return readConfigFile(configFile, process.argv[2] === 'configure');
+};
+
 const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
   return new Promise(
     async (resolve): Promise<void> => {
@@ -23,7 +27,7 @@ const configureYargs = (yargInstance: Argv): Promise<Arguments> => {
       const argv = await yargInstance
         .scriptName('dc-cli')
         .options(configureCommandOptions)
-        .config('config', readConfigFile)
+        .config('config', readConfig)
         .commandDir('./commands', YargsCommandBuilderOptions)
         .strict()
         .demandCommand(1, 'Please specify at least one command')
