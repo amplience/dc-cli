@@ -14,6 +14,7 @@ import { IndexCloneStep } from './steps/index-clone-step';
 import { CloneHubState } from './model/clone-hub-state';
 import { LogErrorLevel } from '../../common/archive/archive-log';
 import { ExtensionCloneStep } from './steps/extension-clone-step';
+import { EventCloneStep } from './steps/event-clone-step';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -47,7 +48,8 @@ export const steps = [
   new SchemaCloneStep(),
   new TypeCloneStep(),
   new IndexCloneStep(),
-  new ContentCloneStep()
+  new ContentCloneStep(),
+  new EventCloneStep()
 ];
 
 export const builder = (yargs: Argv): void => {

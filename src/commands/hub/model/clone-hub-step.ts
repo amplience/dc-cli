@@ -6,7 +6,8 @@ export enum CloneHubStepId {
   Schema = 'schema',
   Type = 'type',
   Index = 'index',
-  Content = 'content'
+  Content = 'content',
+  Event = 'event'
 }
 
 export interface CloneHubStep {

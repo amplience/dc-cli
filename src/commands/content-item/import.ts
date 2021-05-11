@@ -920,7 +920,7 @@ export const handler = async (
     mapFile = getDefaultMappingPath(importTitle);
   }
 
-  if (mapping.load(mapFile)) {
+  if (await mapping.load(mapFile)) {
     log.appendLine(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
   } else {
     log.appendLine(`Creating new mapping file at '${mapFile}'.`);
