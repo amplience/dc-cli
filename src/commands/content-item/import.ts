@@ -245,7 +245,7 @@ const createOrUpdateContent = async (
 
   let locale = item.locale;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (item as any).locale = undefined;
+  item.locale = undefined;
 
   if (oldItem == null) {
     result = { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
