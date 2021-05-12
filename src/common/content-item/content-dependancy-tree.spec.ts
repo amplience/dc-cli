@@ -221,6 +221,25 @@ describe('content-dependancy-tree', () => {
       }
     });
 
+    it('should correctly handle content item bodies with null properties or array items', () => {
+      const bodyWithNullLeaves = dependsOn(['id1']);
+      bodyWithNullLeaves.links.push(null);
+      bodyWithNullLeaves.nullProperty = null;
+
+      const items = createItems([
+        { label: 'id1', body: dependsOn([]), repoId: 'repo1', typeSchemaUri: 'http://type.com' },
+        { label: 'id2', body: bodyWithNullLeaves, repoId: 'repo1', typeSchemaUri: 'http://type.com' }
+      ]);
+
+      const tree = new ContentDependancyTree(items, new ContentMapping());
+
+      expect(tree.levels.length).toEqual(2);
+      expect(tree.circularLinks.length).toEqual(0);
+      expect(tree.all.length).toEqual(2);
+      expect(tree.byId.size).toEqual(2);
+      expect(tree.requiredSchema.length).toEqual(1);
+    });
+
     it('should successfully remove content dependancies', () => {
       const items = defaultDependantItems();
 
