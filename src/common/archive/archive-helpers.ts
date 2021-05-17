@@ -1,4 +1,4 @@
-import { asyncQuestion } from '../log-helpers';
+import { asyncQuestion } from '../question-helpers';
 
 export async function confirmArchive(
   action: string,

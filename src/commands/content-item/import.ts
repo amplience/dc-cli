@@ -28,7 +28,8 @@ import {
 } from '../../common/content-item/content-dependancy-tree';
 
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
-import { getDefaultLogPath, asyncQuestion } from '../../common/log-helpers';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 
