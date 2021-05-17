@@ -51,19 +51,19 @@ export class SchemaCloneStep implements CloneHubStep {
     const toArchive = revertLog.getData('CREATE', this.getName());
     const toUpdate = revertLog.getData('UPDATE', this.getName());
 
-    for (let i = 0; i < toArchive.length; i++) {
+    for (const id of toArchive) {
       try {
-        const schema = await client.contentTypeSchemas.get(toArchive[i]);
+        const schema = await client.contentTypeSchemas.get(id);
         if ((schema as ResourceStatus).status == Status.ACTIVE) {
           await schema.related.archive();
         }
       } catch (e) {
-        state.logFile.appendLine(`Could not archive ${toArchive[i]}. Continuing...`);
+        state.logFile.appendLine(`Could not archive ${id}. Continuing...`);
       }
     }
 
-    for (let i = 0; i < toUpdate.length; i++) {
-      const updateArgs = toUpdate[i].split(' ');
+    for (const id of toUpdate) {
+      const updateArgs = id.split(' ');
 
       try {
         const schema = await client.contentTypeSchemas.getByVersion(updateArgs[0], Number(updateArgs[1]));
@@ -74,7 +74,7 @@ export class SchemaCloneStep implements CloneHubStep {
           typeToSync.related.contentTypeSchema.update();
         }
       } catch (e) {
-        state.logFile.appendLine(`Error while updating ${toUpdate[i]}. Continuing...`);
+        state.logFile.appendLine(`Error while updating ${id}. Continuing...`);
       }
     }
 

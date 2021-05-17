@@ -4,7 +4,7 @@ import { Arguments } from 'yargs';
 import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentItem } from 'dc-management-sdk-js';
-import { asyncQuestion } from '../../common/log-helpers';
+import { asyncQuestion } from '../../common/question-helpers';
 
 export const revert = async (argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>): Promise<boolean> => {
   let log: FileLog;

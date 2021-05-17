@@ -349,6 +349,24 @@ describe('event archive command', () => {
       expect(archiveMock).toBeCalledTimes(2);
     });
 
+    it('should archive events when multiple ids provided', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockGet, mockEditionsList, archiveMock } = mockValues({ status: 'PUBLISHED' });
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        id: ['1', '2']
+      };
+      await handler(argv);
+
+      expect(mockGet).toHaveBeenCalledTimes(4);
+      expect(mockEditionsList).toHaveBeenCalledTimes(2);
+      expect(archiveMock).toBeCalledTimes(4);
+    });
+
     it('should delete event with scheduled edition', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);

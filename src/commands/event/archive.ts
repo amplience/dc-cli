@@ -80,7 +80,7 @@ export const getEvents = async ({
   hubId,
   name
 }: {
-  id?: string;
+  id?: string | string[];
   hubId: string;
   name?: string | string[];
   client: DynamicContent;
@@ -96,19 +96,23 @@ export const getEvents = async ({
 > => {
   try {
     if (id != null) {
-      const event = await client.events.get(id);
-      const editions = await paginator(event.related.editions.list);
+      const ids = Array.isArray(id) ? id : [id];
 
-      return [
-        {
-          event,
-          editions,
-          command: 'ARCHIVE',
-          unscheduleEditions: [],
-          deleteEditions: [],
-          archiveEditions: []
-        }
-      ];
+      return await Promise.all(
+        ids.map(async id => {
+          const event = await client.events.get(id);
+          const editions = await paginator(event.related.editions.list);
+
+          return {
+            event,
+            editions,
+            command: 'ARCHIVE',
+            unscheduleEditions: [],
+            deleteEditions: [],
+            archiveEditions: []
+          };
+        })
+      );
     }
 
     const hub = await client.hubs.get(hubId);

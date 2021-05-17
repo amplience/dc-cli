@@ -2,7 +2,7 @@ import fs from 'fs';
 import * as path from 'path';
 import { URL } from 'url';
 import DataPresenter from '../view/data-presenter';
-import { asyncQuestion } from '../common/log-helpers';
+import { asyncQuestion } from '../common/question-helpers';
 import { FileLog } from '../common/file-log';
 
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
