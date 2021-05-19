@@ -7,7 +7,7 @@ import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 
 export const command = 'archive [id]';
@@ -16,6 +16,8 @@ export const desc = 'Archive Content Items';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('content-item', 'archive', platform);
+
+export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Content Items Archive Log');
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -70,7 +72,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: coerceLog
     });
 };
 
@@ -227,7 +230,7 @@ export const processItems = async ({
   contentItems: ContentItem[];
   force?: boolean;
   silent?: boolean;
-  logFile?: string | FileLog;
+  logFile: FileLog;
   allContent: boolean;
   missingContent: boolean;
   ignoreError?: boolean;
@@ -250,8 +253,7 @@ export const processItems = async ({
     }
   }
 
-  const timestamp = Date.now().toString();
-  const log = logFile instanceof FileLog ? logFile : new ArchiveLog(`Content Items Archive Log - ${timestamp}\n`);
+  const log = logFile.open();
 
   let successCount = 0;
 
@@ -283,9 +285,7 @@ export const processItems = async ({
     }
   }
 
-  if (!silent && typeof logFile === 'string') {
-    await log.writeToFile(logFile.replace('<DATE>', timestamp));
-  }
+  await log.close(!silent);
 
   console.log(`Archived ${successCount} content items.`);
 };

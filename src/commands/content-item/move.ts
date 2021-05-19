@@ -1,4 +1,4 @@
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
@@ -132,7 +132,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -204,7 +205,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       revertLog: argv.revertLog
     });
   } else {
-    const log = new FileLog(argv.logFile as string);
+    const log = argv.logFile.open();
     argv.logFile = log;
 
     const copyConfig = await loadCopyConfig(argv, log);
@@ -245,6 +246,6 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       }
     }
 
-    log.close();
+    await log.close();
   }
 };

@@ -1,4 +1,4 @@
-import { builder, command, handler, LOG_FILENAME } from './archive';
+import { builder, coerceLog, command, handler, LOG_FILENAME } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentType, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -7,10 +7,17 @@ import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
 import { dirname } from 'path';
 import { promisify } from 'util';
 import readline from 'readline';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
+
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 describe('content-type archive command', () => {
   afterEach((): void => {
@@ -69,8 +76,22 @@ describe('content-type archive command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: coerceLog
       });
+    });
+
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+      LOG_FILENAME();
+
+      expect(getDefaultLogPath).toHaveBeenCalledWith('type', 'archive', process.platform);
+    });
+
+    it('should generate a log with coerceLog with the appropriate title', function() {
+      const logFile = coerceLog('filename.log');
+
+      expect(logFile).toEqual(expect.any(FileLog));
+      expect(logFile.title).toMatch(/^Content Type Archive Log \- ./);
     });
   });
 
@@ -83,7 +104,8 @@ describe('content-type archive command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
 
     function generateMockTypeList(
@@ -161,7 +183,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         schemaId: 'http://schemas.com/schema2',
         silent: true
       };
@@ -199,7 +220,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         schemaId: 'http://schemas.com/schema2',
         silent: true
       };
@@ -237,7 +257,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         schemaId: 'http://schemas.com/schema2',
         silent: true,
         force: true
@@ -277,7 +296,6 @@ describe('content-type archive command', () => {
         ...yargArgs,
         id: 'content-type-id',
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true
       };
@@ -308,7 +326,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         schemaId: 'http://schemas.com/schema2',
         force: true,
         silent: true
@@ -343,7 +360,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         schemaId: ['/schemaMatch/'], // Pass as an array to cover that case too.
         force: true,
         silent: true
@@ -373,7 +389,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true
       };
@@ -415,7 +430,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         slient: true,
         force: true,
         revertLog: logFileName
@@ -454,7 +468,7 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/type-archive-test.log',
+        logFile: createLog('temp/type-archive-test.log'),
         schemaId: '/schemaMatch/',
         force: true
       };
@@ -512,7 +526,7 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/type-archive-failed.log',
+        logFile: createLog('temp/type-archive-failed.log'),
         schemaId: '/schemaMatch/',
         force: true
       };
@@ -566,7 +580,7 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/type-archive-skip.log',
+        logFile: createLog('temp/type-archive-skip.log'),
         schemaId: '/schemaMatch/',
         ignoreError: true,
         force: true
@@ -600,7 +614,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true
       };
@@ -611,7 +624,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true,
         revertLog: 'doesntExist.txt'
@@ -637,7 +649,6 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true
       };
@@ -647,7 +658,6 @@ describe('content-type archive command', () => {
       const argv2 = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true,
         id: 'test'
@@ -658,7 +668,6 @@ describe('content-type archive command', () => {
       const argv3 = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         force: true,
         silent: true,
         id: 'test',

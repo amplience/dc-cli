@@ -1,8 +1,6 @@
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-
-import { FileLog } from '../../common/file-log';
 
 import { CleanHubBuilderOptions } from '../../interfaces/clean-hub-builder-options';
 import { SchemaCleanStep } from './steps/schema-clean-step';
@@ -30,7 +28,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     })
 
     .option('step', {
@@ -42,8 +41,7 @@ export const builder = (yargs: Argv): void => {
 const steps = [new ContentCleanStep(), new TypeCleanStep(), new SchemaCleanStep()];
 
 export const handler = async (argv: Arguments<CleanHubBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const logFile = argv.logFile;
-  const log = logFile instanceof FileLog ? logFile : new FileLog(logFile);
+  const log = argv.logFile.open();
 
   argv.logFile = log;
 
@@ -68,7 +66,5 @@ export const handler = async (argv: Arguments<CleanHubBuilderOptions & Configura
     }
   }
 
-  if (!(logFile instanceof FileLog)) {
-    await log.close();
-  }
+  await log.close();
 };
