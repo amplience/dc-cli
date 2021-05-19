@@ -1,13 +1,12 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { Edition, Event, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 const maxAttempts = 30;
 
@@ -17,6 +16,8 @@ export const desc = 'Archive Events';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('event', 'archive', platform);
+
+export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Events Archive Log');
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -44,7 +45,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: coerceLog
     });
 };
 
@@ -158,7 +160,7 @@ export const processItems = async ({
   }[];
   force?: boolean;
   silent?: boolean;
-  logFile?: string | FileLog;
+  logFile: FileLog;
   missingContent: boolean;
   ignoreError?: boolean;
 }): Promise<void> => {
@@ -204,8 +206,7 @@ export const processItems = async ({
       }
     }
 
-    const timestamp = Date.now().toString();
-    const log = logFile instanceof FileLog ? logFile : new ArchiveLog(`Events Archive Log - ${timestamp}\n`);
+    const log = logFile.open();
 
     let successCount = 0;
 
@@ -246,9 +247,7 @@ export const processItems = async ({
       }
     }
 
-    if (!silent && typeof logFile === 'string') {
-      await log.writeToFile(logFile.replace('<DATE>', timestamp));
-    }
+    await log.close(!silent);
 
     return console.log(`Processed ${successCount} events.`);
   } catch (e) {

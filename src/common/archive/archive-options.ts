@@ -8,7 +8,7 @@ export default interface ArchiveOptions {
   folderId?: string | string[];
   name?: string | string[];
   contentType?: string | string[];
-  logFile?: string | FileLog;
+  logFile: FileLog;
   force?: boolean;
   silent?: boolean;
   ignoreError?: boolean;

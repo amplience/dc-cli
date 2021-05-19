@@ -1,5 +1,5 @@
 import { builder, command, handler, LOG_FILENAME } from './clean';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import Yargs from 'yargs/yargs';
 
 import * as content from './steps/content-clean-step';
@@ -101,7 +101,8 @@ describe('hub clean command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
 
       expect(spyOption).toHaveBeenCalledWith('step', {
@@ -139,7 +140,7 @@ describe('hub clean command', () => {
         ...yargArgs,
         ...config,
 
-        logFile: 'temp/clean/steps/all.log',
+        logFile: createLog('temp/clean/steps/all.log'),
         force: true
       };
 
@@ -168,7 +169,7 @@ describe('hub clean command', () => {
           ...yargArgs,
           ...config,
 
-          logFile: 'temp/clean/steps/fail' + i + '.log',
+          logFile: createLog('temp/clean/steps/fail' + i + '.log'),
           force: true
         };
 
@@ -201,7 +202,7 @@ describe('hub clean command', () => {
           ...config,
 
           step: i,
-          logFile: 'temp/clean/steps/step' + i + '.log',
+          logFile: createLog('temp/clean/steps/step' + i + '.log'),
           force: true
         };
 

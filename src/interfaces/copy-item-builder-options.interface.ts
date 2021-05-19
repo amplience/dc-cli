@@ -19,7 +19,7 @@ export interface CopyItemBuilderOptions {
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
-  logFile?: string | FileLog;
+  logFile: FileLog;
   copyConfig?: string | CopyConfig;
 
   revertLog?: string;

@@ -1,4 +1,13 @@
-import { builder, command, handler, LOG_FILENAME, filterContentItems, getContentItems, processItems } from './archive';
+import {
+  builder,
+  command,
+  handler,
+  LOG_FILENAME,
+  filterContentItems,
+  getContentItems,
+  processItems,
+  coerceLog
+} from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentRepository, ContentItem, Folder } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -7,10 +16,17 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { dirname } from 'path';
 import { promisify } from 'util';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
+import { FileLog } from '../../common/file-log';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 
 jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
+
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 describe('content-item archive command', () => {
   afterEach((): void => {
@@ -24,7 +40,8 @@ describe('content-item archive command', () => {
   const config = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    logFile: new FileLog()
   };
 
   const mockValues = (
@@ -286,12 +303,26 @@ describe('content-item archive command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: coerceLog
       });
     });
   });
 
   describe('handler tests', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+      LOG_FILENAME();
+
+      expect(getDefaultLogPath).toHaveBeenCalledWith('content-item', 'archive', process.platform);
+    });
+
+    it('should generate a log with coerceLog with the appropriate title', function() {
+      const logFile = coerceLog('filename.log');
+
+      expect(logFile).toEqual(expect.any(FileLog));
+      expect(logFile.title).toMatch(/^Content Items Archive Log \- ./);
+    });
+
     it('should archive all content', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
@@ -643,7 +674,6 @@ describe('content-item archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         silent: true,
         force: true,
         revertLog: logFileName
@@ -696,7 +726,6 @@ describe('content-item archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         silent: true,
         force: true,
         revertLog: 'wrongFileName.log'
@@ -724,7 +753,7 @@ describe('content-item archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/content-item-archive.log',
+        logFile: createLog('temp/content-item-archive.log'),
         id: '1'
       };
 
@@ -891,7 +920,7 @@ describe('content-item archive command', () => {
         contentItems,
         allContent: true,
         missingContent: false,
-        logFile: './logFile.log'
+        logFile: createLog('./logFile.log')
       });
 
       expect(mockArchive).toBeCalledTimes(2);
@@ -907,7 +936,8 @@ describe('content-item archive command', () => {
       await processItems({
         contentItems: [],
         allContent: true,
-        missingContent: false
+        missingContent: false,
+        logFile: new FileLog()
       });
 
       expect(console.log).toBeCalled();

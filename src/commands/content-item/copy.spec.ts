@@ -13,7 +13,7 @@ import { Arguments } from 'yargs';
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import * as copyConfig from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 
@@ -150,7 +150,8 @@ describe('content-item copy command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -164,7 +165,8 @@ describe('content-item copy command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
 
     beforeAll(async () => {
@@ -422,7 +424,7 @@ describe('content-item copy command', () => {
       expect(importCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
     });
 
-    it('should not close the log if provided as part of the arguments', async () => {
+    it('should not close the log if previously opened', async () => {
       const copyConfig = {
         srcHubId: 'hub2-id',
         srcClientId: 'acc2-id',
@@ -433,7 +435,7 @@ describe('content-item copy command', () => {
         dstSecret: 'acc2-secret'
       };
 
-      const log = new FileLog();
+      const log = new FileLog().open();
       const argv = {
         ...yargArgs,
         ...config,
