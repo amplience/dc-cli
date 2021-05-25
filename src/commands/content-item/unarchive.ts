@@ -206,7 +206,7 @@ export const getContentItems = async ({
         )
       : await Promise.all(
           contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: Status.ACTIVE });
+            const items = await paginator(source.related.contentItems.list, { status: Status.ARCHIVED });
             contentItems.push(...items);
           })
         );
