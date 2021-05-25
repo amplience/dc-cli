@@ -2,7 +2,7 @@ import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from '
 import { dependsOn, dependantType } from './__mocks__/dependant-content-helper';
 import * as reverter from './import-revert';
 import * as publish from '../../common/import/publish-queue';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Folder, ContentType } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -133,7 +133,8 @@ describe('content-item import command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -147,7 +148,8 @@ describe('content-item import command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
 
     beforeEach(async () => {

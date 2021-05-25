@@ -5,7 +5,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ImportSettingsBuilderOptions } from '../../interfaces/import-settings-builder-options.interface';
 import { WorkflowStatesMapping } from '../../common/workflowStates/workflowStates-mapping';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { join } from 'path';
 import { readFile } from 'fs';
@@ -61,7 +61,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     })
     .alias('f', 'force')
     .option('f', {
@@ -78,7 +79,7 @@ export const handler = async (
   let { mapFile } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const mapping = new WorkflowStatesMapping();
   let uniqueLocales = [];
   let uniqueApplications = [];
@@ -170,10 +171,7 @@ export const handler = async (
 
     await trySaveMapping(mapFile, mapping, log);
 
-    if (typeof logFile !== 'object') {
-      // Only close the log if it was opened by this handler.
-      await log.close();
-    }
+    await log.close();
 
     process.stdout.write('\n');
   } catch (e) {

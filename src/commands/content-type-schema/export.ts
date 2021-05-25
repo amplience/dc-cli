@@ -20,7 +20,7 @@ import * as fs from 'fs';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const streamTableOptions = {
@@ -78,7 +78,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -273,7 +274,7 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   );
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const storedContentTypeSchemas = await paginator(
     hub.related.contentTypeSchema.list,
     argv.archived ? undefined : { status: Status.ACTIVE }
@@ -282,8 +283,5 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaIdArray);
   await processContentTypeSchemas(dir, contentTypeSchemas, filteredContentTypeSchemas, log, force || false);
 
-  if (typeof logFile !== 'object') {
-    // Only close the log if it was opened by this handler.
-    await log.close();
-  }
+  await log.close();
 };

@@ -21,6 +21,7 @@ import { validateNoDuplicateContentTypeUris } from './import';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { FileLog } from '../../common/file-log';
 import { streamTableOptions } from '../../common/table/table.consts';
+import { createLog } from '../../common/log-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./import');
@@ -72,7 +73,8 @@ describe('content-type export command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -705,7 +707,7 @@ describe('content-type export command', (): void => {
 
     it('should export all content types for the current hub if no schemaIds specified', async (): Promise<void> => {
       const schemaIdsToExport: string[] | undefined = undefined;
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport };
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, logFile: new FileLog() };
 
       const filteredContentTypesToExport = [...contentTypesToExport];
       jest.spyOn(exportModule, 'filterContentTypesByUri').mockReturnValue(filteredContentTypesToExport);
@@ -725,7 +727,14 @@ describe('content-type export command', (): void => {
       void
     > => {
       const schemaIdsToExport: string[] | undefined = undefined;
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, archived: true };
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'my-dir',
+        schemaId: schemaIdsToExport,
+        archived: true,
+        logFile: new FileLog()
+      };
 
       const filteredContentTypesToExport = [...contentTypesToExport];
       jest.spyOn(exportModule, 'filterContentTypesByUri').mockReturnValue(filteredContentTypesToExport);
@@ -744,7 +753,7 @@ describe('content-type export command', (): void => {
 
     it('should export only selected content types if schemaIds specified', async (): Promise<void> => {
       const schemaIdsToExport: string[] | undefined = ['content-type-uri-2'];
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport };
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, logFile: new FileLog() };
 
       const filteredContentTypesToExport = [contentTypesToExport[1]];
       jest.spyOn(exportModule, 'filterContentTypesByUri').mockReturnValue(filteredContentTypesToExport);

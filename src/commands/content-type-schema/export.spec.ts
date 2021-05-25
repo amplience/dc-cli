@@ -22,6 +22,7 @@ import { table } from 'table';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { FileLog } from '../../common/file-log';
+import { createLog } from '../../common/log-helpers';
 
 jest.mock('fs');
 jest.mock('../../services/import.service');
@@ -76,7 +77,8 @@ describe('content-type-schema export command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -615,7 +617,8 @@ describe('content-type-schema export command', (): void => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
     const contentTypeSchemasToExport: ContentTypeSchema[] = [
       new ContentTypeSchema({

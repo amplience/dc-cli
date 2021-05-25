@@ -14,7 +14,7 @@ import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
@@ -65,7 +65,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -222,7 +223,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
 
   const folderToPathMap: Map<string, string> = new Map();
   const client = dynamicContentClientFactory(argv);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const hub = await client.hubs.get(argv.hubId);
 
   log.appendLine('Retrieving content items, please wait.');
@@ -346,7 +347,5 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     writeJsonToFile(resolvedPath, item);
   }
 
-  if (typeof logFile !== 'object') {
-    await log.close();
-  }
+  await log.close();
 };

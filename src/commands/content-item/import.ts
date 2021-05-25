@@ -28,7 +28,7 @@ import {
 } from '../../common/content-item/content-dependancy-tree';
 
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
@@ -125,7 +125,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -863,12 +864,10 @@ export const handler = async (
   argv.publish = argv.publish || argv.republish;
 
   const client = dynamicContentClientFactory(argv);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
 
   const closeLog = async (): Promise<void> => {
-    if (typeof logFile !== 'object') {
-      await log.close();
-    }
+    await log.close();
   };
 
   let hub: Hub;

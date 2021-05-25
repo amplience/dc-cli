@@ -19,7 +19,7 @@ import { isEqual } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'export <dir>';
@@ -55,7 +55,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -199,7 +200,7 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
   if (argv.archived) {
     const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
@@ -209,8 +210,5 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
   await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes, log, force || false);
 
-  if (typeof logFile !== 'object') {
-    // Only close the log if it was opened by this handler.
-    await log.close();
-  }
+  await log.close();
 };

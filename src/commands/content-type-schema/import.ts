@@ -12,7 +12,7 @@ import { updateContentTypeSchema } from './update.service';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { ResourceStatus, Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'import <dir>';
@@ -35,7 +35,8 @@ export const builder = (yargs: Argv): void => {
   yargs.option('logFile', {
     type: 'string',
     default: LOG_FILENAME,
-    describe: 'Path to a log file to write to.'
+    describe: 'Path to a log file to write to.',
+    coerce: createLog
   });
 };
 
@@ -132,7 +133,7 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
   const { dir, logFile } = argv;
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const schemas = loadJsonFromDirectory<ContentTypeSchema>(dir, ContentTypeSchema);
   const [resolvedSchemas, resolveSchemaErrors] = await resolveSchemaBody(schemas, dir);
   if (Object.keys(resolveSchemaErrors).length > 0) {
@@ -151,8 +152,5 @@ export const handler = async (argv: Arguments<ImportBuilderOptions & Configurati
 
   await processSchemas(schemasToProcess, client, hub, log);
 
-  if (typeof logFile !== 'object') {
-    // Only close the log if it was opened by this handler.
-    await log.close();
-  }
+  await log.close();
 };
