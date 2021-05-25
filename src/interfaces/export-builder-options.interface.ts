@@ -4,6 +4,6 @@ export interface ExportBuilderOptions {
   dir: string;
   schemaId?: string[];
   archived?: boolean;
-  logFile?: string | FileLog;
+  logFile: FileLog;
   force?: boolean;
 }

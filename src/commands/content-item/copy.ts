@@ -10,6 +10,7 @@ import { handler as importer } from './import';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { revert } from './import-revert';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
+import { FileLog } from '../../common/file-log';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -176,6 +177,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       clientSecret: dstSecret,
 
       dir: tempFolder, // unused
+      logFile: new FileLog(),
 
       revertLog: argv.revertLog
     });

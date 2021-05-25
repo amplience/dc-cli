@@ -23,6 +23,7 @@ import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.servi
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import chalk from 'chalk';
 import { FileLog } from '../../common/file-log';
+import { createLog } from '../../common/log-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
@@ -65,7 +66,8 @@ describe('content-type import command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -836,7 +838,7 @@ describe('content-type import command', (): void => {
     });
 
     it('should create a content type and update', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: false };
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: false, logFile: new FileLog() };
       const fileNamesAndContentTypesToImport = {
         'file-1': new ContentTypeWithRepositoryAssignments({
           contentTypeUri: 'type-uri-1',
@@ -874,7 +876,7 @@ describe('content-type import command', (): void => {
     });
 
     it('should create a content type, update and sync a content type', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: true };
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', sync: true, logFile: new FileLog() };
       const fileNamesAndContentTypesToImport = {
         'file-1': new ContentTypeWithRepositoryAssignments({
           contentTypeUri: 'type-uri-1',
@@ -912,7 +914,7 @@ describe('content-type import command', (): void => {
     });
 
     it('should throw an error when no content found in import directory', async (): Promise<void> => {
-      const argv = { ...yargArgs, ...config, dir: 'my-empty-dir', sync: false };
+      const argv = { ...yargArgs, ...config, dir: 'my-empty-dir', sync: false, logFile: new FileLog() };
 
       (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
 

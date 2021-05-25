@@ -1,5 +1,5 @@
 import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './clone';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import Yargs from 'yargs/yargs';
 
@@ -200,7 +200,8 @@ describe('hub clone command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -258,7 +259,7 @@ describe('hub clone command', () => {
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-        logFile: 'temp/clone/steps/all.log',
+        logFile: createLog('temp/clone/steps/all.log'),
 
         force: false,
         validate: false,
@@ -298,7 +299,7 @@ describe('hub clone command', () => {
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: 'temp/clone/steps/fail' + i + '.log',
+          logFile: createLog('temp/clone/steps/fail' + i + '.log'),
 
           mapFile: 'temp/clone/steps/fail' + i + '.json',
           force: false,
@@ -344,7 +345,7 @@ describe('hub clone command', () => {
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: 'temp/clone/steps/step' + i + '.log',
+          logFile: createLog('temp/clone/steps/step' + i + '.log'),
 
           mapFile: 'temp/clone/steps/step' + i + '.json',
           force: false,
@@ -442,7 +443,7 @@ describe('hub clone command', () => {
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-        logFile: 'temp/clone-revert/steps/all.log',
+        logFile: createLog('temp/clone-revert/steps/all.log'),
         revertLog: 'temp/clone-revert/steps.log',
 
         mapFile: 'temp/clone-revert/steps/all.json',
@@ -485,7 +486,7 @@ describe('hub clone command', () => {
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: 'temp/clone-revert/fail/fail' + i + '.log',
+          logFile: createLog('temp/clone-revert/fail/fail' + i + '.log'),
           revertLog: 'temp/clone-revert/fail.log',
 
           mapFile: 'temp/clone-revert/fail/fail' + i + '.json',
@@ -530,7 +531,7 @@ describe('hub clone command', () => {
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-        logFile: 'temp/clone-revert/steps/early.log',
+        logFile: createLog('temp/clone-revert/steps/early.log'),
         revertLog: 'temp/clone-revert/missing.log',
 
         mapFile: 'temp/clone-revert/steps/all.json',
@@ -572,7 +573,7 @@ describe('hub clone command', () => {
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: 'temp/clone-revert/step/step' + i + '.log',
+          logFile: createLog('temp/clone-revert/step/step' + i + '.log'),
           revertLog: 'temp/clone-revert/step.log',
 
           mapFile: 'temp/clone-revert/step/step' + i + '.json',

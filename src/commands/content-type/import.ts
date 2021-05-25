@@ -10,7 +10,7 @@ import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../service
 import { streamTableOptions } from '../../common/table/table.consts';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import { FileLog } from '../../common/file-log';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { ResourceStatus, Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'import <dir>';
@@ -39,7 +39,8 @@ export const builder = (yargs: Argv): void => {
   yargs.option('logFile', {
     type: 'string',
     default: LOG_FILENAME,
-    describe: 'Path to a log file to write to.'
+    describe: 'Path to a log file to write to.',
+    coerce: createLog
   });
 };
 
@@ -308,7 +309,7 @@ export const handler = async (
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
 
   const activeContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
   const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
@@ -319,8 +320,5 @@ export const handler = async (
   }
   await processContentTypes(Object.values(importedContentTypes), client, hub, sync, log);
 
-  if (typeof logFile !== 'object') {
-    // Only close the log if it was opened by this handler.
-    await log.close();
-  }
+  await log.close();
 };

@@ -66,13 +66,10 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const workflowStates = await paginator(hub.related.workflowStates.list);
 
   await processSettings(dir, hub, workflowStates, log, force || false);
 
-  if (typeof logFile !== 'object') {
-    // Only close the log if it was opened by this handler.
-    await log.close();
-  }
+  await log.close();
 };

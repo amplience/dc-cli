@@ -22,6 +22,7 @@ import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { FileLog } from '../../common/file-log';
 import { streamTableOptions } from '../../common/table/table.consts';
 import chalk from 'chalk';
+import { createLog } from '../../common/log-helpers';
 
 jest.mock('fs');
 jest.mock('table');
@@ -60,7 +61,8 @@ describe('content-type-schema import command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -329,7 +331,8 @@ describe('content-type-schema import command', (): void => {
     const argv = {
       ...yargArgs,
       ...config,
-      dir: 'my-dir'
+      dir: 'my-dir',
+      logFile: new FileLog()
     };
 
     beforeEach(() => {

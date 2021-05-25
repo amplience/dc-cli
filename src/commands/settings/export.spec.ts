@@ -6,6 +6,7 @@ import readline from 'readline';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { promisify } from 'util';
 import { exists, unlink } from 'fs';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('readline');
@@ -237,7 +238,8 @@ describe('settings export command', (): void => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: './'
+        dir: './',
+        logFile: new FileLog()
       };
 
       await handler(argv);

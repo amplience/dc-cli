@@ -202,6 +202,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       dir: '', // unused
 
+      logFile: log,
       revertLog: argv.revertLog
     });
   } else {

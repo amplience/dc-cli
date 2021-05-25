@@ -316,7 +316,8 @@ describe('content-item move command', () => {
         clientSecret: 'acc2-secret',
         dir: '',
         hubId: 'hub2-id',
-        revertLog: 'temp/move/moveRevert.txt'
+        revertLog: 'temp/move/moveRevert.txt',
+        logFile: expect.any(FileLog)
       });
 
       rimraf('temp/move/moveRevert.txt');

@@ -1,4 +1,4 @@
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { join } from 'path';
 import { ConfigurationParameters } from '../configure';
@@ -140,15 +140,15 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
 const steps = [new SettingsCloneStep(), new SchemaCloneStep(), new TypeCloneStep(), new ContentCloneStep()];
 
 export const handler = async (argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const logFile = argv.logFile;
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = argv.logFile.open();
   const tempFolder = argv.dir;
 
   if (argv.mapFile == null) {
@@ -241,7 +241,5 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     }
   }
 
-  if (typeof logFile !== 'object') {
-    await log.close();
-  }
+  await log.close();
 };

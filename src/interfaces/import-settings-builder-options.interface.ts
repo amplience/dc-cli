@@ -3,6 +3,6 @@ import { FileLog } from '../common/file-log';
 export interface ImportSettingsBuilderOptions {
   filePath: string;
   mapFile?: string;
-  logFile?: string | FileLog;
+  logFile: FileLog;
   force?: boolean;
 }
