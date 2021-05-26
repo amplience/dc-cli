@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -9,7 +9,6 @@ import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
-import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'archive [id]';
 

@@ -7,7 +7,7 @@ import { handler as importSchema } from '../../content-type-schema/import';
 import dynamicContentClientFactory from '../../../services/dynamic-content-client-factory';
 import paginator from '../../../common/dc-management-sdk-js/paginator';
 import { FileLog } from '../../../common/file-log';
-import { ResourceStatus, Status } from '../../../common/dc-management-sdk-js/resource-status';
+import { Status } from 'dc-management-sdk-js';
 
 export class SchemaCloneStep implements CloneHubStep {
   getName(): string {
@@ -54,7 +54,7 @@ export class SchemaCloneStep implements CloneHubStep {
     for (const id of toArchive) {
       try {
         const schema = await client.contentTypeSchemas.get(id);
-        if ((schema as ResourceStatus).status == Status.ACTIVE) {
+        if (schema.status === Status.ACTIVE) {
           await schema.related.archive();
         }
       } catch (e) {

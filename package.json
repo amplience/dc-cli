@@ -115,7 +115,7 @@
     "ajv": "^6.12.3",
     "axios": "^0.18.1",
     "chalk": "^2.4.2",
-    "dc-management-sdk-js": "^1.9.0",
+    "dc-management-sdk-js": "github:rs-amp/dc-management-sdk-js#feature/status",
     "lodash": "^4.17.15",
     "node-fetch": "^2.6.0",
     "promise-retry": "^2.0.1",

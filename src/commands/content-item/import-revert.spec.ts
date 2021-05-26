@@ -9,6 +9,7 @@ import rmdir from 'rimraf';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { MockContent, ItemTemplate } from '../../common/dc-management-sdk-js/mock-content';
 import { Status } from 'dc-management-sdk-js';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('readline');
 jest.mock('../../services/dynamic-content-client-factory');
@@ -28,7 +29,8 @@ describe('revert tests', function() {
   const config = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    logFile: new FileLog()
   };
 
   beforeAll(async () => {

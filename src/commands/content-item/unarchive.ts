@@ -5,10 +5,9 @@ import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
-import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'unarchive [id]';
 

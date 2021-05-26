@@ -1,7 +1,10 @@
-import { HalResource, Page, Pageable, Sortable } from 'dc-management-sdk-js';
-import { ResourceStatus } from './resource-status';
+import { HalResource, Page, Pageable, Sortable, Status } from 'dc-management-sdk-js';
 
 export const DEFAULT_SIZE = 100;
+
+interface ResourceStatus {
+  status?: Status;
+}
 
 const paginator = async <T extends HalResource>(
   pagableFn: (options?: Pageable & Sortable & ResourceStatus) => Promise<Page<T>>,

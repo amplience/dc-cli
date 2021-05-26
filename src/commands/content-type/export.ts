@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, Status } from 'dc-management-sdk-js';
 import { table } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
 import chalk from 'chalk';
@@ -20,7 +20,6 @@ import { ExportBuilderOptions } from '../../interfaces/export-builder-options.in
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'export <dir>';
 

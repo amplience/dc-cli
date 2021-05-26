@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
@@ -8,7 +8,6 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('type', 'unarchive', platform);
