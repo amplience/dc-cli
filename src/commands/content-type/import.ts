@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentRepository, ContentType, DynamicContent, Hub } from 'dc-management-sdk-js';
+import { ContentRepository, ContentType, DynamicContent, Hub, Status } from 'dc-management-sdk-js';
 import { isEqual } from 'lodash';
 import { table } from 'table';
 import chalk from 'chalk';
@@ -11,7 +11,6 @@ import { streamTableOptions } from '../../common/table/table.consts';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { ResourceStatus, Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'import <dir>';
 
@@ -134,7 +133,7 @@ export const doUpdate = async (
     throw new Error(`Error unable to get content type ${contentType.id}: ${err.message}`);
   }
 
-  if ((retrievedContentType as ResourceStatus).status === Status.ARCHIVED) {
+  if (retrievedContentType.status === Status.ARCHIVED) {
     try {
       // Resurrect this type before updating it.
       retrievedContentType = await retrievedContentType.related.unarchive();

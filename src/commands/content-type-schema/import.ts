@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema, DynamicContent, Hub, ValidationLevel } from 'dc-management-sdk-js';
+import { ContentTypeSchema, DynamicContent, Hub, Status, ValidationLevel } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { table } from 'table';
@@ -13,7 +13,6 @@ import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../service
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { ResourceStatus, Status } from '../../common/dc-management-sdk-js/resource-status';
 
 export const command = 'import <dir>';
 
@@ -80,7 +79,7 @@ export const doUpdate = async (
       return { contentTypeSchema: retrievedSchema, updateStatus: UpdateStatus.SKIPPED };
     }
 
-    if ((retrievedSchema as ResourceStatus).status === Status.ARCHIVED) {
+    if (retrievedSchema.status === Status.ARCHIVED) {
       try {
         // Resurrect this schema before updating it.
         retrievedSchema = await retrievedSchema.related.unarchive();

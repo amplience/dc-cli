@@ -13,7 +13,6 @@ import {
   ContentTypeCachedSchema
 } from 'dc-management-sdk-js';
 import MockPage from './mock-page';
-import { ResourceStatus, Status as TypeStatus } from './resource-status';
 
 export interface ItemTemplate {
   label: string;
@@ -335,7 +334,7 @@ export class MockContent {
 
     mockItemArchive.mockImplementation(() => {
       if (this.failItemActions) throw new Error('Simulated network failure.');
-      if (item.status != Status.ACTIVE) {
+      if (item.status !== Status.ACTIVE) {
         throw new Error('Cannot archive content that is already archived.');
       }
 
@@ -348,7 +347,7 @@ export class MockContent {
 
     mockItemUnarchive.mockImplementation(() => {
       if (this.failItemActions) throw new Error('Simulated network failure.');
-      if (item.status == Status.ACTIVE) {
+      if (item.status === Status.ACTIVE) {
         throw new Error('Cannot unarchive content that is not archived.');
       }
 
@@ -400,13 +399,13 @@ export class MockContent {
 
       mockSchemaArchive.mockImplementation(() => {
         if (this.failSchemaActions) throw new Error('Simulated network failure.');
-        if ((schema as ResourceStatus).status != TypeStatus.ACTIVE) {
+        if (schema.status !== Status.ACTIVE) {
           throw new Error('Cannot archive content that is already archived.');
         }
 
         this.metrics.typeSchemasArchived++;
 
-        (schema as ResourceStatus).status = TypeStatus.ARCHIVED;
+        schema.status = Status.ARCHIVED;
 
         return Promise.resolve(schema);
       });
@@ -462,13 +461,13 @@ export class MockContent {
 
       mockTypeArchive.mockImplementation(() => {
         if (this.failTypeActions) throw new Error('Simulated network failure.');
-        if ((type as ResourceStatus).status != TypeStatus.ACTIVE) {
+        if (type.status !== Status.ACTIVE) {
           throw new Error('Cannot archive content that is already archived.');
         }
 
         this.metrics.typesArchived++;
 
-        (type as ResourceStatus).status = TypeStatus.ARCHIVED;
+        type.status = Status.ARCHIVED;
 
         return Promise.resolve(type);
       });

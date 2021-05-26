@@ -42,6 +42,7 @@ describe('content clone step', () => {
     const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
       ...yargArgs,
       ...config,
+      logFile: new FileLog(),
 
       dir: directory,
 

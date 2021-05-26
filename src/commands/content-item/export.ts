@@ -9,14 +9,13 @@ import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.servi
 
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
+import { ContentItem, Folder, DynamicContent, Hub, ContentRepository, Status } from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
-import { Status } from '../../common/dc-management-sdk-js/resource-status';
 
 interface PublishedContentItem {
   lastPublishedVersion?: number;
