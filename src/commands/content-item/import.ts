@@ -854,7 +854,7 @@ const importTree = async (
 export const handler = async (
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
-  if (argv.revertLog != null) {
+  if (await argv.revertLog) {
     return revert(argv);
   }
 

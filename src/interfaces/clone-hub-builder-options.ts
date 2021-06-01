@@ -8,7 +8,7 @@ export interface CloneHubBuilderOptions {
   dstClientId?: string;
   dstSecret?: string;
 
-  revertLog?: string;
+  revertLog: Promise<FileLog | undefined>;
   step?: number;
 
   mapFile?: string;

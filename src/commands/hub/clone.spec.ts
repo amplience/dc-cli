@@ -1,5 +1,5 @@
 import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './clone';
-import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import Yargs from 'yargs/yargs';
 
@@ -194,7 +194,8 @@ describe('hub clone command', () => {
       expect(spyOption).toHaveBeenCalledWith('revertLog', {
         type: 'string',
         describe:
-          'Revert a previous clone using a given revert log and given directory. Reverts steps in reverse order, starting at the specified one.'
+          'Revert a previous clone using a given revert log and given directory. Reverts steps in reverse order, starting at the specified one.',
+        coerce: openRevertLog
       });
 
       expect(spyOption).toHaveBeenCalledWith('logFile', {
@@ -215,7 +216,9 @@ describe('hub clone command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+
+      revertLog: Promise.resolve(undefined)
     };
 
     beforeAll(async () => {
@@ -444,7 +447,7 @@ describe('hub clone command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
         logFile: createLog('temp/clone-revert/steps/all.log'),
-        revertLog: 'temp/clone-revert/steps.log',
+        revertLog: openRevertLog('temp/clone-revert/steps.log'),
 
         mapFile: 'temp/clone-revert/steps/all.json',
         force: false,
@@ -487,7 +490,7 @@ describe('hub clone command', () => {
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
           logFile: createLog('temp/clone-revert/fail/fail' + i + '.log'),
-          revertLog: 'temp/clone-revert/fail.log',
+          revertLog: openRevertLog('temp/clone-revert/fail.log'),
 
           mapFile: 'temp/clone-revert/fail/fail' + i + '.json',
           force: false,
@@ -532,7 +535,7 @@ describe('hub clone command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
         logFile: createLog('temp/clone-revert/steps/early.log'),
-        revertLog: 'temp/clone-revert/missing.log',
+        revertLog: openRevertLog('temp/clone-revert/missing.log'),
 
         mapFile: 'temp/clone-revert/steps/all.json',
         force: false,
@@ -540,6 +543,7 @@ describe('hub clone command', () => {
         skipIncomplete: false,
         media: true
       };
+
       await handler(argv);
 
       const mocks = getMocks();
@@ -574,7 +578,7 @@ describe('hub clone command', () => {
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
           logFile: createLog('temp/clone-revert/step/step' + i + '.log'),
-          revertLog: 'temp/clone-revert/step.log',
+          revertLog: openRevertLog('temp/clone-revert/step.log'),
 
           mapFile: 'temp/clone-revert/step/step' + i + '.json',
           force: false,

@@ -149,7 +149,9 @@ describe('content-item import command', () => {
       clientId: 'client-id',
       clientSecret: 'client-id',
       hubId: 'hub-id',
-      logFile: new FileLog()
+
+      logFile: new FileLog(),
+      revertLog: Promise.resolve(undefined)
     };
 
     beforeEach(async () => {
@@ -1085,7 +1087,7 @@ describe('content-item import command', () => {
         ...yargArgs,
         ...config,
         dir: 'temp/import/unused/',
-        revertLog: 'log.txt'
+        revertLog: Promise.resolve(new FileLog())
       };
 
       expect(await handler(argv)).toBeTruthy();

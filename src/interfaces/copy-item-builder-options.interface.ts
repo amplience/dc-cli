@@ -23,7 +23,7 @@ export interface CopyItemBuilderOptions {
   logFile: FileLog;
   copyConfig?: string | CopyConfig;
 
-  revertLog?: string | FileLog;
+  revertLog: Promise<FileLog | undefined>;
 
   lastPublish?: boolean;
   publish?: boolean;
