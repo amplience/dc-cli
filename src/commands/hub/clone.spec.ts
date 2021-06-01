@@ -3,8 +3,6 @@ import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-he
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import Yargs from 'yargs/yargs';
 
-import * as copier from '../content-item/copy';
-
 import * as content from './steps/content-clone-step';
 import * as settings from './steps/settings-clone-step';
 import * as schema from './steps/schema-clone-step';
@@ -44,9 +42,6 @@ jest.mock('./steps/schema-clone-step', () => ({
 }));
 jest.mock('./steps/type-clone-step', () => ({ TypeCloneStep: mockStep('Clone Content Types', () => success[2]) }));
 jest.mock('./steps/content-clone-step', () => ({ ContentCloneStep: mockStep('Clone Content', () => success[3]) }));
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const copierAny = copier as any;
 
 jest.mock('../../common/log-helpers', () => ({
   ...jest.requireActual('../../common/log-helpers'),

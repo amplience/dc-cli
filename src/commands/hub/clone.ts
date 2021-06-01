@@ -4,7 +4,6 @@ import { join } from 'path';
 import { ConfigurationParameters } from '../configure';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { FileLog } from '../../common/file-log';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
 
