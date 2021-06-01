@@ -49,8 +49,7 @@ export const traverseRecursive = async (path: string, action: (path: string) => 
 };
 
 export const prepareContentForTree = async (
-  repo: { basePath: string; repo: ContentRepository },
-  argv: Arguments<TreeOptions & ConfigurationParameters>
+  repo: { basePath: string; repo: ContentRepository }
 ): Promise<ContentDependancyTree> => {
   const contentItems: RepositoryContentItem[] = [];
   const schemaNames = new Set<string>();
@@ -93,7 +92,7 @@ const fstPipes = ['├', '├', '└'];
 const circularPipes = ['╗', '║', '╝'];
 const circularLine = '═';
 
-export const printDependency = (
+export const addDependency = (
   item: ItemContentDependancies,
   evaluated: Set<ItemContentDependancies>,
   lines: string[],
@@ -126,7 +125,7 @@ export const printDependency = (
   filteredItems.forEach((dep, index) => {
     const subFst = firstSecondThird(index, filteredItems.length);
     const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
-    printDependency(
+    addDependency(
       dep.resolved as ItemContentDependancies,
       evaluated,
       lines,
@@ -164,7 +163,7 @@ export const printTree = (item: ItemContentDependancies, evaluated: Set<ItemCont
   let lines: string[] = [];
   const circularLinks: CircularLink[] = [];
 
-  const result = printDependency(item, evaluated, lines, circularLinks, [], 0, '');
+  const result = addDependency(item, evaluated, lines, circularLinks, [], 0, '');
 
   if (!result) return false;
 
@@ -210,7 +209,7 @@ export const printTree = (item: ItemContentDependancies, evaluated: Set<ItemCont
 export const handler = async (argv: Arguments<TreeOptions & ConfigurationParameters>): Promise<void> => {
   const dir = argv.dir;
 
-  const tree = await prepareContentForTree({ basePath: dir, repo: new ContentRepository() }, argv);
+  const tree = await prepareContentForTree({ basePath: dir, repo: new ContentRepository() });
 
   // Print the items in the tree.
   // Keep a set of all items that have already been printed.

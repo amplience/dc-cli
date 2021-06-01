@@ -13,7 +13,7 @@ export interface RepositoryContentItem {
 }
 
 export interface ContentDependancy {
-  _meta: { schema: DependancyContentTypeSchema };
+  _meta: { schema: DependancyContentTypeSchema; name: string };
   contentType: string;
   id: string | undefined;
 }
@@ -23,8 +23,7 @@ export interface ContentDependancyInfo {
   dependancy: ContentDependancy;
   owner: RepositoryContentItem;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parent: any;
+  parent?: RecursiveSearchStep;
   index: string | number;
 }
 
@@ -149,7 +148,7 @@ export class ContentDependancyTree {
     item: RepositoryContentItem,
     body: RecursiveSearchStep,
     result: ContentDependancyInfo[],
-    parent: RecursiveSearchStep | null,
+    parent: RecursiveSearchStep | undefined,
     index: string | number
   ): void {
     if (Array.isArray(body)) {
@@ -282,20 +281,21 @@ export class ContentDependancyTree {
   private identifyContentDependancies(items: RepositoryContentItem[]): ItemContentDependancies[] {
     return items.map(item => {
       const result: ContentDependancyInfo[] = [];
-      this.searchObjectForContentDependancies(item, item.content.body, result, null, 0);
+      this.searchObjectForContentDependancies(item, item.content.body, result, undefined, 0);
 
       // Hierarchy parent is also a dependancy.
       if (item.content.body._meta.hierarchy && item.content.body._meta.hierarchy.parentId) {
         result.push({
           dependancy: {
             _meta: {
-              schema: '_hierarchy'
+              schema: '_hierarchy',
+              name: '_hierarchy'
             },
             id: item.content.body._meta.hierarchy.parentId,
             contentType: ''
           },
           owner: item,
-          parent: null,
+          parent: undefined,
           index: 0
         });
       }

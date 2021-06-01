@@ -26,6 +26,7 @@ import {
   ItemContentDependancies,
   ContentDependancyInfo
 } from '../../common/content-item/content-dependancy-tree';
+import { Body } from '../../common/content-item/body';
 
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
@@ -684,11 +685,12 @@ const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, 
 
   if (dep.dependancy._meta.schema === '_hierarchy') {
     dep.owner.content.body._meta.hierarchy.parentId = id;
-  } else {
+  } else if (dep.parent) {
+    const parent = dep.parent as Body;
     if (id == null) {
-      delete dep.parent[dep.index];
+      delete parent[dep.index];
     } else {
-      dep.parent[dep.index] = dep.dependancy;
+      parent[dep.index] = dep.dependancy;
       dep.dependancy.id = id;
     }
   }
