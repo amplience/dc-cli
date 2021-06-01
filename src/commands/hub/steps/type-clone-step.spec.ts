@@ -70,7 +70,8 @@ describe('type clone step', () => {
 
       dstHubId: 'hub2-id',
       dstClientId: 'acc2-id',
-      dstSecret: 'acc2-secret'
+      dstSecret: 'acc2-secret',
+      revertLog: Promise.resolve(new FileLog())
     };
 
     return {

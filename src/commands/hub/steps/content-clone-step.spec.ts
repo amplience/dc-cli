@@ -48,7 +48,8 @@ describe('content clone step', () => {
 
       dstHubId: 'hub2-id',
       dstClientId: 'acc2-id',
-      dstSecret: 'acc2-secret'
+      dstSecret: 'acc2-secret',
+      revertLog: Promise.resolve(new FileLog())
     };
 
     return {
@@ -90,7 +91,7 @@ describe('content clone step', () => {
         ...state.argv,
         dir: join(state.path, 'content'),
         logFile: state.logFile,
-        revertLog: state.revertLog
+        revertLog: expect.any(Promise)
       }
     ]);
 
@@ -127,7 +128,7 @@ describe('content clone step', () => {
         ...state.argv,
         dir: join(state.path, 'content'),
         logFile: state.logFile,
-        revertLog: state.revertLog
+        revertLog: expect.any(Promise)
       }
     ]);
 

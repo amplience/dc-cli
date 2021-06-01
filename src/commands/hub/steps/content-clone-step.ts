@@ -25,7 +25,7 @@ export class ContentCloneStep implements CloneHubStep {
       ...state.argv,
       dir: join(state.path, 'content'),
       logFile: state.logFile,
-      revertLog: state.revertLog
+      revertLog: Promise.resolve(state.revertLog)
     });
 
     return revertSuccess;

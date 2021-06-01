@@ -1,4 +1,4 @@
-import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { join } from 'path';
 import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-options.interface';
@@ -11,6 +11,7 @@ import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { revert } from './import-revert';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
+import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -28,7 +29,8 @@ export const builder = (yargs: Argv): void => {
     .option('revertLog', {
       type: 'string',
       describe:
-        'Path to a log file to revert a copy for. This will archive the most recently copied resources, and revert updated ones.'
+        'Path to a log file to revert a copy for. This will archive the most recently copied resources, and revert updated ones.',
+      coerce: openRevertLog
     })
 
     .option('srcRepo', {
@@ -168,7 +170,15 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   const { srcHubId, srcClientId, srcSecret, dstHubId, dstClientId, dstSecret } = copyConfig;
 
-  if (argv.revertLog) {
+  const revertLog = await argv.revertLog;
+
+  if (revertLog) {
+    if (revertLog.errorLevel === LogErrorLevel.INVALID) {
+      log.error('Could not read the revert log.');
+      await log.close();
+      return false;
+    }
+
     result = await revert({
       ...yargArgs,
 
@@ -228,7 +238,8 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         excludeKeys: argv.excludeKeys,
 
         media: argv.media,
-        logFile: log
+        logFile: log,
+        revertLog: Promise.resolve(undefined)
       });
 
       if (importResult) {

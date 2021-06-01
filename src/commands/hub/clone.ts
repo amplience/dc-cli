@@ -1,4 +1,4 @@
-import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { join } from 'path';
 import { ConfigurationParameters } from '../configure';
@@ -13,6 +13,7 @@ import { SchemaCloneStep } from './steps/schema-clone-step';
 import { SettingsCloneStep } from './steps/settings-clone-step';
 import { TypeCloneStep } from './steps/type-clone-step';
 import { CloneHubState } from './model/clone-hub-state';
+import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -129,7 +130,8 @@ export const builder = (yargs: Argv): void => {
     .option('revertLog', {
       type: 'string',
       describe:
-        'Revert a previous clone using a given revert log and given directory. Reverts steps in reverse order, starting at the specified one.'
+        'Revert a previous clone using a given revert log and given directory. Reverts steps in reverse order, starting at the specified one.',
+      coerce: openRevertLog
     })
 
     .option('step', {
@@ -189,36 +191,33 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
   // Steps system: Each step performs another part of the clone command.
   // If a step fails, we can return to that step on a future attempt.
 
-  if (argv.revertLog) {
-    const revertLog = new FileLog();
-    let loaded = false;
-    try {
-      await revertLog.loadFromFile(argv.revertLog);
-      loaded = true;
-    } catch (e) {
-      log.appendLine(`Could not open the revert log. Error: \n${e}`);
+  const revertLog = await argv.revertLog;
+
+  if (revertLog) {
+    if (revertLog.errorLevel === LogErrorLevel.INVALID) {
+      log.error('Could not read the revert log.');
+      await log.close();
+      return;
     }
 
-    if (loaded) {
-      state.revertLog = revertLog;
+    state.revertLog = revertLog;
 
-      for (let i = argv.step || 0; i < steps.length; i++) {
-        const step = steps[i];
+    for (let i = argv.step || 0; i < steps.length; i++) {
+      const step = steps[i];
 
-        log.switchGroup(step.getName());
-        revertLog.switchGroup(step.getName());
-        log.appendLine(`=== Reverting Step ${i} - ${step.getName()} ===`);
+      log.switchGroup(step.getName());
+      revertLog.switchGroup(step.getName());
+      log.appendLine(`=== Reverting Step ${i} - ${step.getName()} ===`);
 
-        const success = await step.revert(state);
+      const success = await step.revert(state);
 
-        if (!success) {
-          log.appendLine(`Reverting step ${i} (${step.getName()}) Failed. Terminating.`);
-          log.appendLine('');
-          log.appendLine('To continue the revert from this point, use the option:');
-          log.appendLine(`--step ${i}`);
+      if (!success) {
+        log.appendLine(`Reverting step ${i} (${step.getName()}) Failed. Terminating.`);
+        log.appendLine('');
+        log.appendLine('To continue the revert from this point, use the option:');
+        log.appendLine(`--step ${i}`);
 
-          break;
-        }
+        break;
       }
     }
   } else {
