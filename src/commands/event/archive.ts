@@ -275,7 +275,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   }
 
   const events = await getEvents({
-    id: id as string,
+    id,
     client,
     hubId,
     name
