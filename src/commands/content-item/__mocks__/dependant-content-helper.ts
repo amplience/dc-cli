@@ -3,7 +3,8 @@ import { ContentDependancy } from '../../../common/content-item/content-dependan
 function dependancy(id: string): ContentDependancy {
   return {
     _meta: {
-      schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
+      schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link',
+      name: 'content-link'
     },
     contentType: 'https://dev-solutions.s3.amazonaws.com/DynamicContentTypes/Accelerators/blog.json',
     id: id

@@ -48,9 +48,10 @@ export const traverseRecursive = async (path: string, action: (path: string) => 
   }
 };
 
-export const prepareContentForTree = async (
-  repo: { basePath: string; repo: ContentRepository }
-): Promise<ContentDependancyTree> => {
+export const prepareContentForTree = async (repo: {
+  basePath: string;
+  repo: ContentRepository;
+}): Promise<ContentDependancyTree> => {
   const contentItems: RepositoryContentItem[] = [];
   const schemaNames = new Set<string>();
 
@@ -92,51 +93,42 @@ const fstPipes = ['├', '├', '└'];
 const circularPipes = ['╗', '║', '╝'];
 const circularLine = '═';
 
-export const addDependency = (
-  item: ItemContentDependancies,
-  evaluated: Set<ItemContentDependancies>,
-  lines: string[],
-  circularLinks: CircularLink[],
-  evalThis: ParentReference[],
-  fst: number,
-  prefix: string
-): boolean => {
-  const depth = evalThis.length - 1;
-  const pipe = depth < 0 ? '' : fstPipes[fst] + '─ ';
+export class TreeBuilder {
+  lines: string[] = [];
+  circularLinks: CircularLink[] = [];
 
-  const circularMatch = evalThis.find(parent => parent.item == item);
-  if (circularMatch) {
-    lines.push(`${prefix}${pipe}*** (${item.owner.content.label})`);
-    circularLinks.push([circularMatch.line, lines.length - 1]);
-    return false;
-  } else if (evaluated.has(item)) {
-    if (depth > -1) {
-      lines.push(`${prefix}${pipe}(${item.owner.content.label})`);
+  constructor(public evaluated: Set<ItemContentDependancies>) {}
+
+  addDependency(item: ItemContentDependancies, evalThis: ParentReference[], fst: number, prefix: string): boolean {
+    const depth = evalThis.length - 1;
+    const pipe = depth < 0 ? '' : fstPipes[fst] + '─ ';
+
+    const circularMatch = evalThis.find(parent => parent.item == item);
+    if (circularMatch) {
+      this.lines.push(`${prefix}${pipe}*** (${item.owner.content.label})`);
+      this.circularLinks.push([circularMatch.line, this.lines.length - 1]);
+      return false;
+    } else if (this.evaluated.has(item)) {
+      if (depth > -1) {
+        this.lines.push(`${prefix}${pipe}(${item.owner.content.label})`);
+      }
+      return false;
+    } else {
+      this.lines.push(`${prefix}${pipe}${item.owner.content.label}`);
     }
-    return false;
-  } else {
-    lines.push(`${prefix}${pipe}${item.owner.content.label}`);
+
+    evalThis.push({ item, line: this.lines.length - 1 });
+    this.evaluated.add(item);
+
+    const filteredItems = item.dependancies.filter(dep => dep.resolved);
+    filteredItems.forEach((dep, index) => {
+      const subFst = firstSecondThird(index, filteredItems.length);
+      const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
+      this.addDependency(dep.resolved as ItemContentDependancies, [...evalThis], subFst, prefix + subPrefix);
+    });
+    return true;
   }
-
-  evalThis.push({ item, line: lines.length - 1 });
-  evaluated.add(item);
-
-  const filteredItems = item.dependancies.filter(dep => dep.resolved);
-  filteredItems.forEach((dep, index) => {
-    const subFst = firstSecondThird(index, filteredItems.length);
-    const subPrefix = depth == -1 ? '' : fst === 2 ? '   ' : '│  ';
-    addDependency(
-      dep.resolved as ItemContentDependancies,
-      evaluated,
-      lines,
-      circularLinks,
-      [...evalThis],
-      subFst,
-      prefix + subPrefix
-    );
-  });
-  return true;
-};
+}
 
 export const fillWhitespace = (original: string, current: string, char: string, targetLength: number): string => {
   let position = original.length;
@@ -160,14 +152,14 @@ export const fillWhitespace = (original: string, current: string, char: string, 
 };
 
 export const printTree = (item: ItemContentDependancies, evaluated: Set<ItemContentDependancies>): boolean => {
-  let lines: string[] = [];
-  const circularLinks: CircularLink[] = [];
+  const builder = new TreeBuilder(evaluated);
 
-  const result = addDependency(item, evaluated, lines, circularLinks, [], 0, '');
+  const result = builder.addDependency(item, [], 0, '');
 
   if (!result) return false;
 
-  lines = lines.map(line => line + ' ');
+  const circularLinks = builder.circularLinks;
+  const lines = builder.lines.map(line => line + ' ');
   const modifiedLines = [...lines];
 
   // Render circular references.
