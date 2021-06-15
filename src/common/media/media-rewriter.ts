@@ -84,15 +84,7 @@ export class MediaRewriter {
   }
 
   private getLinkNames(): Set<string> {
-    const allNames = new Set<string>();
-
-    this.injector.all.forEach(item => {
-      item.links.forEach(link => {
-        allNames.add(link.link.name);
-      });
-    });
-
-    return allNames;
+    return new Set<string>(this.injector.all.flatMap(links => links.links.map(link => link.link.name)));
   }
 
   private replaceLinks(assetsByName: Map<string, Asset>): Set<string> {
