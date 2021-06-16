@@ -89,17 +89,35 @@ export const filterContentItems = async ({
 
     if (revertLog != null) {
       const log = await new ArchiveLog().loadFromFile(revertLog);
-      const ids = log.getData('ARCHIVE');
-      const contentItemsFiltered = contentItems.filter(contentItem => ids.indexOf(contentItem.id || '') != -1);
-      if (contentItems.length != ids.length) {
+      const archived = log.getData('ARCHIVE');
+      const items = archived.map(args => args.split(' '));
+
+      // The archive actions may include delivery keys that were removed.
+      // Add these back to the content item, which will cause the unarchive to assign them later.
+      const contentItemsFiltered = contentItems
+        .map(contentItem => {
+          const entry = items.find(item => item[0] === contentItem.id || '');
+          if (entry) {
+            contentItem.body._meta.deliveryKey = entry[1];
+            return contentItem;
+          } else {
+            return null;
+          }
+        })
+        .filter(contentItem => !!contentItem);
+
+      if (contentItemsFiltered.length != archived.length) {
         missingContent = true;
       }
 
       return {
-        contentItems: contentItemsFiltered,
+        contentItems: contentItemsFiltered as ContentItem[],
         missingContent
       };
     }
+
+    // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
+    contentItems.forEach(item => delete item.body._meta.deliveryKey);
 
     if (name != null) {
       const itemsArray: string[] = Array.isArray(name) ? name : [name];
@@ -181,14 +199,15 @@ export const getContentItems = async ({
     folderId != null
       ? await Promise.all(
           folders.map(async source => {
-            const items = await paginator(source.related.contentItems.list);
+            const items = await paginator(source.related.contentItems.list, { status: 'ARCHIVED' });
 
-            contentItems.push(...items.filter(item => item.status == 'ACTIVE'));
+            contentItems.push(...items);
           })
         )
       : await Promise.all(
           contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: 'ACTIVE' });
+            const items = await paginator(source.related.contentItems.list, { status: 'ARCHIVED' });
+
             contentItems.push(...items);
           })
         );
@@ -256,7 +275,14 @@ export const processItems = async ({
 
   for (let i = 0; i < contentItems.length; i++) {
     try {
-      await contentItems[i].related.unarchive();
+      const deliveryKey = contentItems[i].body._meta.deliveryKey;
+      contentItems[i] = await contentItems[i].related.unarchive();
+
+      if (contentItems[i].body._meta.deliveryKey != deliveryKey) {
+        // Restore the delivery key if present. (only on ARCHIVE revert)
+        contentItems[i].body._meta.deliveryKey = deliveryKey;
+        await contentItems[i].related.update(contentItems[i]);
+      }
 
       log.addAction('UNARCHIVE', `${contentItems[i].id}\n`);
       successCount++;
@@ -284,7 +310,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, name, contentType } = argv;
   const client = dynamicContentClientFactory(argv);
 
-  const allContent = !id && !name && !contentType && !revertLog;
+  const allContent = !id && !name && !contentType && !revertLog && !folderId && !repoId;
 
   if (repoId && id) {
     console.log('ID of content item is specified, ignoring repository ID');

@@ -1,6 +1,7 @@
 import { ArchiveLog } from './archive/archive-log';
 
 export class FileLog extends ArchiveLog {
+  private openedCount = 0;
   closed: boolean;
 
   constructor(private filename?: string) {
@@ -18,11 +19,19 @@ export class FileLog extends ArchiveLog {
     this.addComment(text as string);
   }
 
-  public async close(): Promise<void> {
-    if (this.filename != null) {
-      await this.writeToFile(this.filename);
-    }
+  public open(): FileLog {
+    this.openedCount++;
 
-    this.closed = true;
+    return this;
+  }
+
+  public async close(writeIfClosed = true): Promise<void> {
+    if (--this.openedCount <= 0) {
+      if (this.filename != null && writeIfClosed) {
+        await this.writeToFile(this.filename);
+      }
+
+      this.closed = true;
+    }
   }
 }
