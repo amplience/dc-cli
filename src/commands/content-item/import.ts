@@ -31,6 +31,7 @@ import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
+import { MediaRewriter } from '../../common/media/media-rewriter';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -112,6 +113,13 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Exclude delivery keys when importing content items.'
+    })
+
+    .option('media', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
     })
 
     .option('logFile', {
@@ -272,7 +280,7 @@ const prepareContentForImport = async (
   folder: Folder | null,
   mapping: ContentMapping,
   log: FileLog,
-  argv: ImportItemBuilderOptions
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<ContentDependancyTree | null> => {
   // traverse folder structure and find content items
   // replicate relative path string in target repo/folder (create if does not exist)
@@ -506,6 +514,29 @@ const prepareContentForImport = async (
     } catch (e) {
       log.error('Failed creating repo assignments:', e);
       return null;
+    }
+  }
+
+  // Step 2.5: Detect media links and rewrite their IDs, endpoints etc.
+  if (argv.media) {
+    log.appendLine(`Detecting and rewriting media links...`);
+    const rewriter = new MediaRewriter(argv, contentItems);
+
+    let missing: Set<string>;
+    try {
+      missing = await rewriter.rewrite();
+    } catch (e) {
+      log.error(
+        `Failed to rewrite media links. Make sure your client is properly configured, or remove the --media flag.`,
+        e
+      );
+      return null;
+    }
+
+    log.appendLine(`Finished rewriting media links.`);
+
+    if (missing.size > 0) {
+      log.warn(`${missing.size} media items could not be found in the target asset store. Ignoring.`);
     }
   }
 

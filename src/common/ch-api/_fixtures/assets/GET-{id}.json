@@ -1,0 +1,29 @@
+{
+  "content": {
+    "data": [
+      {
+        "srcName": "AlltheLook1.jpg",
+        "revisionNumber": 5,
+        "bucketID": "b0d42ebb-679b-4010-ae20-9ce989837481",
+        "label": "AlltheLook1.jpg",
+        "mimeType": "image/jpeg",
+        "type": "image",
+        "locale": "en-GB",
+        "userID": "57b98b7f-c6bf-43d2-9f24-a408d1c6d59d",
+        "thumbFile": "74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "folderID": "00000000-0000-0000-0000-000000000000",
+        "file": "74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "createdDate": 1606739632488,
+        "name": "AlltheLook1",
+        "subType": null,
+        "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+        "thumbURL": "https://thumbs.amplience.net/r/74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "publishStatus": "PUBLISHED",
+        "status": "active",
+        "timestamp": 1610384041283
+      }
+    ],
+    "count": 1
+  },
+  "status": "success"
+}

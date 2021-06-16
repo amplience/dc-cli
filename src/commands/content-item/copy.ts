@@ -127,6 +127,13 @@ export const builder = (yargs: Argv): void => {
       describe: 'Exclude delivery keys when importing content items.'
     })
 
+    .option('media', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+    })
+
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
@@ -213,12 +220,14 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         force: argv.force,
         validate: argv.validate,
         skipIncomplete: argv.skipIncomplete,
-        logFile: log,
 
         republish: argv.republish,
         publish: argv.publish,
 
-        excludeKeys: argv.excludeKeys
+        excludeKeys: argv.excludeKeys,
+
+        media: argv.media,
+        logFile: log
       });
 
       if (importResult) {

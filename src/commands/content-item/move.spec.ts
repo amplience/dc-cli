@@ -128,6 +128,13 @@ describe('content-item move command', () => {
         describe: 'Exclude delivery keys when importing content items.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('media', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
@@ -210,7 +217,8 @@ describe('content-item move command', () => {
         mapFile: 'map.json',
         force: false,
         validate: false,
-        skipIncomplete: false
+        skipIncomplete: false,
+        media: true
       };
       await handler(argv);
 
@@ -229,6 +237,7 @@ describe('content-item move command', () => {
       expect(copyCalls[0].force).toEqual(argv.force);
       expect(copyCalls[0].validate).toEqual(argv.validate);
       expect(copyCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
+      expect(copyCalls[0].media).toEqual(argv.media);
 
       expect(argv.exportedIds).toEqual(exportIds);
 

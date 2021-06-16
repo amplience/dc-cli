@@ -1,0 +1,130 @@
+{
+  "content": {
+    "data": [
+      {
+        "srcName": "AlltheLook1.jpg",
+        "revisionNumber": 5,
+        "mimeType": "image/jpeg",
+        "type": "image",
+        "locale": "en-GB",
+        "userID": "57b98b7f-c6bf-43d2-9f24-a408d1c6d59d",
+        "thumbFile": "74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "folderID": "00000000-0000-0000-0000-000000000000",
+        "relationships": {
+          "containsImage": [
+            {
+              "schema": "image",
+              "schemaID": "4e357e14-5141-4153-979e-125e4bdb9c97",
+              "variants": [
+                {
+                  "values": {
+                    "colorSpace": "rgb",
+                    "resolutionY": 0,
+                    "valid": true,
+                    "resolutionX": 0,
+                    "depth": 8,
+                    "alpha": false,
+                    "format": "JPEG",
+                    "width": 1289,
+                    "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+                    "height": 1400,
+                    "resolutionUnits": 0
+                  },
+                  "variantID": "3e8a4d62-8058-46d9-a75d-bb735537e85c",
+                  "variantName": "*"
+                }
+              ],
+              "PK": {
+                "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+              }
+            }
+          ],
+          "containsEXIF": [
+            {
+              "schema": "exif",
+              "schemaID": "cf9303dc-7b01-46e3-ba34-072390a4684d",
+              "variants": [
+                {
+                  "values": {
+                    "software": "Adobe Photoshop CC 2014 (Macintosh)",
+                    "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+                  },
+                  "variantID": "3e8a4d62-8058-46d9-a75d-bb735537e85c",
+                  "variantName": "*"
+                }
+              ],
+              "PK": {
+                "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+              }
+            }
+          ],
+          "fromFile": [
+            {
+              "schema": "file",
+              "schemaID": "590ec5d8-d2f1-4df3-b52c-32df6e166d0f",
+              "variants": [
+                {
+                  "values": {
+                    "size": 1109425,
+                    "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+                    "type": "JPEG"
+                  },
+                  "variantID": "3e8a4d62-8058-46d9-a75d-bb735537e85c",
+                  "variantName": "*"
+                }
+              ],
+              "PK": {
+                "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717"
+              }
+            }
+          ]
+        },
+        "file": "74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "unpublish": {
+          "last": {
+            "jobID": "unpublish.8f0034fd-e0e7-4a55-a81b-a87054827a8f",
+            "revisionNumber": 18,
+            "timestamp": 1610382560948,
+            "status": "COMPLETED"
+          },
+          "lastSuccess": {
+            "jobID": "unpublish.8f0034fd-e0e7-4a55-a81b-a87054827a8f",
+            "revisionNumber": 18,
+            "timestamp": 1610382560948,
+            "status": "COMPLETED"
+          }
+        },
+        "id": "65d78690-bf4e-415d-a16c-ca4dadbb2717",
+        "thumbURL": "https://thumbs.amplience.net/r/74bef2ea-010b-4853-a5ee-f0b4daa59f0d",
+        "publishStatus": "PUBLISHED",
+        "timestamp": 1610384041283,
+        "workflow": {},
+        "bucketID": "b0d42ebb-679b-4010-ae20-9ce989837481",
+        "label": "AlltheLook1.jpg",
+        "tags": [],
+        "createdDate": 1606739632488,
+        "size": 1109425,
+        "publish": {
+          "last": {
+            "jobID": "p.c78c904d-72c4-497b-be11-1d0a99c52627",
+            "revisionNumber": 21,
+            "timestamp": 1610384041207,
+            "status": "COMPLETED"
+          },
+          "lastSuccess": {
+            "jobID": "p.c78c904d-72c4-497b-be11-1d0a99c52627",
+            "revisionNumber": 21,
+            "timestamp": 1610384041207,
+            "status": "COMPLETED"
+          }
+        },
+        "name": "AlltheLook1",
+        "localeGroupAssets": [],
+        "subType": null,
+        "status": "active"
+      }
+    ],
+    "count": 1
+  },
+  "status": "success"
+}
