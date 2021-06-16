@@ -79,7 +79,9 @@ export const prepareContentForTree = async (repo: {
   return new ContentDependancyTree(contentItems, new ContentMapping());
 };
 
-type CircularLink = [number, number];
+type LineIndexFrom = number;
+type LineIndexTo = number;
+type CircularLink = [LineIndexFrom, LineIndexTo];
 interface ParentReference {
   item: ItemContentDependancies;
   line: number;
