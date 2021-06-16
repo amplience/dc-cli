@@ -119,5 +119,8 @@
     "sanitize-filename": "^1.6.3",
     "table": "^5.4.6",
     "yargs": "^14.0.0"
+  },
+  "engines": {
+    "node": ">12"
   }
 }
