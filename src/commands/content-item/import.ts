@@ -244,7 +244,6 @@ const createOrUpdateContent = async (
   // The locale will be set after creation.
 
   let locale = item.locale;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   item.locale = undefined;
 
   if (oldItem == null) {
