@@ -303,7 +303,7 @@ describe('content-item tree command', () => {
       await handler(argv);
 
       expect(consoleLogSpy.mock.calls.map(args => args[0]).join('\n')).toMatchSnapshot();
-      expect(consoleErrorSpy.mock.calls.map(args => args[0]).join('\n')).toMatchSnapshot();
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

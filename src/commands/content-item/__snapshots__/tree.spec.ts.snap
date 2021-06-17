@@ -66,8 +66,6 @@ item1
 Finished. Circular Dependencies printed: 0"
 `;
 
-exports[`content-item tree command handler tests should print an error when invalid json is found 2`] = `"Couldn't read content item at '/Users/rhys/Documents/amplience/dc-cli/temp/tree/invalud/repo1/badfile.json': SyntaxError: Unexpected token o in JSON at position 1"`;
-
 exports[`content-item tree command handler tests should print multiple disjoint trees of content items 1`] = `
 "=== LEVEL 3 (1) ===
 item1 
