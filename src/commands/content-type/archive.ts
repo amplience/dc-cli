@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -79,8 +79,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
 
   if (id != null) {
     try {
-      const contentType: ContentType = await client.contentTypes.get(id);
-      types = [contentType];
+      const typeIds = Array.isArray(id) ? id : [id];
+      types = await Promise.all(typeIds.map(id => client.contentTypes.get(id)));
     } catch (e) {
       console.log(`Fatal error: could not find content type with ID ${id}. Error: \n${e.toString()}`);
       return;
@@ -88,7 +88,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(argv.hubId);
-      types = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+      types = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content types to archive. Is your hub correct? Error: \n${e.toString()}`

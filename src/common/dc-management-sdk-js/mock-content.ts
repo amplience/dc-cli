@@ -49,7 +49,11 @@ export class MockContentMetrics {
   itemsVersionGet = 0;
   foldersCreated = 0;
   typesCreated = 0;
+  typesArchived = 0;
+  typesSynced = 0;
   typeSchemasCreated = 0;
+  typeSchemasUpdated = 0;
+  typeSchemasArchived = 0;
 
   reset(): void {
     this.itemsCreated = 0;
@@ -60,7 +64,11 @@ export class MockContentMetrics {
     this.itemsVersionGet = 0;
     this.foldersCreated = 0;
     this.typesCreated = 0;
+    this.typesArchived = 0;
+    this.typesSynced = 0;
     this.typeSchemasCreated = 0;
+    this.typeSchemasUpdated = 0;
+    this.typeSchemasArchived = 0;
   }
 }
 
@@ -83,6 +91,8 @@ export class MockContent {
   failItemActions: null | 'all' | 'not-version' = null;
   failFolderActions: null | 'list' | 'parent' | 'items' = null;
   failRepoActions: null | 'list' | 'create' = null;
+  failTypeActions: null | 'all' = null;
+  failSchemaActions: null | 'all' = null;
   failHubGet: boolean;
   failRepoList: boolean;
 
@@ -109,6 +119,14 @@ export class MockContent {
 
     const mockTypeSchemaGet = jest.fn(id => Promise.resolve(this.typeSchemaById.get(id) as ContentTypeSchema));
 
+    const mockTypeSchemaGetVersion = jest.fn((id, version) => {
+      const schema = this.typeSchemaById.get(id) as ContentTypeSchema;
+
+      schema.version = version;
+
+      return Promise.resolve(schema);
+    });
+
     const mockItemGet = jest.fn(id => {
       const result = this.items.find(item => item.id === id);
       if (result == null) {
@@ -132,7 +150,8 @@ export class MockContent {
         get: mockTypeGet
       },
       contentTypeSchemas: {
-        get: mockTypeSchemaGet
+        get: mockTypeSchemaGet,
+        getByVersion: mockTypeSchemaGetVersion
       },
       contentItems: {
         get: mockItemGet
@@ -315,7 +334,7 @@ export class MockContent {
 
     mockItemArchive.mockImplementation(() => {
       if (this.failItemActions) throw new Error('Simulated network failure.');
-      if (item.status != Status.ACTIVE) {
+      if (item.status !== Status.ACTIVE) {
         throw new Error('Cannot archive content that is already archived.');
       }
 
@@ -328,7 +347,7 @@ export class MockContent {
 
     mockItemUnarchive.mockImplementation(() => {
       if (this.failItemActions) throw new Error('Simulated network failure.');
-      if (item.status == Status.ACTIVE) {
+      if (item.status === Status.ACTIVE) {
         throw new Error('Cannot unarchive content that is not archived.');
       }
 
@@ -364,16 +383,61 @@ export class MockContent {
     schemaOnly?: boolean
   ): void {
     if (!this.typeSchemaById.has(id)) {
-      const schema = new ContentTypeSchema({ id: id, schemaId: schemaName, body: JSON.stringify(body) });
+      const schema = new ContentTypeSchema({
+        id: id,
+        schemaId: schemaName,
+        body: JSON.stringify(body),
+        status: 'ACTIVE'
+      });
       this.typeSchemaById.set(id, schema);
+
+      const mockSchemaArchive = jest.fn();
+      schema.related.archive = mockSchemaArchive;
+
+      const mockSchemaUpdate = jest.fn();
+      schema.related.update = mockSchemaUpdate;
+
+      mockSchemaArchive.mockImplementation(() => {
+        if (this.failSchemaActions) throw new Error('Simulated network failure.');
+        if (schema.status !== Status.ACTIVE) {
+          throw new Error('Cannot archive content that is already archived.');
+        }
+
+        this.metrics.typeSchemasArchived++;
+
+        schema.status = Status.ARCHIVED;
+
+        return Promise.resolve(schema);
+      });
+
+      mockSchemaUpdate.mockImplementation(newSchema => {
+        if (this.failSchemaActions) throw new Error('Simulated network failure.');
+        this.metrics.typeSchemasUpdated++;
+
+        schema.body = newSchema.body;
+        schema.version = (schema.version as number) + 1;
+
+        return Promise.resolve(schema);
+      });
     }
 
     if (!schemaOnly) {
-      const type = new ContentType({ id: id, contentTypeUri: schemaName, settings: { label: basename(schemaName) } });
+      const type = new ContentType({
+        id: id,
+        contentTypeUri: schemaName,
+        settings: { label: basename(schemaName) },
+        status: 'ACTIVE'
+      });
       this.typeById.set(id, type);
 
       const mockCached = jest.fn();
       type.related.contentTypeSchema.get = mockCached;
+
+      const mockCachedUpdate = jest.fn();
+      type.related.contentTypeSchema.update = mockCachedUpdate;
+
+      const mockTypeArchive = jest.fn();
+      type.related.archive = mockTypeArchive;
 
       mockCached.mockImplementation(() => {
         const cached = new ContentTypeCachedSchema({
@@ -382,6 +446,30 @@ export class MockContent {
         });
 
         return Promise.resolve(cached);
+      });
+
+      mockCachedUpdate.mockImplementation(() => {
+        const cached = new ContentTypeCachedSchema({
+          contentTypeUri: schemaName,
+          cachedSchema: { ...body, $id: schemaName }
+        });
+
+        this.metrics.typesSynced++;
+
+        return Promise.resolve(cached);
+      });
+
+      mockTypeArchive.mockImplementation(() => {
+        if (this.failTypeActions) throw new Error('Simulated network failure.');
+        if (type.status !== Status.ACTIVE) {
+          throw new Error('Cannot archive content that is already archived.');
+        }
+
+        this.metrics.typesArchived++;
+
+        type.status = Status.ARCHIVED;
+
+        return Promise.resolve(type);
       });
 
       const repoArray = typeof repos === 'string' ? [repos] : repos;

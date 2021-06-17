@@ -17,6 +17,10 @@ export type ConfigurationParameters = {
   hubId: string;
 };
 
+type ConfigArgument = {
+  config: string;
+};
+
 export const configureCommandOptions: CommandOptions = {
   clientId: { type: 'string', demandOption: true },
   clientSecret: { type: 'string', demandOption: true },
@@ -43,14 +47,14 @@ const writeConfigFile = (configFile: string, parameters: ConfigurationParameters
 export const readConfigFile = (configFile: string): object =>
   fs.existsSync(configFile) ? JSON.parse(fs.readFileSync(configFile, 'utf-8')) : {};
 
-export const handler = (argv: Arguments<ConfigurationParameters>): void => {
+export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument>): void => {
   const { clientId, clientSecret, hubId } = argv;
-  const storedConfig = readConfigFile(CONFIG_FILENAME());
+  const storedConfig = readConfigFile(argv.config);
 
   if (isEqual(storedConfig, { clientId, clientSecret, hubId })) {
     console.log('Config file up-to-date.  Please use `--help` for command usage.');
     return;
   }
-  writeConfigFile(CONFIG_FILENAME(), { clientId, clientSecret, hubId });
+  writeConfigFile(argv.config, { clientId, clientSecret, hubId });
   console.log('Config file updated.');
 };

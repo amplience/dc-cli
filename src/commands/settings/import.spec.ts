@@ -6,6 +6,8 @@ import { Hub, Settings, WorkflowState } from 'dc-management-sdk-js';
 import { promisify } from 'util';
 import { exists, unlink, writeFile } from 'fs';
 import rmdir from 'rimraf';
+import { createLog } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('readline');
 jest.mock('../../services/dynamic-content-client-factory');
@@ -329,8 +331,10 @@ describe('settings import command', (): void => {
       expect(spyOptions).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
+
       expect(spyOptions).toHaveBeenCalledWith('f', {
         type: 'boolean',
         boolean: true,
@@ -449,7 +453,7 @@ describe('settings import command', (): void => {
       await handler({
         ...argv,
         mapFile: './mapSettings.json',
-        logFile: './log.json',
+        logFile: createLog('./log.json'),
         force: true
       });
 
@@ -475,7 +479,8 @@ describe('settings import command', (): void => {
         ...argv,
         mapFile: './mapSettings2.json',
         force: true,
-        answer: ['n']
+        answer: ['n'],
+        logFile: new FileLog()
       });
 
       expect(mockGetHub).toHaveBeenCalled();
@@ -490,7 +495,8 @@ describe('settings import command', (): void => {
 
       await handler({
         ...argv,
-        force: true
+        force: true,
+        logFile: new FileLog()
       });
 
       expect(mockGetHub).toHaveBeenCalled();

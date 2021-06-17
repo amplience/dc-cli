@@ -26,10 +26,11 @@ import {
   ItemContentDependancies,
   ContentDependancyInfo
 } from '../../common/content-item/content-dependancy-tree';
+import { Body } from '../../common/content-item/body';
 
-import { asyncQuestion } from '../../common/archive/archive-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 
@@ -125,7 +126,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -402,7 +404,8 @@ const prepareContentForImport = async (
     const updateExisting =
       force ||
       (await asyncQuestion(
-        `${alreadyExists.length} of the items being imported already exist in the mapping. Would you like to update these content items instead of skipping them? (y/n) `
+        `${alreadyExists.length} of the items being imported already exist in the mapping. Would you like to update these content items instead of skipping them? (y/n) `,
+        log
       ));
 
     if (!updateExisting) {
@@ -444,7 +447,8 @@ const prepareContentForImport = async (
       const create =
         force ||
         (await asyncQuestion(
-          'Content types can be automatically created for these schemas, but it is not recommended as they will have a default name and lack any configuration. Are you sure you wish to continue? (y/n) '
+          'Content types can be automatically created for these schemas, but it is not recommended as they will have a default name and lack any configuration. Are you sure you wish to continue? (y/n) ',
+          log
         ));
       if (!create) {
         return null;
@@ -508,7 +512,8 @@ const prepareContentForImport = async (
     const createAssignments =
       force ||
       (await asyncQuestion(
-        'These assignments will be created automatically. Are you sure you still wish to continue? (y/n) '
+        'These assignments will be created automatically. Are you sure you still wish to continue? (y/n) ',
+        log
       ));
     if (!createAssignments) {
       return null;
@@ -585,7 +590,8 @@ const prepareContentForImport = async (
     const ignore =
       force ||
       (await asyncQuestion(
-        `${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `
+        `${affectedContentItems.length} out of ${beforeRemove} content items will be skipped. Are you sure you still wish to continue? (y/n) `,
+        log
       ));
     if (!ignore) {
       return null;
@@ -661,7 +667,8 @@ const prepareContentForImport = async (
     const ignore =
       force ||
       (await asyncQuestion(
-        `${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `
+        `${invalidContentItems.length} out of ${contentItems.length} content items will be affected. Are you sure you still wish to continue? (y/n) `,
+        log
       ));
     if (!ignore) {
       return null;
@@ -678,12 +685,23 @@ const prepareContentForImport = async (
   return tree;
 };
 
-const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping): void => {
-  const id = mapping.getContentItem(dep.dependancy.id) || dep.dependancy.id;
+const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, allowNull: boolean): void => {
+  let id = mapping.getContentItem(dep.dependancy.id);
+
+  if (id == null && !allowNull) {
+    id = dep.dependancy.id;
+  }
+
   if (dep.dependancy._meta.schema === '_hierarchy') {
     dep.owner.content.body._meta.hierarchy.parentId = id;
-  } else {
-    dep.dependancy.id = id;
+  } else if (dep.parent) {
+    const parent = dep.parent as Body;
+    if (id == null) {
+      delete parent[dep.index];
+    } else {
+      parent[dep.index] = dep.dependancy;
+      dep.dependancy.id = id;
+    }
   }
 };
 
@@ -709,7 +727,7 @@ const importTree = async (
 
       // Replace any dependancies with the existing mapping.
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping);
+        rewriteDependancy(dep, mapping, false);
       });
 
       const originalId = content.id;
@@ -784,7 +802,7 @@ const importTree = async (
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping);
+        rewriteDependancy(dep, mapping, pass === 0);
       });
 
       const originalId = content.id;
@@ -818,6 +836,7 @@ const importTree = async (
 
         newDependants[i] = newItem;
         mapping.registerContentItem(originalId as string, newItem.id as string);
+        mapping.registerContentItem(newItem.id as string, newItem.id as string);
       } else {
         if (itemShouldPublish(content) && (newItem.version != oldVersion || argv.republish)) {
           publishable.push({ item: newItem, node: item });
@@ -857,7 +876,7 @@ const importTree = async (
 export const handler = async (
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
-  if (argv.revertLog != null) {
+  if (await argv.revertLog) {
     return revert(argv);
   }
 
@@ -867,12 +886,10 @@ export const handler = async (
   argv.publish = argv.publish || argv.republish;
 
   const client = dynamicContentClientFactory(argv);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
 
   const closeLog = async (): Promise<void> => {
-    if (typeof logFile !== 'object') {
-      await log.close();
-    }
+    await log.close();
   };
 
   let hub: Hub;
@@ -968,7 +985,8 @@ export const handler = async (
         const ignore =
           force ||
           (await asyncQuestion(
-            'These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) '
+            'These repositories will be skipped during the import, as they need to be added to the hub manually. Do you want to continue? (y/n) ',
+            log
           ));
         if (!ignore) {
           closeLog();

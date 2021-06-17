@@ -12,7 +12,8 @@ export interface ArchiveLogItem {
 export enum LogErrorLevel {
   NONE = 0,
   WARNING,
-  ERROR
+  ERROR,
+  INVALID
 }
 
 export class ArchiveLog {

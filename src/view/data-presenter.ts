@@ -16,11 +16,13 @@ export const RenderingOptions: CommandOptions = {
 };
 
 type MapFn = (data: object) => object;
+type PrintFn = (message: string) => void;
 
 interface RenderOptions {
   json?: boolean;
   tableUserConfig?: TableUserConfig;
   itemMapFn?: MapFn;
+  printFn?: PrintFn;
 }
 
 export default class DataPresenter {
@@ -53,8 +55,13 @@ export default class DataPresenter {
       output = Array.isArray(this.data)
         ? this.generateHorizontalTable(this.data.map(itemMapFn), renderOptions.tableUserConfig)
         : this.generateVerticalTable(itemMapFn(this.data), renderOptions.tableUserConfig);
-      output += '\n';
     }
-    process.stdout.write(output);
+
+    if (renderOptions.printFn) {
+      renderOptions.printFn(output);
+    } else {
+      if (!renderOptions.json) output += '\n';
+      process.stdout.write(output);
+    }
   }
 }

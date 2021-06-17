@@ -1,17 +1,15 @@
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
 import { Arguments } from 'yargs';
-import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentItem } from 'dc-management-sdk-js';
-import { asyncQuestion } from '../../common/archive/archive-helpers';
+import { asyncQuestion } from '../../common/question-helpers';
+import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export const revert = async (argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>): Promise<boolean> => {
-  const log = new FileLog();
-  try {
-    await log.loadFromFile(argv.revertLog as string);
-  } catch (e) {
-    console.log('Could not open the import log! Aborting.');
+  const log = await argv.revertLog;
+  if (!log || log.errorLevel === LogErrorLevel.INVALID) {
+    console.log('No valid log file provided. Aborting.');
     return false;
   }
 

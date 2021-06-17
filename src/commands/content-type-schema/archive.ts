@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -78,8 +78,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   if (id != null) {
     try {
       // Get the schema ID and use the other path, to avoid code duplication.
-      const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
-      schemas = [contentTypeSchema];
+      const schemasIds = Array.isArray(id) ? id : [id];
+      schemas = await Promise.all(schemasIds.map(id => client.contentTypeSchemas.get(id)));
     } catch (e) {
       console.log(`Fatal error: could not find schema with ID ${id}. Error: \n${e.toString()}`);
       return;
@@ -87,7 +87,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(hubId);
-      schemas = await paginator(hub.related.contentTypeSchema.list, { status: 'ACTIVE' });
+      schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ACTIVE });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content type schemas to archive. Is your hub correct? Error: \n${e.toString()}`

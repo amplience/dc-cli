@@ -1,0 +1,15 @@
+import { CloneHubState } from './clone-hub-state';
+
+export enum CloneHubStepId {
+  Settings = 'settings',
+  Schema = 'schema',
+  Type = 'type',
+  Content = 'content'
+}
+
+export interface CloneHubStep {
+  getId(): CloneHubStepId;
+  getName(): string;
+  run(state: CloneHubState): Promise<boolean>;
+  revert(state: CloneHubState): Promise<boolean>;
+}
