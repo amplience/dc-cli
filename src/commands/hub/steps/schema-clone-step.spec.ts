@@ -13,6 +13,7 @@ import * as schemaImport from '../../content-type-schema/import';
 import * as schemaExport from '../../content-type-schema/export';
 
 import { SchemaCloneStep } from './schema-clone-step';
+import { CloneHubStepId } from '../model/clone-hub-step';
 
 jest.mock('../../../services/dynamic-content-client-factory');
 jest.mock('../../content-type-schema/import');
@@ -92,6 +93,11 @@ describe('schema clone step', () => {
       logFile: new FileLog(join(directory, logName + '.log'))
     };
   }
+
+  it('should have the id "schema"', () => {
+    const step = new SchemaCloneStep();
+    expect(step.getId()).toEqual(CloneHubStepId.Schema);
+  });
 
   it('should have the name "Clone Content Type Schemas"', () => {
     const step = new SchemaCloneStep();

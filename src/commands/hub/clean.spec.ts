@@ -210,7 +210,7 @@ describe('hub clean command', () => {
           ...yargArgs,
           ...config,
 
-          step: Object.values(CleanHubStepId)[i],
+          step: steps[i].getId(),
           logFile: createLog('temp/clean/steps/step' + i + '.log'),
           force: true
         };

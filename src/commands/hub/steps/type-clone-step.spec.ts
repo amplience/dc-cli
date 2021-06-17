@@ -13,6 +13,7 @@ import * as typeImport from '../../content-type/import';
 import * as typeExport from '../../content-type/export';
 
 import { TypeCloneStep } from './type-clone-step';
+import { CloneHubStepId } from '../model/clone-hub-step';
 
 jest.mock('../../../services/dynamic-content-client-factory');
 jest.mock('../../content-type/import');
@@ -92,6 +93,11 @@ describe('type clone step', () => {
       logFile: new FileLog(join(directory, logName + '.log'))
     };
   }
+
+  it('should have the id "type"', () => {
+    const step = new TypeCloneStep();
+    expect(step.getId()).toEqual(CloneHubStepId.Type);
+  });
 
   it('should have the name "Clone Content Types"', () => {
     const step = new TypeCloneStep();

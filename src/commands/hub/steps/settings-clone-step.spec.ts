@@ -10,6 +10,7 @@ import * as settingsImport from '../../settings/import';
 import * as settingsExport from '../../settings/export';
 
 import { SettingsCloneStep } from './settings-clone-step';
+import { CloneHubStepId } from '../model/clone-hub-step';
 
 jest.mock('../../../services/dynamic-content-client-factory');
 jest.mock('../../settings/import');
@@ -69,6 +70,11 @@ describe('settings clone step', () => {
       logFile: new FileLog(join(directory, logName + '.log'))
     };
   }
+
+  it('should have the id "settings"', () => {
+    const step = new SettingsCloneStep();
+    expect(step.getId()).toEqual(CloneHubStepId.Settings);
+  });
 
   it('should have the name "Clone Settings"', () => {
     const step = new SettingsCloneStep();

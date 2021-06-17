@@ -9,6 +9,7 @@ import * as copy from '../../content-item/copy';
 
 import { ContentCloneStep } from './content-clone-step';
 import { CopyItemBuilderOptions } from '../../../interfaces/copy-item-builder-options.interface';
+import { CloneHubStepId } from '../model/clone-hub-step';
 
 jest.mock('../../../services/dynamic-content-client-factory');
 jest.mock('../../content-item/copy');
@@ -70,6 +71,11 @@ describe('content clone step', () => {
       logFile: new FileLog(join(directory, logName + '.log'))
     };
   }
+
+  it('should have the id "content"', () => {
+    const step = new ContentCloneStep();
+    expect(step.getId()).toEqual(CloneHubStepId.Content);
+  });
 
   it('should have the name "Clone Content"', () => {
     const step = new ContentCloneStep();

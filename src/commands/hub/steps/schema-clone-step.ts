@@ -1,4 +1,4 @@
-import { CloneHubStep } from '../model/clone-hub-step';
+import { CloneHubStep, CloneHubStepId } from '../model/clone-hub-step';
 import { CloneHubState } from '../model/clone-hub-state';
 import { join } from 'path';
 
@@ -10,6 +10,10 @@ import { FileLog } from '../../../common/file-log';
 import { Status } from 'dc-management-sdk-js';
 
 export class SchemaCloneStep implements CloneHubStep {
+  getId(): CloneHubStepId {
+    return CloneHubStepId.Schema;
+  }
+
   getName(): string {
     return 'Clone Content Type Schemas';
   }

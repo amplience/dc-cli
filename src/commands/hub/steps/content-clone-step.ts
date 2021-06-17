@@ -1,10 +1,14 @@
-import { CloneHubStep } from '../model/clone-hub-step';
+import { CloneHubStep, CloneHubStepId } from '../model/clone-hub-step';
 import { CloneHubState } from '../model/clone-hub-state';
 import { join } from 'path';
 
 import { handler as copyContent } from '../../content-item/copy';
 
 export class ContentCloneStep implements CloneHubStep {
+  getId(): CloneHubStepId {
+    return CloneHubStepId.Content;
+  }
+
   getName(): string {
     return 'Clone Content';
   }

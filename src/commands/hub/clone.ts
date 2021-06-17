@@ -39,6 +39,8 @@ export const desc =
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('hub', 'clone', platform);
 
+export const steps = [new SettingsCloneStep(), new SchemaCloneStep(), new TypeCloneStep(), new ContentCloneStep()];
+
 export const builder = (yargs: Argv): void => {
   yargs
     .positional('dir', {
@@ -134,8 +136,9 @@ export const builder = (yargs: Argv): void => {
     })
 
     .option('step', {
-      type: 'number',
-      describe: 'Start at a numbered step. 1: Settings, 2: Schema, 3: Type, 4: Content'
+      type: 'string',
+      describe: 'Start at a specific step. Steps after the one you specify will also run.',
+      choices: steps.map(step => step.getId())
     })
 
     .option('logFile', {
@@ -145,8 +148,6 @@ export const builder = (yargs: Argv): void => {
       coerce: createLog
     });
 };
-
-const steps = [new SettingsCloneStep(), new SchemaCloneStep(), new TypeCloneStep(), new ContentCloneStep()];
 
 export const handler = async (argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const log = argv.logFile.open();
@@ -192,6 +193,8 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
 
   const revertLog = await argv.revertLog;
 
+  const stepIndex = Math.max(0, steps.findIndex(step => step.getId() === argv.step));
+
   if (revertLog) {
     if (revertLog.errorLevel === LogErrorLevel.INVALID) {
       log.error('Could not read the revert log.');
@@ -201,7 +204,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
 
     state.revertLog = revertLog;
 
-    for (let i = argv.step || 0; i < steps.length; i++) {
+    for (let i = stepIndex; i < steps.length; i++) {
       const step = steps[i];
 
       log.switchGroup(step.getName());
@@ -211,16 +214,16 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
       const success = await step.revert(state);
 
       if (!success) {
-        log.appendLine(`Reverting step ${i} (${step.getName()}) Failed. Terminating.`);
+        log.appendLine(`Reverting step ${i} ('${step.getId()}': ${step.getName()}) Failed. Terminating.`);
         log.appendLine('');
         log.appendLine('To continue the revert from this point, use the option:');
-        log.appendLine(`--step ${i}`);
+        log.appendLine(`--step ${step.getId()}`);
 
         break;
       }
     }
   } else {
-    for (let i = argv.step || 0; i < steps.length; i++) {
+    for (let i = stepIndex; i < steps.length; i++) {
       const step = steps[i];
 
       log.switchGroup(step.getName());
@@ -229,10 +232,10 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
       const success = await step.run(state);
 
       if (!success) {
-        log.appendLine(`Step ${i} (${step.getName()}) Failed. Terminating.`);
+        log.appendLine(`Step ${i} ('${step.getId()}': ${step.getName()}) Failed. Terminating.`);
         log.appendLine('');
         log.appendLine('To continue the clone from this point, use the option:');
-        log.appendLine(`--step ${i}`);
+        log.appendLine(`--step ${step.getId()}`);
 
         break;
       }

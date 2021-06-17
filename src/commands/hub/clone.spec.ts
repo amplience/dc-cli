@@ -1,4 +1,4 @@
-import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './clone';
+import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath, steps } from './clone';
 import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import Yargs from 'yargs/yargs';
@@ -14,6 +14,7 @@ import { ConfigurationParameters } from '../configure';
 import { Arguments } from 'yargs';
 import { FileLog } from '../../common/file-log';
 import { CloneHubState } from './model/clone-hub-state';
+import { CloneHubStepId } from './model/clone-hub-step';
 
 jest.mock('readline');
 
@@ -28,20 +29,30 @@ function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mockStep(name: string, success: () => boolean): any {
+function mockStep(name: string, id: string, success: () => boolean): any {
   return jest.fn().mockImplementation(() => ({
     run: succeedOrFail(jest.fn(), success),
     revert: succeedOrFail(jest.fn(), success),
-    getName: jest.fn().mockReturnValue(name)
+    getName: jest.fn().mockReturnValue(name),
+    getId: jest.fn().mockReturnValue(id)
   }));
 }
 
-jest.mock('./steps/settings-clone-step', () => ({ SettingsCloneStep: mockStep('Clone Settings', () => success[0]) }));
-jest.mock('./steps/schema-clone-step', () => ({
-  SchemaCloneStep: mockStep('Clone Content Type Schemas', () => success[1])
+jest.mock('./steps/settings-clone-step', () => ({
+  SettingsCloneStep: mockStep('Clone Settings', 'settings', () => success[0])
 }));
-jest.mock('./steps/type-clone-step', () => ({ TypeCloneStep: mockStep('Clone Content Types', () => success[2]) }));
-jest.mock('./steps/content-clone-step', () => ({ ContentCloneStep: mockStep('Clone Content', () => success[3]) }));
+
+jest.mock('./steps/schema-clone-step', () => ({
+  SchemaCloneStep: mockStep('Clone Content Type Schemas', 'schemas', () => success[1])
+}));
+
+jest.mock('./steps/type-clone-step', () => ({
+  TypeCloneStep: mockStep('Clone Content Types', 'types', () => success[2])
+}));
+
+jest.mock('./steps/content-clone-step', () => ({
+  ContentCloneStep: mockStep('Clone Content', 'content', () => success[3])
+}));
 
 jest.mock('../../common/log-helpers', () => ({
   ...jest.requireActual('../../common/log-helpers'),
@@ -199,6 +210,12 @@ describe('hub clone command', () => {
         describe: 'Path to a log file to write to.',
         coerce: createLog
       });
+
+      expect(spyOption).toHaveBeenCalledWith('step', {
+        type: 'string',
+        describe: 'Start at a specific step. Steps after the one you specify will also run.',
+        choices: steps.map(step => step.getId())
+      });
     });
   });
 
@@ -336,7 +353,7 @@ describe('hub clone command', () => {
           ...yargArgs,
           ...config,
 
-          step: i,
+          step: steps[i].getId(),
 
           dir: 'temp/clone/steps',
 
@@ -370,6 +387,18 @@ describe('hub clone command', () => {
 
         const loadLog = new FileLog();
         await loadLog.loadFromFile('temp/clone/steps/step' + i + '.log');
+      }
+    });
+
+    it('should only have one of each type of step', () => {
+      const stepsSoFar = new Set<CloneHubStepId>();
+
+      for (const step of steps) {
+        const id = step.getId();
+
+        expect(stepsSoFar.has(id)).toBeFalsy();
+
+        stepsSoFar.add(id);
       }
     });
   });
@@ -565,7 +594,7 @@ describe('hub clone command', () => {
           ...yargArgs,
           ...config,
 
-          step: i,
+          step: steps[i].getId(),
 
           dir: 'temp/clone-revert/step',
 

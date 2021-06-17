@@ -1,4 +1,4 @@
-import { CloneHubStep } from '../model/clone-hub-step';
+import { CloneHubStep, CloneHubStepId } from '../model/clone-hub-step';
 import { CloneHubState } from '../model/clone-hub-state';
 import { join } from 'path';
 
@@ -9,6 +9,10 @@ import { FileLog } from '../../../common/file-log';
 import { existsSync } from 'fs';
 
 export class TypeCloneStep implements CloneHubStep {
+  getId(): CloneHubStepId {
+    return CloneHubStepId.Type;
+  }
+
   getName(): string {
     return 'Clone Content Types';
   }

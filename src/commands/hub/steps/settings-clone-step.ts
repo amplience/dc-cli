@@ -1,4 +1,4 @@
-import { CloneHubStep } from '../model/clone-hub-step';
+import { CloneHubStep, CloneHubStepId } from '../model/clone-hub-step';
 import { CloneHubState } from '../model/clone-hub-state';
 import { join } from 'path';
 import { readdirSync } from 'fs';
@@ -8,6 +8,10 @@ import { handler as importSettings } from '../../settings/import';
 import { ensureDirectoryExists } from '../../../common/import/directory-utils';
 
 export class SettingsCloneStep implements CloneHubStep {
+  getId(): CloneHubStepId {
+    return CloneHubStepId.Settings;
+  }
+
   getName(): string {
     return 'Clone Settings';
   }
