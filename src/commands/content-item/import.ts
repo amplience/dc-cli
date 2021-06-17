@@ -241,6 +241,13 @@ const createOrUpdateContent = async (
 
   let result: ContentImportResult;
 
+  // Clear locale before import.
+  // It's possible to get a LOCALE_IMMUTABLE error if a locale is present in the created item.
+  // The locale will be set after creation.
+
+  let locale = item.locale;
+  item.locale = undefined;
+
   if (oldItem == null) {
     result = { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
   } else {
@@ -253,9 +260,11 @@ const createOrUpdateContent = async (
     result = { newItem: await oldItem.related.update(item), oldVersion };
   }
 
-  if (item.locale != null && result.newItem.locale != item.locale) {
-    await result.newItem.related.setLocale(item.locale);
+  if (locale != null && result.newItem.locale != locale) {
+    locale = (await result.newItem.related.setLocale(locale)).locale;
   }
+
+  item.locale = locale;
 
   return result;
 };
