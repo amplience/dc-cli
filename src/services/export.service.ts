@@ -4,6 +4,7 @@ import { URL } from 'url';
 import DataPresenter from '../view/data-presenter';
 import { asyncQuestion } from '../common/question-helpers';
 import { FileLog } from '../common/file-log';
+import sanitize from 'sanitize-filename';
 
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
@@ -11,6 +12,8 @@ export const uniqueFilenamePath = (dir: string, file = '', extension: string, ex
   if (dir.substr(-1) === path.sep) {
     dir = dir.slice(0, -1);
   }
+
+  file = sanitize(file, { replacement: '_' });
 
   let counter = 0;
   let uniqueFilename = '';

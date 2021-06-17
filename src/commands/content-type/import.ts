@@ -3,7 +3,7 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentRepository, ContentType, DynamicContent, Hub, Status } from 'dc-management-sdk-js';
-import { isEqual } from 'lodash';
+import { isEqual, difference, uniq, intersection } from 'lodash';
 import { table } from 'table';
 import chalk from 'chalk';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
@@ -19,8 +19,11 @@ export const desc = 'Import Content Types';
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('type', 'import', platform);
 
+let notFoundRepositories: string[] = [];
+
 export type CommandParameters = {
   sync: boolean;
+  skipAssign?: boolean;
 };
 
 export const builder = (yargs: Argv): void => {
@@ -40,6 +43,12 @@ export const builder = (yargs: Argv): void => {
     default: LOG_FILENAME,
     describe: 'Path to a log file to write to.',
     coerce: createLog
+  });
+
+  yargs.option('skipAssign', {
+    describe: 'Skip assigning content types to repositories.',
+    type: 'boolean',
+    default: false
   });
 };
 
@@ -209,8 +218,12 @@ export const synchronizeContentTypeRepositories = async (
 
   const contentTypeId = contentType.id || '';
 
-  const definedContentRepository = (contentType.repositories || []).filter(
+  const definedContentRepository = intersection(contentType.repositories || [], [...namedRepositories.keys()]).filter(
     (value, index, array) => array.indexOf(value) === index
+  );
+
+  notFoundRepositories = notFoundRepositories.concat(
+    difference(contentType.repositories, [...namedRepositories.keys()])
   );
 
   let changedAssignment = false;
@@ -240,7 +253,8 @@ export const processContentTypes = async (
   client: DynamicContent,
   hub: Hub,
   sync: boolean,
-  log: FileLog
+  log: FileLog,
+  skipAssign = false
 ): Promise<void> => {
   const data: string[][] = [];
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
@@ -274,6 +288,7 @@ export const processContentTypes = async (
 
     if (
       contentType.repositories &&
+      !skipAssign &&
       (await synchronizeContentTypeRepositories(
         new ContentTypeWithRepositoryAssignments({ ...contentType, ...contentTypeResult }),
         namedRepositories
@@ -286,13 +301,25 @@ export const processContentTypes = async (
   }
 
   log.appendLine(table(data, streamTableOptions));
+
+  if (!skipAssign && notFoundRepositories.length) {
+    log.appendLine('\nThe following Repositories were not found in destination Hub:');
+
+    uniq(notFoundRepositories).map(name => log.appendLine(`  ${name}`));
+  } else if (skipAssign) {
+    log.appendLine(
+      '\nContent types were not automatically registered to the repositories because of --skipAssign argument.'
+    );
+  }
+
+  log.appendLine();
 };
 
 export const handler = async (
   argv: Arguments<ImportBuilderOptions & ConfigurationParameters & CommandParameters>,
   idFilter?: string[]
 ): Promise<void> => {
-  const { dir, sync, logFile } = argv;
+  const { dir, sync, logFile, skipAssign } = argv;
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments
@@ -317,7 +344,7 @@ export const handler = async (
   for (const [filename, importedContentType] of Object.entries(importedContentTypes)) {
     importedContentTypes[filename] = storedContentTypeMapper(importedContentType, storedContentTypes);
   }
-  await processContentTypes(Object.values(importedContentTypes), client, hub, sync, log);
+  await processContentTypes(Object.values(importedContentTypes), client, hub, sync, log, skipAssign);
 
   await log.close();
 };

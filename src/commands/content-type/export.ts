@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentType, Status } from 'dc-management-sdk-js';
+import { ContentType, Status, ContentRepository } from 'dc-management-sdk-js';
 import { table } from 'table';
 import { streamTableOptions } from '../../common/table/table.consts';
 import chalk from 'chalk';
@@ -15,7 +15,7 @@ import {
 } from '../../services/export.service';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { validateNoDuplicateContentTypeUris } from './import';
-import { isEqual } from 'lodash';
+import { isEqual, compact } from 'lodash';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
@@ -62,10 +62,14 @@ export const builder = (yargs: Argv): void => {
 const equals = (a: ContentType, b: ContentType): boolean =>
   a.contentTypeUri === b.contentTypeUri && isEqual(a.settings, b.settings);
 
+interface ContentTypeWithRepositories extends ContentType {
+  repositories?: string[];
+}
+
 interface ExportRecord {
   readonly filename: string;
   readonly status: ExportResult;
-  readonly contentType: ContentType;
+  readonly contentType: ContentTypeWithRepositories;
 }
 
 export const filterContentTypesByUri = (listToFilter: ContentType[], contentTypeUriList: string[]): ContentType[] => {
@@ -87,14 +91,34 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
   return listToFilter.filter(contentType => contentTypeUriList.some(uri => contentType.contentTypeUri === uri));
 };
 
+export const getReposNamesForContentType = (
+  repositories: ContentRepository[] = [],
+  contentType: ContentType
+): string[] => {
+  return compact(
+    repositories
+      .filter(
+        repo =>
+          repo.contentTypes &&
+          repo.contentTypes.find(
+            el => el.hubContentTypeId === contentType.id && el.contentTypeUri === contentType.contentTypeUri
+          )
+      )
+      .map(repo => repo.name || '')
+  );
+};
+
 export const getExportRecordForContentType = (
-  contentType: ContentType,
+  contentType: ContentTypeWithRepositories,
   outputDir: string,
-  previouslyExportedContentTypes: { [filename: string]: ContentType }
+  previouslyExportedContentTypes: { [filename: string]: ContentType },
+  repositories?: ContentRepository[]
 ): ExportRecord => {
   const indexOfExportedContentType = Object.values(previouslyExportedContentTypes).findIndex(
     c => c.contentTypeUri === contentType.contentTypeUri
   );
+  contentType.repositories = getReposNamesForContentType(repositories, contentType);
+
   if (indexOfExportedContentType < 0) {
     const filename = uniqueFilename(
       outputDir,
@@ -132,7 +156,8 @@ type ExportsMap = {
 export const getContentTypeExports = (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
-  contentTypesBeingExported: ContentType[]
+  contentTypesBeingExported: ContentType[],
+  repositories?: ContentRepository[]
 ): [ExportRecord[], ExportsMap[]] => {
   const allExports: ExportRecord[] = [];
   const updatedExportsMap: ExportsMap[] = []; // uri x filename
@@ -141,8 +166,15 @@ export const getContentTypeExports = (
       continue;
     }
 
-    const exportRecord = getExportRecordForContentType(contentType, outputDir, previouslyExportedContentTypes);
+    const exportRecord = getExportRecordForContentType(
+      contentType,
+      outputDir,
+      previouslyExportedContentTypes,
+      repositories
+    );
+
     allExports.push(exportRecord);
+
     if (exportRecord.status === 'UPDATED') {
       updatedExportsMap.push({ uri: contentType.contentTypeUri, filename: exportRecord.filename });
     }
@@ -154,6 +186,7 @@ export const processContentTypes = async (
   outputDir: string,
   previouslyExportedContentTypes: { [filename: string]: ContentType },
   contentTypesBeingExported: ContentType[],
+  repositories: ContentRepository[] | undefined,
   log: FileLog,
   force: boolean
 ): Promise<void> => {
@@ -165,7 +198,8 @@ export const processContentTypes = async (
   const [allExports, updatedExportsMap] = getContentTypeExports(
     outputDir,
     previouslyExportedContentTypes,
-    contentTypesBeingExported
+    contentTypesBeingExported,
+    repositories
   );
   if (
     allExports.length === 0 ||
@@ -193,13 +227,14 @@ export const processContentTypes = async (
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, schemaId, logFile, force } = argv;
+  const client = dynamicContentClientFactory(argv);
+  const hub = await client.hubs.get(argv.hubId);
+  const log = logFile.open();
+  const repositories = (await paginator(hub.related.contentRepositories.list)) || [];
 
   const previouslyExportedContentTypes = loadJsonFromDirectory<ContentType>(dir, ContentType);
   validateNoDuplicateContentTypeUris(previouslyExportedContentTypes);
 
-  const client = dynamicContentClientFactory(argv);
-  const hub = await client.hubs.get(argv.hubId);
-  const log = logFile.open();
   const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
   if (argv.archived) {
     const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
@@ -207,7 +242,14 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   }
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypes = filterContentTypesByUri(storedContentTypes, schemaIdArray);
-  await processContentTypes(dir, previouslyExportedContentTypes, filteredContentTypes, log, force || false);
+  await processContentTypes(
+    dir,
+    previouslyExportedContentTypes,
+    filteredContentTypes,
+    repositories,
+    log,
+    force || false
+  );
 
   await log.close();
 };
