@@ -5,7 +5,7 @@ import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
-import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
@@ -153,7 +153,7 @@ export const getContentItems = async ({
   contentType
 }: {
   client: DynamicContent;
-  id?: string;
+  id?: string | string[];
   hubId: string;
   repoId?: string | string[];
   folderId?: string | string[];
@@ -165,7 +165,9 @@ export const getContentItems = async ({
     const contentItems: ContentItem[] = [];
 
     if (id != null) {
-      contentItems.push(await client.contentItems.get(id));
+      const itemIds = Array.isArray(id) ? id : [id];
+      const items = await Promise.all(itemIds.map(id => client.contentItems.get(id)));
+      contentItems.push(...items);
 
       return {
         contentItems,
@@ -192,7 +194,7 @@ export const getContentItems = async ({
         )
       : await Promise.all(
           contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: 'ACTIVE' });
+            const items = await paginator(source.related.contentItems.list, { status: Status.ACTIVE });
             contentItems.push(...items);
           })
         );

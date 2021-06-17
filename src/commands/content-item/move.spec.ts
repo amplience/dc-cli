@@ -18,7 +18,7 @@ import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-optio
 import { ItemTemplate, MockContent } from '../../common/dc-management-sdk-js/mock-content';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { getDefaultLogPath, createLog as createFileLog, createLog } from '../../common/log-helpers';
+import { getDefaultLogPath, createLog as createFileLog, createLog, openRevertLog } from '../../common/log-helpers';
 import * as copyConfig from '../../common/content-item/copy-config';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 import { FileLog } from '../../common/file-log';
@@ -59,7 +59,8 @@ describe('content-item move command', () => {
       expect(spyOption).toHaveBeenCalledWith('revertLog', {
         type: 'string',
         describe:
-          'Path to a log file to revert a move for. This will archive the most recently moved resources from the destination, unarchive from the source, and revert updated ones.'
+          'Path to a log file to revert a move for. This will archive the most recently moved resources from the destination, unarchive from the source, and revert updated ones.',
+        coerce: openRevertLog
       });
 
       expect(spyOption).toHaveBeenCalledWith('srcRepo', {
@@ -158,7 +159,9 @@ describe('content-item move command', () => {
       clientId: 'client-id',
       clientSecret: 'client-id',
       hubId: 'hub-id',
-      logFile: new FileLog()
+
+      logFile: new FileLog(),
+      revertLog: Promise.resolve(undefined)
     };
 
     beforeAll(async () => {
@@ -300,7 +303,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: 'temp/move/moveRevert.txt'
+        revertLog: openRevertLog('temp/move/moveRevert.txt')
       };
       await handler(argv);
 
@@ -316,7 +319,8 @@ describe('content-item move command', () => {
         clientSecret: 'acc2-secret',
         dir: '',
         hubId: 'hub2-id',
-        revertLog: 'temp/move/moveRevert.txt'
+        revertLog: expect.any(Promise),
+        logFile: expect.any(FileLog)
       });
 
       rimraf('temp/move/moveRevert.txt');
@@ -355,7 +359,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: 'temp/move/moveRevertFetch.txt'
+        revertLog: openRevertLog('temp/move/moveRevertFetch.txt')
       };
       await handler(argv);
 
@@ -366,8 +370,6 @@ describe('content-item move command', () => {
     });
 
     // should revert uninterrupted when unarchiving an item fails
-
-    // should abort early when passing a missing revert log
 
     it('should abort early when passing a missing revert log', async () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
@@ -390,7 +392,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: 'temp/move/moveRevertMissing.txt'
+        revertLog: openRevertLog('temp/move/moveRevertMissing.txt')
       };
       await handler(argv);
 
@@ -513,7 +515,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: 'temp/move/abort.txt'
+        revertLog: Promise.resolve(new FileLog())
       };
       await handler(argv);
 

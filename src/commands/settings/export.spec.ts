@@ -6,6 +6,7 @@ import readline from 'readline';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { promisify } from 'util';
 import { exists, unlink } from 'fs';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('readline');
@@ -27,12 +28,19 @@ describe('settings export command', (): void => {
     it('should configure yargs', () => {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
+      const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
 
       builder(argv);
 
       expect(spyPositional).toHaveBeenCalledWith('dir', {
         describe: 'Output directory for the exported Settings',
         type: 'string'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('f', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Overwrite settings without asking.'
       });
     });
   });
@@ -230,7 +238,8 @@ describe('settings export command', (): void => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: './'
+        dir: './',
+        logFile: new FileLog()
       };
 
       await handler(argv);

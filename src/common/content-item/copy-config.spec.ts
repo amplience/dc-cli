@@ -13,7 +13,9 @@ const yargArgs = {
   $0: 'test',
   _: ['test'],
   json: true,
-  logFile: new FileLog()
+
+  logFile: new FileLog(),
+  revertLog: Promise.resolve(undefined)
 };
 
 describe('copy-config', () => {

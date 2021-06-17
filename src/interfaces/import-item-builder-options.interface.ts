@@ -12,7 +12,7 @@ export interface ImportItemBuilderOptions {
   skipIncomplete?: boolean;
   excludeKeys?: boolean;
   media?: boolean;
-  logFile?: FileLog;
+  logFile: FileLog;
 
-  revertLog?: string;
+  revertLog: Promise<FileLog | undefined>;
 }

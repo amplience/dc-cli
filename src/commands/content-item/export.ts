@@ -9,12 +9,12 @@ import { uniqueFilenamePath, writeJsonToFile } from '../../services/export.servi
 
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { ContentItem, Folder, DynamicContent, Hub, ContentRepository } from 'dc-management-sdk-js';
+import { ContentItem, Folder, DynamicContent, Hub, ContentRepository, Status } from 'dc-management-sdk-js';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-item/content-mapping';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 
 interface PublishedContentItem {
@@ -64,7 +64,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -136,7 +137,7 @@ const getContentItems = async (
     // Add content items in repo base folder. Cache the other items so we don't have to request them again.
     let newItems: ContentItem[];
     try {
-      const allItems = await paginator(repository.related.contentItems.list, { status: 'ACTIVE' });
+      const allItems = await paginator(repository.related.contentItems.list, { status: Status.ACTIVE });
 
       Array.prototype.push.apply(repoItems, allItems);
       newItems = allItems.filter(item => item.folderId == null);
@@ -221,7 +222,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
 
   const folderToPathMap: Map<string, string> = new Map();
   const client = dynamicContentClientFactory(argv);
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = logFile.open();
   const hub = await client.hubs.get(argv.hubId);
 
   log.appendLine('Retrieving content items, please wait.');
@@ -345,7 +346,5 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     writeJsonToFile(resolvedPath, item);
   }
 
-  if (typeof logFile !== 'object') {
-    await log.close();
-  }
+  await log.close();
 };

@@ -5,7 +5,7 @@ import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
-import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
 
@@ -199,15 +199,13 @@ export const getContentItems = async ({
     folderId != null
       ? await Promise.all(
           folders.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: 'ARCHIVED' });
-
+            const items = await paginator(source.related.contentItems.list, { status: Status.ARCHIVED });
             contentItems.push(...items);
           })
         )
       : await Promise.all(
           contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: 'ARCHIVED' });
-
+            const items = await paginator(source.related.contentItems.list, { status: Status.ARCHIVED });
             contentItems.push(...items);
           })
         );

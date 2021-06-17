@@ -1,19 +1,16 @@
+import { CloneHubStepId } from '../commands/hub/model/clone-hub-step';
 import { CopyConfig } from '../common/content-item/copy-config';
 import { FileLog } from '../common/file-log';
 
-export interface CopyItemBuilderOptions {
-  srcRepo?: string;
-  srcFolder?: string;
-
-  dstRepo?: string;
-  dstFolder?: string;
+export interface CloneHubBuilderOptions {
+  dir: string;
 
   dstHubId?: string;
   dstClientId?: string;
   dstSecret?: string;
 
-  schemaId?: string[] | string;
-  name?: string[] | string;
+  revertLog: Promise<FileLog | undefined>;
+  step?: CloneHubStepId;
 
   mapFile?: string;
   force?: boolean;
@@ -23,13 +20,9 @@ export interface CopyItemBuilderOptions {
   logFile: FileLog;
   copyConfig?: string | CopyConfig;
 
-  revertLog: Promise<FileLog | undefined>;
-
   lastPublish?: boolean;
   publish?: boolean;
   republish?: boolean;
 
   excludeKeys?: boolean;
-
-  exportedIds?: string[];
 }

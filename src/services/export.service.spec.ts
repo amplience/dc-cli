@@ -4,6 +4,7 @@ import { uniqueFilename } from './export.service';
 import { ContentType } from 'dc-management-sdk-js';
 import * as readline from 'readline';
 import { table } from 'table';
+import { FileLog } from '../common/file-log';
 
 const mockQuestion = jest.fn();
 const mockClose = jest.fn();
@@ -95,7 +96,7 @@ describe('export service tests', () => {
       });
 
       const updatedExportsMap = [{ filename: 'my-export-filename', schemaId: 'my-content-type-uri' }];
-      const res = await promptToOverwriteExports(updatedExportsMap);
+      const res = await promptToOverwriteExports(updatedExportsMap, new FileLog());
 
       expect(res).toBeTruthy();
       expect(createInterfaceSpy).toHaveBeenCalledTimes(1);
@@ -112,7 +113,7 @@ describe('export service tests', () => {
       });
 
       const updatedExportsMap = [{ filename: 'my-export-filename', schemaId: 'my-content-type-uri' }];
-      const res = await promptToOverwriteExports(updatedExportsMap);
+      const res = await promptToOverwriteExports(updatedExportsMap, new FileLog());
 
       expect(res).toBeFalsy();
       expect(createInterfaceSpy).toHaveBeenCalledTimes(1);
@@ -129,7 +130,7 @@ describe('export service tests', () => {
       });
 
       const updatedExportsMap = [{ filename: 'my-export-filename', schemaId: 'my-content-type-uri' }];
-      const res = await promptToOverwriteExports(updatedExportsMap);
+      const res = await promptToOverwriteExports(updatedExportsMap, new FileLog());
 
       expect(res).toBeFalsy();
       expect(createInterfaceSpy).toHaveBeenCalledTimes(1);
@@ -144,15 +145,10 @@ describe('export service tests', () => {
   describe('nothingExportedExit', () => {
     it('should exit with an export message', () => {
       const writeSpy = jest.spyOn(process.stdout, 'write');
-      const exitSpy = jest.spyOn(process, 'exit');
-      const exitError = new Error('PROCESS EXIT INVOKED FOR TEST');
 
       writeSpy.mockImplementation();
-      exitSpy.mockImplementation(() => {
-        throw exitError;
-      });
 
-      expect(nothingExportedExit).toThrowError(exitError);
+      nothingExportedExit(new FileLog());
       expect(writeSpy.mock.calls).toMatchSnapshot();
     });
   });

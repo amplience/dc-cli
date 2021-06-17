@@ -1,4 +1,4 @@
-import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
@@ -10,6 +10,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentItem, Status } from 'dc-management-sdk-js';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { revert } from './import-revert';
+import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export const command = 'move';
 
@@ -23,7 +24,8 @@ export const builder = (yargs: Argv): void => {
     .option('revertLog', {
       type: 'string',
       describe:
-        'Path to a log file to revert a move for. This will archive the most recently moved resources from the destination, unarchive from the source, and revert updated ones.'
+        'Path to a log file to revert a move for. This will archive the most recently moved resources from the destination, unarchive from the source, and revert updated ones.',
+      coerce: openRevertLog
     })
 
     .option('srcRepo', {
@@ -140,7 +142,14 @@ export const builder = (yargs: Argv): void => {
 export const handler = async (argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
   argv.exportedIds = [];
 
-  if (argv.revertLog != null) {
+  const revertLog = await argv.revertLog;
+
+  if (revertLog) {
+    if (revertLog.errorLevel === LogErrorLevel.INVALID) {
+      console.error('Could not read the revert log.');
+      return;
+    }
+
     const copyConfig = await loadCopyConfig(argv, new FileLog());
 
     if (copyConfig == null) {
@@ -154,15 +163,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       clientSecret: copyConfig.srcSecret
     });
 
-    const log = new FileLog();
-    try {
-      await log.loadFromFile(argv.revertLog as string);
-    } catch (e) {
-      console.log('Could not open the import log! Aborting.');
-      return;
-    }
-
-    const toUnarchive = log.getData('MOVED'); // Undo moved content by unarchiving it.
+    const toUnarchive = revertLog.getData('MOVED'); // Undo moved content by unarchiving it.
 
     for (let i = 0; i < toUnarchive.length; i++) {
       const id = toUnarchive[i];
@@ -202,6 +203,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       dir: '', // unused
 
+      logFile: argv.logFile,
       revertLog: argv.revertLog
     });
   } else {

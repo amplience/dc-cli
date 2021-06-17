@@ -17,7 +17,10 @@ export const setForceFail = (fail: boolean): void => {
 export const handler = async (argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters>): Promise<boolean> => {
   calls.push(argv);
   const idOut = argv.exportedIds as string[];
-  idOut.push(...outputIds);
+
+  if (idOut) {
+    idOut.push(...outputIds);
+  }
 
   return !forceFail;
 };
