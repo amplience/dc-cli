@@ -1,13 +1,14 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 
 export const command = 'archive [id]';
 
@@ -15,6 +16,8 @@ export const desc = 'Archive Content Type Schemas';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('schema', 'archive', platform);
+
+export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Content Type Schema Archive Log');
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -54,7 +57,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: coerceLog
     });
 };
 
@@ -74,8 +78,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   if (id != null) {
     try {
       // Get the schema ID and use the other path, to avoid code duplication.
-      const contentTypeSchema: ContentTypeSchema = await client.contentTypeSchemas.get(id);
-      schemas = [contentTypeSchema];
+      const schemasIds = Array.isArray(id) ? id : [id];
+      schemas = await Promise.all(schemasIds.map(id => client.contentTypeSchemas.get(id)));
     } catch (e) {
       console.log(`Fatal error: could not find schema with ID ${id}. Error: \n${e.toString()}`);
       return;
@@ -83,7 +87,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(hubId);
-      schemas = await paginator(hub.related.contentTypeSchema.list, { status: 'ACTIVE' });
+      schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ACTIVE });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content type schemas to archive. Is your hub correct? Error: \n${e.toString()}`
@@ -131,8 +135,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
-  const timestamp = Date.now().toString();
-  const log = new ArchiveLog(`Content Type Schema Archive Log - ${timestamp}\n`);
+  const log = logFile.open();
 
   let successCount = 0;
 
@@ -140,7 +143,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     try {
       await schemas[i].related.archive();
 
-      log.addAction('ARCHIVE', `${schemas[i].schemaId}\n`);
+      log.addAction('ARCHIVE', `${schemas[i].schemaId}`);
       successCount++;
     } catch (e) {
       log.addComment(`ARCHIVE FAILED: ${schemas[i].schemaId}`);
@@ -155,9 +158,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
-  if (!silent && logFile) {
-    await log.writeToFile(logFile.replace('<DATE>', timestamp));
-  }
+  await log.close(!silent);
 
   console.log(`Archived ${successCount} content type schemas.`);
 };

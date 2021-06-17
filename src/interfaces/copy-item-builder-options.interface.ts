@@ -19,10 +19,11 @@ export interface CopyItemBuilderOptions {
   force?: boolean;
   validate?: boolean;
   skipIncomplete?: boolean;
-  logFile?: string | FileLog;
+  media?: boolean;
+  logFile: FileLog;
   copyConfig?: string | CopyConfig;
 
-  revertLog?: string;
+  revertLog: Promise<FileLog | undefined>;
 
   lastPublish?: boolean;
   publish?: boolean;

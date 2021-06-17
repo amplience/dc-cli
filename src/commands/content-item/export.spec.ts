@@ -3,12 +3,13 @@ import { dependsOn } from './__mocks__/dependant-content-helper';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import Yargs from 'yargs/yargs';
 import { ItemTemplate, getItemInfo, getItemName, MockContent } from '../../common/dc-management-sdk-js/mock-content';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { exists } from 'fs';
 import { promisify } from 'util';
 import readline from 'readline';
 
 import rmdir from 'rimraf';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('readline');
 jest.mock('../../services/dynamic-content-client-factory');
@@ -82,7 +83,8 @@ describe('content-item export command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -116,7 +118,8 @@ describe('content-item export command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
 
     beforeAll(async () => {

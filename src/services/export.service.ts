@@ -2,7 +2,9 @@ import fs from 'fs';
 import * as path from 'path';
 import { URL } from 'url';
 import DataPresenter from '../view/data-presenter';
-import readline from 'readline';
+import { asyncQuestion } from '../common/question-helpers';
+import { FileLog } from '../common/file-log';
+import sanitize from 'sanitize-filename';
 
 export type ExportResult = 'CREATED' | 'UPDATED' | 'UP-TO-DATE';
 
@@ -10,6 +12,8 @@ export const uniqueFilenamePath = (dir: string, file = '', extension: string, ex
   if (dir.substr(-1) === path.sep) {
     dir = dir.slice(0, -1);
   }
+
+  file = sanitize(file, { replacement: '_' });
 
   let counter = 0;
   let uniqueFilename = '';
@@ -38,43 +42,25 @@ export const writeJsonToFile = <T extends {}>(filename: string, resource: T): vo
   }
 };
 
-export const promptToOverwriteExports = (updatedExportsMap: { [key: string]: string }[]): Promise<boolean> => {
-  return new Promise((resolve): void => {
-    process.stdout.write('The following files will be overwritten:\n');
-    // display updatedExportsMap as a table of uri x filename
-    const itemMapFn = ({ filename, schemaId }: { filename: string; schemaId: string }): object => ({
-      File: filename,
-      'Schema ID': schemaId
-    });
-    new DataPresenter(updatedExportsMap).render({ itemMapFn });
-
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    rl.question('Do you want to continue (y/n)?: ', answer => {
-      rl.close();
-      return resolve(answer === 'y');
-    });
+export const promptToOverwriteExports = (
+  updatedExportsMap: { [key: string]: string }[],
+  log: FileLog
+): Promise<boolean> => {
+  log.appendLine('The following files will be overwritten:');
+  // display updatedExportsMap as a table of uri x filename
+  const itemMapFn = ({ filename, schemaId }: { filename: string; schemaId: string }): object => ({
+    File: filename,
+    'Schema ID': schemaId
   });
+  new DataPresenter(updatedExportsMap).render({ itemMapFn, printFn: log.appendLine.bind(log) });
+
+  return asyncQuestion('Do you want to continue (y/n)?: ', log);
 };
 
-export const promptToExportSettings = (filename: string): Promise<boolean> => {
-  return new Promise((resolve): void => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    rl.question(`Do you want to export setting to ${filename} (y/n)?: `, answer => {
-      rl.close();
-      return resolve(answer === 'y');
-    });
-  });
+export const promptToExportSettings = (filename: string, log: FileLog): Promise<boolean> => {
+  return asyncQuestion(`Do you want to export setting to ${filename} (y/n)?: `, log);
 };
 
-export const nothingExportedExit = (msg = 'Nothing was exported, exiting.\n'): void => {
-  process.stdout.write(msg);
-  process.exit(1);
+export const nothingExportedExit = (log: FileLog, msg = 'Nothing was exported, exiting.'): void => {
+  log.appendLine(msg);
 };

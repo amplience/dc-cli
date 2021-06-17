@@ -2,7 +2,7 @@ import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from '
 import { dependsOn, dependantType } from './__mocks__/dependant-content-helper';
 import * as reverter from './import-revert';
 import * as publish from '../../common/import/publish-queue';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Folder, ContentType } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -15,12 +15,17 @@ import rmdir from 'rimraf';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { MockContent, ItemTemplate } from '../../common/dc-management-sdk-js/mock-content';
 import { FileLog } from '../../common/file-log';
+import { MediaRewriter } from '../../common/media/media-rewriter';
 
 jest.mock('readline');
 jest.mock('./import-revert');
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/import/publish-queue');
-jest.mock('../../common/log-helpers');
+jest.mock('../../common/media/media-rewriter');
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 function rimraf(dir: string): Promise<Error> {
   return new Promise((resolve): void => {
@@ -118,10 +123,18 @@ describe('content-item import command', () => {
         describe: 'Exclude delivery keys when importing content items.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('media', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -135,7 +148,10 @@ describe('content-item import command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+
+      logFile: new FileLog(),
+      revertLog: Promise.resolve(undefined)
     };
 
     beforeEach(async () => {
@@ -1071,7 +1087,7 @@ describe('content-item import command', () => {
         ...yargArgs,
         ...config,
         dir: 'temp/import/unused/',
-        revertLog: 'log.txt'
+        revertLog: Promise.resolve(new FileLog())
       };
 
       expect(await handler(argv)).toBeTruthy();
@@ -1303,6 +1319,34 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsCreated).toEqual(0);
 
       await rimraf('temp/import/abort2/');
+    });
+
+    it('should call the media rewriter when --media is passed', async () => {
+      const templates: ItemTemplate[] = [{ label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }];
+
+      await createContent('temp/import/media1/', templates, false);
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('targetRepo');
+      mockContent.registerContentType('http://type', 'type', 'targetRepo');
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: 'temp/import/media1/',
+        mapFile: 'temp/import/media1.json',
+        baseRepo: 'targetRepo',
+        media: true
+      };
+      await handler(argv);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((MediaRewriter as any).rewrites).toEqual(1);
+
+      expect(mockContent.metrics.itemsCreated).toEqual(1);
+      expect(mockContent.metrics.itemsUpdated).toEqual(0);
+
+      await rimraf('temp/import/media1/');
     });
   });
 });

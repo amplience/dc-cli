@@ -9,6 +9,7 @@ import {
   getContentTypeSchemaExports,
   getExportRecordForContentTypeSchema,
   handler,
+  LOG_FILENAME,
   processContentTypeSchemas,
   writeSchemaBody
 } from './export';
@@ -17,9 +18,11 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ContentTypeSchema, ValidationLevel } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import * as exportServiceModule from '../../services/export.service';
-import { createStream } from 'table';
+import { table } from 'table';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
+import { FileLog } from '../../common/file-log';
+import { createLog } from '../../common/log-helpers';
 
 jest.mock('fs');
 jest.mock('../../services/import.service');
@@ -61,10 +64,21 @@ describe('content-type-schema export command', (): void => {
           'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
         requiresArg: true
       });
+      expect(spyOption).toHaveBeenCalledWith('f', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Overwrite content type schema without asking.'
+      });
       expect(spyOption).toHaveBeenCalledWith('archived', {
         type: 'boolean',
         describe: 'If present, archived content type schemas will also be considered.',
         boolean: true
+      });
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -75,7 +89,8 @@ describe('content-type-schema export command', (): void => {
     let mockGetContentTypeSchemaExports: jest.SpyInstance;
     let mockWriteJsonToFile: jest.SpyInstance;
     let mockWriteSchemaBody: jest.SpyInstance;
-    const mockStreamWrite = jest.fn();
+    let mockTable: jest.Mock;
+
     const exportedContentTypeSchemas = [
       {
         schemaId: 'content-type-schema-id-1',
@@ -106,9 +121,8 @@ describe('content-type-schema export command', (): void => {
       mockGetContentTypeSchemaExports = jest.spyOn(exportModule, 'getContentTypeSchemaExports');
       mockWriteSchemaBody = jest.spyOn(exportModule, 'writeSchemaBody');
       mockWriteJsonToFile = jest.spyOn(exportServiceModule, 'writeJsonToFile');
-      (createStream as jest.Mock).mockReturnValue({
-        write: mockStreamWrite
-      });
+      mockTable = table as jest.Mock;
+      mockTable.mockImplementation(jest.requireActual('table').table);
       mockWriteJsonToFile.mockImplementation();
       mockWriteSchemaBody.mockImplementation();
     });
@@ -142,7 +156,7 @@ describe('content-type-schema export command', (): void => {
         []
       ]);
 
-      await processContentTypeSchemas('export-dir', {}, contentTypeSchemasToProcess);
+      await processContentTypeSchemas('export-dir', {}, contentTypeSchemasToProcess, new FileLog(), false);
 
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledWith('export-dir', {}, contentTypeSchemasToProcess);
@@ -155,8 +169,8 @@ describe('content-type-schema export command', (): void => {
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(3);
       expect(mockWriteSchemaBody.mock.calls).toMatchSnapshot();
 
-      expect(mockStreamWrite).toHaveBeenCalledTimes(4);
-      expect(mockStreamWrite.mock.calls).toMatchSnapshot();
+      expect(mockTable).toHaveBeenCalledTimes(1);
+      expect(mockTable.mock.calls).toMatchSnapshot();
     });
 
     it('should not output any export files if a previous export exists and the content type is unchanged', async () => {
@@ -184,7 +198,13 @@ describe('content-type-schema export command', (): void => {
       const previouslyExportedContentTypeSchemas = {
         'export-dir/export-filename-2.json': contentTypeSchemasToProcess[1]
       };
-      await processContentTypeSchemas('export-dir', previouslyExportedContentTypeSchemas, contentTypeSchemasToProcess);
+      await processContentTypeSchemas(
+        'export-dir',
+        previouslyExportedContentTypeSchemas,
+        contentTypeSchemasToProcess,
+        new FileLog(),
+        false
+      );
 
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledWith(
@@ -197,8 +217,8 @@ describe('content-type-schema export command', (): void => {
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
 
-      expect(mockStreamWrite).toHaveBeenCalledTimes(4);
-      expect(mockStreamWrite.mock.calls).toMatchSnapshot();
+      expect(mockTable).toHaveBeenCalledTimes(1);
+      expect(mockTable.mock.calls).toMatchSnapshot();
     });
 
     it('should update the existing export file for a changed content type', async () => {
@@ -241,7 +261,13 @@ describe('content-type-schema export command', (): void => {
         'export-dir/export-filename-3.json': contentTypeSchemasToProcess[2]
       };
 
-      await processContentTypeSchemas('export-dir', previouslyExportedContentTypeSchemas, mutatedContentTypeSchemas);
+      await processContentTypeSchemas(
+        'export-dir',
+        previouslyExportedContentTypeSchemas,
+        mutatedContentTypeSchemas,
+        new FileLog(),
+        false
+      );
 
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledWith(
@@ -258,8 +284,8 @@ describe('content-type-schema export command', (): void => {
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(1);
       expect(mockWriteSchemaBody.mock.calls).toMatchSnapshot();
 
-      expect(mockStreamWrite).toHaveBeenCalledTimes(4);
-      expect(mockStreamWrite.mock.calls).toMatchSnapshot();
+      expect(mockTable).toHaveBeenCalledTimes(1);
+      expect(mockTable.mock.calls).toMatchSnapshot();
     });
 
     it('should not update anything if the user says "n" to the overwrite prompt', async () => {
@@ -271,10 +297,6 @@ describe('content-type-schema export command', (): void => {
         validationLevel: ValidationLevel.CONTENT_TYPE
       });
 
-      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
-      jest.spyOn(process, 'exit').mockImplementation(() => {
-        throw exitError;
-      });
       const stdoutSpy = jest.spyOn(process.stdout, 'write');
       stdoutSpy.mockImplementation();
 
@@ -309,9 +331,13 @@ describe('content-type-schema export command', (): void => {
         'export-dir/export-filename-3.json': contentTypeSchemasToProcess[2]
       };
 
-      await expect(
-        processContentTypeSchemas('export-dir', previouslyExportedContentTypeSchemas, mutatedContentTypeSchemas)
-      ).rejects.toThrowError(exitError);
+      await processContentTypeSchemas(
+        'export-dir',
+        previouslyExportedContentTypeSchemas,
+        mutatedContentTypeSchemas,
+        new FileLog(),
+        false
+      );
 
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(1);
@@ -324,19 +350,14 @@ describe('content-type-schema export command', (): void => {
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
-      expect(mockStreamWrite).toHaveBeenCalledTimes(0);
-      expect(process.exit).toHaveBeenCalled();
+      expect(mockTable).toHaveBeenCalledTimes(0);
     });
 
     it('should not do anything if the list of schemas to export is empty', async () => {
-      const exitError = new Error('ERROR TO VALIDATE PROCESS EXIT');
-      jest.spyOn(process, 'exit').mockImplementation(() => {
-        throw exitError;
-      });
       const stdoutSpy = jest.spyOn(process.stdout, 'write');
       stdoutSpy.mockImplementation();
 
-      await expect(processContentTypeSchemas('export-dir', {}, [])).rejects.toThrowError(exitError);
+      expect(processContentTypeSchemas('export-dir', {}, [], new FileLog(), false));
 
       expect(stdoutSpy.mock.calls).toMatchSnapshot();
       expect(mockGetContentTypeSchemaExports).toHaveBeenCalledTimes(0);
@@ -344,8 +365,7 @@ describe('content-type-schema export command', (): void => {
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(mockWriteJsonToFile).toHaveBeenCalledTimes(0);
       expect(mockWriteSchemaBody).toHaveBeenCalledTimes(0);
-      expect(mockStreamWrite).toHaveBeenCalledTimes(0);
-      expect(process.exit).toHaveBeenCalled();
+      expect(mockTable).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -597,7 +617,8 @@ describe('content-type-schema export command', (): void => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
     const contentTypeSchemasToExport: ContentTypeSchema[] = [
       new ContentTypeSchema({
@@ -644,6 +665,10 @@ describe('content-type-schema export command', (): void => {
       });
     });
 
+    function expectProcessArguments(dir: string, schemas: ContentTypeSchema[]): void {
+      expect(processContentTypeSchemasSpy.mock.calls[0].slice(0, 3)).toEqual([dir, {}, schemas]);
+    }
+
     it('should export all content type schemas for the current hub', async (): Promise<void> => {
       filterContentTypeSchemasBySchemaIdSpy.mockReturnValue(contentTypeSchemasToExport);
 
@@ -655,7 +680,7 @@ describe('content-type-schema export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+      expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
 
     it('should ignore any resolve schema errors', async (): Promise<void> => {
@@ -670,7 +695,7 @@ describe('content-type-schema export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+      expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
 
     it('should export all content type schemas for the current hub if schemaId is not supplied', async (): Promise<
@@ -686,7 +711,7 @@ describe('content-type-schema export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+      expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
 
     it('should export only the specified content type schema when schemaId is provided', async (): Promise<void> => {
@@ -703,7 +728,7 @@ describe('content-type-schema export command', (): void => {
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, [
         'content-type-schema-id-1'
       ]);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, filteredContentTypeSchemas);
+      expectProcessArguments(argv.dir, filteredContentTypeSchemas);
     });
 
     it('should export all content type schemas when schemaId is undefined', async (): Promise<void> => {
@@ -715,7 +740,7 @@ describe('content-type-schema export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+      expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
 
     it('should export all content type schemas when schemaId is an empty array', async (): Promise<void> => {
@@ -727,7 +752,7 @@ describe('content-type-schema export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+      expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
 
     it('should export even archived content type schemas when --archived is provided', async (): Promise<void> => {
@@ -739,7 +764,7 @@ describe('content-type-schema export command', (): void => {
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, ContentTypeSchema);
       expect(resolveSchemaBodyMock).toHaveBeenCalledWith({}, 'my-dir');
       expect(filterContentTypeSchemasBySchemaIdSpy).toHaveBeenCalledWith(contentTypeSchemasToExport, []);
-      expect(processContentTypeSchemasSpy).toHaveBeenCalledWith(argv.dir, {}, contentTypeSchemasToExport);
+      expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
   });
 

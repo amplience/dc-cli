@@ -5,9 +5,10 @@ import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
-import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { getDefaultLogPath, createLog } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 
 export const command = 'archive [id]';
 
@@ -15,6 +16,8 @@ export const desc = 'Archive Content Items';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('content-item', 'archive', platform);
+
+export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Content Items Archive Log');
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -69,7 +72,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: coerceLog
     });
 };
 
@@ -149,7 +153,7 @@ export const getContentItems = async ({
   contentType
 }: {
   client: DynamicContent;
-  id?: string;
+  id?: string | string[];
   hubId: string;
   repoId?: string | string[];
   folderId?: string | string[];
@@ -161,7 +165,9 @@ export const getContentItems = async ({
     const contentItems: ContentItem[] = [];
 
     if (id != null) {
-      contentItems.push(await client.contentItems.get(id));
+      const itemIds = Array.isArray(id) ? id : [id];
+      const items = await Promise.all(itemIds.map(id => client.contentItems.get(id)));
+      contentItems.push(...items);
 
       return {
         contentItems,
@@ -188,7 +194,7 @@ export const getContentItems = async ({
         )
       : await Promise.all(
           contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: 'ACTIVE' });
+            const items = await paginator(source.related.contentItems.list, { status: Status.ACTIVE });
             contentItems.push(...items);
           })
         );
@@ -226,7 +232,7 @@ export const processItems = async ({
   contentItems: ContentItem[];
   force?: boolean;
   silent?: boolean;
-  logFile?: string;
+  logFile: FileLog;
   allContent: boolean;
   missingContent: boolean;
   ignoreError?: boolean;
@@ -249,16 +255,24 @@ export const processItems = async ({
     }
   }
 
-  const timestamp = Date.now().toString();
-  const log = new ArchiveLog(`Content Items Archive Log - ${timestamp}\n`);
+  const log = logFile.open();
 
   let successCount = 0;
 
   for (let i = 0; i < contentItems.length; i++) {
     try {
+      const deliveryKey = contentItems[i].body._meta.deliveryKey;
+      let args = contentItems[i].id;
+      if (deliveryKey) {
+        contentItems[i].body._meta.deliveryKey = null;
+
+        contentItems[i] = await contentItems[i].related.update(contentItems[i]);
+
+        args += ` ${deliveryKey}`;
+      }
       await contentItems[i].related.archive();
 
-      log.addAction('ARCHIVE', `${contentItems[i].id}\n`);
+      log.addAction('ARCHIVE', `${args}`);
       successCount++;
     } catch (e) {
       log.addComment(`ARCHIVE FAILED: ${contentItems[i].id}`);
@@ -273,9 +287,7 @@ export const processItems = async ({
     }
   }
 
-  if (!silent && logFile) {
-    await log.writeToFile(logFile.replace('<DATE>', timestamp));
-  }
+  await log.close(!silent);
 
   console.log(`Archived ${successCount} content items.`);
 };
@@ -284,7 +296,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, name, contentType } = argv;
   const client = dynamicContentClientFactory(argv);
 
-  const allContent = !id && !name && !contentType && !revertLog;
+  const allContent = !id && !name && !contentType && !revertLog && !folderId && !repoId;
 
   if (repoId && id) {
     console.log('ID of content item is specified, ignoring repository ID');

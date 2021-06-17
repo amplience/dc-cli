@@ -9,6 +9,8 @@ import rmdir from 'rimraf';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { MockContent, ItemTemplate } from '../../common/dc-management-sdk-js/mock-content';
 import { Status } from 'dc-management-sdk-js';
+import { FileLog } from '../../common/file-log';
+import { openRevertLog } from '../../common/log-helpers';
 
 jest.mock('readline');
 jest.mock('../../services/dynamic-content-client-factory');
@@ -28,7 +30,8 @@ describe('revert tests', function() {
   const config = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    logFile: new FileLog()
   };
 
   beforeAll(async () => {
@@ -75,7 +78,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/createOnly.txt',
+      revertLog: openRevertLog('temp/revert/createOnly.txt'),
       dir: '.'
     };
     await revert(argv);
@@ -108,7 +111,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/createImport.txt',
+      revertLog: openRevertLog('temp/revert/createImport.txt'),
       dir: '.'
     };
     await revert(argv);
@@ -171,7 +174,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/createWarn.txt',
+      revertLog: openRevertLog('temp/revert/createWarn.txt'),
       dir: '.'
     };
     await revert(argv);
@@ -212,7 +215,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/revertAbort.txt',
+      revertLog: openRevertLog('temp/revert/revertAbort.txt'),
       dir: '.'
     };
     const result = await revert(argv);
@@ -255,7 +258,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/revertSkip.txt',
+      revertLog: openRevertLog('temp/revert/revertSkip.txt'),
       dir: '.'
     };
     const result = await revert(argv);
@@ -292,7 +295,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/revertEmpty.txt',
+      revertLog: openRevertLog('temp/revert/revertEmpty.txt'),
       dir: '.'
     };
     await revert(argv);
@@ -330,7 +333,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/revertSkip.txt',
+      revertLog: openRevertLog('temp/revert/revertSkip.txt'),
       dir: '.'
     };
     const result = await revert(argv);
@@ -366,7 +369,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/revertSkip2.txt',
+      revertLog: openRevertLog('temp/revert/revertSkip2.txt'),
       dir: '.'
     };
     const result = await revert(argv);
@@ -401,16 +404,25 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: 'temp/revert/revertMissing.txt',
-      dir: '.'
+      dir: '.',
+      revertLog: Promise.resolve(undefined)
     };
     const result = await revert(argv);
 
     expect(result).toBeFalsy();
 
-    // check items were archived appropriately
+    const argv2 = {
+      ...yargArgs,
+      ...config,
+      dir: '.',
+      revertLog: openRevertLog('temp/revert/missing.txt')
+    };
+    const result2 = await revert(argv2);
+
+    expect(result2).toBeFalsy();
+
+    // check items were not updated or archived
     expect(mockContent.metrics.itemsUpdated).toEqual(0);
-    // check items were archived appropriately
     expect(mockContent.metrics.itemsArchived).toEqual(0);
   });
 });

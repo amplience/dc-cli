@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentType } from 'dc-management-sdk-js';
+import { ContentType, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -8,7 +8,8 @@ import { equalsOrRegex } from '../../common/filter/filter';
 
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { FileLog } from '../../common/file-log';
 
 export const command = 'archive [id]';
 
@@ -16,6 +17,8 @@ export const desc = 'Archive Content Types';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('type', 'archive', platform);
+
+export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Content Type Archive Log');
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -55,7 +58,8 @@ export const builder = (yargs: Argv): void => {
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: coerceLog
     });
 };
 
@@ -75,8 +79,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
 
   if (id != null) {
     try {
-      const contentType: ContentType = await client.contentTypes.get(id);
-      types = [contentType];
+      const typeIds = Array.isArray(id) ? id : [id];
+      types = await Promise.all(typeIds.map(id => client.contentTypes.get(id)));
     } catch (e) {
       console.log(`Fatal error: could not find content type with ID ${id}. Error: \n${e.toString()}`);
       return;
@@ -84,7 +88,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(argv.hubId);
-      types = await paginator(hub.related.contentTypes.list, { status: 'ACTIVE' });
+      types = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content types to archive. Is your hub correct? Error: \n${e.toString()}`
@@ -133,9 +137,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
-  const timestamp = Date.now().toString();
-
-  const log = new ArchiveLog(`Content Type Archive Log - ${timestamp}\n`);
+  const log = logFile.open();
 
   let successCount = 0;
 
@@ -160,9 +162,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     }
   }
 
-  if (!silent && logFile) {
-    await log.writeToFile(logFile.replace('<DATE>', timestamp));
-  }
+  await log.close(!silent);
 
   console.log(`Archived ${successCount} content types.`);
 };

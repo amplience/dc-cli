@@ -1,4 +1,4 @@
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { join } from 'path';
 import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-options.interface';
@@ -8,9 +8,10 @@ import rmdir from 'rimraf';
 import { handler as exporter } from './export';
 import { handler as importer } from './import';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { FileLog } from '../../common/file-log';
 import { revert } from './import-revert';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
+import { FileLog } from '../../common/file-log';
+import { LogErrorLevel } from '../../common/archive/archive-log';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -28,7 +29,8 @@ export const builder = (yargs: Argv): void => {
     .option('revertLog', {
       type: 'string',
       describe:
-        'Path to a log file to revert a copy for. This will archive the most recently copied resources, and revert updated ones.'
+        'Path to a log file to revert a copy for. This will archive the most recently copied resources, and revert updated ones.',
+      coerce: openRevertLog
     })
 
     .option('srcRepo', {
@@ -127,10 +129,18 @@ export const builder = (yargs: Argv): void => {
       describe: 'Exclude delivery keys when importing content items.'
     })
 
+    .option('media', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+    })
+
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.'
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -141,8 +151,7 @@ function rimraf(dir: string): Promise<Error> {
 }
 
 export const handler = async (argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters>): Promise<boolean> => {
-  const logFile = argv.logFile;
-  const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+  const log = argv.logFile.open();
   const tempFolder = getTempFolder(Date.now().toString());
 
   const yargArgs = {
@@ -161,7 +170,15 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   const { srcHubId, srcClientId, srcSecret, dstHubId, dstClientId, dstSecret } = copyConfig;
 
-  if (argv.revertLog) {
+  const revertLog = await argv.revertLog;
+
+  if (revertLog) {
+    if (revertLog.errorLevel === LogErrorLevel.INVALID) {
+      log.error('Could not read the revert log.');
+      await log.close();
+      return false;
+    }
+
     result = await revert({
       ...yargArgs,
 
@@ -170,6 +187,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       clientSecret: dstSecret,
 
       dir: tempFolder, // unused
+      logFile: new FileLog(),
 
       revertLog: argv.revertLog
     });
@@ -213,12 +231,15 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         force: argv.force,
         validate: argv.validate,
         skipIncomplete: argv.skipIncomplete,
-        logFile: log,
 
         republish: argv.republish,
         publish: argv.publish,
 
-        excludeKeys: argv.excludeKeys
+        excludeKeys: argv.excludeKeys,
+
+        media: argv.media,
+        logFile: log,
+        revertLog: Promise.resolve(undefined)
       });
 
       if (importResult) {
@@ -232,9 +253,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
     await rimraf(tempFolder);
   }
 
-  if (typeof logFile !== 'object') {
-    await log.close();
-  }
+  await log.close();
 
   return result;
 };

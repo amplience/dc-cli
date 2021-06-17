@@ -12,7 +12,10 @@ jest.mock('fs');
 const yargArgs = {
   $0: 'test',
   _: ['test'],
-  json: true
+  json: true,
+
+  logFile: new FileLog(),
+  revertLog: Promise.resolve(undefined)
 };
 
 describe('copy-config', () => {
@@ -90,7 +93,7 @@ describe('copy-config', () => {
 
     it('should return a config object based on the arguments when no config file argument is given', async () => {
       const log = new FileLog();
-      const argv: Arguments<ConfigurationParameters> = {
+      const argv: Arguments<ConfigurationParameters & CopyItemBuilderOptions> = {
         ...yargArgs,
         hubId: 'test',
         clientId: 'test2',

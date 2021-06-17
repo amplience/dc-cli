@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import { ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
@@ -83,7 +83,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   } else {
     try {
       const hub = await client.hubs.get(argv.hubId);
-      schemas = await paginator(hub.related.contentTypeSchema.list, { status: 'ARCHIVED' });
+      schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ARCHIVED });
     } catch (e) {
       console.log(
         `Fatal error: could not retrieve content type schemas to unarchive. Is your hub correct? Error: \n${e.toString()}`

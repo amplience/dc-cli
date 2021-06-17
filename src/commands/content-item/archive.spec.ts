@@ -1,4 +1,13 @@
-import { builder, command, handler, LOG_FILENAME, filterContentItems, getContentItems, processItems } from './archive';
+import {
+  builder,
+  command,
+  handler,
+  LOG_FILENAME,
+  filterContentItems,
+  getContentItems,
+  processItems,
+  coerceLog
+} from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentRepository, ContentItem, Folder } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -7,10 +16,17 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { dirname } from 'path';
 import { promisify } from 'util';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
+import { FileLog } from '../../common/file-log';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 
 jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
+
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 describe('content-item archive command', () => {
   afterEach((): void => {
@@ -24,9 +40,9 @@ describe('content-item archive command', () => {
   const config = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    logFile: new FileLog()
   };
-  const archiveMockFunc = jest.fn();
 
   const mockValues = (
     archiveError = false
@@ -36,16 +52,69 @@ describe('content-item archive command', () => {
     mockItemsList: () => void;
     mockArchive: () => void;
     mockItemGetById: () => void;
+    mockItemUpdate: () => void;
     mockRepoGet: () => void;
     mockFolderGet: () => void;
+    contentItems: ContentItem[];
   } => {
     const mockGet = jest.fn();
     const mockGetList = jest.fn();
     const mockItemsList = jest.fn();
     const mockArchive = jest.fn();
     const mockItemGetById = jest.fn();
+    const mockItemUpdate = jest.fn();
     const mockRepoGet = jest.fn();
     const mockFolderGet = jest.fn();
+
+    const contentItems = [
+      new ContentItem({
+        id: '1',
+        label: 'item1',
+        repoId: 'repo1',
+        folderId: 'folder1',
+        status: 'ACTIVE',
+        body: {
+          _meta: {
+            schema: 'http://test.com'
+          }
+        },
+        client: {
+          performActionThatReturnsResource: mockArchive,
+          updateResource: mockItemUpdate
+        },
+        _links: {
+          archive: {
+            href: 'https://api.amplience.net/v2/content/content-items/1/archive'
+          }
+        }
+      }),
+      new ContentItem({
+        id: '2',
+        label: 'item2',
+        repoId: 'repo1',
+        folderId: 'folder1',
+        status: 'ACTIVE',
+        body: {
+          _meta: {
+            schema: 'http://test1.com'
+          }
+        },
+        client: {
+          performActionThatReturnsResource: mockArchive,
+          updateResource: mockItemUpdate
+        },
+        _links: {
+          archive: {
+            href: 'https://api.amplience.net/v2/content/content-items/2/archive'
+          }
+        }
+      })
+    ];
+
+    contentItems[0].related.archive = mockArchive;
+    contentItems[0].related.update = mockItemUpdate;
+    contentItems[1].related.archive = mockArchive;
+    contentItems[1].related.update = mockItemUpdate;
 
     (dynamicContentClientFactory as jest.Mock).mockReturnValue({
       hubs: {
@@ -137,76 +206,13 @@ describe('content-item archive command', () => {
       })
     );
 
-    mockItemGetById.mockResolvedValue(
-      new ContentItem({
-        id: '1',
-        label: 'item1',
-        repoId: 'repo1',
-        folderId: 'folder1',
-        status: 'ACTIVE',
-        body: {
-          _meta: {
-            schema: 'http://test.com'
-          }
-        },
-        related: { archive: mockArchive },
-        client: {
-          performActionThatReturnsResource: mockArchive
-        },
-        _links: {
-          archive: {
-            href: 'https://api.amplience.net/v2/content/content-items/1/archive'
-          }
-        }
-      })
-    );
+    mockItemGetById.mockResolvedValue(contentItems[0]);
 
-    mockItemsList.mockResolvedValue(
-      new MockPage(ContentItem, [
-        new ContentItem({
-          id: '1',
-          label: 'item1',
-          repoId: 'repo1',
-          folderId: 'folder1',
-          status: 'ACTIVE',
-          body: {
-            _meta: {
-              schema: 'http://test.com'
-            }
-          },
-          related: { archive: mockArchive },
-          client: {
-            performActionThatReturnsResource: mockArchive
-          },
-          _links: {
-            archive: {
-              href: 'https://api.amplience.net/v2/content/content-items/1/archive'
-            }
-          }
-        }),
-        new ContentItem({
-          id: '2',
-          label: 'item2',
-          repoId: 'repo1',
-          folderId: 'folder1',
-          status: 'ACTIVE',
-          body: {
-            _meta: {
-              schema: 'http://test1.com'
-            }
-          },
-          client: {
-            performActionThatReturnsResource: mockArchive
-          },
-          _links: {
-            archive: {
-              href: 'https://api.amplience.net/v2/content/content-items/2/archive'
-            }
-          },
-          related: { archive: mockArchive }
-        })
-      ])
-    );
+    mockItemUpdate.mockResolvedValue(contentItems[0]);
+
+    mockArchive.mockResolvedValue(contentItems[0]);
+
+    mockItemsList.mockResolvedValue(new MockPage(ContentItem, contentItems));
 
     if (archiveError) {
       mockArchive.mockRejectedValue(new Error('Error'));
@@ -220,59 +226,12 @@ describe('content-item archive command', () => {
       mockItemsList,
       mockArchive,
       mockItemGetById,
+      mockItemUpdate,
       mockRepoGet,
-      mockFolderGet
+      mockFolderGet,
+      contentItems
     };
   };
-
-  const contentItems = [
-    new ContentItem({
-      id: '1',
-      label: 'item1',
-      repoId: 'repo1',
-      folderId: 'folder1',
-      status: 'ACTIVE',
-      body: {
-        _meta: {
-          schema: 'http://test.com'
-        }
-      },
-      related: { archive: archiveMockFunc },
-      client: {
-        performActionThatReturnsResource: archiveMockFunc
-      },
-      _links: {
-        archive: {
-          href: 'https://api.amplience.net/v2/content/content-items/1/archive'
-        }
-      }
-    }),
-    new ContentItem({
-      id: '2',
-      label: 'item2',
-      repoId: 'repo1',
-      folderId: 'folder1',
-      status: 'ACTIVE',
-      body: {
-        _meta: {
-          schema: 'http://test1.com'
-        }
-      },
-      client: {
-        performActionThatReturnsResource: archiveMockFunc
-      },
-      _links: {
-        archive: {
-          href: 'https://api.amplience.net/v2/content/content-items/2/archive'
-        }
-      },
-      related: { archive: archiveMockFunc }
-    })
-  ];
-
-  archiveMockFunc.mockResolvedValue({
-    message: 'Success'
-  });
 
   it('should command should defined', function() {
     expect(command).toEqual('archive [id]');
@@ -344,12 +303,26 @@ describe('content-item archive command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: coerceLog
       });
     });
   });
 
   describe('handler tests', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+      LOG_FILENAME();
+
+      expect(getDefaultLogPath).toHaveBeenCalledWith('content-item', 'archive', process.platform);
+    });
+
+    it('should generate a log with coerceLog with the appropriate title', function() {
+      const logFile = coerceLog('filename.log');
+
+      expect(logFile).toEqual(expect.any(FileLog));
+      expect(logFile.title).toMatch(/^Content Items Archive Log \- ./);
+    });
+
     it('should archive all content', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
@@ -687,7 +660,7 @@ describe('content-item archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const logFileName = 'temp/content-item-unrachive.log';
+      const logFileName = 'temp/content-item-unarchive.log';
       const log = '// Type log test file\n' + 'UNARCHIVE 1\n' + 'UNARCHIVE 2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -701,7 +674,6 @@ describe('content-item archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         silent: true,
         force: true,
         revertLog: logFileName
@@ -740,7 +712,7 @@ describe('content-item archive command', () => {
         await promisify(unlink)('temp/content-item-unarchive.log');
       }
 
-      const logFileName = 'temp/content-item-unrachive.log';
+      const logFileName = 'temp/content-item-unarchive.log';
       const log = '// Type log test file\n' + 'UNARCHIVE 1\n' + 'UNARCHIVE 2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -754,7 +726,6 @@ describe('content-item archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: LOG_FILENAME(),
         silent: true,
         force: true,
         revertLog: 'wrongFileName.log'
@@ -775,12 +746,14 @@ describe('content-item archive command', () => {
         await promisify(unlink)('temp/content-item-archive.log');
       }
 
-      const { mockItemGetById, mockArchive } = mockValues();
+      const { mockItemGetById, mockArchive, contentItems } = mockValues();
+
+      contentItems[0].body._meta.deliveryKey = 'delivery-key';
 
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/content-item-archive.log',
+        logFile: createLog('temp/content-item-archive.log'),
         id: '1'
       };
 
@@ -797,13 +770,19 @@ describe('content-item archive command', () => {
 
       const logLines = log.split('\n');
       let total = 0;
+      let deliveryKeys = 0;
       logLines.forEach(line => {
         if (line.indexOf('ARCHIVE') !== -1) {
           total++;
         }
+
+        if (line.indexOf('delivery-key') !== -1) {
+          deliveryKeys++;
+        }
       });
 
       expect(total).toEqual(1);
+      expect(deliveryKeys).toEqual(1);
 
       await promisify(unlink)('temp/content-item-archive.log');
     });
@@ -874,6 +853,8 @@ describe('content-item archive command', () => {
 
   describe('filterContentItems tests', () => {
     it('should filter content items', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems
       });
@@ -885,6 +866,8 @@ describe('content-item archive command', () => {
     });
 
     it('should filter content items by content type', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems,
         contentType: '/test.com/'
@@ -897,6 +880,8 @@ describe('content-item archive command', () => {
     });
 
     it('should filter content items by content types', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems,
         contentType: ['/test.com/', '/test1.com/']
@@ -909,6 +894,8 @@ describe('content-item archive command', () => {
     });
 
     it('should filter content items by name', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems,
         name: ['/item1/']
@@ -924,6 +911,8 @@ describe('content-item archive command', () => {
 
   describe('processItems tests', () => {
     it('should archive content items', async () => {
+      const { contentItems, mockArchive } = mockValues();
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
@@ -931,10 +920,10 @@ describe('content-item archive command', () => {
         contentItems,
         allContent: true,
         missingContent: false,
-        logFile: './logFile.log'
+        logFile: createLog('./logFile.log')
       });
 
-      expect(archiveMockFunc).toBeCalledTimes(2);
+      expect(mockArchive).toBeCalledTimes(2);
 
       if (await promisify(exists)('./logFile.log')) {
         await promisify(unlink)('./logFile.log');
@@ -947,7 +936,8 @@ describe('content-item archive command', () => {
       await processItems({
         contentItems: [],
         allContent: true,
-        missingContent: false
+        missingContent: false,
+        logFile: new FileLog()
       });
 
       expect(console.log).toBeCalled();

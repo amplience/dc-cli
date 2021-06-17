@@ -1,4 +1,4 @@
-import { builder, command, handler, LOG_FILENAME, getEvents } from './archive';
+import { builder, command, handler, LOG_FILENAME, getEvents, coerceLog } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Event, Edition, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -6,6 +6,7 @@ import readline from 'readline';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { promisify } from 'util';
 import { exists, readFile, unlink } from 'fs';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('readline');
 
@@ -24,7 +25,8 @@ describe('event archive command', () => {
   const config = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    logFile: new FileLog()
   };
 
   it('should command should defined', function() {
@@ -65,8 +67,16 @@ describe('event archive command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: coerceLog
       });
+    });
+
+    it('should generate a log with coerceLog with the appropriate title', function() {
+      const logFile = coerceLog('filename.log');
+
+      expect(logFile).toEqual(expect.any(FileLog));
+      expect(logFile.title).toMatch(/^Events Archive Log \- ./);
     });
   });
 
@@ -339,6 +349,24 @@ describe('event archive command', () => {
       expect(archiveMock).toBeCalledTimes(2);
     });
 
+    it('should archive events when multiple ids provided', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockGet, mockEditionsList, archiveMock } = mockValues({ status: 'PUBLISHED' });
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        id: ['1', '2']
+      };
+      await handler(argv);
+
+      expect(mockGet).toHaveBeenCalledTimes(4);
+      expect(mockEditionsList).toHaveBeenCalledTimes(2);
+      expect(archiveMock).toBeCalledTimes(4);
+    });
+
     it('should delete event with scheduled edition', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
@@ -554,7 +582,7 @@ describe('event archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile,
+        logFile: new FileLog(logFile),
         silent: false,
         id: '1'
       };
@@ -637,7 +665,7 @@ describe('event archive command', () => {
         ...yargArgs,
         ...config,
         silent: false,
-        logFile: 'temp/event-archive.log',
+        logFile: new FileLog('temp/event-archive.log'),
         id: '1'
       };
 

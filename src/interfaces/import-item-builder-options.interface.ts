@@ -11,7 +11,8 @@ export interface ImportItemBuilderOptions {
   validate?: boolean;
   skipIncomplete?: boolean;
   excludeKeys?: boolean;
-  logFile?: string | FileLog;
+  media?: boolean;
+  logFile: FileLog;
 
-  revertLog?: string;
+  revertLog: Promise<FileLog | undefined>;
 }

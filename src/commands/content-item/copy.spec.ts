@@ -13,7 +13,7 @@ import { Arguments } from 'yargs';
 import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import * as copyConfig from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 
@@ -22,7 +22,10 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./export');
 jest.mock('./import');
 jest.mock('./import-revert');
-jest.mock('../../common/log-helpers');
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 function rimraf(dir: string): Promise<Error> {
   return new Promise((resolve): void => {
@@ -49,7 +52,8 @@ describe('content-item copy command', () => {
       expect(spyOption).toHaveBeenCalledWith('revertLog', {
         type: 'string',
         describe:
-          'Path to a log file to revert a copy for. This will archive the most recently copied resources, and revert updated ones.'
+          'Path to a log file to revert a copy for. This will archive the most recently copied resources, and revert updated ones.',
+        coerce: openRevertLog
       });
 
       expect(spyOption).toHaveBeenCalledWith('srcRepo', {
@@ -147,10 +151,18 @@ describe('content-item copy command', () => {
         describe: 'Exclude delivery keys when importing content items.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('media', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -164,7 +176,10 @@ describe('content-item copy command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+
+      logFile: new FileLog(),
+      revertLog: Promise.resolve(undefined)
     };
 
     beforeAll(async () => {
@@ -227,7 +242,8 @@ describe('content-item copy command', () => {
         publish: true,
         republish: true,
 
-        excludeKeys: true
+        excludeKeys: true,
+        media: true
       };
       await handler(argv);
 
@@ -256,6 +272,7 @@ describe('content-item copy command', () => {
       expect(importCalls[0].republish).toEqual(argv.republish);
 
       expect(importCalls[0].excludeKeys).toEqual(argv.excludeKeys);
+      expect(importCalls[0].media).toEqual(argv.media);
     });
 
     it('should forward to import-revert when revertLog is present.', async () => {
@@ -274,7 +291,7 @@ describe('content-item copy command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: 'revertTest.txt'
+        revertLog: Promise.resolve(new FileLog())
       };
       await handler(argv);
 
@@ -286,6 +303,31 @@ describe('content-item copy command', () => {
       expect(revertCalls[0].clientSecret).toEqual(argv.dstSecret);
       expect(revertCalls[0].hubId).toEqual(argv.dstHubId);
       expect(revertCalls[0].revertLog).toEqual(argv.revertLog);
+    });
+
+    it('should exit early when revertLog is not present.', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const revertCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (reverter as any).calls;
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+
+        revertLog: openRevertLog('temp/copy/revertMissing.txt')
+      };
+      await handler(argv);
+
+      expect(exportCalls.length).toEqual(0);
+      expect(importCalls.length).toEqual(0);
+      expect(revertCalls.length).toEqual(0);
     });
 
     it('should return false and remove temp folder when import fails or throws.', async () => {
@@ -422,7 +464,7 @@ describe('content-item copy command', () => {
       expect(importCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
     });
 
-    it('should not close the log if provided as part of the arguments', async () => {
+    it('should not close the log if previously opened', async () => {
       const copyConfig = {
         srcHubId: 'hub2-id',
         srcClientId: 'acc2-id',
@@ -433,7 +475,7 @@ describe('content-item copy command', () => {
         dstSecret: 'acc2-secret'
       };
 
-      const log = new FileLog();
+      const log = new FileLog().open();
       const argv = {
         ...yargArgs,
         ...config,
