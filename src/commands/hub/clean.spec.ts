@@ -1,4 +1,5 @@
-import { builder, command, handler, LOG_FILENAME } from './clean';
+import { builder, command, handler, LOG_FILENAME, steps } from './clean';
+import { CleanHubStepId } from './model/clean-hub-step';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import Yargs from 'yargs/yargs';
 
@@ -25,18 +26,25 @@ function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mockStep(name: string, success: () => boolean): any {
+function mockStep(name: string, id: string, success: () => boolean): any {
   return jest.fn().mockImplementation(() => ({
     run: succeedOrFail(jest.fn(), success),
     revert: succeedOrFail(jest.fn(), success),
-    getName: jest.fn().mockReturnValue(name)
+    getName: jest.fn().mockReturnValue(name),
+    getId: jest.fn().mockReturnValue(id)
   }));
 }
 
-jest.mock('./steps/content-clean-step', () => ({ ContentCleanStep: mockStep('Clean Content', () => success[0]) }));
-jest.mock('./steps/type-clean-step', () => ({ TypeCleanStep: mockStep('Clean Content Types', () => success[1]) }));
+jest.mock('./steps/content-clean-step', () => ({
+  ContentCleanStep: mockStep('Clean Content', 'content', () => success[0])
+}));
+
+jest.mock('./steps/type-clean-step', () => ({
+  TypeCleanStep: mockStep('Clean Content Types', 'type', () => success[1])
+}));
+
 jest.mock('./steps/schema-clean-step', () => ({
-  SchemaCleanStep: mockStep('Clean Content Type Schemas', () => success[2])
+  SchemaCleanStep: mockStep('Clean Content Type Schemas', 'schema', () => success[2])
 }));
 
 jest.mock('../../common/log-helpers', () => ({
@@ -106,8 +114,9 @@ describe('hub clean command', () => {
       });
 
       expect(spyOption).toHaveBeenCalledWith('step', {
-        type: 'number',
-        describe: 'Start at a numbered step. 0: Schema, 1: Type, 2: Content'
+        type: 'string',
+        describe: 'Start at a specific step. Steps after the one you specify will also run.',
+        choices: steps.map(step => step.getId())
       });
     });
   });
@@ -201,7 +210,7 @@ describe('hub clean command', () => {
           ...yargArgs,
           ...config,
 
-          step: i,
+          step: Object.values(CleanHubStepId)[i],
           logFile: createLog('temp/clean/steps/step' + i + '.log'),
           force: true
         };
@@ -222,6 +231,18 @@ describe('hub clean command', () => {
 
         const loadLog = new FileLog();
         await loadLog.loadFromFile('temp/clean/steps/step' + i + '.log');
+      }
+    });
+
+    it('should only have one of each type of step', () => {
+      const stepsSoFar = new Set<CleanHubStepId>();
+
+      for (const step of steps) {
+        const id = step.getId();
+
+        expect(stepsSoFar.has(id)).toBeFalsy();
+
+        stepsSoFar.add(id);
       }
     });
   });

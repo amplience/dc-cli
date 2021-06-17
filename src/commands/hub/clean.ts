@@ -1,5 +1,5 @@
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { Argv, Arguments } from 'yargs';
+import { Argv, Arguments, choices } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 
 import { CleanHubBuilderOptions } from '../../interfaces/clean-hub-builder-options';
@@ -14,6 +14,8 @@ export const desc =
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('hub', 'clean', platform);
+
+export const steps = [new ContentCleanStep(), new TypeCleanStep(), new SchemaCleanStep()];
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -33,12 +35,11 @@ export const builder = (yargs: Argv): void => {
     })
 
     .option('step', {
-      type: 'number',
-      describe: 'Start at a numbered step. 0: Schema, 1: Type, 2: Content'
+      type: 'string',
+      describe: 'Start at a specific step. Steps after the one you specify will also run.',
+      choices: steps.map(step => step.getId())
     });
 };
-
-const steps = [new ContentCleanStep(), new TypeCleanStep(), new SchemaCleanStep()];
 
 export const handler = async (argv: Arguments<CleanHubBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const log = argv.logFile.open();
@@ -48,7 +49,9 @@ export const handler = async (argv: Arguments<CleanHubBuilderOptions & Configura
   // Steps system: Each step performs another part of the clean command.
   // If a step fails, we can return to that step on a future attempt.
 
-  for (let i = argv.step || 0; i < steps.length; i++) {
+  const stepIndex = Math.max(0, steps.findIndex(step => step.getId() === argv.step));
+
+  for (let i = stepIndex; i < steps.length; i++) {
     const step = steps[i];
 
     log.switchGroup(step.getName());
@@ -57,10 +60,10 @@ export const handler = async (argv: Arguments<CleanHubBuilderOptions & Configura
     const success = await step.run(argv);
 
     if (!success) {
-      log.appendLine(`Step ${i} (${step.getName()}) Failed. Terminating.`);
+      log.appendLine(`Step ${i} ('${step.getId()}': ${step.getName()}) Failed. Terminating.`);
       log.appendLine('');
       log.appendLine('To continue the clean from this point, use the option:');
-      log.appendLine(`--step ${i}`);
+      log.appendLine(`--step ${step.getId()}`);
 
       break;
     }

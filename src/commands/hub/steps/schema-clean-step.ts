@@ -3,9 +3,13 @@ import { FileLog } from '../../../common/file-log';
 import { CleanHubBuilderOptions } from '../../../interfaces/clean-hub-builder-options';
 import { ConfigurationParameters } from '../../configure';
 import { handler } from '../../content-type-schema/archive';
-import { CleanHubStep } from '../model/clean-hub-step';
+import { CleanHubStep, CleanHubStepId } from '../model/clean-hub-step';
 
 export class SchemaCleanStep implements CleanHubStep {
+  getId(): CleanHubStepId {
+    return CleanHubStepId.Schema;
+  }
+
   getName(): string {
     return 'Clean Content Type Schemas';
   }
