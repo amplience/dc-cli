@@ -7,6 +7,7 @@ import { join } from 'path';
 import * as archive from '../../content-type-schema/archive';
 
 import { SchemaCleanStep } from './schema-clean-step';
+import { CleanHubStepId } from '../model/clean-hub-step';
 
 jest.mock('../../../services/dynamic-content-client-factory');
 jest.mock('../../content-type-schema/archive');
@@ -42,6 +43,11 @@ describe('schema clean step', () => {
       logFile: new FileLog(join(directory, logName + '.log'))
     };
   }
+
+  it('should have the id "schema"', () => {
+    const step = new SchemaCleanStep();
+    expect(step.getId()).toEqual(CleanHubStepId.Schema);
+  });
 
   it('should have the name "Clean Content Type Schemas"', () => {
     const step = new SchemaCleanStep();

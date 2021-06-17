@@ -7,6 +7,7 @@ import { join } from 'path';
 import * as archive from '../../content-item/archive';
 
 import { ContentCleanStep } from './content-clean-step';
+import { CleanHubStepId } from '../model/clean-hub-step';
 
 jest.mock('../../../services/dynamic-content-client-factory');
 jest.mock('../../content-item/archive');
@@ -42,6 +43,11 @@ describe('content clean step', () => {
       logFile: new FileLog(join(directory, logName + '.log'))
     };
   }
+
+  it('should have the id "content"', () => {
+    const step = new ContentCleanStep();
+    expect(step.getId()).toEqual(CleanHubStepId.Content);
+  });
 
   it('should have the name "Clean Content"', () => {
     const step = new ContentCleanStep();
