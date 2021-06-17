@@ -1,5 +1,5 @@
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { Argv, Arguments, choices } from 'yargs';
+import { Argv, Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 
 import { CleanHubBuilderOptions } from '../../interfaces/clean-hub-builder-options';
