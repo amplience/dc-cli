@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.11.0](https://www.github.com/amplience/dc-cli/compare/v0.10.0...v0.11.0) (2021-06-17)
+
+
+### Features
+
+* **content-item:** add tree command, improved circular dependency import ([#91](https://www.github.com/amplience/dc-cli/issues/91)) ([39bdddf](https://www.github.com/amplience/dc-cli/commit/39bdddf540baeebcc44fb353d473a61218b2bd37))
+* **content-item:** detect and rewrite media links when importing with --media flag ([#71](https://www.github.com/amplience/dc-cli/issues/71)) ([3fd9437](https://www.github.com/amplience/dc-cli/commit/3fd94371df77d4b32964d8c7fff5e05b8fdd4f75))
+* **hub:** clean hub command ([#77](https://www.github.com/amplience/dc-cli/issues/77)) ([9fb7b80](https://www.github.com/amplience/dc-cli/commit/9fb7b807707379792f4ac278d833b4b4d03409da))
+* **hub:** clone hub command ([#76](https://www.github.com/amplience/dc-cli/issues/76)) ([0d6c43c](https://www.github.com/amplience/dc-cli/commit/0d6c43c53b3ec6d0c6ca36f9b9061ce013f1da1e))
+
+
+### Bug Fixes
+
+* **export:** content type schemas and content types special characters ([#69](https://www.github.com/amplience/dc-cli/issues/69)) ([d73104c](https://www.github.com/amplience/dc-cli/commit/d73104c73c5ce5de25c243d5df31bac67efdef4e))
+* strip locale before importing, then set it afterwards ([#70](https://www.github.com/amplience/dc-cli/issues/70)) ([10838fd](https://www.github.com/amplience/dc-cli/commit/10838fda47b793bae5af3b2fd3e1a72964ec9583))
+
 ## [0.10.0](https://www.github.com/amplience/dc-cli/compare/v0.9.0...v0.10.0) (2021-03-16)
 
 
