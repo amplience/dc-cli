@@ -1,3 +1,5 @@
+import { FileLog } from '../file-log';
+
 export default interface ArchiveOptions {
   id?: string;
   schemaId?: string | string[];
@@ -6,7 +8,7 @@ export default interface ArchiveOptions {
   folderId?: string | string[];
   name?: string | string[];
   contentType?: string | string[];
-  logFile?: string;
+  logFile: FileLog;
   force?: boolean;
   silent?: boolean;
   ignoreError?: boolean;

@@ -18,14 +18,18 @@ import { CopyItemBuilderOptions } from '../../interfaces/copy-item-builder-optio
 import { ItemTemplate, MockContent } from '../../common/dc-management-sdk-js/mock-content';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { getDefaultLogPath } from '../../common/log-helpers';
+import { getDefaultLogPath, createLog as createFileLog, createLog } from '../../common/log-helpers';
 import * as copyConfig from '../../common/content-item/copy-config';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
+import { FileLog } from '../../common/file-log';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./copy');
 jest.mock('./import-revert');
-jest.mock('../../common/log-helpers');
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const copierAny = copier as any;
@@ -138,7 +142,8 @@ describe('content-item move command', () => {
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
-        describe: 'Path to a log file to write to.'
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
       });
     });
   });
@@ -152,7 +157,8 @@ describe('content-item move command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      logFile: new FileLog()
     };
 
     beforeAll(async () => {
@@ -417,9 +423,7 @@ describe('content-item move command', () => {
 
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret',
-
-        logFile: LOG_FILENAME()
+        dstSecret: 'acc2-secret'
       };
       await handler(argv);
 
@@ -466,7 +470,7 @@ describe('content-item move command', () => {
         validate: false,
         skipIncomplete: false,
 
-        logFile: 'temp/move/failLog.txt'
+        logFile: createFileLog('temp/move/failLog.txt')
       };
       await handler(argv);
 
@@ -489,9 +493,7 @@ describe('content-item move command', () => {
 
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret',
-
-        logFile: LOG_FILENAME()
+        dstSecret: 'acc2-secret'
       };
       await handler(argv);
 

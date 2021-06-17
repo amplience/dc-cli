@@ -34,7 +34,6 @@ describe('content-item unarchive command', () => {
     clientSecret: 'client-id',
     hubId: 'hub-id'
   };
-  const unarchiveMockFunc = jest.fn();
 
   const mockValues = (
     unarchiveError = false
@@ -43,17 +42,70 @@ describe('content-item unarchive command', () => {
     mockGetList: () => void;
     mockItemsList: () => void;
     mockUnarchive: () => void;
+    mockItemUpdate: () => void;
     mockItemGetById: () => void;
     mockRepoGet: () => void;
     mockFolderGet: () => void;
+    contentItems: ContentItem[];
   } => {
     const mockGet = jest.fn();
     const mockGetList = jest.fn();
     const mockItemsList = jest.fn();
     const mockUnarchive = jest.fn();
+    const mockItemUpdate = jest.fn();
     const mockItemGetById = jest.fn();
     const mockRepoGet = jest.fn();
     const mockFolderGet = jest.fn();
+
+    const item = new ContentItem({
+      id: '1',
+      label: 'item1',
+      repoId: 'repo1',
+      folderId: 'folder1',
+      status: 'ARCHIVED',
+      body: {
+        _meta: {
+          schema: 'http://test.com'
+        }
+      },
+      client: {
+        performActionThatReturnsResource: mockUnarchive
+      },
+      _links: {
+        unarchive: {
+          href: 'https://api.amplience.net/v2/content/content-items/1/unarchive'
+        }
+      }
+    });
+
+    const contentItems = [
+      item,
+      new ContentItem({
+        id: '2',
+        label: 'item2',
+        repoId: 'repo1',
+        folderId: 'folder1',
+        status: 'ARCHIVED',
+        body: {
+          _meta: {
+            schema: 'http://test1.com'
+          }
+        },
+        client: {
+          performActionThatReturnsResource: mockUnarchive
+        },
+        _links: {
+          unarchive: {
+            href: 'https://api.amplience.net/v2/content/content-items/2/unarchive'
+          }
+        }
+      })
+    ];
+
+    contentItems[0].related.unarchive = mockUnarchive;
+    contentItems[0].related.update = mockItemUpdate;
+    contentItems[1].related.unarchive = mockUnarchive;
+    contentItems[1].related.update = mockItemUpdate;
 
     (dynamicContentClientFactory as jest.Mock).mockReturnValue({
       hubs: {
@@ -145,76 +197,11 @@ describe('content-item unarchive command', () => {
       })
     );
 
-    mockItemGetById.mockResolvedValue(
-      new ContentItem({
-        id: '1',
-        label: 'item1',
-        repoId: 'repo1',
-        folderId: 'folder1',
-        status: 'ACTIVE',
-        body: {
-          _meta: {
-            schema: 'http://test.com'
-          }
-        },
-        related: { unarchive: mockUnarchive },
-        client: {
-          performActionThatReturnsResource: mockUnarchive
-        },
-        _links: {
-          unarchive: {
-            href: 'https://api.amplience.net/v2/content/content-items/1/unarchive'
-          }
-        }
-      })
-    );
+    mockItemGetById.mockResolvedValue(item);
+    mockUnarchive.mockResolvedValue(item);
+    mockItemUpdate.mockResolvedValue(item);
 
-    mockItemsList.mockResolvedValue(
-      new MockPage(ContentItem, [
-        new ContentItem({
-          id: '1',
-          label: 'item1',
-          repoId: 'repo1',
-          folderId: 'folder1',
-          status: 'ACTIVE',
-          body: {
-            _meta: {
-              schema: 'http://test.com'
-            }
-          },
-          related: { unarchive: mockUnarchive },
-          client: {
-            performActionThatReturnsResource: mockUnarchive
-          },
-          _links: {
-            unarchive: {
-              href: 'https://api.amplience.net/v2/content/content-items/1/unarchive'
-            }
-          }
-        }),
-        new ContentItem({
-          id: '2',
-          label: 'item2',
-          repoId: 'repo1',
-          folderId: 'folder1',
-          status: 'ACTIVE',
-          body: {
-            _meta: {
-              schema: 'http://test1.com'
-            }
-          },
-          client: {
-            performActionThatReturnsResource: mockUnarchive
-          },
-          _links: {
-            unarchive: {
-              href: 'https://api.amplience.net/v2/content/content-items/2/unarchive'
-            }
-          },
-          related: { unarchive: mockUnarchive }
-        })
-      ])
-    );
+    mockItemsList.mockResolvedValue(new MockPage(ContentItem, contentItems));
 
     if (unarchiveError) {
       mockUnarchive.mockRejectedValue(new Error('Error'));
@@ -227,60 +214,13 @@ describe('content-item unarchive command', () => {
       mockGetList,
       mockItemsList,
       mockUnarchive,
+      mockItemUpdate,
       mockItemGetById,
       mockRepoGet,
-      mockFolderGet
+      mockFolderGet,
+      contentItems
     };
   };
-
-  const contentItems = [
-    new ContentItem({
-      id: '1',
-      label: 'item1',
-      repoId: 'repo1',
-      folderId: 'folder1',
-      status: 'ACTIVE',
-      body: {
-        _meta: {
-          schema: 'http://test.com'
-        }
-      },
-      related: { unarchive: unarchiveMockFunc },
-      client: {
-        performActionThatReturnsResource: unarchiveMockFunc
-      },
-      _links: {
-        unarchive: {
-          href: 'https://api.amplience.net/v2/content/content-items/1/unarchive'
-        }
-      }
-    }),
-    new ContentItem({
-      id: '2',
-      label: 'item2',
-      repoId: 'repo1',
-      folderId: 'folder1',
-      status: 'ACTIVE',
-      body: {
-        _meta: {
-          schema: 'http://test1.com'
-        }
-      },
-      client: {
-        performActionThatReturnsResource: unarchiveMockFunc
-      },
-      _links: {
-        unarchive: {
-          href: 'https://api.amplience.net/v2/content/content-items/2/unarchive'
-        }
-      },
-      related: { unarchive: unarchiveMockFunc }
-    })
-  ];
-
-  unarchiveMockFunc.mockResolvedValue({
-    message: 'Success'
-  });
 
   it('should command should defined', function() {
     expect(command).toEqual('unarchive [id]');
@@ -696,7 +636,7 @@ describe('content-item unarchive command', () => {
       (readline as any).setResponses(['y']);
 
       const logFileName = 'temp/content-item-unarchive.log';
-      const log = '// Type log test file\n' + 'ARCHIVE 1\n' + 'ARCHIVE 2\n' + 'ARCHIVE idMissing';
+      const log = '// Type log test file\n' + 'ARCHIVE 1\n' + 'ARCHIVE 2 delivery-key\n' + 'ARCHIVE idMissing';
 
       const dir = dirname(logFileName);
       if (!(await promisify(exists)(dir))) {
@@ -704,7 +644,7 @@ describe('content-item unarchive command', () => {
       }
       await promisify(writeFile)(logFileName, log);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues();
+      const { mockGet, mockGetList, mockUnarchive, mockItemsList, mockItemUpdate } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -719,6 +659,9 @@ describe('content-item unarchive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockGetList).toHaveBeenCalled();
       expect(mockItemsList).toHaveBeenCalled();
+      expect(mockItemUpdate).toHaveBeenCalled();
+      const updateItem: ContentItem = (mockItemUpdate as jest.Mock).mock.calls[0][0];
+      expect(updateItem.body._meta.deliveryKey).toEqual('delivery-key');
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
@@ -882,6 +825,8 @@ describe('content-item unarchive command', () => {
 
   describe('filterContentItems tests', () => {
     it('should filter content items', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems
       });
@@ -893,6 +838,8 @@ describe('content-item unarchive command', () => {
     });
 
     it('should filter content items by content type', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems,
         contentType: '/test.com/'
@@ -905,6 +852,8 @@ describe('content-item unarchive command', () => {
     });
 
     it('should filter content items by content types', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems,
         contentType: ['/test.com/', '/test1.com/']
@@ -917,6 +866,8 @@ describe('content-item unarchive command', () => {
     });
 
     it('should filter content items by name', async () => {
+      const { contentItems } = mockValues();
+
       const result = await filterContentItems({
         contentItems,
         name: ['/item1/']
@@ -932,6 +883,8 @@ describe('content-item unarchive command', () => {
 
   describe('processItems tests', () => {
     it('should unarchive content items', async () => {
+      const { contentItems, mockUnarchive } = mockValues();
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
@@ -942,7 +895,7 @@ describe('content-item unarchive command', () => {
         logFile: './logFile.log'
       });
 
-      expect(unarchiveMockFunc).toBeCalledTimes(2);
+      expect(mockUnarchive).toBeCalledTimes(2);
 
       if (await promisify(exists)('./logFile.log')) {
         await promisify(unlink)('./logFile.log');
