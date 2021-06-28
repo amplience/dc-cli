@@ -93,17 +93,17 @@ export const filterExtensionsById = (listToFilter: Extension[], extensionUriList
 export const getExportRecordForExtension = (
   extension: Extension,
   outputDir: string,
-  previouslyExportedContentTypes: { [filename: string]: Extension }
+  previouslyExportedExtensions: { [filename: string]: Extension }
 ): ExportRecord => {
-  const indexOfExportedContentType = Object.values(previouslyExportedContentTypes).findIndex(
+  const indexOfExportedExtension = Object.values(previouslyExportedExtensions).findIndex(
     c => c.name === extension.name
   );
 
-  if (indexOfExportedContentType < 0) {
-    const filename = uniqueFilenamePath(outputDir, extension.name, 'json', Object.keys(previouslyExportedContentTypes));
+  if (indexOfExportedExtension < 0) {
+    const filename = uniqueFilenamePath(outputDir, extension.name, 'json', Object.keys(previouslyExportedExtensions));
 
     // This filename is now used.
-    previouslyExportedContentTypes[filename] = extension;
+    previouslyExportedExtensions[filename] = extension;
 
     return {
       filename: filename,
@@ -111,9 +111,9 @@ export const getExportRecordForExtension = (
       extension
     };
   }
-  const filename = Object.keys(previouslyExportedContentTypes)[indexOfExportedContentType];
-  const previouslyExportedContentType = Object.values(previouslyExportedContentTypes)[indexOfExportedContentType];
-  if (equals(previouslyExportedContentType, extension)) {
+  const filename = Object.keys(previouslyExportedExtensions)[indexOfExportedExtension];
+  const previouslyExportedExtension = Object.values(previouslyExportedExtensions)[indexOfExportedExtension];
+  if (equals(previouslyExportedExtension, extension)) {
     return { filename, status: 'UP-TO-DATE', extension };
   }
   return {
@@ -159,7 +159,7 @@ export const processExtensions = async (
   force: boolean
 ): Promise<void> => {
   if (extensionsBeingExported.length === 0) {
-    nothingExportedExit(log, 'No content types to export from this hub, exiting.');
+    nothingExportedExit(log, 'No extensions to export from this hub, exiting.');
     return;
   }
 

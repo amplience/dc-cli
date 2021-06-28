@@ -1,42 +1,42 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`content-type export command filterExtensionsById should throw an error for ids which do not exist in the list of extensions 1`] = `
+exports[`extension export command filterExtensionsById should throw an error for ids which do not exist in the list of extensions 1`] = `
 "The following schema ID(s) could not be found: ['extension-id-4'].
 Nothing was exported, exiting."
 `;
 
-exports[`content-type export command getExports should return a list of extensions to export and a list of filenames that will be updated 1`] = `
+exports[`extension export command getExports should return a list of extensions to export and a list of filenames that will be updated 1`] = `
 Array [
   Array [
     Object {
-      "label": "content type 1",
+      "label": "extension 1",
       "name": "extension-name-1",
     },
     "export-dir",
     Object {
       "export-dir/export-filename-1.json": Object {
-        "label": "content type 1",
+        "label": "extension 1",
         "name": "extension-name-1",
       },
       "export-dir/export-filename-2.json": Object {
-        "label": "content type 2",
+        "label": "extension 2",
         "name": "extension-name-2",
       },
     },
   ],
   Array [
     Object {
-      "label": "content type 2",
+      "label": "extension 2",
       "name": "extension-name-2",
     },
     "export-dir",
     Object {
       "export-dir/export-filename-1.json": Object {
-        "label": "content type 1",
+        "label": "extension 1",
         "name": "extension-name-1",
       },
       "export-dir/export-filename-2.json": Object {
-        "label": "content type 2",
+        "label": "extension 2",
         "name": "extension-name-2",
       },
     },
@@ -44,11 +44,11 @@ Array [
 ]
 `;
 
-exports[`content-type export command getExports should return a list of extensions to export and a list of filenames that will be updated 2`] = `
+exports[`extension export command getExports should return a list of extensions to export and a list of filenames that will be updated 2`] = `
 Array [
   Object {
     "extension": Object {
-      "label": "content type 1",
+      "label": "extension 1",
       "name": "extension-name-1",
     },
     "filename": "export-dir/export-filename-1.json",
@@ -56,7 +56,7 @@ Array [
   },
   Object {
     "extension": Object {
-      "label": "content type 2",
+      "label": "extension 2",
       "name": "extension-name-2",
     },
     "filename": "export-dir/export-filename-2.json",
@@ -65,7 +65,7 @@ Array [
 ]
 `;
 
-exports[`content-type export command getExports should return a list of extensions to export and a list of filenames that will be updated 3`] = `
+exports[`extension export command getExports should return a list of extensions to export and a list of filenames that will be updated 3`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-2.json",
@@ -74,11 +74,11 @@ Array [
 ]
 `;
 
-exports[`content-type export command getExports should return a list of extensions to export and no filenames that will be updated (first export) 1`] = `
+exports[`extension export command getExports should return a list of extensions to export and no filenames that will be updated (first export) 1`] = `
 Array [
   Array [
     Object {
-      "label": "content type 1",
+      "label": "extension 1",
       "name": "extension-name-1",
     },
     "export-dir",
@@ -86,7 +86,7 @@ Array [
   ],
   Array [
     Object {
-      "label": "content type 2",
+      "label": "extension 2",
       "name": "extension-name-2",
     },
     "export-dir",
@@ -95,11 +95,11 @@ Array [
 ]
 `;
 
-exports[`content-type export command getExports should return a list of extensions to export and no filenames that will be updated (first export) 2`] = `
+exports[`extension export command getExports should return a list of extensions to export and no filenames that will be updated (first export) 2`] = `
 Array [
   Object {
     "extension": Object {
-      "label": "content type 1",
+      "label": "extension 1",
       "name": "extension-name-1",
     },
     "filename": "export-dir/export-filename-1.json",
@@ -107,7 +107,7 @@ Array [
   },
   Object {
     "extension": Object {
-      "label": "content type 2",
+      "label": "extension 2",
       "name": "extension-name-2",
     },
     "filename": "export-dir/export-filename-2.json",
@@ -116,10 +116,10 @@ Array [
 ]
 `;
 
-exports[`content-type export command processExtensions should output a message if no extensions to export from hub 1`] = `
+exports[`extension export command processExtensions should output a message if no extensions to export from hub 1`] = `
 Array [
   Array [
-    "No content types to export from this hub, exiting.
+    "No extensions to export from this hub, exiting.
 ",
   ],
 ]

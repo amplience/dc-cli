@@ -28,7 +28,7 @@ jest.mock('fs');
 jest.mock('table');
 jest.mock('../../common/log-helpers');
 
-describe('content-type import command', (): void => {
+describe('extension import command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });

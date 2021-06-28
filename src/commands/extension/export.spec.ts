@@ -30,7 +30,7 @@ jest.mock('../../common/import/directory-utils');
 jest.mock('table');
 jest.mock('../../common/log-helpers');
 
-describe('content-type export command', (): void => {
+describe('extension export command', (): void => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -81,11 +81,11 @@ describe('content-type export command', (): void => {
     const extensionsToExport = [
       new Extension({
         name: 'extension-name-1',
-        label: 'content type 1'
+        label: 'extension 1'
       }),
       new Extension({
         name: 'extension-name-2',
-        label: 'content type 2'
+        label: 'extension 2'
       })
     ];
 
@@ -151,7 +151,7 @@ describe('content-type export command', (): void => {
     it('should skip any that are missing a name', () => {
       const [allExports, updatedExportsMap] = getExtensionExports('export-dir', {}, [
         new Extension({
-          label: 'content type 1'
+          label: 'extension 1'
         })
       ]);
 
@@ -180,7 +180,7 @@ describe('content-type export command', (): void => {
 
       jest.spyOn(exportServiceModule, 'uniqueFilenamePath').mockReturnValueOnce('export-dir/export-filename-3.json');
 
-      const existingTypes = Object.keys(exportedExtensions);
+      const existingExtensions = Object.keys(exportedExtensions);
 
       const result = getExportRecordForExtension(newExtensionToExport, 'export-dir', exportedExtensions);
 
@@ -188,7 +188,7 @@ describe('content-type export command', (): void => {
         'export-dir',
         newExtensionToExport.name,
         'json',
-        existingTypes
+        existingExtensions
       );
       expect(result).toEqual({
         filename: 'export-dir/export-filename-3.json',
@@ -209,7 +209,7 @@ describe('content-type export command', (): void => {
         })
       };
       const updatedExtensionToExport = new Extension({
-        id: 'content-type-id-2',
+        id: 'extension-id-2',
         name: 'extension-name-2',
         label: 'extension 2 - mutated label'
       });
@@ -543,7 +543,7 @@ describe('content-type export command', (): void => {
     it('should not update anything if the user says "n" to the overwrite prompt', async () => {
       const mutatedExtensions = [...extensionsToProcess];
       mutatedExtensions[1] = new Extension({
-        id: 'content-type-id-2',
+        id: 'extension-id-2',
         name: 'extension-name-2',
         label: 'extension 2 - mutated label',
         status: 'ACTIVE'
@@ -681,7 +681,7 @@ describe('content-type export command', (): void => {
     });
 
     it('should export only selected extensions if ids specified', async (): Promise<void> => {
-      const idsToExport: string[] | undefined = ['content-type-id-2'];
+      const idsToExport: string[] | undefined = ['extension-id-2'];
       const argv = { ...yargArgs, ...config, dir: 'my-dir', id: idsToExport, logFile: new FileLog() };
 
       const filteredExtensionsToExport = [extensionsToExport[1]];
