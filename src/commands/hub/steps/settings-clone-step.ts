@@ -58,7 +58,7 @@ export class SettingsCloneStep implements CloneHubStep {
 
       await importSettings({
         filePath: join(state.path, 'settings', matchingFile),
-        mapFile: state.argv.mapFile,
+        //mapFile: state.argv.mapFile,
         force: state.argv.force,
         logFile: state.logFile,
         ...state.to
