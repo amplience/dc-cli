@@ -82,7 +82,7 @@ export const handler = async (
 
   try {
     if (mapFile == null) {
-      mapFile = getDefaultMappingPath(`workflow-states-${hub.id}`);
+      mapFile = getDefaultMappingPath(`hub-${hub.id}`);
     }
 
     if (await mapping.load(mapFile)) {
