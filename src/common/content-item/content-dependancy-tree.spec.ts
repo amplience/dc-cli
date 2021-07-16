@@ -1,5 +1,5 @@
 import { ContentDependancyTree, RepositoryContentItem, ItemContentDependancies } from './content-dependancy-tree';
-import { ContentMapping } from './content-mapping';
+import { ContentMapping } from '../content-mapping';
 import { ContentItem, Status, ContentRepository } from 'dc-management-sdk-js';
 import { ItemTemplate } from '../dc-management-sdk-js/mock-content';
 import { dependsOn } from '../../commands/content-item/__mocks__/dependant-content-helper';

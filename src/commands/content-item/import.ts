@@ -19,7 +19,7 @@ import {
   ContentTypeSchema,
   Status
 } from 'dc-management-sdk-js';
-import { ContentMapping } from '../../common/content-item/content-mapping';
+import { ContentMapping } from '../../common/content-mapping';
 import {
   ContentDependancyTree,
   RepositoryContentItem,

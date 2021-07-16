@@ -1,5 +1,5 @@
 import { ContentItem, ContentRepository } from 'dc-management-sdk-js';
-import { ContentMapping } from './content-mapping';
+import { ContentMapping } from '../content-mapping';
 import { Body } from './body';
 
 type DependancyContentTypeSchema =

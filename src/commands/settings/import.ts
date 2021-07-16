@@ -3,7 +3,7 @@ import { ConfigurationParameters } from '../configure';
 import { WorkflowState, Settings } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ImportSettingsBuilderOptions } from '../../interfaces/import-settings-builder-options.interface';
-import { WorkflowStatesMapping } from '../../common/workflowStates/workflowStates-mapping';
+import { ContentMapping } from '../../common/content-mapping';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
@@ -29,11 +29,7 @@ export function getDefaultMappingPath(name: string, platform: string = process.p
   );
 }
 
-const trySaveMapping = async (
-  mapFile: string | undefined,
-  mapping: WorkflowStatesMapping,
-  log: FileLog
-): Promise<void> => {
+const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping, log: FileLog): Promise<void> => {
   if (mapFile != null) {
     try {
       await mapping.save(mapFile);
@@ -80,13 +76,13 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const log = logFile.open();
-  const mapping = new WorkflowStatesMapping();
+  const mapping = new ContentMapping();
   let uniqueLocales = [];
   let uniqueApplications = [];
 
   try {
     if (mapFile == null) {
-      mapFile = getDefaultMappingPath(`workflow-states-${hub.id}`);
+      mapFile = getDefaultMappingPath(`hub-${hub.id}`);
     }
 
     if (await mapping.load(mapFile)) {
