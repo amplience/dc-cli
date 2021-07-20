@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.11.1](https://www.github.com/amplience/dc-cli/compare/v0.11.0...v0.11.1) (2021-07-20)
+
+
+### Bug Fixes
+
+* combine workflow state and content item mapping files ([#96](https://www.github.com/amplience/dc-cli/issues/96)) ([e9ceb96](https://www.github.com/amplience/dc-cli/commit/e9ceb962e7c1acec55b11489fc60bd7d548ecaff))
+
 ## [0.11.0](https://www.github.com/amplience/dc-cli/compare/v0.10.0...v0.11.0) (2021-06-17)
 
 
