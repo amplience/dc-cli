@@ -2,11 +2,25 @@ import { readFile, writeFile, exists, mkdir } from 'fs';
 import { dirname } from 'path';
 import { promisify } from 'util';
 
-export class WorkflowStatesMapping {
+export class ContentMapping {
+  contentItems: Map<string, string>;
   workflowStates: Map<string, string>;
 
   constructor() {
+    this.contentItems = new Map<string, string>();
     this.workflowStates = new Map<string, string>();
+  }
+
+  getContentItem(id: string | undefined): string | undefined {
+    if (id === undefined) {
+      return undefined;
+    }
+
+    return this.contentItems.get(id);
+  }
+
+  registerContentItem(fromId: string, toId: string): void {
+    this.contentItems.set(fromId, toId);
   }
 
   getWorkflowState(id: string | undefined): string | undefined {
@@ -22,7 +36,8 @@ export class WorkflowStatesMapping {
   }
 
   async save(filename: string): Promise<void> {
-    const obj: SerializedStatesMapping = {
+    const obj: SerializedContentMapping = {
+      contentItems: Array.from(this.contentItems),
       workflowStates: Array.from(this.workflowStates)
     };
 
@@ -40,6 +55,7 @@ export class WorkflowStatesMapping {
       const text = await promisify(readFile)(filename, { encoding: 'utf8' });
       const obj = JSON.parse(text);
 
+      this.contentItems = new Map(obj.contentItems);
       this.workflowStates = new Map(obj.workflowStates);
       return true;
     } catch (e) {
@@ -48,6 +64,7 @@ export class WorkflowStatesMapping {
   }
 }
 
-interface SerializedStatesMapping {
+interface SerializedContentMapping {
+  contentItems: [string, string][];
   workflowStates: [string, string][];
 }

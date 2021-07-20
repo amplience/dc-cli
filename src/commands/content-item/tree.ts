@@ -11,7 +11,7 @@ import {
   ItemContentDependancies,
   RepositoryContentItem
 } from '../../common/content-item/content-dependancy-tree';
-import { ContentMapping } from '../../common/content-item/content-mapping';
+import { ContentMapping } from '../../common/content-mapping';
 
 export const command = 'tree <dir>';
 
