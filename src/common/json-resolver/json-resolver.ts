@@ -19,7 +19,12 @@ export async function jsonResolver(jsonToResolve = '', relativeDir: string = __d
   let resolvedFilename: string | URL = jsonToResolve;
   if (jsonToResolve.match(/file:\/\//)) {
     resolvedFilename = new URL(jsonToResolve);
-  } else if (jsonToResolve.split(path.sep)[0].match(/^\.{1,2}$/)) {
+  } else if (
+    jsonToResolve
+      .replace(/\\/g, '/')
+      .split('/')[0]
+      .match(/^\.{1,2}$/)
+  ) {
     resolvedFilename = path.resolve(relativeDir, jsonToResolve);
   }
 
