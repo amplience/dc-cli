@@ -6,8 +6,8 @@ import { ensureDirectoryExists } from '../import/directory-utils';
 
 describe('archive-log', () => {
   describe('archive-log tests', () => {
-    beforeEach(() => {
-      jest.resetAllMocks();
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     it('should return false when writing to file fails', async () => {
