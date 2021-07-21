@@ -69,6 +69,12 @@ describe('content type schema helper', function() {
       expect(mockPathResolve).toHaveBeenCalledWith('/foo', './content-type-schema/schema.json');
     });
 
+    it('should load JSON from a local file (windows relative path) using a supplied relative dir', async function() {
+      const mockPathResolve = path.resolve as jest.Mock;
+      await successfulLocalFileInvocation('.\\content-type-schema\\schema.json', '\\foo');
+      expect(mockPathResolve).toHaveBeenCalledWith('\\foo', '.\\content-type-schema\\schema.json');
+    });
+
     it('should load JSON from a local file (with file url)', async function() {
       await successfulLocalFileInvocation('file://content-type-schema/schema.json');
     });
