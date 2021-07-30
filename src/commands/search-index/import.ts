@@ -174,7 +174,7 @@ export const doUpdate = async (
     const retrievedIndex: SearchIndex = await hub.related.searchIndexes.get(index.id || '');
     const webhooks = new Map();
 
-    if (equals(await enrichServerIndex(webhooks, allReplicas, retrievedIndex), index)) {
+    if (equals(await enrichServerIndex(webhooks, allReplicas, retrievedIndex), index, false)) {
       return { index: retrievedIndex, updateStatus: UpdateStatus.SKIPPED };
     }
 

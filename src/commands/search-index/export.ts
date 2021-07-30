@@ -13,7 +13,7 @@ import { AssignedContentType } from 'dc-management-sdk-js/build/main/lib/model/A
 import { SearchIndexKey } from 'dc-management-sdk-js/build/main/lib/model/SearchIndexKey';
 import { isEqual } from 'lodash';
 import { table } from 'table';
-import { Arguments, Argv, string } from 'yargs';
+import { Arguments, Argv } from 'yargs';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { FileLog } from '../../common/file-log';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
@@ -70,17 +70,17 @@ const ensureJSON = (resource: HalResource): object => {
   return resource.toJSON != null ? resource.toJSON() : resource;
 };
 
-const replicaEquals = (a: EnrichedReplica, b: EnrichedReplica): boolean =>
+const replicaEquals = (a: EnrichedReplica, b: EnrichedReplica, keys: boolean): boolean =>
   a.label === b.label &&
-  isEqual(ensureJSON(a.keys), ensureJSON(b.keys)) &&
+  (!keys || isEqual(ensureJSON(a.keys), ensureJSON(b.keys))) &&
   isEqual(ensureJSON(a.settings), ensureJSON(b.settings));
 
-export const equals = (a: EnrichedSearchIndex, b: EnrichedSearchIndex): boolean =>
+export const equals = (a: EnrichedSearchIndex, b: EnrichedSearchIndex, keys = true): boolean =>
   a.label === b.label &&
   isEqual(a.assignedContentTypes.map(x => ensureJSON(x)), b.assignedContentTypes.map(x => ensureJSON(x))) &&
   a.replicas.length == b.replicas.length &&
-  a.replicas.map((x, i) => replicaEquals(x, b.replicas[i])).reduce((a, b) => a && b, true) &&
-  isEqual(ensureJSON(a.keys), ensureJSON(b.keys)) &&
+  a.replicas.map((x, i) => replicaEquals(x, b.replicas[i], keys)).reduce((a, b) => a && b, true) &&
+  (!keys || isEqual(ensureJSON(a.keys), ensureJSON(b.keys))) &&
   isEqual(ensureJSON(a.settings), ensureJSON(b.settings));
 
 const searchIndexList = (hub: Hub, parentId?: string, projection?: string) => {
