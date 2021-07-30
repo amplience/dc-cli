@@ -136,10 +136,11 @@ describe('search-index export command', (): void => {
         ...index.toJSON(),
         settings: settings,
         keys: key,
-        assignedContentTypes: enrichedContentTypes
+        assignedContentTypes: enrichedContentTypes,
+        replicas: []
       });
 
-      const enriched = await exportModule.enrichIndex(index);
+      const enriched = await exportModule.enrichIndex(new Map(), new Map(), index);
 
       expect(index.related.settings.get).toHaveBeenCalledTimes(1);
       expect(index.related.assignedContentTypes.list).toHaveBeenCalledTimes(1);
@@ -263,7 +264,8 @@ describe('search-index export command', (): void => {
         new AssignedContentType({
           id: 'assigned-type-1'
         })
-      ]
+      ],
+      replicas: []
     };
 
     it('should create export for any newly exported index', async () => {
@@ -708,6 +710,66 @@ describe('search-index export command', (): void => {
     });
   });
 
+  describe('separateReplicas', () => {
+    it('it should separate replicas into a mapping', () => {
+      const indices = [
+        new SearchIndex({
+          id: 'parent',
+          label: 'not-replica',
+          parentId: null
+        }),
+        new SearchIndex({
+          id: 'child',
+          label: 'replica',
+          parentId: 'parent'
+        }),
+        new SearchIndex({
+          id: 'child2',
+          label: 'replica2',
+          parentId: 'parent'
+        }),
+        new SearchIndex({
+          id: 'not-parent',
+          label: 'not-replica2',
+          parentId: null
+        })
+      ];
+
+      const { storedIndices, allReplicas } = exportModule.separateReplicas(indices);
+
+      expect(storedIndices).toEqual([indices[0], indices[3]]);
+      expect(allReplicas.size).toEqual(1);
+      expect(allReplicas.get('parent')).toEqual([indices[1], indices[2]]);
+    });
+
+    it('it should return no replicas when none are present', () => {
+      const indices = [
+        new SearchIndex({
+          id: 'parent',
+          label: 'not-replica',
+          parentId: null
+        }),
+        new SearchIndex({
+          id: 'not-parent',
+          label: 'not-replica2',
+          parentId: null
+        })
+      ];
+
+      const { storedIndices, allReplicas } = exportModule.separateReplicas(indices);
+
+      expect(storedIndices).toEqual(indices);
+      expect(allReplicas.size).toEqual(0);
+    });
+
+    it('it should return nothing when no indices are provided', () => {
+      const { storedIndices, allReplicas } = exportModule.separateReplicas([]);
+
+      expect(storedIndices).toEqual([]);
+      expect(allReplicas.size).toEqual(0);
+    });
+  });
+
   describe('handler tests', () => {
     const yargArgs = {
       $0: 'test',
@@ -727,7 +789,8 @@ describe('search-index export command', (): void => {
         type: 'STAGING',
         settings: {},
         keys: {},
-        assignedContentTypes: {}
+        assignedContentTypes: [],
+        replicas: []
       }),
       new EnrichedSearchIndex({
         name: 'account.suffix-2',
@@ -736,7 +799,8 @@ describe('search-index export command', (): void => {
         type: 'STAGING',
         settings: {},
         keys: {},
-        assignedContentTypes: {}
+        assignedContentTypes: [],
+        replicas: []
       })
     ];
 
@@ -776,7 +840,9 @@ describe('search-index export command', (): void => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, logFile: new FileLog() };
 
       const filteredIndicesToExport = [...indicesToExport];
-      jest.spyOn(exportModule, 'enrichIndex').mockImplementation(x => Promise.resolve(x as EnrichedSearchIndex));
+      jest
+        .spyOn(exportModule, 'enrichIndex')
+        .mockImplementation((x, y, z) => Promise.resolve(z as EnrichedSearchIndex));
       jest.spyOn(exportModule, 'filterIndicesById').mockReturnValue(filteredIndicesToExport);
 
       await handler(argv);
@@ -801,7 +867,9 @@ describe('search-index export command', (): void => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir', id: idsToExport, logFile: new FileLog() };
 
       const filteredIndicesToExport = [indicesToExport[1]];
-      jest.spyOn(exportModule, 'enrichIndex').mockImplementation(x => Promise.resolve(x as EnrichedSearchIndex));
+      jest
+        .spyOn(exportModule, 'enrichIndex')
+        .mockImplementation((x, y, z) => Promise.resolve(z as EnrichedSearchIndex));
       jest.spyOn(exportModule, 'filterIndicesById').mockReturnValue(filteredIndicesToExport);
 
       await handler(argv);

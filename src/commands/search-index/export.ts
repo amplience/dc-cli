@@ -1,10 +1,19 @@
 import chalk from 'chalk';
-import { HalResource, Hub, Page, Pageable, SearchIndex, SearchIndexSettings, Sortable } from 'dc-management-sdk-js';
+import {
+  HalResource,
+  Hub,
+  Page,
+  Pageable,
+  SearchIndex,
+  SearchIndexSettings,
+  Sortable,
+  Webhook
+} from 'dc-management-sdk-js';
 import { AssignedContentType } from 'dc-management-sdk-js/build/main/lib/model/AssignedContentType';
 import { SearchIndexKey } from 'dc-management-sdk-js/build/main/lib/model/SearchIndexKey';
 import { isEqual } from 'lodash';
 import { table } from 'table';
-import { Arguments, Argv } from 'yargs';
+import { Arguments, Argv, string } from 'yargs';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { FileLog } from '../../common/file-log';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
@@ -22,6 +31,7 @@ import {
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { ConfigurationParameters } from '../configure';
 import { validateNoDuplicateIndexNames } from './import';
+import { join } from 'path';
 
 export const command = 'export <dir>';
 
@@ -60,9 +70,16 @@ const ensureJSON = (resource: HalResource): object => {
   return resource.toJSON != null ? resource.toJSON() : resource;
 };
 
-const equals = (a: EnrichedSearchIndex, b: EnrichedSearchIndex): boolean =>
+const replicaEquals = (a: EnrichedReplica, b: EnrichedReplica): boolean =>
+  a.label === b.label &&
+  isEqual(ensureJSON(a.keys), ensureJSON(b.keys)) &&
+  isEqual(ensureJSON(a.settings), ensureJSON(b.settings));
+
+export const equals = (a: EnrichedSearchIndex, b: EnrichedSearchIndex): boolean =>
   a.label === b.label &&
   isEqual(a.assignedContentTypes.map(x => ensureJSON(x)), b.assignedContentTypes.map(x => ensureJSON(x))) &&
+  a.replicas.length == b.replicas.length &&
+  a.replicas.map((x, i) => replicaEquals(x, b.replicas[i])).reduce((a, b) => a && b, true) &&
   isEqual(ensureJSON(a.keys), ensureJSON(b.keys)) &&
   isEqual(ensureJSON(a.settings), ensureJSON(b.settings));
 
@@ -77,10 +94,16 @@ export class EnrichedAssignedContentType extends AssignedContentType {
   archivedContentWebhook: string;
 }
 
+export class EnrichedReplica extends SearchIndex {
+  settings: SearchIndexSettings;
+  keys: SearchIndexKey;
+}
+
 export class EnrichedSearchIndex extends SearchIndex {
   settings: SearchIndexSettings;
   keys: SearchIndexKey;
   assignedContentTypes: EnrichedAssignedContentType[];
+  replicas: EnrichedReplica[];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public toJSON(): any {
@@ -111,20 +134,46 @@ export const filterIndicesById = (
   return listToFilter.filter(index => indexIdList.some(id => index.id === id));
 };
 
-export const enrichIndex = async (index: SearchIndex): Promise<EnrichedSearchIndex> => {
+export const registerWebhook = (mapping: Map<string, Webhook>, webhook: Webhook): string => {
+  mapping.set(webhook.id as string, webhook);
+
+  return webhook.id as string;
+};
+
+export const enrichReplica = async (replica: SearchIndex): Promise<EnrichedReplica> => {
+  const enrichedReplica = new EnrichedReplica(replica);
+
+  enrichedReplica.settings = await replica.related.settings.get();
+  enrichedReplica.keys = await replica.related.keys.get();
+
+  return enrichedReplica;
+};
+
+export const enrichIndex = async (
+  webhooks: Map<string, Webhook>,
+  allReplicas: Map<string, SearchIndex[]>,
+  index: SearchIndex
+): Promise<EnrichedSearchIndex> => {
   const enrichedIndex = new EnrichedSearchIndex(index);
 
   enrichedIndex.settings = await index.related.settings.get();
   const types = await paginator(index.related.assignedContentTypes.list);
   enrichedIndex.keys = await index.related.keys.get();
 
+  const replicas = allReplicas.get(index.id as string);
+  if (replicas) {
+    enrichedIndex.replicas = await Promise.all(replicas.map(enrichReplica));
+  } else {
+    enrichedIndex.replicas = [];
+  }
+
   const enrichedTypes: EnrichedAssignedContentType[] = [];
 
   for (const type of types) {
     const enriched = new EnrichedAssignedContentType(type);
-    enriched.webhook = (await type.related.webhook()).id as string;
-    enriched.activeContentWebhook = (await type.related.activeContentWebhook()).id as string;
-    enriched.archivedContentWebhook = (await type.related.archivedContentWebhook()).id as string;
+    enriched.webhook = registerWebhook(webhooks, await type.related.webhook());
+    enriched.activeContentWebhook = registerWebhook(webhooks, await type.related.activeContentWebhook());
+    enriched.archivedContentWebhook = registerWebhook(webhooks, await type.related.archivedContentWebhook());
 
     enrichedTypes.push(enriched);
   }
@@ -238,6 +287,70 @@ export const processIndices = async (
   log.appendLine(table(data, streamTableOptions));
 };
 
+const filterWebhooks = (
+  webhooks: Map<string, Webhook>,
+  filteredIndices: EnrichedSearchIndex[]
+): Map<string, Webhook> => {
+  const filtered = new Map<string, Webhook>();
+
+  for (const index of filteredIndices) {
+    for (const type of index.assignedContentTypes) {
+      filtered.set(type.webhook, webhooks.get(type.webhook) as Webhook);
+      filtered.set(type.activeContentWebhook, webhooks.get(type.activeContentWebhook) as Webhook);
+      filtered.set(type.archivedContentWebhook, webhooks.get(type.archivedContentWebhook) as Webhook);
+    }
+  }
+
+  return filtered;
+};
+
+const processWebhooks = async (
+  outputDir: string,
+  //previouslyExportedIndices: { [filename: string]: EnrichedSearchIndex },
+  webhooksBeingExported: Webhook[],
+  log: FileLog,
+  force: boolean
+): Promise<void> => {
+  const previouslyExportedWebhooks: { [filename: string]: Webhook } = {};
+  const base = join(outputDir, 'webhooks');
+  await ensureDirectoryExists(base);
+
+  const data: string[][] = [];
+
+  data.push([chalk.bold('File'), chalk.bold('Label'), chalk.bold('Result')]);
+  for (const webhook of webhooksBeingExported) {
+    const filename = uniqueFilenamePath(base, webhook.label, 'json', Object.keys(previouslyExportedWebhooks));
+    delete webhook.id; // do not export id
+    writeJsonToFile(filename, webhook);
+    data.push([filename, webhook.label as string, 'UPDATED']);
+  }
+
+  log.appendLine(table(data, streamTableOptions));
+};
+
+export const separateReplicas = (
+  allIndices: SearchIndex[]
+): { storedIndices: SearchIndex[]; allReplicas: Map<string, SearchIndex[]> } => {
+  const storedIndices: SearchIndex[] = [];
+  const allReplicas = new Map<string, SearchIndex[]>();
+  for (const index of allIndices) {
+    if (index.parentId == null) {
+      storedIndices.push(index);
+    } else {
+      let list = allReplicas.get(index.parentId);
+
+      if (list == null) {
+        list = [];
+        allReplicas.set(index.parentId, list);
+      }
+
+      list.push(index);
+    }
+  }
+
+  return { storedIndices, allReplicas };
+};
+
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
   const { dir, id, logFile, force } = argv;
   const client = dynamicContentClientFactory(argv);
@@ -247,12 +360,18 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const previouslyExportedIndices = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
   validateNoDuplicateIndexNames(previouslyExportedIndices);
 
-  const storedIndices = await paginator(searchIndexList(hub));
-  const enrichedIndices = await Promise.all(storedIndices.map(enrichIndex));
+  const allStoredIndices = await paginator(searchIndexList(hub));
+  const { storedIndices, allReplicas } = separateReplicas(allStoredIndices);
+
+  const webhooks = new Map<string, Webhook>();
+  const enrichedIndices = await Promise.all(storedIndices.map(index => enrichIndex(webhooks, allReplicas, index)));
 
   const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
   const filteredIndices = filterIndicesById(enrichedIndices, idArray);
   await processIndices(dir, previouslyExportedIndices, filteredIndices, log, force || false);
+
+  const filteredWebhooks = filterWebhooks(webhooks, filteredIndices);
+  await processWebhooks(dir, Array.from(filteredWebhooks.values()), log, force || false);
 
   await log.close();
 };
