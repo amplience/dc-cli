@@ -8,6 +8,7 @@ import { ExportBuilderOptions } from '../../interfaces/export-builder-options.in
 import * as path from 'path';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 export const command = 'export <dir>';
 
@@ -48,6 +49,9 @@ export const processSettings = async (
   if (outputDir.substr(-1) === path.sep) {
     dir = dir.slice(0, -1);
   }
+
+  await ensureDirectoryExists(outputDir);
+
   const file = path.basename(`hub-settings-${id}-${name}`, '.json');
 
   const uniqueFilename = dir + path.sep + file + '.json';
