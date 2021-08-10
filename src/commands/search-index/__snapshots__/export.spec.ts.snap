@@ -5,7 +5,7 @@ exports[`search-index export command filterIndicesById should throw an error for
 Nothing was exported, exiting."
 `;
 
-exports[`search-index export command getExports should return a list of indices to export and a list of filenames that will be updated 1`] = `
+exports[`search-index export command getIndexExports should return a list of indices to export and a list of filenames that will be updated 1`] = `
 Array [
   Array [
     Object {
@@ -38,6 +38,8 @@ Array [
         "name": "index-name-2",
       },
     },
+    Map {},
+    Map {},
   ],
   Array [
     Object {
@@ -70,11 +72,13 @@ Array [
         "name": "index-name-2",
       },
     },
+    Map {},
+    Map {},
   ],
 ]
 `;
 
-exports[`search-index export command getExports should return a list of indices to export and a list of filenames that will be updated 2`] = `
+exports[`search-index export command getIndexExports should return a list of indices to export and a list of filenames that will be updated 2`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-1.json",
@@ -105,7 +109,7 @@ Array [
 ]
 `;
 
-exports[`search-index export command getExports should return a list of indices to export and a list of filenames that will be updated 3`] = `
+exports[`search-index export command getIndexExports should return a list of indices to export and a list of filenames that will be updated 3`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-2.json",
@@ -114,7 +118,7 @@ Array [
 ]
 `;
 
-exports[`search-index export command getExports should return a list of indices to export and no filenames that will be updated (first export) 1`] = `
+exports[`search-index export command getIndexExports should return a list of indices to export and no filenames that will be updated (first export) 1`] = `
 Array [
   Array [
     Object {
@@ -128,6 +132,8 @@ Array [
     },
     "export-dir",
     Object {},
+    Map {},
+    Map {},
   ],
   Array [
     Object {
@@ -141,11 +147,13 @@ Array [
     },
     "export-dir",
     Object {},
+    Map {},
+    Map {},
   ],
 ]
 `;
 
-exports[`search-index export command getExports should return a list of indices to export and no filenames that will be updated (first export) 2`] = `
+exports[`search-index export command getIndexExports should return a list of indices to export and no filenames that will be updated (first export) 2`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-1.json",

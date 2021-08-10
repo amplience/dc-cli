@@ -1,12 +1,15 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { SearchIndex, Hub } from 'dc-management-sdk-js';
+import { SearchIndex, Hub, Webhook } from 'dc-management-sdk-js';
+import * as exportModule from './export';
 import * as importModule from './import';
+import * as webhookRewriter from './webhook-rewriter';
 import {
   builder,
   command,
   doCreate,
   doUpdate,
   handler,
+  loadAndRewriteWebhooks,
   LOG_FILENAME,
   processIndices,
   storedIndexMapper,
@@ -90,8 +93,59 @@ describe('search-index import command', (): void => {
     });
   });
 
+  describe('replicaList', () => {
+    it('should return a function that lists the replicas for the given index, with the given projection', async () => {
+      const replicas = new MockPage(SearchIndex, [new SearchIndex({ label: 'webhook1' })]);
+      const index = new SearchIndex({ label: 'webhook1' });
+      index.related.replicas.list = jest.fn().mockResolvedValue(replicas);
+
+      const resultFn = await importModule.replicaList(index, 'projection');
+
+      const noOptionsResult = await resultFn();
+      expect(noOptionsResult).toEqual(replicas);
+      expect(index.related.replicas.list).toHaveBeenCalledWith('projection', undefined);
+
+      const optionsResult = await resultFn({ sort: 'sort' });
+      expect(optionsResult).toEqual(replicas);
+      expect(index.related.replicas.list).toHaveBeenCalledWith('projection', { sort: 'sort' });
+    });
+
+    it('should return a function that lists the replicas for the given index, with no projection', async () => {
+      const replicas = new MockPage(SearchIndex, [new SearchIndex({ label: 'webhook1' })]);
+      const index = new SearchIndex({ label: 'webhook1' });
+      index.related.replicas.list = jest.fn().mockResolvedValue(replicas);
+
+      const resultFn = await importModule.replicaList(index);
+
+      const result = await resultFn();
+      expect(result).toEqual(replicas);
+      expect(index.related.replicas.list).toHaveBeenCalledWith(undefined, undefined);
+    });
+  });
+
+  describe('updateWebhookIfDifferent', () => {
+    it('should update the webhook if newWebhook is defined', async () => {
+      const webhook = new Webhook({ label: 'webhook1' });
+      webhook.related.update = jest.fn().mockResolvedValue(webhook);
+      const newWebhook = new Webhook({ label: 'webhook2' });
+
+      await importModule.updateWebhookIfDifferent(webhook, newWebhook);
+
+      expect(webhook.related.update).toHaveBeenCalledWith(newWebhook);
+    });
+
+    it('should not update the webhook if newWebhook is undefined', async () => {
+      const webhook = new Webhook({ label: 'webhook1' });
+      webhook.related.update = jest.fn().mockResolvedValue(webhook);
+
+      await importModule.updateWebhookIfDifferent(webhook, undefined);
+
+      expect(webhook.related.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('doCreate', () => {
-    it('should create a index and return report', async () => {
+    it('should create an index and return report', async () => {
       const mockHub = new Hub();
       const log = new FileLog();
       const newIndex = new SearchIndex({ id: 'created-id' });
@@ -99,7 +153,8 @@ describe('search-index import command', (): void => {
       mockHub.related.searchIndexes.create = mockCreate;
       jest.spyOn(importModule, 'enrichIndex').mockResolvedValue();
       const index = { name: 'index-name', label: 'test-label' };
-      const result = await doCreate(mockHub, index as EnrichedSearchIndex, log);
+      const webhooks = new Map();
+      const result = await doCreate(mockHub, index as EnrichedSearchIndex, webhooks, log);
 
       expect(log.getData('CREATE')).toMatchInlineSnapshot(`
         Array [
@@ -107,7 +162,7 @@ describe('search-index import command', (): void => {
         ]
       `);
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(index));
-      expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index);
+      expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
       expect(result).toEqual(newIndex);
     });
 
@@ -121,7 +176,9 @@ describe('search-index import command', (): void => {
       mockHub.related.searchIndexes.create = mockCreate;
       const index = { name: 'index-name', label: 'test-label' };
 
-      await expect(doCreate(mockHub, index as EnrichedSearchIndex, log)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(
+        doCreate(mockHub, index as EnrichedSearchIndex, new Map(), log)
+      ).rejects.toThrowErrorMatchingSnapshot();
       expect(importModule.enrichIndex).not.toHaveBeenCalled();
       expect(log.getData('CREATE')).toEqual([]);
     });
@@ -138,7 +195,9 @@ describe('search-index import command', (): void => {
       mockHub.related.searchIndexes.create = mockCreate;
       const index = { name: 'index-name', label: 'test-label' };
 
-      await expect(doCreate(mockHub, index as EnrichedSearchIndex, log)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(
+        doCreate(mockHub, index as EnrichedSearchIndex, new Map(), log)
+      ).rejects.toThrowErrorMatchingSnapshot();
       expect(importModule.enrichIndex).not.toHaveBeenCalled();
       expect(log.getData('CREATE')).toEqual([]);
     });
@@ -155,12 +214,318 @@ describe('search-index import command', (): void => {
           'The update-index action is not available, ensure you have permission to perform this action.'
         );
       const index = { name: 'index-name', label: 'test-label' };
+      const webhooks = new Map();
 
-      await expect(doCreate(mockHub, index as EnrichedSearchIndex, log)).rejects.toThrowErrorMatchingSnapshot();
+      await expect(
+        doCreate(mockHub, index as EnrichedSearchIndex, webhooks, log)
+      ).rejects.toThrowErrorMatchingSnapshot();
 
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(index));
-      expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index);
+      expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
       expect(log.getData('CREATE')).toEqual([]);
+    });
+  });
+
+  describe('doUpdate', () => {
+    beforeEach(() => {});
+
+    it('should update an index and return report', async () => {
+      const mutatedIndex = {
+        id: 'stored-id',
+        name: 'not-matched-name',
+        label: 'mutated-label'
+      } as EnrichedSearchIndex;
+      const storedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'matched-name',
+        label: 'label'
+      });
+      const expectedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'not-matched-name',
+        label: 'mutated-label'
+      });
+
+      const updatedIndex = new SearchIndex(mutatedIndex);
+      const mockUpdate = jest.fn().mockResolvedValue(updatedIndex);
+      storedIndex.related.update = mockUpdate;
+
+      const hub = new Hub();
+      hub.related.searchIndexes.get = jest.fn().mockResolvedValue(storedIndex);
+
+      const enrichedStoredIndex = new EnrichedSearchIndex(storedIndex);
+      jest.spyOn(exportModule, 'enrichIndex').mockResolvedValueOnce(enrichedStoredIndex);
+      jest.spyOn(importModule, 'getIndexProperties').mockReturnValueOnce(mutatedIndex);
+      jest.spyOn(importModule, 'enrichIndex').mockResolvedValueOnce();
+
+      const log = new FileLog();
+      const webhooks = new Map();
+      const replicas = new Map();
+      const result = await doUpdate(hub, replicas, mutatedIndex, webhooks, log);
+
+      expect(log.getData('UPDATE')).toMatchInlineSnapshot(`
+        Array [
+          "stored-id",
+        ]
+      `);
+      expect(hub.related.searchIndexes.get).toHaveBeenCalledWith('stored-id');
+      expect(exportModule.enrichIndex).toHaveBeenCalledWith(expect.any(Map), replicas, storedIndex);
+      expect(importModule.enrichIndex).toHaveBeenCalledWith(updatedIndex, mutatedIndex, webhooks);
+      expect(result).toEqual({ index: updatedIndex, updateStatus: UpdateStatus.UPDATED });
+      expect(mockUpdate.mock.calls[0][0].toJSON()).toEqual(expectedIndex.toJSON());
+    });
+
+    it('should skip update when no change to index and return report', async () => {
+      const mutatedIndex = new EnrichedSearchIndex({
+        id: 'stored-id',
+        name: 'matched-name',
+        label: 'label',
+        settings: {},
+        assignedContentTypes: [],
+        replicas: []
+      });
+      const storedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'matched-name',
+        label: 'label'
+      });
+
+      const hub = new Hub();
+      hub.related.searchIndexes.get = jest.fn().mockResolvedValue(storedIndex);
+
+      jest.spyOn(exportModule, 'enrichIndex').mockResolvedValueOnce(
+        new EnrichedSearchIndex({
+          ...storedIndex,
+          settings: {},
+          assignedContentTypes: [],
+          replicas: []
+        })
+      );
+
+      const log = new FileLog();
+      const webhooks = new Map();
+      const replicas = new Map();
+      const result = await doUpdate(hub, replicas, mutatedIndex, webhooks, log);
+
+      expect(hub.related.searchIndexes.get).toHaveBeenCalledWith('stored-id');
+      expect(exportModule.enrichIndex).toHaveBeenCalledWith(expect.any(Map), replicas, storedIndex);
+      expect(result).toEqual({ index: storedIndex, updateStatus: UpdateStatus.SKIPPED });
+      expect(log.getData('UPDATE')).toEqual([]);
+    });
+
+    it('should throw an error when unable to get index during update', async () => {
+      const mutatedIndex = {
+        id: 'stored-id',
+        name: 'matched-name',
+        label: 'label'
+      } as EnrichedSearchIndex;
+
+      const hub = new Hub();
+      hub.related.searchIndexes.get = jest.fn().mockImplementation(() => {
+        throw new Error('Error retrieving index');
+      });
+
+      const log = new FileLog();
+      const webhooks = new Map();
+      const replicas = new Map();
+
+      await expect(doUpdate(hub, replicas, mutatedIndex, webhooks, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(hub.related.searchIndexes.get).toHaveBeenCalledWith('stored-id');
+      expect(log.getData('UPDATE')).toEqual([]);
+    });
+
+    it('should throw an error when unable to update index during update if a string error is returned by sdk', async () => {
+      const mutatedIndex = {
+        id: 'stored-id',
+        name: 'not-matched-name',
+        label: 'mutated-label'
+      } as EnrichedSearchIndex;
+      const storedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'matched-name',
+        label: 'label'
+      });
+      const expectedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'not-matched-name',
+        label: 'mutated-label'
+      });
+
+      const hub = new Hub();
+      hub.related.searchIndexes.get = jest.fn().mockResolvedValue(storedIndex);
+
+      const mockUpdate = jest
+        .fn()
+        .mockRejectedValue('The update action is not available, ensure you have permission to perform this action.');
+      storedIndex.related.update = mockUpdate;
+
+      const enrichedStoredIndex = new EnrichedSearchIndex(storedIndex);
+      jest.spyOn(exportModule, 'enrichIndex').mockResolvedValueOnce(enrichedStoredIndex);
+      jest.spyOn(importModule, 'getIndexProperties').mockReturnValueOnce(mutatedIndex);
+
+      const log = new FileLog();
+      const webhooks = new Map();
+      const replicas = new Map();
+      await expect(doUpdate(hub, replicas, mutatedIndex, webhooks, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(hub.related.searchIndexes.get).toHaveBeenCalledWith('stored-id');
+      expect(exportModule.enrichIndex).toHaveBeenCalledWith(expect.any(Map), replicas, storedIndex);
+      expect(log.getData('UPDATE')).toEqual([]);
+      expect(mockUpdate.mock.calls[0][0].toJSON()).toEqual(expectedIndex.toJSON());
+    });
+
+    it('should throw an error when unable to update index during update', async () => {
+      const mutatedIndex = {
+        id: 'stored-id',
+        name: 'not-matched-name',
+        label: 'mutated-label'
+      } as EnrichedSearchIndex;
+      const storedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'matched-name',
+        label: 'label'
+      });
+      const expectedIndex = new SearchIndex({
+        id: 'stored-id',
+        name: 'not-matched-name',
+        label: 'mutated-label'
+      });
+
+      const hub = new Hub();
+      hub.related.searchIndexes.get = jest.fn().mockResolvedValue(storedIndex);
+
+      const mockUpdate = jest.fn().mockRejectedValue(new Error('Error saving index'));
+      storedIndex.related.update = mockUpdate;
+
+      const enrichedStoredIndex = new EnrichedSearchIndex(storedIndex);
+      jest.spyOn(exportModule, 'enrichIndex').mockResolvedValueOnce(enrichedStoredIndex);
+      jest.spyOn(importModule, 'getIndexProperties').mockReturnValueOnce(mutatedIndex);
+
+      const log = new FileLog();
+      const webhooks = new Map();
+      const replicas = new Map();
+      await expect(doUpdate(hub, replicas, mutatedIndex, webhooks, log)).rejects.toThrowErrorMatchingSnapshot();
+      expect(hub.related.searchIndexes.get).toHaveBeenCalledWith('stored-id');
+      expect(exportModule.enrichIndex).toHaveBeenCalledWith(expect.any(Map), replicas, storedIndex);
+      expect(log.getData('UPDATE')).toEqual([]);
+      expect(mockUpdate.mock.calls[0][0].toJSON()).toEqual(expectedIndex.toJSON());
+    });
+  });
+
+  describe('loadAndRewriteWebhooks', () => {
+    it('should create an id to webhook map from the webhooks loaded from the given directory', async () => {
+      const webhooks = {
+        'directory/webhooks/webhook1.json': new Webhook({
+          id: 'id1',
+          label: 'webhook1',
+          customPayload: { value: 'a' }
+        }),
+        'directory/webhooks/webhook2.json': new Webhook({
+          id: 'id2',
+          label: 'webhook2',
+          customPayload: { value: 'b' }
+        })
+      };
+
+      const hub = new Hub({
+        name: 'accountName',
+        settings: {
+          virtualStagingEnvironment: {
+            hostname: 'http://amplience.com'
+          }
+        }
+      });
+
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(webhooks);
+      jest.spyOn(webhookRewriter, 'rewriteDeliveryContentItem').mockImplementation(body => {
+        return body + '-rewrite';
+      });
+
+      const result = await loadAndRewriteWebhooks(hub, 'directory/webhooks');
+
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('directory/webhooks', Webhook);
+      expect(result.size).toEqual(2);
+      expect(result.get('id1')).toEqual(webhooks['directory/webhooks/webhook1.json']);
+      expect(result.get('id2')).toEqual(webhooks['directory/webhooks/webhook2.json']);
+      expect(webhooks['directory/webhooks/webhook1.json'].customPayload).toEqual({ value: 'a-rewrite' });
+      expect(webhooks['directory/webhooks/webhook2.json'].customPayload).toEqual({ value: 'b-rewrite' });
+
+      expect(webhookRewriter.rewriteDeliveryContentItem).toHaveBeenNthCalledWith(
+        1,
+        'a',
+        'accountName',
+        'http://amplience.com'
+      );
+      expect(webhookRewriter.rewriteDeliveryContentItem).toHaveBeenNthCalledWith(
+        2,
+        'b',
+        'accountName',
+        'http://amplience.com'
+      );
+    });
+
+    it('should not rewrite webhook body if none is present', async () => {
+      const webhooks = {
+        'directory/webhooks/webhook1.json': new Webhook({
+          id: 'id1',
+          label: 'webhook1'
+        }),
+        'directory/webhooks/webhook2.json': new Webhook({
+          id: 'id2',
+          label: 'webhook2'
+        })
+      };
+
+      const hub = new Hub({
+        name: 'accountName',
+        settings: {
+          virtualStagingEnvironment: {
+            hostname: 'http://amplience.com'
+          }
+        }
+      });
+
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(webhooks);
+      jest.spyOn(webhookRewriter, 'rewriteDeliveryContentItem');
+
+      const result = await loadAndRewriteWebhooks(hub, 'directory/webhooks');
+
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('directory/webhooks', Webhook);
+      expect(result.size).toEqual(2);
+      expect(result.get('id1')).toEqual(webhooks['directory/webhooks/webhook1.json']);
+      expect(result.get('id2')).toEqual(webhooks['directory/webhooks/webhook2.json']);
+      expect(webhooks['directory/webhooks/webhook1.json'].customPayload).toBeUndefined();
+      expect(webhooks['directory/webhooks/webhook2.json'].customPayload).toBeUndefined();
+
+      expect(webhookRewriter.rewriteDeliveryContentItem).not.toHaveBeenCalled();
+    });
+
+    it('should pass an undefined vse to the rewriter if the object is missing from settings', async () => {
+      const webhooks = {
+        'directory/webhooks/webhook1.json': new Webhook({
+          id: 'id1',
+          label: 'webhook1',
+          customPayload: { value: 'a' }
+        })
+      };
+
+      const hub = new Hub({
+        name: 'accountName',
+        settings: {}
+      });
+
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(webhooks);
+      jest.spyOn(webhookRewriter, 'rewriteDeliveryContentItem').mockImplementation(body => {
+        return body + '-rewrite';
+      });
+
+      const result = await loadAndRewriteWebhooks(hub, 'directory/webhooks');
+
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('directory/webhooks', Webhook);
+      expect(result.size).toEqual(1);
+      expect(result.get('id1')).toEqual(webhooks['directory/webhooks/webhook1.json']);
+      expect(webhooks['directory/webhooks/webhook1.json'].customPayload).toEqual({ value: 'a-rewrite' });
+
+      expect(webhookRewriter.rewriteDeliveryContentItem).toHaveBeenCalledWith('a', 'accountName', undefined);
     });
   });
 
@@ -172,8 +537,7 @@ describe('search-index import command', (): void => {
       mockTable.mockImplementation(jest.requireActual('table').table);
     });
 
-    it('should create and update a index', async () => {
-      const client = (dynamicContentClientFactory as jest.Mock)();
+    it('should create and update an index', async () => {
       const hub = new Hub();
       const indicesToProcess = [
         new EnrichedSearchIndex({
@@ -208,14 +572,17 @@ describe('search-index import command', (): void => {
         updateStatus: UpdateStatus.SKIPPED
       };
       jest.spyOn(importModule, 'doUpdate').mockResolvedValueOnce(doUpdateResult2);
+      const webhooks = new Map();
+      const replicas = new Map();
 
-      await processIndices(indicesToProcess, new Map(), client, hub, new FileLog());
+      await processIndices(indicesToProcess, replicas, webhooks, hub, new FileLog());
 
-      expect(importModule.doCreate).toHaveBeenCalledWith(hub, indicesToProcess[0], expect.any(FileLog));
+      expect(importModule.doCreate).toHaveBeenCalledWith(hub, indicesToProcess[0], webhooks, expect.any(FileLog));
       expect(importModule.doUpdate).toHaveBeenCalledWith(
         hub,
-        expect.any(Map),
+        replicas,
         indicesToProcess[1],
+        webhooks,
         expect.any(FileLog)
       );
 
@@ -354,7 +721,7 @@ describe('search-index import command', (): void => {
       expect(getDefaultLogPath).toHaveBeenCalledWith('search-index', 'import', process.platform);
     });
 
-    it('should create a index and update', async (): Promise<void> => {
+    it('should create an index and update', async (): Promise<void> => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir', logFile: new FileLog() };
       const fileNamesAndIndicesToImport = {
         'file-1': new EnrichedSearchIndex({
@@ -383,7 +750,7 @@ describe('search-index import command', (): void => {
       expect(processIndices).toHaveBeenCalledWith(
         Object.values(fileNamesAndIndicesToImport),
         expect.any(Map),
-        expect.any(Object),
+        expect.any(Map),
         expect.any(Object),
         expect.any(FileLog)
       );
@@ -415,7 +782,7 @@ describe('search-index import command', (): void => {
       expect(processIndices).toHaveBeenCalledWith(
         [fileNamesAndIndicesToImport['file-2']],
         expect.any(Map),
-        expect.any(Object),
+        expect.any(Map),
         expect.any(Object),
         expect.any(FileLog)
       );

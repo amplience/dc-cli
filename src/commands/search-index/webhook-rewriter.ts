@@ -9,7 +9,11 @@ function matchAll(regex: RegExp, string: string): RegExpExecArray[] {
   return result;
 }
 
-export function rewriteDeliveryContentItem(webhookBody: string, account: string, stagingEnvironment: string): string {
+export function rewriteDeliveryContentItem(
+  webhookBody: string,
+  account: string,
+  stagingEnvironment: string | undefined
+): string {
   // Current limitations - cannot handle key/value pairs where the value contains space, or a }} within quotes.
   // These should not affect the two variables being replaced anyways.
   // First, locate the withDeliveryContentItem opening tags.
@@ -46,7 +50,9 @@ export function rewriteDeliveryContentItem(webhookBody: string, account: string,
           replaceValue = account;
           break;
         case 'stagingEnvironment':
-          replaceValue = stagingEnvironment;
+          if (stagingEnvironment !== undefined) {
+            replaceValue = stagingEnvironment;
+          }
           break;
       }
 

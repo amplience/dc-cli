@@ -18,6 +18,12 @@ exports[`search-index import command doCreate should throw an error when index c
 The create-index action is not available, ensure you have permission to perform this action."
 `;
 
+exports[`search-index import command doUpdate should throw an error when unable to get index during update 1`] = `"Error updating index matched-name: Error retrieving index"`;
+
+exports[`search-index import command doUpdate should throw an error when unable to update index during update 1`] = `"Error updating index not-matched-name: Error saving index"`;
+
+exports[`search-index import command doUpdate should throw an error when unable to update index during update if a string error is returned by sdk 1`] = `"Error updating index not-matched-name: undefined"`;
+
 exports[`search-index import command handler tests should throw an error when no content found in import directory 1`] = `"No indices found in my-empty-dir"`;
 
 exports[`search-index import command validateNoDuplicateIndexNames should throw and error when there are duplicate uris 1`] = `

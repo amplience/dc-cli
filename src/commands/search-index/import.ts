@@ -1,16 +1,18 @@
 import chalk from 'chalk';
-import { DynamicContent, Hub, Page, Pageable, SearchIndex, SearchIndexSettings, Sortable } from 'dc-management-sdk-js';
+import { Hub, Page, Pageable, SearchIndex, Settings, Sortable, Webhook } from 'dc-management-sdk-js';
+import { join } from 'path';
 import { table } from 'table';
 import { Arguments, Argv } from 'yargs';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { streamTableOptions } from '../../common/table/table.consts';
-import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
+import { ImportIndexBuilderOptions } from '../../interfaces/import-index-builder-options.interface';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../services/import.service';
 import { ConfigurationParameters } from '../configure';
 import { EnrichedSearchIndex, equals, enrichIndex as enrichServerIndex, separateReplicas } from './export';
+import { rewriteDeliveryContentItem } from './webhook-rewriter';
 
 export const command = 'import <dir>';
 
@@ -38,7 +40,7 @@ const searchIndexList = (hub: Hub, parentId?: string, projection?: string) => {
     hub.related.searchIndexes.list(parentId, projection, options);
 };
 
-const replicaList = (index: SearchIndex, projection?: string) => {
+export const replicaList = (index: SearchIndex, projection?: string) => {
   return (options?: Pageable & Sortable): Promise<Page<SearchIndex>> =>
     index.related.replicas.list(projection, options);
 };
@@ -94,7 +96,7 @@ export const storedIndexMapper = (index: EnrichedSearchIndex, storedIndices: Sea
   return new EnrichedSearchIndex(mutatedIndex);
 };
 
-const getIndexProperties = (index: SearchIndex): object => {
+export const getIndexProperties = (index: SearchIndex): object => {
   return {
     label: index.label,
     name: index.name,
@@ -103,10 +105,34 @@ const getIndexProperties = (index: SearchIndex): object => {
   };
 };
 
-export const enrichIndex = async (index: SearchIndex, enrichedIndex: EnrichedSearchIndex): Promise<void> => {
+export const updateWebhookIfDifferent = async (webhook: Webhook, newWebhook: Webhook | undefined): Promise<void> => {
+  if (newWebhook === undefined) {
+    return;
+  }
+
+  await webhook.related.update(newWebhook);
+};
+
+export const enrichIndex = async (
+  index: SearchIndex,
+  enrichedIndex: EnrichedSearchIndex,
+  webhooks: Map<string, Webhook>
+): Promise<void> => {
+  // Union the replicas on the server and the replicas being imported.
+  // This avoids replicas being detached from their parents, and thus becoming unusable.
+  const settings = await index.related.settings.get();
+  const replicas = new Set<string>(settings.replicas || []);
+  if (enrichedIndex.settings.replicas) {
+    enrichedIndex.settings.replicas.forEach((replica: string) => {
+      replicas.add(replica);
+    });
+  }
+  enrichedIndex.settings.replicas = Array.from(replicas);
+
+  // Update the search index settings.
   await index.related.settings.update(enrichedIndex.settings, false);
 
-  if (enrichedIndex.settings.replicas && enrichedIndex.settings.replicas.length) {
+  if (replicas.size) {
     // Replica settings must also be updated. The replicas may have changed, so fetch them again.
 
     const replicas = await paginator(replicaList(index));
@@ -141,7 +167,15 @@ export const enrichIndex = async (index: SearchIndex, enrichedIndex: EnrichedSea
     // Update any webhooks if they differ from the ones being imported, if the flag is provided.
     // Does the webhook being referenced in the saved index exist in the import?
 
-    //const webhooks = new Map<string, Webhook>();
+    await updateWebhookIfDifferent(await existing.related.webhook(), webhooks.get(assignment.webhook));
+    await updateWebhookIfDifferent(
+      await existing.related.activeContentWebhook(),
+      webhooks.get(assignment.activeContentWebhook)
+    );
+    await updateWebhookIfDifferent(
+      await existing.related.archivedContentWebhook(),
+      webhooks.get(assignment.archivedContentWebhook)
+    );
   }
 
   // Finally, remove any content type assignments that are not present in the imported index.
@@ -150,11 +184,16 @@ export const enrichIndex = async (index: SearchIndex, enrichedIndex: EnrichedSea
   }
 };
 
-export const doCreate = async (hub: Hub, index: EnrichedSearchIndex, log: FileLog): Promise<SearchIndex> => {
+export const doCreate = async (
+  hub: Hub,
+  index: EnrichedSearchIndex,
+  webhooks: Map<string, Webhook>,
+  log: FileLog
+): Promise<SearchIndex> => {
   try {
     const createdIndex = await hub.related.searchIndexes.create(new SearchIndex(getIndexProperties(index)));
 
-    await enrichIndex(createdIndex, index);
+    await enrichIndex(createdIndex, index, webhooks);
 
     log.addAction('CREATE', `${createdIndex.id}`);
 
@@ -168,13 +207,17 @@ export const doUpdate = async (
   hub: Hub,
   allReplicas: Map<string, SearchIndex[]>,
   index: EnrichedSearchIndex,
+  webhooks: Map<string, Webhook>,
   log: FileLog
 ): Promise<{ index: SearchIndex; updateStatus: UpdateStatus }> => {
   try {
     const retrievedIndex: SearchIndex = await hub.related.searchIndexes.get(index.id || '');
-    const webhooks = new Map();
 
-    if (equals(await enrichServerIndex(webhooks, allReplicas, retrievedIndex), index, false)) {
+    const dstWebhooks = new Map<string, Webhook>();
+
+    const enrichedWebhook = await enrichServerIndex(dstWebhooks, allReplicas, retrievedIndex);
+
+    if (equals(enrichedWebhook, index, false, dstWebhooks, webhooks)) {
       return { index: retrievedIndex, updateStatus: UpdateStatus.SKIPPED };
     }
 
@@ -182,7 +225,7 @@ export const doUpdate = async (
 
     const updatedIndex = await retrievedIndex.related.update(retrievedIndex);
 
-    await enrichIndex(updatedIndex, index);
+    await enrichIndex(updatedIndex, index, webhooks);
 
     log.addAction('UPDATE', `${retrievedIndex.id}`);
 
@@ -192,25 +235,48 @@ export const doUpdate = async (
   }
 };
 
+export const loadAndRewriteWebhooks = async (hub: Hub, dir: string): Promise<Map<string, Webhook>> => {
+  const webhookList = loadJsonFromDirectory<Webhook>(dir, Webhook);
+  const webhooks = new Map<string, Webhook>();
+
+  for (const webhook of Object.values(webhookList)) {
+    webhooks.set(webhook.id as string, webhook);
+  }
+
+  // Rewrite webhooks. Load VSE and account name from settings.
+  const account = hub.name as string;
+  const settings = hub.settings as Settings;
+  const vseObj = settings.virtualStagingEnvironment;
+  const vse = vseObj ? vseObj.hostname : undefined;
+
+  webhooks.forEach(webhook => {
+    if (webhook.customPayload) {
+      webhook.customPayload.value = rewriteDeliveryContentItem(webhook.customPayload.value, account, vse);
+    }
+  });
+
+  return webhooks;
+};
+
 export const processIndices = async (
   indicesToProcess: EnrichedSearchIndex[],
   allReplicas: Map<string, SearchIndex[]>,
-  client: DynamicContent,
+  webhooks: Map<string, Webhook>,
   hub: Hub,
   log: FileLog
 ): Promise<void> => {
   const data: string[][] = [];
 
   data.push([chalk.bold('ID'), chalk.bold('Name'), chalk.bold('Result')]);
-  for (const schema of indicesToProcess) {
+  for (const entry of indicesToProcess) {
     let status: ImportResult;
     let index: SearchIndex;
-    if (schema.id) {
-      const result = await doUpdate(hub, allReplicas, schema, log);
+    if (entry.id) {
+      const result = await doUpdate(hub, allReplicas, entry, webhooks, log);
       index = result.index;
       status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
-      index = await doCreate(hub, schema, log);
+      index = await doCreate(hub, entry, webhooks, log);
       status = 'CREATED';
     }
     data.push([index.id || '', index.name as string, status]);
@@ -220,7 +286,7 @@ export const processIndices = async (
 };
 
 export const handler = async (
-  argv: Arguments<ImportBuilderOptions & ConfigurationParameters>,
+  argv: Arguments<ImportIndexBuilderOptions & ConfigurationParameters>,
   idFilter?: string[]
 ): Promise<void> => {
   const { dir, logFile } = argv;
@@ -242,8 +308,9 @@ export const handler = async (
   const { storedIndices, allReplicas } = separateReplicas(allStoredIndices);
 
   const indicesToProcess = Object.values(indices).map(index => storedIndexMapper(index, storedIndices));
+  const webhooks = argv.webhooks ? await loadAndRewriteWebhooks(hub, join(dir, 'webhooks')) : new Map();
 
-  await processIndices(indicesToProcess, allReplicas, client, hub, log);
+  await processIndices(indicesToProcess, allReplicas, webhooks, hub, log);
 
   await log.close();
 };
