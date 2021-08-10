@@ -33,6 +33,13 @@ export const builder = (yargs: Argv): void => {
     describe: 'Path to a log file to write to.',
     coerce: createLog
   });
+
+  yargs.option('webhooks', {
+    type: 'boolean',
+    describe:
+      'Import webhooks as well. The command will attempt to rewrite account names and staging environments in the webhook body to match the destination.',
+    boolean: true
+  });
 };
 
 const searchIndexList = (hub: Hub, parentId?: string, projection?: string) => {
@@ -116,7 +123,7 @@ export const updateWebhookIfDifferent = async (webhook: Webhook, newWebhook: Web
 export const enrichIndex = async (
   index: SearchIndex,
   enrichedIndex: EnrichedSearchIndex,
-  webhooks: Map<string, Webhook>
+  webhooks: Map<string, Webhook> | undefined
 ): Promise<void> => {
   // Union the replicas on the server and the replicas being imported.
   // This avoids replicas being detached from their parents, and thus becoming unusable.
@@ -167,15 +174,17 @@ export const enrichIndex = async (
     // Update any webhooks if they differ from the ones being imported, if the flag is provided.
     // Does the webhook being referenced in the saved index exist in the import?
 
-    await updateWebhookIfDifferent(await existing.related.webhook(), webhooks.get(assignment.webhook));
-    await updateWebhookIfDifferent(
-      await existing.related.activeContentWebhook(),
-      webhooks.get(assignment.activeContentWebhook)
-    );
-    await updateWebhookIfDifferent(
-      await existing.related.archivedContentWebhook(),
-      webhooks.get(assignment.archivedContentWebhook)
-    );
+    if (webhooks) {
+      await updateWebhookIfDifferent(await existing.related.webhook(), webhooks.get(assignment.webhook));
+      await updateWebhookIfDifferent(
+        await existing.related.activeContentWebhook(),
+        webhooks.get(assignment.activeContentWebhook)
+      );
+      await updateWebhookIfDifferent(
+        await existing.related.archivedContentWebhook(),
+        webhooks.get(assignment.archivedContentWebhook)
+      );
+    }
   }
 
   // Finally, remove any content type assignments that are not present in the imported index.
@@ -187,7 +196,7 @@ export const enrichIndex = async (
 export const doCreate = async (
   hub: Hub,
   index: EnrichedSearchIndex,
-  webhooks: Map<string, Webhook>,
+  webhooks: Map<string, Webhook> | undefined,
   log: FileLog
 ): Promise<SearchIndex> => {
   try {
@@ -207,7 +216,7 @@ export const doUpdate = async (
   hub: Hub,
   allReplicas: Map<string, SearchIndex[]>,
   index: EnrichedSearchIndex,
-  webhooks: Map<string, Webhook>,
+  webhooks: Map<string, Webhook> | undefined,
   log: FileLog
 ): Promise<{ index: SearchIndex; updateStatus: UpdateStatus }> => {
   try {
@@ -261,7 +270,7 @@ export const loadAndRewriteWebhooks = async (hub: Hub, dir: string): Promise<Map
 export const processIndices = async (
   indicesToProcess: EnrichedSearchIndex[],
   allReplicas: Map<string, SearchIndex[]>,
-  webhooks: Map<string, Webhook>,
+  webhooks: Map<string, Webhook> | undefined,
   hub: Hub,
   log: FileLog
 ): Promise<void> => {
@@ -308,7 +317,7 @@ export const handler = async (
   const { storedIndices, allReplicas } = separateReplicas(allStoredIndices);
 
   const indicesToProcess = Object.values(indices).map(index => storedIndexMapper(index, storedIndices));
-  const webhooks = argv.webhooks ? await loadAndRewriteWebhooks(hub, join(dir, 'webhooks')) : new Map();
+  const webhooks = argv.webhooks ? await loadAndRewriteWebhooks(hub, join(dir, 'webhooks')) : undefined;
 
   await processIndices(indicesToProcess, allReplicas, webhooks, hub, log);
 

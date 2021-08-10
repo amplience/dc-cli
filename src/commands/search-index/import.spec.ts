@@ -60,6 +60,13 @@ describe('search-index import command', (): void => {
         describe: 'Path to a log file to write to.',
         coerce: createLog
       });
+
+      expect(spyOption).toHaveBeenCalledWith('webhooks', {
+        type: 'boolean',
+        describe:
+          'Import webhooks as well. The command will attempt to rewrite account names and staging environments in the webhook body to match the destination.',
+        boolean: true
+      });
     });
   });
 
@@ -750,7 +757,7 @@ describe('search-index import command', (): void => {
       expect(processIndices).toHaveBeenCalledWith(
         Object.values(fileNamesAndIndicesToImport),
         expect.any(Map),
-        expect.any(Map),
+        undefined,
         expect.any(Object),
         expect.any(FileLog)
       );
@@ -782,7 +789,7 @@ describe('search-index import command', (): void => {
       expect(processIndices).toHaveBeenCalledWith(
         [fileNamesAndIndicesToImport['file-2']],
         expect.any(Map),
-        expect.any(Map),
+        undefined,
         expect.any(Object),
         expect.any(FileLog)
       );

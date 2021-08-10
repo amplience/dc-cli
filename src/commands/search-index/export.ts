@@ -11,7 +11,7 @@ import {
 } from 'dc-management-sdk-js';
 import { AssignedContentType } from 'dc-management-sdk-js/build/main/lib/model/AssignedContentType';
 import { SearchIndexKey } from 'dc-management-sdk-js/build/main/lib/model/SearchIndexKey';
-import { isEqual } from 'lodash';
+import { isEqual, result } from 'lodash';
 import { table } from 'table';
 import { Arguments, Argv } from 'yargs';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -100,13 +100,16 @@ export const assignedContentTypeEquals = (
   b: EnrichedAssignedContentType,
   aWebhooks?: Map<string, Webhook>,
   bWebhooks?: Map<string, Webhook>
-): boolean => {
-  return (
-    !(aWebhooks && bWebhooks) ||
-    (webhookEquals(aWebhooks.get(a.webhook), bWebhooks.get(b.webhook)) &&
-      webhookEquals(aWebhooks.get(a.activeContentWebhook), bWebhooks.get(b.activeContentWebhook)) &&
-      webhookEquals(aWebhooks.get(a.archivedContentWebhook), bWebhooks.get(b.archivedContentWebhook)))
-  );
+): boolean =>
+  !(aWebhooks && bWebhooks) ||
+  (webhookEquals(aWebhooks.get(a.webhook), bWebhooks.get(b.webhook)) &&
+    webhookEquals(aWebhooks.get(a.activeContentWebhook), bWebhooks.get(b.activeContentWebhook)) &&
+    webhookEquals(aWebhooks.get(a.archivedContentWebhook), bWebhooks.get(b.archivedContentWebhook)));
+
+export const ensureSettings = (settings: SearchIndexSettings): object => {
+  const result = ensureJSON(settings) as SearchIndexSettings;
+  result.replicas = result.replicas || [];
+  return result;
 };
 
 export const equals = (
@@ -117,14 +120,13 @@ export const equals = (
   bWebhooks?: Map<string, Webhook>
 ): boolean =>
   a.label === b.label &&
-  //isEqual(a.assignedContentTypes.map(x => ensureJSON(x)), b.assignedContentTypes.map(x => ensureJSON(x))) &&
   a.assignedContentTypes
     .map((x, i) => assignedContentTypeEquals(x, b.assignedContentTypes[i], aWebhooks, bWebhooks))
     .reduce((a, b) => a && b, true) &&
   a.replicas.length == b.replicas.length &&
   a.replicas.map((x, i) => replicaEquals(x, b.replicas[i], keys)).reduce((a, b) => a && b, true) &&
   (!keys || isEqual(ensureJSON(a.keys), ensureJSON(b.keys))) &&
-  isEqual(ensureJSON(a.settings), ensureJSON(b.settings));
+  isEqual(ensureSettings(a.settings), ensureSettings(b.settings));
 
 const searchIndexList = (hub: Hub, parentId?: string, projection?: string) => {
   return (options?: Pageable & Sortable): Promise<Page<SearchIndex>> =>
