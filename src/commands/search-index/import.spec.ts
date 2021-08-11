@@ -234,7 +234,9 @@ describe('search-index import command', (): void => {
   });
 
   describe('doUpdate', () => {
-    beforeEach(() => {});
+    beforeEach(() => {
+      /* ... */
+    });
 
     it('should update an index and return report', async () => {
       const mutatedIndex = {

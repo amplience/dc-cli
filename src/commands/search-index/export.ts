@@ -11,7 +11,7 @@ import {
 } from 'dc-management-sdk-js';
 import { AssignedContentType } from 'dc-management-sdk-js/build/main/lib/model/AssignedContentType';
 import { SearchIndexKey } from 'dc-management-sdk-js/build/main/lib/model/SearchIndexKey';
-import { isEqual, result } from 'lodash';
+import { isEqual } from 'lodash';
 import { table } from 'table';
 import { Arguments, Argv } from 'yargs';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -384,8 +384,7 @@ export const processWebhooks = async (
   outputDir: string,
   //previouslyExportedIndices: { [filename: string]: EnrichedSearchIndex },
   webhooksBeingExported: Webhook[],
-  log: FileLog,
-  force: boolean
+  log: FileLog
 ): Promise<void> => {
   if (webhooksBeingExported.length === 0) {
     return;
@@ -454,7 +453,7 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   await processIndices(dir, previouslyExportedIndices, enrichedIndices, webhooks, log, force || false);
 
   const filteredWebhooks = filterWebhooks(webhooks, enrichedIndices);
-  await processWebhooks(dir, Array.from(filteredWebhooks.values()), log, force || false);
+  await processWebhooks(dir, Array.from(filteredWebhooks.values()), log);
 
   await log.close();
 };

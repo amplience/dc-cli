@@ -1037,7 +1037,7 @@ describe('search-index export command', (): void => {
         })
       ];
 
-      await processWebhooks('export-dir', webhooks, new FileLog(), false);
+      await processWebhooks('export-dir', webhooks, new FileLog());
 
       expect(mockEnsureDirectory).toHaveBeenCalledWith('export-dir/webhooks');
 
