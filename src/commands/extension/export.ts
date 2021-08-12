@@ -81,7 +81,7 @@ export const filterExtensionsById = (listToFilter: Extension[], extensionUriList
   );
   if (unmatchedExtensionUriList.length > 0) {
     throw new Error(
-      `The following schema ID(s) could not be found: [${unmatchedExtensionUriList
+      `The following extension URI(s) could not be found: [${unmatchedExtensionUriList
         .map(u => `'${u}'`)
         .join(', ')}].\nNothing was exported, exiting.`
     );

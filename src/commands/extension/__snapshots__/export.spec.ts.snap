@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`extension export command filterExtensionsById should throw an error for ids which do not exist in the list of extensions 1`] = `
-"The following schema ID(s) could not be found: ['extension-id-4'].
+"The following extension URI(s) could not be found: ['extension-id-4'].
 Nothing was exported, exiting."
 `;
 

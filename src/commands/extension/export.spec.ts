@@ -657,8 +657,8 @@ describe('extension export command', (): void => {
     });
 
     it('should export all extensions for the current hub if no ids specified', async (): Promise<void> => {
-      const schemaIdsToExport: string[] | undefined = undefined;
-      const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, logFile: new FileLog() };
+      const extensionIdsToExport: string[] | undefined = undefined;
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', extensionId: extensionIdsToExport, logFile: new FileLog() };
 
       const filteredExtensionsToExport = [...extensionsToExport];
       jest.spyOn(exportModule, 'filterExtensionsById').mockReturnValue(filteredExtensionsToExport);

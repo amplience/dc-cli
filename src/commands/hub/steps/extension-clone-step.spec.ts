@@ -26,8 +26,6 @@ function rimraf(dir: string): Promise<Error> {
 }
 
 describe('extension clone step', () => {
-  let mockContent: MockContent;
-
   const yargArgs = {
     $0: 'test',
     _: ['test']
@@ -41,12 +39,6 @@ describe('extension clone step', () => {
 
   function reset(): void {
     jest.resetAllMocks();
-
-    mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
-    mockContent.createMockRepository('targetRepo');
-    mockContent.registerContentType('http://type', 'type', 'targetRepo');
-    mockContent.registerContentType('http://type2', 'type2', 'targetRepo');
-    mockContent.registerContentType('http://type3', 'type3', 'targetRepo');
   }
 
   beforeEach(async () => {

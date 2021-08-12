@@ -130,15 +130,15 @@ export const processExtensions = async (
   const data: string[][] = [];
 
   data.push([chalk.bold('ID'), chalk.bold('Name'), chalk.bold('Result')]);
-  for (const schema of extensionsToProcess) {
+  for (const entry of extensionsToProcess) {
     let status: ImportResult;
     let extension: Extension;
-    if (schema.id) {
-      const result = await doUpdate(client, schema, log);
+    if (entry.id) {
+      const result = await doUpdate(client, entry, log);
       extension = result.extension;
       status = result.updateStatus === UpdateStatus.SKIPPED ? 'UP-TO-DATE' : 'UPDATED';
     } else {
-      extension = await doCreate(hub, schema, log);
+      extension = await doCreate(hub, entry, log);
       status = 'CREATED';
     }
     data.push([extension.id || '', extension.name, status]);
