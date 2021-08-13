@@ -200,7 +200,11 @@ export const doCreate = async (
   log: FileLog
 ): Promise<SearchIndex> => {
   try {
-    const createdIndex = await hub.related.searchIndexes.create(new SearchIndex(getIndexProperties(index)));
+    const assignedContentTypes = index.assignedContentTypes.map(type => ({ contentTypeUri: type.contentTypeUri }));
+
+    const toCreate = new SearchIndex({ ...getIndexProperties(index), assignedContentTypes });
+
+    const createdIndex = await hub.related.searchIndexes.create(toCreate);
 
     await enrichIndex(createdIndex, index, webhooks);
 

@@ -24,6 +24,7 @@ import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { EnrichedSearchIndex } from './export';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
+import { AssignedContentType } from 'dc-management-sdk-js/build/main/lib/model/AssignedContentType';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
@@ -152,6 +153,9 @@ describe('search-index import command', (): void => {
   });
 
   describe('doCreate', () => {
+    const assignedContentType = new AssignedContentType({ contentTypeUri: 'http://uri.com' });
+    const assignedContentTypes = [{ contentTypeUri: 'http://uri.com' }];
+
     it('should create an index and return report', async () => {
       const mockHub = new Hub();
       const log = new FileLog();
@@ -159,7 +163,8 @@ describe('search-index import command', (): void => {
       const mockCreate = jest.fn().mockResolvedValue(newIndex);
       mockHub.related.searchIndexes.create = mockCreate;
       jest.spyOn(importModule, 'enrichIndex').mockResolvedValue();
-      const index = { name: 'index-name', label: 'test-label' };
+      const indexBase = { name: 'index-name', label: 'test-label' };
+      const index = { ...indexBase, assignedContentTypes: [assignedContentType] };
       const webhooks = new Map();
       const result = await doCreate(mockHub, index as EnrichedSearchIndex, webhooks, log);
 
@@ -168,7 +173,7 @@ describe('search-index import command', (): void => {
           "created-id",
         ]
       `);
-      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(index));
+      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ ...indexBase, assignedContentTypes }));
       expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
       expect(result).toEqual(newIndex);
     });
@@ -181,7 +186,7 @@ describe('search-index import command', (): void => {
         throw new Error('Error creating index');
       });
       mockHub.related.searchIndexes.create = mockCreate;
-      const index = { name: 'index-name', label: 'test-label' };
+      const index = { name: 'index-name', label: 'test-label', assignedContentTypes: [assignedContentType] };
 
       await expect(
         doCreate(mockHub, index as EnrichedSearchIndex, new Map(), log)
@@ -200,7 +205,7 @@ describe('search-index import command', (): void => {
           'The create-index action is not available, ensure you have permission to perform this action.'
         );
       mockHub.related.searchIndexes.create = mockCreate;
-      const index = { name: 'index-name', label: 'test-label' };
+      const index = { name: 'index-name', label: 'test-label', assignedContentTypes: [assignedContentType] };
 
       await expect(
         doCreate(mockHub, index as EnrichedSearchIndex, new Map(), log)
@@ -220,14 +225,15 @@ describe('search-index import command', (): void => {
         .mockRejectedValue(
           'The update-index action is not available, ensure you have permission to perform this action.'
         );
-      const index = { name: 'index-name', label: 'test-label' };
+      const indexBase = { name: 'index-name', label: 'test-label' };
+      const index = { ...indexBase, assignedContentTypes: [assignedContentType] };
       const webhooks = new Map();
 
       await expect(
         doCreate(mockHub, index as EnrichedSearchIndex, webhooks, log)
       ).rejects.toThrowErrorMatchingSnapshot();
 
-      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining(index));
+      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ ...indexBase, assignedContentTypes }));
       expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
       expect(log.getData('CREATE')).toEqual([]);
     });
