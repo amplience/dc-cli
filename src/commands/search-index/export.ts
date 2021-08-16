@@ -382,7 +382,6 @@ export const filterWebhooks = (
 
 export const processWebhooks = async (
   outputDir: string,
-  //previouslyExportedIndices: { [filename: string]: EnrichedSearchIndex },
   webhooksBeingExported: Webhook[],
   log: FileLog
 ): Promise<void> => {

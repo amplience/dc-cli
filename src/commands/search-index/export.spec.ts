@@ -244,29 +244,36 @@ describe('search-index export command', (): void => {
   });
 
   describe('enrichIndex tests', () => {
-    it('should request settings, types, keys and webhooks to enrich the given indices', async (): Promise<void> => {
-      const index = new SearchIndex({
+    let index: SearchIndex;
+    let settings: SearchIndexSettings;
+    let key: SearchIndexKey;
+    let assignedContentTypes: AssignedContentType[];
+    let enrichedContentTypes: EnrichedAssignedContentType[];
+
+    beforeEach(() => {
+      index = new SearchIndex({
+        id: 'id-1',
         name: 'account.suffix-1',
         suffix: 'suffix-1',
         label: 'Index 1',
         type: 'STAGING'
       });
 
-      const settings = new SearchIndexSettings({
+      settings = new SearchIndexSettings({
         example: 'setting'
       });
 
-      const key = new SearchIndexKey({
+      key = new SearchIndexKey({
         id: 'key-id',
         key: 'example-key'
       });
 
-      const assignedContentTypes = [
+      assignedContentTypes = [
         new AssignedContentType({ contentTypeUri: 'http://1' }),
         new AssignedContentType({ contentTypeUri: 'http://2' })
       ];
 
-      const enrichedContentTypes: EnrichedAssignedContentType[] = [];
+      enrichedContentTypes = [];
 
       assignedContentTypes.forEach((type, index) => {
         type.related.webhook = jest.fn().mockResolvedValue(new Webhook({ id: 'webhook-' + index }));
@@ -295,7 +302,9 @@ describe('search-index export command', (): void => {
           get: jest.fn().mockResolvedValue(key)
         }
       };
+    });
 
+    it('should request settings, types, keys and webhooks to enrich the given indices', async (): Promise<void> => {
       const expectedEnriched = new EnrichedSearchIndex({
         ...index.toJSON(),
         settings: settings,
@@ -305,6 +314,40 @@ describe('search-index export command', (): void => {
       });
 
       const enriched = await exportModule.enrichIndex(new Map(), new Map(), index);
+
+      expect(index.related.settings.get).toHaveBeenCalledTimes(1);
+      expect(index.related.assignedContentTypes.list).toHaveBeenCalledTimes(1);
+      expect(index.related.keys.get).toHaveBeenCalledTimes(1);
+
+      for (const type of assignedContentTypes) {
+        expect(type.related.webhook).toHaveBeenCalledTimes(1);
+        expect(type.related.activeContentWebhook).toHaveBeenCalledTimes(1);
+        expect(type.related.archivedContentWebhook).toHaveBeenCalledTimes(1);
+      }
+
+      expect(enriched.toJSON()).toEqual(expectedEnriched.toJSON());
+    });
+
+    it('should enrich replicas when present', async (): Promise<void> => {
+      const allReplicas = new Map<string, SearchIndex[]>();
+
+      const replica = new SearchIndex({ id: 'replica-1' });
+      const enrichedReplica = new EnrichedReplica(replica);
+      allReplicas.set('id-1', [replica]);
+
+      jest.spyOn(exportModule, 'enrichReplica').mockResolvedValue(enrichedReplica);
+
+      const expectedEnriched = new EnrichedSearchIndex({
+        ...index.toJSON(),
+        settings: settings,
+        keys: key,
+        assignedContentTypes: enrichedContentTypes,
+        replicas: [enrichedReplica]
+      });
+
+      const enriched = await exportModule.enrichIndex(new Map(), allReplicas, index);
+
+      expect(exportModule.enrichReplica).toHaveBeenCalledWith(replica, 0, [replica]);
 
       expect(index.related.settings.get).toHaveBeenCalledTimes(1);
       expect(index.related.assignedContentTypes.list).toHaveBeenCalledTimes(1);

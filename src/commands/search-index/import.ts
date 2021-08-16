@@ -224,7 +224,7 @@ export const doUpdate = async (
   log: FileLog
 ): Promise<{ index: SearchIndex; updateStatus: UpdateStatus }> => {
   try {
-    const retrievedIndex: SearchIndex = await hub.related.searchIndexes.get(index.id || '');
+    const retrievedIndex: SearchIndex = await hub.related.searchIndexes.get(index.id as string);
 
     const dstWebhooks = new Map<string, Webhook>();
 
@@ -292,7 +292,7 @@ export const processIndices = async (
       index = await doCreate(hub, entry, webhooks, log);
       status = 'CREATED';
     }
-    data.push([index.id || '', index.name as string, status]);
+    data.push([index.id as string, index.name as string, status]);
   }
 
   log.appendLine(table(data, streamTableOptions));

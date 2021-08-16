@@ -1,5 +1,5 @@
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { SearchIndex, Hub, Webhook } from 'dc-management-sdk-js';
+import { SearchIndex, Hub, Webhook, SearchIndexSettings } from 'dc-management-sdk-js';
 import * as exportModule from './export';
 import * as importModule from './import';
 import * as webhookRewriter from './webhook-rewriter';
@@ -8,6 +8,7 @@ import {
   command,
   doCreate,
   doUpdate,
+  enrichIndex,
   handler,
   loadAndRewriteWebhooks,
   LOG_FILENAME,
@@ -22,9 +23,10 @@ import { loadJsonFromDirectory, UpdateStatus } from '../../services/import.servi
 import chalk from 'chalk';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { EnrichedSearchIndex } from './export';
+import { EnrichedReplica, EnrichedSearchIndex } from './export';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { AssignedContentType } from 'dc-management-sdk-js/build/main/lib/model/AssignedContentType';
+import { join } from 'path';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../view/data-presenter');
@@ -236,6 +238,205 @@ describe('search-index import command', (): void => {
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ ...indexBase, assignedContentTypes }));
       expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
       expect(log.getData('CREATE')).toEqual([]);
+    });
+  });
+
+  describe('enrichIndex', () => {
+    function addWebhookFns(type: AssignedContentType, webhooks: Webhook[] = []): void {
+      type.related.webhook = jest.fn().mockResolvedValue(webhooks[0]);
+      type.related.activeContentWebhook = jest.fn().mockResolvedValue(webhooks[1]);
+      type.related.archivedContentWebhook = jest.fn().mockResolvedValue(webhooks[2]);
+      type.related.unassign = jest.fn().mockReturnValue(Promise.resolve());
+    }
+
+    it('should fetch settings, content types for comparison with the index to be enriched', async () => {
+      const index = new SearchIndex({
+        name: 'index-1',
+        label: 'index-1'
+      });
+
+      const enrichedIndex = new EnrichedSearchIndex({
+        settings: {},
+        assignedContentTypes: []
+      });
+
+      index.related.settings.get = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.settings.update = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, []));
+      index.related.assignedContentTypes.create = jest.fn();
+
+      await enrichIndex(index, enrichedIndex, undefined);
+
+      expect(enrichedIndex.settings.replicas).toEqual([]);
+      expect(index.related.settings.get).toHaveBeenCalled();
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
+      expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
+    });
+
+    it("should update settings with a union of both source and destination replicas, then update each replica's settings", async () => {
+      const index = new SearchIndex({
+        name: 'index-1',
+        label: 'index-1'
+      });
+
+      const enrichedIndex = new EnrichedSearchIndex({
+        settings: {
+          replicas: ['replica-1', 'replica-2']
+        },
+        assignedContentTypes: [],
+        replicas: [
+          new EnrichedReplica({
+            name: 'replica-1',
+            settings: new SearchIndexSettings({ setting: '1' })
+          }),
+          new EnrichedReplica({
+            name: 'replica-2',
+            settings: new SearchIndexSettings({ setting: '2' })
+          })
+        ]
+      });
+
+      const indexNames = ['replica-1', 'replica-2', 'replica-3'];
+      const replicas = indexNames.map(name => {
+        const index = new SearchIndex({ name });
+        index.related.update = jest.fn().mockResolvedValue(index);
+        index.related.settings.update = jest
+          .fn()
+          .mockImplementation(settings => Promise.resolve(new SearchIndexSettings(settings)));
+        return index;
+      });
+
+      index.related.settings.get = jest.fn().mockResolvedValue(new SearchIndexSettings({ replicas: ['replica-3'] }));
+      index.related.settings.update = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.replicas.list = jest.fn().mockResolvedValue(new MockPage(SearchIndex, replicas));
+      index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, []));
+      index.related.assignedContentTypes.create = jest.fn();
+
+      await enrichIndex(index, enrichedIndex, undefined);
+
+      expect(enrichedIndex.settings.replicas).toEqual(expect.arrayContaining(['replica-1', 'replica-2', 'replica-3']));
+      expect(enrichedIndex.settings.replicas.length).toEqual(3);
+      expect(index.related.settings.get).toHaveBeenCalled();
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.replicas.list).toHaveBeenCalled();
+
+      for (let i = 0; i < 2; i++) {
+        expect((replicas[i].related.update as jest.Mock).mock.calls[0][0].name).toEqual(replicas[i].name);
+        expect(replicas[i].related.settings.update).toHaveBeenCalledWith(enrichedIndex.replicas[i].settings, false);
+      }
+
+      expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
+      expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
+    });
+
+    it('should assign any content types that are not yet assigned on the destination index, removing any that are no longer present', async () => {
+      const index = new SearchIndex({
+        name: 'index-1',
+        label: 'index-1'
+      });
+
+      const enrichedIndex = new EnrichedSearchIndex({
+        settings: {},
+        assignedContentTypes: [
+          new AssignedContentType({ contentTypeUri: 'http://toCreate.com' }),
+          new AssignedContentType({ contentTypeUri: 'http://toUpdate.com' })
+        ]
+      });
+
+      const existingURIs = ['http://toUpdate.com', 'http://toDelete.com'];
+      const existingTypes = existingURIs.map(uri => {
+        const type = new AssignedContentType({ contentTypeUri: uri });
+        addWebhookFns(type);
+        return type;
+      });
+
+      index.related.settings.get = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.settings.update = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.assignedContentTypes.list = jest
+        .fn()
+        .mockResolvedValue(new MockPage(AssignedContentType, existingTypes));
+
+      const created: AssignedContentType[] = [];
+      index.related.assignedContentTypes.create = jest.fn().mockImplementation(type => {
+        created.push(type);
+        addWebhookFns(type);
+        return type;
+      });
+
+      await enrichIndex(index, enrichedIndex, undefined);
+
+      expect(created).toEqual([enrichedIndex.assignedContentTypes[0]]);
+
+      expect(existingTypes[0].related.unassign).not.toHaveBeenCalled();
+      expect(existingTypes[1].related.unassign).toHaveBeenCalled();
+      expect(index.related.assignedContentTypes.create).toHaveBeenCalledWith(enrichedIndex.assignedContentTypes[0]);
+
+      expect(enrichedIndex.settings.replicas).toEqual([]);
+      expect(index.related.settings.get).toHaveBeenCalled();
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
+    });
+
+    it('should update webhooks for the destination index when they are available', async () => {
+      const index = new SearchIndex({
+        name: 'index-1',
+        label: 'index-1'
+      });
+
+      const enrichedIndex = new EnrichedSearchIndex({
+        settings: {},
+        assignedContentTypes: [
+          new AssignedContentType({
+            contentTypeUri: 'http://toUpdate.com',
+            webhook: 'id-1',
+            activeContentWebhook: 'id-2'
+          })
+        ]
+      });
+
+      const type = new AssignedContentType({ contentTypeUri: 'http://toUpdate.com' });
+      const webhooks = [new Webhook({ id: 'id-1' }), new Webhook({ id: 'id-2' }), new Webhook({ id: 'id-3' })];
+      addWebhookFns(type, webhooks);
+
+      const enrichedWebhooks = new Map();
+      enrichedWebhooks.set('id-1', new Webhook({ id: 'id-1', label: 'updated-1' }));
+      enrichedWebhooks.set('id-2', new Webhook({ id: 'id-2', label: 'updated-2' }));
+
+      jest.spyOn(importModule, 'updateWebhookIfDifferent').mockReturnValue(Promise.resolve());
+
+      index.related.settings.get = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.settings.update = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, [type]));
+      index.related.assignedContentTypes.create = jest.fn();
+
+      await enrichIndex(index, enrichedIndex, enrichedWebhooks);
+
+      expect(type.related.unassign).not.toHaveBeenCalled();
+      expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
+
+      expect(type.related.webhook).toHaveBeenCalled();
+      expect(type.related.activeContentWebhook).toHaveBeenCalled();
+      expect(type.related.archivedContentWebhook).toHaveBeenCalled();
+
+      expect(importModule.updateWebhookIfDifferent).toHaveBeenNthCalledWith(
+        1,
+        webhooks[0],
+        enrichedWebhooks.get('id-1')
+      );
+
+      expect(importModule.updateWebhookIfDifferent).toHaveBeenNthCalledWith(
+        2,
+        webhooks[1],
+        enrichedWebhooks.get('id-2')
+      );
+
+      expect(importModule.updateWebhookIfDifferent).toHaveBeenNthCalledWith(3, webhooks[2], undefined);
+
+      expect(enrichedIndex.settings.replicas).toEqual([]);
+      expect(index.related.settings.get).toHaveBeenCalled();
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
     });
   });
 
@@ -798,6 +999,45 @@ describe('search-index import command', (): void => {
         [fileNamesAndIndicesToImport['file-2']],
         expect.any(Map),
         undefined,
+        expect.any(Object),
+        expect.any(FileLog)
+      );
+    });
+
+    it('should load webhooks when the webhooks argument is provided', async (): Promise<void> => {
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', logFile: new FileLog(), webhooks: true };
+      const fileNamesAndIndicesToImport = {
+        'file-1': new EnrichedSearchIndex({
+          name: 'index-name-1',
+          label: 'created'
+        }),
+        'file-2': new EnrichedSearchIndex({
+          id: 'content-index-id',
+          name: 'index-name-2',
+          label: 'updated'
+        })
+      };
+
+      const webhookMap = new Map();
+
+      (loadJsonFromDirectory as jest.Mock).mockReturnValue(fileNamesAndIndicesToImport);
+      jest
+        .spyOn(importModule, 'storedIndexMapper')
+        .mockReturnValueOnce(fileNamesAndIndicesToImport['file-1'])
+        .mockReturnValueOnce(fileNamesAndIndicesToImport['file-2']);
+      jest.spyOn(importModule, 'processIndices').mockResolvedValueOnce();
+      jest.spyOn(importModule, 'loadAndRewriteWebhooks').mockResolvedValueOnce(webhookMap);
+
+      await handler(argv);
+
+      expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', EnrichedSearchIndex);
+      expect(loadAndRewriteWebhooks).toHaveBeenCalledWith(expect.any(Object), join('my-dir', 'webhooks'));
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalled();
+      expect(processIndices).toHaveBeenCalledWith(
+        Object.values(fileNamesAndIndicesToImport),
+        expect.any(Map),
+        webhookMap,
         expect.any(Object),
         expect.any(FileLog)
       );
