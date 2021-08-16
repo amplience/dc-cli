@@ -1,9 +1,7 @@
 import { Arguments } from 'yargs';
-import { MockContent } from '../../../common/dc-management-sdk-js/mock-content';
 import { FileLog } from '../../../common/file-log';
 import { ensureDirectoryExists } from '../../../common/import/directory-utils';
 import { CloneHubBuilderOptions } from '../../../interfaces/clone-hub-builder-options';
-import dynamicContentClientFactory from '../../../services/dynamic-content-client-factory';
 import { ConfigurationParameters } from '../../configure';
 import { CloneHubState } from '../model/clone-hub-state';
 import { join } from 'path';
