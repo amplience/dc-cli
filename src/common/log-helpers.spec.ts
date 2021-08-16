@@ -1,5 +1,8 @@
 import { createLog, getDefaultLogPath } from './log-helpers';
 import { join } from 'path';
+import { setVersion } from './file-log';
+
+setVersion('test-ver');
 
 describe('log-helpers', () => {
   describe('getDefaultLogPath tests', () => {
@@ -32,7 +35,7 @@ describe('log-helpers', () => {
       const log = createLog('exampleFilename.txt');
 
       // Undefined title matches the filename.
-      expect(log.title).toEqual('exampleFilename.txt');
+      expect(log.title).toEqual('dc-cli test-ver - exampleFilename.txt');
       expect(log['filename']).toEqual('exampleFilename.txt');
       expect(log['openedCount']).toEqual(0);
     });
@@ -41,7 +44,7 @@ describe('log-helpers', () => {
       const log = createLog('exampleFilename.txt');
 
       // Undefined title matches the filename.
-      expect(log.title).toEqual('exampleFilename.txt');
+      expect(log.title).toEqual('dc-cli test-ver - exampleFilename.txt');
       expect(log['filename']).toEqual('exampleFilename.txt');
       expect(log['openedCount']).toEqual(0);
     });
@@ -50,7 +53,7 @@ describe('log-helpers', () => {
       const log = createLog('exampleFilename2.txt', 'title with timestamp');
 
       // Followed by timestamp.
-      expect(log.title).toMatch(/^title with timestamp \- ./);
+      expect(log.title).toMatch(/^dc\-cli test\-ver \- title with timestamp \- ./);
       expect(log['filename']).toEqual('exampleFilename2.txt');
       expect(log['openedCount']).toEqual(0);
     });

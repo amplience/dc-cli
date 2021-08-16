@@ -8,7 +8,9 @@ import { dirname } from 'path';
 import { promisify } from 'util';
 import readline from 'readline';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { FileLog } from '../../common/file-log';
+import { FileLog, setVersion } from '../../common/file-log';
+
+setVersion('test-ver');
 
 jest.mock('readline');
 
@@ -91,7 +93,7 @@ describe('content-type archive command', () => {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
-      expect(logFile.title).toMatch(/^Content Type Archive Log \- ./);
+      expect(logFile.title).toMatch(/^dc\-cli test\-ver \- Content Type Archive Log \- ./);
     });
   });
 

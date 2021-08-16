@@ -6,7 +6,9 @@ import readline from 'readline';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { promisify } from 'util';
 import { exists, readFile, unlink } from 'fs';
-import { FileLog } from '../../common/file-log';
+import { FileLog, setVersion } from '../../common/file-log';
+
+setVersion('test-ver');
 
 jest.mock('readline');
 
@@ -76,7 +78,7 @@ describe('event archive command', () => {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
-      expect(logFile.title).toMatch(/^Events Archive Log \- ./);
+      expect(logFile.title).toMatch(/^dc\-cli test\-ver \- Events Archive Log \- ./);
     });
   });
 

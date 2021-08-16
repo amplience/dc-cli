@@ -16,8 +16,10 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { dirname } from 'path';
 import { promisify } from 'util';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
-import { FileLog } from '../../common/file-log';
+import { FileLog, setVersion } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+
+setVersion('test-ver');
 
 jest.mock('readline');
 
@@ -320,7 +322,7 @@ describe('content-item archive command', () => {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
-      expect(logFile.title).toMatch(/^Content Items Archive Log \- ./);
+      expect(logFile.title).toMatch(/^dc\-cli test\-ver \- Content Items Archive Log \- ./);
     });
 
     it('should archive all content', async () => {
