@@ -83,6 +83,24 @@ export const validateNoDuplicateIndexNames = (importedIndexes: {
   }
 };
 
+export const rewriteIndexNames = (
+  hub: Hub,
+  importedIndexes: {
+    [filename: string]: EnrichedSearchIndex;
+  }
+): void | never => {
+  for (const index of Object.values(importedIndexes)) {
+    const name = index.name as string;
+    const firstDot = name.indexOf('.');
+
+    if (firstDot == -1) {
+      index.name = `${hub.name}.${name}`;
+    } else {
+      index.name = `${hub.name}${name.substring(firstDot)}`;
+    }
+  }
+};
+
 export const filterIndexesById = (
   idFilter: string[],
   importedIndexes: {
@@ -312,6 +330,7 @@ export const handler = async (
   }
 
   validateNoDuplicateIndexNames(indexes);
+  rewriteIndexNames(hub, indexes);
 
   if (idFilter) {
     filterIndexesById(idFilter, indexes);

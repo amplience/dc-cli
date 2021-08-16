@@ -14,7 +14,8 @@ import {
   LOG_FILENAME,
   processIndexes,
   storedIndexMapper,
-  validateNoDuplicateIndexNames
+  validateNoDuplicateIndexNames,
+  rewriteIndexNames
 } from './import';
 import Yargs from 'yargs/yargs';
 import { table } from 'table';
@@ -850,6 +851,26 @@ describe('search-index import command', (): void => {
     });
   });
 
+  describe('rewriteIndexNames', function() {
+    it("should rewrite index names to contain the given hub's name", () => {
+      const indexesToProcess = {
+        'file-1': new EnrichedSearchIndex({
+          name: 'oldHub.index-name-1'
+        }),
+        'file-2': new EnrichedSearchIndex({
+          name: 'index-name-2'
+        })
+      };
+
+      const hub = new Hub({ name: 'newHub' });
+
+      expect(() => rewriteIndexNames(hub, indexesToProcess)).not.toThrow();
+
+      expect(indexesToProcess['file-1'].name).toEqual('newHub.index-name-1');
+      expect(indexesToProcess['file-2'].name).toEqual('newHub.index-name-2');
+    });
+  });
+
   describe('filterIndexesById', function() {
     it('should delete indexes without a matching id', () => {
       const indexesToProcess = {
@@ -957,10 +978,12 @@ describe('search-index import command', (): void => {
         .mockReturnValueOnce(fileNamesAndIndexesToImport['file-1'])
         .mockReturnValueOnce(fileNamesAndIndexesToImport['file-2']);
       jest.spyOn(importModule, 'processIndexes').mockResolvedValueOnce();
+      jest.spyOn(importModule, 'rewriteIndexNames');
 
       await handler(argv);
 
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', EnrichedSearchIndex);
+      expect(rewriteIndexNames).toHaveBeenCalledWith(expect.any(Object), fileNamesAndIndexesToImport);
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(mockList).toHaveBeenCalled();
       expect(processIndexes).toHaveBeenCalledWith(
@@ -990,10 +1013,14 @@ describe('search-index import command', (): void => {
       (loadJsonFromDirectory as jest.Mock).mockReturnValue({ ...fileNamesAndIndexesToImport });
       jest.spyOn(importModule, 'storedIndexMapper').mockReturnValueOnce(fileNamesAndIndexesToImport['file-2']);
       jest.spyOn(importModule, 'processIndexes').mockResolvedValueOnce();
+      jest.spyOn(importModule, 'rewriteIndexNames');
 
       await handler(argv, ['index-id-2']);
 
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', EnrichedSearchIndex);
+      expect(rewriteIndexNames).toHaveBeenCalledWith(expect.any(Object), {
+        'file-2': fileNamesAndIndexesToImport['file-2']
+      });
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(processIndexes).toHaveBeenCalledWith(
         [fileNamesAndIndexesToImport['file-2']],
@@ -1027,10 +1054,12 @@ describe('search-index import command', (): void => {
         .mockReturnValueOnce(fileNamesAndIndexesToImport['file-2']);
       jest.spyOn(importModule, 'processIndexes').mockResolvedValueOnce();
       jest.spyOn(importModule, 'loadAndRewriteWebhooks').mockResolvedValueOnce(webhookMap);
+      jest.spyOn(importModule, 'rewriteIndexNames');
 
       await handler(argv);
 
       expect(loadJsonFromDirectory).toHaveBeenCalledWith('my-dir', EnrichedSearchIndex);
+      expect(rewriteIndexNames).toHaveBeenCalledWith(expect.any(Object), fileNamesAndIndexesToImport);
       expect(loadAndRewriteWebhooks).toHaveBeenCalledWith(expect.any(Object), join('my-dir', 'webhooks'));
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(mockList).toHaveBeenCalled();
