@@ -3,12 +3,12 @@ import * as directoryUtils from '../../common/import/directory-utils';
 import {
   builder,
   command,
-  filterIndicesById,
+  filterIndexesById,
   getIndexExports,
   getExportRecordForIndex,
   handler,
   LOG_FILENAME,
-  processIndices,
+  processIndexes,
   EnrichedSearchIndex,
   EnrichedAssignedContentType,
   webhookEquals,
@@ -68,13 +68,13 @@ describe('search-index export command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('id', {
         type: 'string',
         describe:
-          'The ID of a Search Index to be exported.\nIf no --id option is given, all search indices for the hub are exported.\nA single --id option may be given to export a single Search Index.\nMultiple --id options may be given to export multiple search indices at the same time.',
+          'The ID of a Search Index to be exported.\nIf no --id option is given, all search indexes for the hub are exported.\nA single --id option may be given to export a single Search Index.\nMultiple --id options may be given to export multiple search indexes at the same time.',
         requiresArg: true
       });
       expect(spyOption).toHaveBeenCalledWith('f', {
         type: 'boolean',
         boolean: true,
-        describe: 'Overwrite search indices without asking.'
+        describe: 'Overwrite search indexes without asking.'
       });
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
@@ -201,7 +201,7 @@ describe('search-index export command', (): void => {
   });
 
   describe('enrichReplica tests', () => {
-    it('should request settings and keys to enrich the given indices', async (): Promise<void> => {
+    it('should request settings and keys to enrich the given indexes', async (): Promise<void> => {
       const index = new SearchIndex({
         name: 'account.suffix-1',
         suffix: 'suffix-1',
@@ -304,7 +304,7 @@ describe('search-index export command', (): void => {
       };
     });
 
-    it('should request settings, types, keys and webhooks to enrich the given indices', async (): Promise<void> => {
+    it('should request settings, types, keys and webhooks to enrich the given indexes', async (): Promise<void> => {
       const expectedEnriched = new EnrichedSearchIndex({
         ...index.toJSON(),
         settings: settings,
@@ -410,7 +410,7 @@ describe('search-index export command', (): void => {
   describe('getIndexExports', () => {
     let getExportRecordForIndexSpy: jest.SpyInstance;
 
-    const indicesToExport = [
+    const indexesToExport = [
       new EnrichedSearchIndex({
         name: 'index-name-1',
         label: 'index 1',
@@ -431,16 +431,16 @@ describe('search-index export command', (): void => {
       })
     ];
 
-    const exportedIndices = {
-      'export-dir/export-filename-1.json': indicesToExport[0],
-      'export-dir/export-filename-2.json': indicesToExport[1]
+    const exportedIndexes = {
+      'export-dir/export-filename-1.json': indexesToExport[0],
+      'export-dir/export-filename-2.json': indexesToExport[1]
     };
 
     beforeEach(() => {
       getExportRecordForIndexSpy = jest.spyOn(exportModule, 'getExportRecordForIndex');
     });
 
-    it('should return a list of indices to export and no filenames that will be updated (first export)', () => {
+    it('should return a list of indexes to export and no filenames that will be updated (first export)', () => {
       const exportedWebhooks = new Map();
       jest.spyOn(exportModule, 'getExportedWebhooks').mockReturnValueOnce(exportedWebhooks);
 
@@ -448,15 +448,15 @@ describe('search-index export command', (): void => {
         .mockReturnValueOnce({
           filename: 'export-dir/export-filename-1.json',
           status: 'CREATED',
-          index: indicesToExport[0]
+          index: indexesToExport[0]
         })
         .mockReturnValueOnce({
           filename: 'export-dir/export-filename-2.json',
           status: 'CREATED',
-          index: indicesToExport[1]
+          index: indexesToExport[1]
         });
 
-      const [allExports, updatedExportsMap] = getIndexExports('export-dir', {}, indicesToExport, new Map());
+      const [allExports, updatedExportsMap] = getIndexExports('export-dir', {}, indexesToExport, new Map());
 
       expect(getExportRecordForIndexSpy).toHaveBeenCalledTimes(2);
       expect(getExportRecordForIndexSpy.mock.calls).toMatchSnapshot();
@@ -464,7 +464,7 @@ describe('search-index export command', (): void => {
       expect(updatedExportsMap).toEqual([]);
     });
 
-    it('should return a list of indices to export and a list of filenames that will be updated', () => {
+    it('should return a list of indexes to export and a list of filenames that will be updated', () => {
       const exportedWebhooks = new Map();
       jest.spyOn(exportModule, 'getExportedWebhooks').mockReturnValueOnce(exportedWebhooks);
 
@@ -472,18 +472,18 @@ describe('search-index export command', (): void => {
         .mockReturnValueOnce({
           filename: 'export-dir/export-filename-1.json',
           status: 'CREATED',
-          index: indicesToExport[0]
+          index: indexesToExport[0]
         })
         .mockReturnValueOnce({
           filename: 'export-dir/export-filename-2.json',
           status: 'UPDATED',
-          index: indicesToExport[1]
+          index: indexesToExport[1]
         });
 
       const [allExports, updatedExportsMap] = getIndexExports(
         'export-dir',
-        exportedIndices,
-        indicesToExport,
+        exportedIndexes,
+        indexesToExport,
         new Map()
       );
 
@@ -493,7 +493,7 @@ describe('search-index export command', (): void => {
       expect(updatedExportsMap).toMatchSnapshot();
     });
 
-    it('should not return a list of indices to export or a list of filenames that will be updated', () => {
+    it('should not return a list of indexes to export or a list of filenames that will be updated', () => {
       const exportedWebhooks = new Map();
       jest.spyOn(exportModule, 'getExportedWebhooks').mockReturnValueOnce(exportedWebhooks);
       const [allExports, updatedExportsMap] = getIndexExports('export-dir', {}, [], new Map());
@@ -541,7 +541,7 @@ describe('search-index export command', (): void => {
     };
 
     it('should create export for any newly exported index', async () => {
-      const exportedIndices = {
+      const exportedIndexes = {
         'export-dir/export-filename-1.json': new EnrichedSearchIndex({
           name: 'index-name-1',
           label: 'index 1',
@@ -561,15 +561,15 @@ describe('search-index export command', (): void => {
 
       jest.spyOn(exportServiceModule, 'uniqueFilenamePath').mockReturnValueOnce('export-dir/export-filename-3.json');
 
-      const existingIndices = Object.keys(exportedIndices);
+      const existingIndexes = Object.keys(exportedIndexes);
 
-      const result = getExportRecordForIndex(newIndexToExport, 'export-dir', exportedIndices, new Map(), new Map());
+      const result = getExportRecordForIndex(newIndexToExport, 'export-dir', exportedIndexes, new Map(), new Map());
 
       expect(exportServiceModule.uniqueFilenamePath).toHaveBeenCalledWith(
         'export-dir',
         newIndexToExport.name,
         'json',
-        existingIndices
+        existingIndexes
       );
       expect(result).toEqual({
         filename: 'export-dir/export-filename-3.json',
@@ -579,7 +579,7 @@ describe('search-index export command', (): void => {
     });
 
     it('should update export for any index with different content', async () => {
-      const exportedIndices = {
+      const exportedIndexes = {
         'export-dir/export-filename-1.json': new EnrichedSearchIndex({
           name: 'index-name-1',
           label: 'index 1',
@@ -600,7 +600,7 @@ describe('search-index export command', (): void => {
 
       jest.spyOn(exportServiceModule, 'uniqueFilenamePath');
 
-      const result = getExportRecordForIndex(updatedIndexToExport, 'export-dir', exportedIndices, new Map(), new Map());
+      const result = getExportRecordForIndex(updatedIndexToExport, 'export-dir', exportedIndexes, new Map(), new Map());
 
       expect(exportServiceModule.uniqueFilenamePath).toHaveBeenCalledTimes(0);
       expect(result).toEqual({
@@ -611,7 +611,7 @@ describe('search-index export command', (): void => {
     });
 
     it('should not update export for any index with same content', async () => {
-      const exportedIndices = {
+      const exportedIndexes = {
         'export-dir/export-filename-1.json': new EnrichedSearchIndex({
           name: 'index-name-1',
           label: 'index 1',
@@ -635,7 +635,7 @@ describe('search-index export command', (): void => {
       const result = getExportRecordForIndex(
         unchangedIndexToExport,
         'export-dir',
-        exportedIndices,
+        exportedIndexes,
         new Map(),
         new Map()
       );
@@ -649,7 +649,7 @@ describe('search-index export command', (): void => {
     });
   });
 
-  describe('filterIndicesById', () => {
+  describe('filterIndexesById', () => {
     const listToFilter = [
       new EnrichedSearchIndex({
         id: 'index-id-1',
@@ -665,29 +665,29 @@ describe('search-index export command', (): void => {
       })
     ];
 
-    it('should return the indices matching the given uris', async () => {
-      const result = filterIndicesById(listToFilter, ['index-id-1', 'index-id-3']);
+    it('should return the indexes matching the given uris', async () => {
+      const result = filterIndexesById(listToFilter, ['index-id-1', 'index-id-3']);
       expect(result).toEqual(expect.arrayContaining([listToFilter[0], listToFilter[2]]));
     });
 
-    it('should return all the indices because there are no URIs to filter', async () => {
-      const result = filterIndicesById(listToFilter, []);
+    it('should return all the indexes because there are no URIs to filter', async () => {
+      const result = filterIndexesById(listToFilter, []);
       expect(result).toEqual(listToFilter);
     });
 
-    it('should throw an error for ids which do not exist in the list of indices', async () => {
+    it('should throw an error for ids which do not exist in the list of indexes', async () => {
       expect(() =>
-        filterIndicesById(listToFilter, ['index-id-1', 'index-id-4', 'index-id-3'])
+        filterIndexesById(listToFilter, ['index-id-1', 'index-id-4', 'index-id-3'])
       ).toThrowErrorMatchingSnapshot();
     });
   });
 
-  describe('processIndices', () => {
+  describe('processIndexes', () => {
     let mockEnsureDirectory: jest.Mock;
     let mockTable: jest.Mock;
     let stdoutSpy: jest.SpyInstance;
 
-    const indicesToProcess = [
+    const indexesToProcess = [
       new EnrichedSearchIndex({
         id: 'index-id-1',
         name: 'index-name-1',
@@ -708,7 +708,7 @@ describe('search-index export command', (): void => {
       })
     ];
 
-    const exportedIndices = [
+    const exportedIndexes = [
       {
         name: 'index-name-1',
         label: 'index 1',
@@ -739,37 +739,37 @@ describe('search-index export command', (): void => {
       jest.resetAllMocks();
     });
 
-    it('should output export files for the given indices if nothing previously exported', async () => {
+    it('should output export files for the given indexes if nothing previously exported', async () => {
       jest.spyOn(exportModule, 'getIndexExports').mockReturnValueOnce([
         [
           {
             filename: 'export-dir/export-filename-1.json',
             status: 'CREATED',
-            index: indicesToProcess[0]
+            index: indexesToProcess[0]
           },
           {
             filename: 'export-dir/export-filename-2.json',
             status: 'CREATED',
-            index: indicesToProcess[1]
+            index: indexesToProcess[1]
           },
           {
             filename: 'export-dir/export-filename-3.json',
             status: 'CREATED',
-            index: indicesToProcess[2]
+            index: indexesToProcess[2]
           }
         ],
         []
       ]);
 
-      const previouslyExportedIndices = {};
+      const previouslyExportedIndexes = {};
       const webhooks = new Map();
-      await processIndices('export-dir', previouslyExportedIndices, indicesToProcess, webhooks, new FileLog(), false);
+      await processIndexes('export-dir', previouslyExportedIndexes, indexesToProcess, webhooks, new FileLog(), false);
 
       expect(exportModule.getIndexExports).toHaveBeenCalledTimes(1);
       expect(exportModule.getIndexExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedIndices,
-        indicesToProcess,
+        previouslyExportedIndexes,
+        indexesToProcess,
         webhooks
       );
 
@@ -779,17 +779,17 @@ describe('search-index export command', (): void => {
       expect(exportServiceModule.writeJsonToFile).toHaveBeenNthCalledWith(
         1,
         'export-dir/export-filename-1.json',
-        expect.objectContaining(exportedIndices[0])
+        expect.objectContaining(exportedIndexes[0])
       );
       expect(exportServiceModule.writeJsonToFile).toHaveBeenNthCalledWith(
         2,
         'export-dir/export-filename-2.json',
-        expect.objectContaining(exportedIndices[1])
+        expect.objectContaining(exportedIndexes[1])
       );
       expect(exportServiceModule.writeJsonToFile).toHaveBeenNthCalledWith(
         3,
         'export-dir/export-filename-3.json',
-        expect.objectContaining(exportedIndices[2])
+        expect.objectContaining(exportedIndexes[2])
       );
 
       expect(mockTable).toHaveBeenCalledTimes(1);
@@ -797,20 +797,20 @@ describe('search-index export command', (): void => {
         1,
         [
           [chalk.bold('File'), chalk.bold('Name'), chalk.bold('Result')],
-          ['export-dir/export-filename-1.json', indicesToProcess[0].name, 'CREATED'],
-          ['export-dir/export-filename-2.json', indicesToProcess[1].name, 'CREATED'],
-          ['export-dir/export-filename-3.json', indicesToProcess[2].name, 'CREATED']
+          ['export-dir/export-filename-1.json', indexesToProcess[0].name, 'CREATED'],
+          ['export-dir/export-filename-2.json', indexesToProcess[1].name, 'CREATED'],
+          ['export-dir/export-filename-3.json', indexesToProcess[2].name, 'CREATED']
         ],
         streamTableOptions
       );
     });
 
-    it('should output a message if no indices to export from hub', async () => {
+    it('should output a message if no indexes to export from hub', async () => {
       jest.spyOn(exportModule, 'getIndexExports').mockReturnValueOnce([[], []]);
 
-      const previouslyExportedIndices = {};
+      const previouslyExportedIndexes = {};
 
-      await processIndices('export-dir', previouslyExportedIndices, [], new Map(), new FileLog(), false);
+      await processIndexes('export-dir', previouslyExportedIndexes, [], new Map(), new FileLog(), false);
 
       expect(mockEnsureDirectory).toHaveBeenCalledTimes(0);
       expect(exportModule.getIndexExports).toHaveBeenCalledTimes(0);
@@ -825,34 +825,34 @@ describe('search-index export command', (): void => {
           {
             filename: 'export-dir/export-filename-1.json',
             status: 'UP-TO-DATE',
-            index: indicesToProcess[0]
+            index: indexesToProcess[0]
           },
           {
             filename: 'export-dir/export-filename-2.json',
             status: 'UP-TO-DATE',
-            index: indicesToProcess[1]
+            index: indexesToProcess[1]
           },
           {
             filename: 'export-dir/export-filename-3.json',
             status: 'UP-TO-DATE',
-            index: indicesToProcess[2]
+            index: indexesToProcess[2]
           }
         ],
         []
       ]);
 
-      const previouslyExportedIndices = {
-        'export-dir/export-filename-2.json': new EnrichedSearchIndex(exportedIndices[1])
+      const previouslyExportedIndexes = {
+        'export-dir/export-filename-2.json': new EnrichedSearchIndex(exportedIndexes[1])
       };
       const webhooks = new Map();
-      const indices = [...indicesToProcess];
-      await processIndices('export-dir', previouslyExportedIndices, indices, webhooks, new FileLog(), false);
+      const indexes = [...indexesToProcess];
+      await processIndexes('export-dir', previouslyExportedIndexes, indexes, webhooks, new FileLog(), false);
 
       expect(exportModule.getIndexExports).toHaveBeenCalledTimes(1);
       expect(exportModule.getIndexExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedIndices,
-        indices,
+        previouslyExportedIndexes,
+        indexes,
         webhooks
       );
 
@@ -864,17 +864,17 @@ describe('search-index export command', (): void => {
         1,
         [
           [chalk.bold('File'), chalk.bold('Name'), chalk.bold('Result')],
-          ['export-dir/export-filename-1.json', indicesToProcess[0].name, 'UP-TO-DATE'],
-          ['export-dir/export-filename-2.json', indicesToProcess[1].name, 'UP-TO-DATE'],
-          ['export-dir/export-filename-3.json', indicesToProcess[2].name, 'UP-TO-DATE']
+          ['export-dir/export-filename-1.json', indexesToProcess[0].name, 'UP-TO-DATE'],
+          ['export-dir/export-filename-2.json', indexesToProcess[1].name, 'UP-TO-DATE'],
+          ['export-dir/export-filename-3.json', indexesToProcess[2].name, 'UP-TO-DATE']
         ],
         streamTableOptions
       );
     });
 
     it('should update the existing export file for a changed index', async () => {
-      const mutatedIndices = [...indicesToProcess];
-      mutatedIndices[1] = new EnrichedSearchIndex({
+      const mutatedIndexes = [...indexesToProcess];
+      mutatedIndexes[1] = new EnrichedSearchIndex({
         id: 'index-id-2',
         name: 'index-name-2',
         label: 'index 2 - mutated label',
@@ -888,39 +888,39 @@ describe('search-index export command', (): void => {
           {
             filename: 'export-dir/export-filename-1.json',
             status: 'UP-TO-DATE',
-            index: mutatedIndices[0]
+            index: mutatedIndexes[0]
           },
           {
             filename: 'export-dir/export-filename-2.json',
             status: 'UPDATED',
-            index: mutatedIndices[1]
+            index: mutatedIndexes[1]
           },
           {
             filename: 'export-dir/export-filename-3.json',
             status: 'UP-TO-DATE',
-            index: mutatedIndices[2]
+            index: mutatedIndexes[2]
           }
         ],
         [
           {
             filename: 'export-dir/export-filename-2.json',
-            uri: mutatedIndices[1].id as string
+            uri: mutatedIndexes[1].id as string
           }
         ]
       ]);
 
-      const previouslyExportedIndices = {
-        'export-dir/export-filename-2.json': new EnrichedSearchIndex(exportedIndices[1])
+      const previouslyExportedIndexes = {
+        'export-dir/export-filename-2.json': new EnrichedSearchIndex(exportedIndexes[1])
       };
       const webhooks = new Map();
 
-      await processIndices('export-dir', previouslyExportedIndices, mutatedIndices, webhooks, new FileLog(), false);
+      await processIndexes('export-dir', previouslyExportedIndexes, mutatedIndexes, webhooks, new FileLog(), false);
 
       expect(exportModule.getIndexExports).toHaveBeenCalledTimes(1);
       expect(exportModule.getIndexExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedIndices,
-        mutatedIndices,
+        previouslyExportedIndexes,
+        mutatedIndexes,
         webhooks
       );
 
@@ -932,17 +932,17 @@ describe('search-index export command', (): void => {
         1,
         [
           [chalk.bold('File'), chalk.bold('Name'), chalk.bold('Result')],
-          ['export-dir/export-filename-1.json', indicesToProcess[0].name, 'UP-TO-DATE'],
-          ['export-dir/export-filename-2.json', indicesToProcess[1].name, 'UPDATED'],
-          ['export-dir/export-filename-3.json', indicesToProcess[2].name, 'UP-TO-DATE']
+          ['export-dir/export-filename-1.json', indexesToProcess[0].name, 'UP-TO-DATE'],
+          ['export-dir/export-filename-2.json', indexesToProcess[1].name, 'UPDATED'],
+          ['export-dir/export-filename-3.json', indexesToProcess[2].name, 'UP-TO-DATE']
         ],
         streamTableOptions
       );
     });
 
     it('should not update anything if the user says "n" to the overwrite prompt', async () => {
-      const mutatedIndices = [...indicesToProcess];
-      mutatedIndices[1] = new EnrichedSearchIndex({
+      const mutatedIndexes = [...indexesToProcess];
+      mutatedIndexes[1] = new EnrichedSearchIndex({
         id: 'index-id-2',
         name: 'index-name-2',
         label: 'index 2 - mutated label',
@@ -955,39 +955,39 @@ describe('search-index export command', (): void => {
           {
             filename: 'export-dir/export-filename-1.json',
             status: 'UP-TO-DATE',
-            index: mutatedIndices[0]
+            index: mutatedIndexes[0]
           },
           {
             filename: 'export-dir/export-filename-2.json',
             status: 'UPDATED',
-            index: mutatedIndices[1]
+            index: mutatedIndexes[1]
           },
           {
             filename: 'export-dir/export-filename-3.json',
             status: 'UP-TO-DATE',
-            index: mutatedIndices[2]
+            index: mutatedIndexes[2]
           }
         ],
         [
           {
             filename: 'export-dir/export-filename-2.json',
-            uri: mutatedIndices[1].id as string
+            uri: mutatedIndexes[1].id as string
           }
         ]
       ]);
 
-      const previouslyExportedIndices = {
-        'export-dir/export-filename-2.json': new EnrichedSearchIndex(exportedIndices[1])
+      const previouslyExportedIndexes = {
+        'export-dir/export-filename-2.json': new EnrichedSearchIndex(exportedIndexes[1])
       };
       const webhooks = new Map();
 
-      await processIndices('export-dir', previouslyExportedIndices, mutatedIndices, webhooks, new FileLog(), false);
+      await processIndexes('export-dir', previouslyExportedIndexes, mutatedIndexes, webhooks, new FileLog(), false);
 
       expect(exportModule.getIndexExports).toHaveBeenCalledTimes(1);
       expect(exportModule.getIndexExports).toHaveBeenCalledWith(
         'export-dir',
-        previouslyExportedIndices,
-        mutatedIndices,
+        previouslyExportedIndexes,
+        mutatedIndexes,
         webhooks
       );
 
@@ -998,7 +998,7 @@ describe('search-index export command', (): void => {
   });
 
   describe('filterWebhooks', () => {
-    it('should return a webhook mapping consisting of only webhooks in the given search indices', () => {
+    it('should return a webhook mapping consisting of only webhooks in the given search indexes', () => {
       const webhooks = new Map([
         ['id1', new Webhook({ id: 'id1', label: 'webhook1' })],
         ['id2', new Webhook({ id: 'id2', label: 'webhook2' })],
@@ -1006,7 +1006,7 @@ describe('search-index export command', (): void => {
         ['id4', new Webhook({ id: 'id4', label: 'webhook4' })]
       ]);
 
-      const indices = [
+      const indexes = [
         new EnrichedSearchIndex({
           assignedContentTypes: [
             new EnrichedAssignedContentType({
@@ -1027,7 +1027,7 @@ describe('search-index export command', (): void => {
         })
       ];
 
-      const result = filterWebhooks(webhooks, indices);
+      const result = filterWebhooks(webhooks, indexes);
 
       expect(result.size).toEqual(3);
       expect(result.get('id1')).toEqual(webhooks.get('id1'));
@@ -1035,7 +1035,7 @@ describe('search-index export command', (): void => {
       expect(result.get('id4')).toEqual(webhooks.get('id4'));
     });
 
-    it('should filter all webhooks if no indices are provided', () => {
+    it('should filter all webhooks if no indexes are provided', () => {
       const webhooks = new Map([
         ['id1', new Webhook({ id: 'id1', label: 'webhook1' })],
         ['id2', new Webhook({ id: 'id2', label: 'webhook2' })],
@@ -1043,8 +1043,8 @@ describe('search-index export command', (): void => {
         ['id4', new Webhook({ id: 'id4', label: 'webhook4' })]
       ]);
 
-      const indices: EnrichedSearchIndex[] = [];
-      const result = filterWebhooks(webhooks, indices);
+      const indexes: EnrichedSearchIndex[] = [];
+      const result = filterWebhooks(webhooks, indexes);
 
       expect(result.size).toEqual(0);
     });
@@ -1117,7 +1117,7 @@ describe('search-index export command', (): void => {
 
   describe('separateReplicas', () => {
     it('it should separate replicas into a mapping', () => {
-      const indices = [
+      const indexes = [
         new SearchIndex({
           id: 'parent',
           label: 'not-replica',
@@ -1140,15 +1140,15 @@ describe('search-index export command', (): void => {
         })
       ];
 
-      const { storedIndices, allReplicas } = exportModule.separateReplicas(indices);
+      const { storedIndexes, allReplicas } = exportModule.separateReplicas(indexes);
 
-      expect(storedIndices).toEqual([indices[0], indices[3]]);
+      expect(storedIndexes).toEqual([indexes[0], indexes[3]]);
       expect(allReplicas.size).toEqual(1);
-      expect(allReplicas.get('parent')).toEqual([indices[1], indices[2]]);
+      expect(allReplicas.get('parent')).toEqual([indexes[1], indexes[2]]);
     });
 
     it('it should return no replicas when none are present', () => {
-      const indices = [
+      const indexes = [
         new SearchIndex({
           id: 'parent',
           label: 'not-replica',
@@ -1161,16 +1161,16 @@ describe('search-index export command', (): void => {
         })
       ];
 
-      const { storedIndices, allReplicas } = exportModule.separateReplicas(indices);
+      const { storedIndexes, allReplicas } = exportModule.separateReplicas(indexes);
 
-      expect(storedIndices).toEqual(indices);
+      expect(storedIndexes).toEqual(indexes);
       expect(allReplicas.size).toEqual(0);
     });
 
-    it('it should return nothing when no indices are provided', () => {
-      const { storedIndices, allReplicas } = exportModule.separateReplicas([]);
+    it('it should return nothing when no indexes are provided', () => {
+      const { storedIndexes, allReplicas } = exportModule.separateReplicas([]);
 
-      expect(storedIndices).toEqual([]);
+      expect(storedIndexes).toEqual([]);
       expect(allReplicas.size).toEqual(0);
     });
   });
@@ -1186,7 +1186,7 @@ describe('search-index export command', (): void => {
       hubId: 'hub-id'
     };
 
-    const indicesToExport: EnrichedSearchIndex[] = [
+    const indexesToExport: EnrichedSearchIndex[] = [
       new EnrichedSearchIndex({
         name: 'account.suffix-1',
         suffix: 'suffix-1',
@@ -1215,7 +1215,7 @@ describe('search-index export command', (): void => {
     beforeEach(() => {
       (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
 
-      const listResponse = new MockPage(SearchIndex, indicesToExport);
+      const listResponse = new MockPage(SearchIndex, indexesToExport);
       mockList = jest.fn().mockResolvedValue(listResponse);
 
       mockGetHub = jest.fn().mockResolvedValue({
@@ -1231,7 +1231,7 @@ describe('search-index export command', (): void => {
           get: mockGetHub
         }
       });
-      jest.spyOn(exportModule, 'processIndices').mockResolvedValue();
+      jest.spyOn(exportModule, 'processIndexes').mockResolvedValue();
     });
 
     it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
@@ -1240,15 +1240,15 @@ describe('search-index export command', (): void => {
       expect(getDefaultLogPath).toHaveBeenCalledWith('search-index', 'export', process.platform);
     });
 
-    it('should export all indices for the current hub if no ids specified', async (): Promise<void> => {
+    it('should export all indexes for the current hub if no ids specified', async (): Promise<void> => {
       const schemaIdsToExport: string[] | undefined = undefined;
       const argv = { ...yargArgs, ...config, dir: 'my-dir', schemaId: schemaIdsToExport, logFile: new FileLog() };
 
-      const filteredIndicesToExport = [...indicesToExport];
+      const filteredIndexesToExport = [...indexesToExport];
       jest
         .spyOn(exportModule, 'enrichIndex')
         .mockImplementation((x, y, z) => Promise.resolve(z as EnrichedSearchIndex));
-      jest.spyOn(exportModule, 'filterIndicesById').mockReturnValue(filteredIndicesToExport);
+      jest.spyOn(exportModule, 'filterIndexesById').mockReturnValue(filteredIndexesToExport);
 
       await handler(argv);
 
@@ -1257,26 +1257,26 @@ describe('search-index export command', (): void => {
       expect(mockList).toHaveBeenCalledWith(undefined, undefined, { size: 100 });
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, EnrichedSearchIndex);
       expect(validateNoDuplicateIndexNames).toHaveBeenCalled();
-      expect(exportModule.filterIndicesById).toHaveBeenCalledWith(indicesToExport, []);
-      expect(exportModule.processIndices).toHaveBeenCalledWith(
+      expect(exportModule.filterIndexesById).toHaveBeenCalledWith(indexesToExport, []);
+      expect(exportModule.processIndexes).toHaveBeenCalledWith(
         argv.dir,
         [],
-        filteredIndicesToExport,
+        filteredIndexesToExport,
         expect.any(Map),
         expect.any(FileLog),
         false
       );
     });
 
-    it('should export only selected indices if ids specified', async (): Promise<void> => {
+    it('should export only selected indexes if ids specified', async (): Promise<void> => {
       const idsToExport: string[] | undefined = ['index-id-2'];
       const argv = { ...yargArgs, ...config, dir: 'my-dir', id: idsToExport, logFile: new FileLog() };
 
-      const filteredIndicesToExport = [indicesToExport[1]];
+      const filteredIndexesToExport = [indexesToExport[1]];
       jest
         .spyOn(exportModule, 'enrichIndex')
         .mockImplementation((x, y, z) => Promise.resolve(z as EnrichedSearchIndex));
-      jest.spyOn(exportModule, 'filterIndicesById').mockReturnValue(filteredIndicesToExport);
+      jest.spyOn(exportModule, 'filterIndexesById').mockReturnValue(filteredIndexesToExport);
 
       await handler(argv);
 
@@ -1284,11 +1284,11 @@ describe('search-index export command', (): void => {
       expect(mockList).toHaveBeenCalled();
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, EnrichedSearchIndex);
       expect(validateNoDuplicateIndexNames).toHaveBeenCalled();
-      expect(exportModule.filterIndicesById).toHaveBeenCalledWith(indicesToExport, idsToExport);
-      expect(exportModule.processIndices).toHaveBeenCalledWith(
+      expect(exportModule.filterIndexesById).toHaveBeenCalledWith(indexesToExport, idsToExport);
+      expect(exportModule.processIndexes).toHaveBeenCalledWith(
         argv.dir,
         [],
-        filteredIndicesToExport,
+        filteredIndexesToExport,
         expect.any(Map),
         expect.any(FileLog),
         false

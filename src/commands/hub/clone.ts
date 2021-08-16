@@ -30,7 +30,7 @@ export function getDefaultMappingPath(name: string, platform: string = process.p
 // hub-*/extensions/
 // hub-*/schemas/
 // hub-*/types/
-// hub-*/indices/
+// hub-*/indexes/
 // hub-*/content/
 // hub-*/events/
 

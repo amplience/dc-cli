@@ -13,12 +13,12 @@ export class IndexCloneStep implements CloneHubStep {
   }
 
   getName(): string {
-    return 'Clone Indices';
+    return 'Clone Indexes';
   }
 
   async run(state: CloneHubState): Promise<boolean> {
     try {
-      state.logFile.appendLine(`Exporting existing indices from destination.`);
+      state.logFile.appendLine(`Exporting existing indexes from destination.`);
       await exportIndex({
         dir: join(state.path, 'oldIndex'),
         force: true,
@@ -26,12 +26,12 @@ export class IndexCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
-      state.logFile.appendLine(`ERROR: Could not export existing indices. \n${e}`);
+      state.logFile.appendLine(`ERROR: Could not export existing indexes. \n${e}`);
       return false;
     }
 
     try {
-      state.logFile.appendLine(`Exporting indices from source.`);
+      state.logFile.appendLine(`Exporting indexes from source.`);
       await exportIndex({
         dir: join(state.path, 'index'),
         force: true,
@@ -39,7 +39,7 @@ export class IndexCloneStep implements CloneHubStep {
         ...state.from
       });
     } catch (e) {
-      state.logFile.appendLine(`ERROR: Could not export indices. \n${e}`);
+      state.logFile.appendLine(`ERROR: Could not export indexes. \n${e}`);
       return false;
     }
 
@@ -51,7 +51,7 @@ export class IndexCloneStep implements CloneHubStep {
         ...state.to
       });
     } catch (e) {
-      state.logFile.appendLine(`ERROR: Could not import indices. \n${e}`);
+      state.logFile.appendLine(`ERROR: Could not import indexes. \n${e}`);
       return false;
     }
 
@@ -59,7 +59,7 @@ export class IndexCloneStep implements CloneHubStep {
   }
 
   async revert(state: CloneHubState): Promise<boolean> {
-    // Deleting indices leaves names reserved and unusable, so CREATE actions are ignored.
+    // Deleting indexes leaves names reserved and unusable, so CREATE actions are ignored.
     const toUpdate = (state.revertLog as FileLog).getData('UPDATE', this.getName());
 
     // Update using the oldIndex folder.
@@ -74,7 +74,7 @@ export class IndexCloneStep implements CloneHubStep {
           toUpdate.map(item => item.split(' ')[0])
         );
       } catch (e) {
-        state.logFile.appendLine(`ERROR: Could not import old indices. \n${e}`);
+        state.logFile.appendLine(`ERROR: Could not import old indexes. \n${e}`);
         return false;
       }
     }

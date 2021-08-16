@@ -89,9 +89,9 @@ describe('index clone step', () => {
     expect(step.getId()).toEqual(CloneHubStepId.Index);
   });
 
-  it('should have the name "Clone Indices"', () => {
+  it('should have the name "Clone Indexes"', () => {
     const step = new IndexCloneStep();
-    expect(step.getName()).toEqual('Clone Indices');
+    expect(step.getName()).toEqual('Clone Indexes');
   });
 
   it('should call export on the source, backup and import to the destination', async () => {
@@ -163,11 +163,11 @@ describe('index clone step', () => {
     expect(indexImport.handler).toBeCalled();
   });
 
-  it('should pass indices with the UPDATE action to the index import command on revert, in the oldIndex folder', async () => {
+  it('should pass indexes with the UPDATE action to the index import command on revert, in the oldIndex folder', async () => {
     const state = generateState('temp/clone-ext/revert-update/', 'revert-update');
 
     const fakeLog = new FileLog();
-    fakeLog.switchGroup('Clone Indices');
+    fakeLog.switchGroup('Clone Indexes');
     fakeLog.addAction('CREATE', 'index');
     fakeLog.addAction('UPDATE', 'index2');
 
@@ -190,11 +190,11 @@ describe('index clone step', () => {
     expect(result).toBeTruthy();
   });
 
-  it('should not call import indices when no update actions can be reverted', async () => {
+  it('should not call import indexes when no update actions can be reverted', async () => {
     const state = generateState('temp/clone-ext/revert-none/', 'revert-none');
 
     const fakeLog = new FileLog();
-    fakeLog.switchGroup('Clone Indices');
+    fakeLog.switchGroup('Clone Indexes');
     fakeLog.addAction('CREATE', 'index');
 
     await ensureDirectoryExists('temp/clone-ext/revert-none/oldIndex');
@@ -210,11 +210,11 @@ describe('index clone step', () => {
     expect(result).toBeTruthy();
   });
 
-  it('should return false when importing indices for revert fails', async () => {
+  it('should return false when importing indexes for revert fails', async () => {
     const state = generateState('temp/clone-ext/revert-update/', 'revert-update');
 
     const fakeLog = new FileLog();
-    fakeLog.switchGroup('Clone Indices');
+    fakeLog.switchGroup('Clone Indexes');
     fakeLog.addAction('CREATE', 'index');
     fakeLog.addAction('UPDATE', 'index2');
 

@@ -23,7 +23,7 @@ export const LOG_FILENAME = (platform: string = process.platform): string =>
 
 export const builder = (yargs: Argv): void => {
   yargs.positional('dir', {
-    describe: 'Directory containing Search Indices',
+    describe: 'Directory containing Search Indexes',
     type: 'string'
   });
 
@@ -55,11 +55,11 @@ export const replicaList = (index: SearchIndex, projection?: string) => {
 type IndexName = string;
 type IndexFile = string;
 
-export const validateNoDuplicateIndexNames = (importedIndices: {
+export const validateNoDuplicateIndexNames = (importedIndexes: {
   [filename: string]: EnrichedSearchIndex;
 }): void | never => {
   const nameToFilenameMap = new Map<IndexName, IndexFile[]>(); // map: name x filenames
-  for (const [filename, index] of Object.entries(importedIndices)) {
+  for (const [filename, index] of Object.entries(importedIndexes)) {
     if (index.name) {
       const otherFilenames: string[] = nameToFilenameMap.get(index.name) || [];
       if (filename) {
@@ -76,28 +76,28 @@ export const validateNoDuplicateIndexNames = (importedIndices: {
 
   if (uniqueDuplicateNames.length > 0) {
     throw new Error(
-      `Indices must have unique name values. Duplicate values found:-\n${uniqueDuplicateNames
+      `Indexes must have unique name values. Duplicate values found:-\n${uniqueDuplicateNames
         .map(([name, filenames]) => `  name: '${name}' in files: [${filenames.map(f => `'${f}'`).join(', ')}]`)
         .join('\n')}`
     );
   }
 };
 
-export const filterIndicesById = (
+export const filterIndexesById = (
   idFilter: string[],
-  importedIndices: {
+  importedIndexes: {
     [filename: string]: SearchIndex;
   }
 ): void | never => {
-  for (const [filename, index] of Object.entries(importedIndices)) {
+  for (const [filename, index] of Object.entries(importedIndexes)) {
     if (idFilter.indexOf(index.id as string) === -1) {
-      delete importedIndices[filename];
+      delete importedIndexes[filename];
     }
   }
 };
 
-export const storedIndexMapper = (index: EnrichedSearchIndex, storedIndices: SearchIndex[]): EnrichedSearchIndex => {
-  const found = storedIndices.find(stored => stored.name === index.name);
+export const storedIndexMapper = (index: EnrichedSearchIndex, storedIndexes: SearchIndex[]): EnrichedSearchIndex => {
+  const found = storedIndexes.find(stored => stored.name === index.name);
   const mutatedIndex = found ? { ...index, id: found.id } : index;
 
   return new EnrichedSearchIndex(mutatedIndex);
@@ -271,8 +271,8 @@ export const loadAndRewriteWebhooks = async (hub: Hub, dir: string): Promise<Map
   return webhooks;
 };
 
-export const processIndices = async (
-  indicesToProcess: EnrichedSearchIndex[],
+export const processIndexes = async (
+  indexesToProcess: EnrichedSearchIndex[],
   allReplicas: Map<string, SearchIndex[]>,
   webhooks: Map<string, Webhook> | undefined,
   hub: Hub,
@@ -281,7 +281,7 @@ export const processIndices = async (
   const data: string[][] = [];
 
   data.push([chalk.bold('ID'), chalk.bold('Name'), chalk.bold('Result')]);
-  for (const entry of indicesToProcess) {
+  for (const entry of indexesToProcess) {
     let status: ImportResult;
     let index: SearchIndex;
     if (entry.id) {
@@ -306,24 +306,24 @@ export const handler = async (
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const log = logFile.open();
-  const indices = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
-  if (Object.keys(indices).length === 0) {
-    throw new Error(`No indices found in ${dir}`);
+  const indexes = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
+  if (Object.keys(indexes).length === 0) {
+    throw new Error(`No indexes found in ${dir}`);
   }
 
-  validateNoDuplicateIndexNames(indices);
+  validateNoDuplicateIndexNames(indexes);
 
   if (idFilter) {
-    filterIndicesById(idFilter, indices);
+    filterIndexesById(idFilter, indexes);
   }
 
-  const allStoredIndices = await paginator(searchIndexList(hub));
-  const { storedIndices, allReplicas } = separateReplicas(allStoredIndices);
+  const allStoredIndexes = await paginator(searchIndexList(hub));
+  const { storedIndexes, allReplicas } = separateReplicas(allStoredIndexes);
 
-  const indicesToProcess = Object.values(indices).map(index => storedIndexMapper(index, storedIndices));
+  const indexesToProcess = Object.values(indexes).map(index => storedIndexMapper(index, storedIndexes));
   const webhooks = argv.webhooks ? await loadAndRewriteWebhooks(hub, join(dir, 'webhooks')) : undefined;
 
-  await processIndices(indicesToProcess, allReplicas, webhooks, hub, log);
+  await processIndexes(indexesToProcess, allReplicas, webhooks, hub, log);
 
   await log.close();
 };

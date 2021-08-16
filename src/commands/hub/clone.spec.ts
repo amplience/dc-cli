@@ -57,7 +57,7 @@ jest.mock('./steps/type-clone-step', () => ({
 }));
 
 jest.mock('./steps/index-clone-step', () => ({
-  IndexCloneStep: mockStep('Clone Indices', 'index', () => success[4])
+  IndexCloneStep: mockStep('Clone Indexes', 'index', () => success[4])
 }));
 
 jest.mock('./steps/content-clone-step', () => ({

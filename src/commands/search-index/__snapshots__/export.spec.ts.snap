@@ -1,11 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`search-index export command filterIndicesById should throw an error for ids which do not exist in the list of indices 1`] = `
+exports[`search-index export command filterIndexesById should throw an error for ids which do not exist in the list of indexes 1`] = `
 "The following ID(s) could not be found: ['index-id-4'].
 Nothing was exported, exiting."
 `;
 
-exports[`search-index export command getIndexExports should return a list of indices to export and a list of filenames that will be updated 1`] = `
+exports[`search-index export command getIndexExports should return a list of indexes to export and a list of filenames that will be updated 1`] = `
 Array [
   Array [
     Object {
@@ -78,7 +78,7 @@ Array [
 ]
 `;
 
-exports[`search-index export command getIndexExports should return a list of indices to export and a list of filenames that will be updated 2`] = `
+exports[`search-index export command getIndexExports should return a list of indexes to export and a list of filenames that will be updated 2`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-1.json",
@@ -109,7 +109,7 @@ Array [
 ]
 `;
 
-exports[`search-index export command getIndexExports should return a list of indices to export and a list of filenames that will be updated 3`] = `
+exports[`search-index export command getIndexExports should return a list of indexes to export and a list of filenames that will be updated 3`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-2.json",
@@ -118,7 +118,7 @@ Array [
 ]
 `;
 
-exports[`search-index export command getIndexExports should return a list of indices to export and no filenames that will be updated (first export) 1`] = `
+exports[`search-index export command getIndexExports should return a list of indexes to export and no filenames that will be updated (first export) 1`] = `
 Array [
   Array [
     Object {
@@ -153,7 +153,7 @@ Array [
 ]
 `;
 
-exports[`search-index export command getIndexExports should return a list of indices to export and no filenames that will be updated (first export) 2`] = `
+exports[`search-index export command getIndexExports should return a list of indexes to export and no filenames that will be updated (first export) 2`] = `
 Array [
   Object {
     "filename": "export-dir/export-filename-1.json",
@@ -184,10 +184,10 @@ Array [
 ]
 `;
 
-exports[`search-index export command processIndices should output a message if no indices to export from hub 1`] = `
+exports[`search-index export command processIndexes should output a message if no indexes to export from hub 1`] = `
 Array [
   Array [
-    "No search indices to export from this hub, exiting.
+    "No search indexes to export from this hub, exiting.
 ",
   ],
 ]
