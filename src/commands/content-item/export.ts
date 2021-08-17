@@ -13,7 +13,7 @@ import { ContentItem, Folder, DynamicContent, Hub, ContentRepository, Status } f
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { ContentDependancyTree, RepositoryContentItem } from '../../common/content-item/content-dependancy-tree';
-import { ContentMapping } from '../../common/content-item/content-mapping';
+import { ContentMapping } from '../../common/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 
