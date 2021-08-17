@@ -6,7 +6,6 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
-import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { applyFacet } from '../../common/filter/facet';
 
