@@ -92,8 +92,8 @@
     "@types/rimraf": "^3.0.0",
     "@types/table": "^4.0.7",
     "@types/url-template": "^2.0.28",
-    "@typescript-eslint/eslint-plugin": "^2.3.0",
-    "@typescript-eslint/parser": "^2.3.0",
+    "@typescript-eslint/eslint-plugin": "^2.34.0",
+    "@typescript-eslint/parser": "^2.34.0",
     "adm-zip": "^0.4.13",
     "axios-mock-adapter": "^1.19.0",
     "commitizen": "^4.2.4",
@@ -109,7 +109,7 @@
     "standard-version": "^9.3.1",
     "ts-jest": "^27.0.4",
     "ts-node": "^8.4.1",
-    "typescript": "^3.6.3"
+    "typescript": "^3.9.10"
   },
   "dependencies": {
     "ajv": "^6.12.3",
