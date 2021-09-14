@@ -635,7 +635,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const logFileName = 'temp/content-item-unarchive.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
       const log = '// Type log test file\n' + 'ARCHIVE 1\n' + 'ARCHIVE 2 delivery-key\n' + 'ARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -687,11 +687,11 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      if (await promisify(exists)('temp/content-item-archive.log')) {
-        await promisify(unlink)('temp/content-item-archive.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`);
       }
 
-      const logFileName = 'temp/content-item-unarchive.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
       const log = '// Type log test file\n' + 'ARCHIVE 1\n' + 'ARCHIVE 2\n' + 'ARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -722,8 +722,8 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      if (await promisify(exists)('temp/content-item-unarchive.log')) {
-        await promisify(unlink)('temp/content-item-unarchive.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`);
       }
 
       const { mockItemGetById, mockUnarchive } = mockValues();
@@ -731,7 +731,7 @@ describe('content-item unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/content-item-unarchive.log',
+        logFile: `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`,
         id: '1'
       };
 
@@ -740,11 +740,11 @@ describe('content-item unarchive command', () => {
       expect(mockItemGetById).toHaveBeenCalled();
       expect(mockUnarchive).toBeCalled();
 
-      const logExists = await promisify(exists)('temp/content-item-unarchive.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`);
 
       expect(logExists).toBeTruthy();
 
-      const log = await promisify(readFile)('temp/content-item-unarchive.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -756,7 +756,7 @@ describe('content-item unarchive command', () => {
 
       expect(total).toEqual(1);
 
-      await promisify(unlink)('temp/content-item-unarchive.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`);
     });
   });
 

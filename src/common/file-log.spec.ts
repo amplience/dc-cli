@@ -27,20 +27,20 @@ describe('file-log', () => {
 
     it('should embed the date in the filename', async () => {
       jest.spyOn(Date, 'now').mockImplementation(() => 1234);
-      await ensureDirectoryExists('temp/');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/`);
 
-      const log = new FileLog('temp/FileWithDate-<DATE>.log').open();
+      const log = new FileLog(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-<DATE>.log`).open();
       log.appendLine('Test Message');
       await log.close();
 
-      expect(await promisify(exists)('temp/FileWithDate-1234.log')).toBeTruthy();
+      expect(await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`)).toBeTruthy();
       expect(await promisify(readFile)('temp/FileWithDate-1234.log', { encoding: 'utf-8' })).toMatchInlineSnapshot(`
         "// dc-cli test-ver - temp/FileWithDate-1234.log
         // Test Message
         SUCCESS"
       `);
 
-      await promisify(unlink)('temp/FileWithDate-1234.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`);
     });
 
     it('should only save the log after it has been closed as many times as it was opened', async () => {

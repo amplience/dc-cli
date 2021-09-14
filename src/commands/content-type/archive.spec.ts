@@ -403,7 +403,7 @@ describe('content-type archive command', () => {
       const targets: (() => Promise<ContentType>)[] = [];
       const skips: (() => Promise<ContentType>)[] = [];
 
-      const logFileName = 'temp/type-archive-revert.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/type-archive-revert.log`;
       const log = '// Type log test file\n' + 'UNARCHIVE id1\n' + 'UNARCHIVE id2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -446,8 +446,8 @@ describe('content-type archive command', () => {
 
     it('should output archived content to a well formatted log file with specified path in --logFile', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/type-archive-test.log')) {
-        await promisify(unlink)('temp/type-archive-test.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/type-archive-test.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/type-archive-test.log`);
       }
 
       const targets: string[] = [];
@@ -470,19 +470,19 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: createLog('temp/type-archive-test.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/type-archive-test.log`),
         schemaId: '/schemaMatch/',
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/type-archive-test.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/type-archive-test.log`);
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match.
 
-      const log = await promisify(readFile)('temp/type-archive-test.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/type-archive-test.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -498,13 +498,13 @@ describe('content-type archive command', () => {
 
       expect(total).toEqual(2);
 
-      await promisify(unlink)('temp/type-archive-test.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/type-archive-test.log`);
     });
 
     it('should report a failed archive in the provided --logFile and exit immediately', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/type-archive-failed.log')) {
-        await promisify(unlink)('temp/type-archive-failed.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/type-archive-failed.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/type-archive-failed.log`);
       }
 
       const targets: string[] = [];
@@ -528,19 +528,19 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: createLog('temp/type-archive-failed.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/type-archive-failed.log`),
         schemaId: '/schemaMatch/',
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/type-archive-failed.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/type-archive-failed.log`);
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match (as failures)
 
-      const log = await promisify(readFile)('temp/type-archive-failed.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/type-archive-failed.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -552,13 +552,13 @@ describe('content-type archive command', () => {
 
       expect(total).toEqual(1); // Does not continue to archive the next one
 
-      await promisify(unlink)('temp/type-archive-failed.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/type-archive-failed.log`);
     });
 
     it('should skip failed archives when --ignoreError is provided, but log all failures', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/type-archive-skip.log')) {
-        await promisify(unlink)('temp/type-archive-skip.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/type-archive-skip.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/type-archive-skip.log`);
       }
 
       const targets: string[] = [];
@@ -582,20 +582,20 @@ describe('content-type archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: createLog('temp/type-archive-skip.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/type-archive-skip.log`),
         schemaId: '/schemaMatch/',
         ignoreError: true,
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/type-archive-skip.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/type-archive-skip.log`);
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match (as failures)
 
-      const log = await promisify(readFile)('temp/type-archive-skip.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/type-archive-skip.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -607,7 +607,7 @@ describe('content-type archive command', () => {
 
       expect(total).toEqual(2); // Fails to archive each matching type.
 
-      await promisify(unlink)('temp/type-archive-skip.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/type-archive-skip.log`);
     });
 
     it('should exit cleanly when no content can be archived', async () => {

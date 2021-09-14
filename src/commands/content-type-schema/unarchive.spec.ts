@@ -359,7 +359,7 @@ describe('content-item-schema unarchive command', () => {
       const targets: (() => Promise<ContentTypeSchema>)[] = [];
       const skips: (() => Promise<ContentTypeSchema>)[] = [];
 
-      const logFileName = 'temp/schema-unarchive-revert.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/schema-unarchive-revert.log`;
       const log =
         '// Schema log test file\n' +
         'ARCHIVE http://schemas.com/schemaMatch1\n' +
@@ -406,7 +406,7 @@ describe('content-item-schema unarchive command', () => {
     });
 
     it('should output archived content to a well formatted log file with specified path in --logFile', async () => {
-      const logFileName = 'temp/type-unarchive-test.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/type-unarchive-test.log`;
 
       // First, ensure the log does not already exist.
       if (await promisify(exists)(logFileName)) {
@@ -466,8 +466,8 @@ describe('content-item-schema unarchive command', () => {
 
     it('should report a failed unarchive in the provided --logFile and exit immediately', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/schema-unarchive-failed.log')) {
-        await promisify(unlink)('temp/schema-unarchive-failed.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-failed.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-failed.log`);
       }
 
       const targets: string[] = [];
@@ -491,19 +491,19 @@ describe('content-item-schema unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/schema-unarchive-failed.log',
+        logFile: `temp_${process.env.JEST_WORKER_ID}/schema-unarchive-failed.log`,
         schemaId: '/schemaMatch/',
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/schema-unarchive-failed.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-failed.log`);
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match (as failures)
 
-      const log = await promisify(readFile)('temp/schema-unarchive-failed.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-failed.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -515,13 +515,13 @@ describe('content-item-schema unarchive command', () => {
 
       expect(total).toEqual(1); // Does not continue to archive the next one
 
-      await promisify(unlink)('temp/schema-unarchive-failed.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-failed.log`);
     });
 
     it('should skip failed unarchives when --ignoreError is provided, but log all failures', async () => {
       // First, ensure the log does not already exist.
-      if (await promisify(exists)('temp/schema-unarchive-skip.log')) {
-        await promisify(unlink)('temp/schema-unarchive-skip.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-skip.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-skip.log`);
       }
 
       const targets: string[] = [];
@@ -545,20 +545,20 @@ describe('content-item-schema unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: 'temp/schema-unarchive-skip.log',
+        logFile: `temp_${process.env.JEST_WORKER_ID}/schema-unarchive-skip.log`,
         schemaId: '/schemaMatch/',
         ignoreError: true,
         force: true
       };
       await handler(argv);
 
-      const logExists = await promisify(exists)('temp/schema-unarchive-skip.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-skip.log`);
 
       expect(logExists).toBeTruthy();
 
       // Log should contain the two schema that match (as failures)
 
-      const log = await promisify(readFile)('temp/schema-unarchive-skip.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-skip.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -570,7 +570,7 @@ describe('content-item-schema unarchive command', () => {
 
       expect(total).toEqual(2); // Fails to archive each matching type.
 
-      await promisify(unlink)('temp/schema-unarchive-skip.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/schema-unarchive-skip.log`);
     });
 
     it('should exit cleanly when no content can be unarchived', async () => {

@@ -82,7 +82,7 @@ describe('settings clone step', () => {
   });
 
   it('should call the settings commands with arguments from the state, importing the result of the export and performing a backup', async () => {
-    const state = generateState('temp/clone-settings/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-settings/run/`, 'run');
 
     (settingsImport.handler as jest.Mock).mockResolvedValue(true);
     (settingsExport.handler as jest.Mock).mockResolvedValue(true);
@@ -122,7 +122,7 @@ describe('settings clone step', () => {
   });
 
   it('should return false when exporting fails, the exported file is missing or import fails', async () => {
-    const state = generateState('temp/clone-settings/fail/', 'fail');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-settings/fail/`, 'fail');
     const step = new SettingsCloneStep();
 
     (settingsImport.handler as jest.Mock).mockResolvedValue(true);
@@ -176,7 +176,7 @@ describe('settings clone step', () => {
   });
 
   it('should import saved settings in the given directory when reverting', async () => {
-    const state = generateState('temp/clone-settings/revert/', 'revert');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-settings/revert/`, 'revert');
 
     (settingsImport.handler as jest.Mock).mockResolvedValue(true);
 
@@ -198,7 +198,7 @@ describe('settings clone step', () => {
   });
 
   it('should fail revert if the saved settings are missing, or the import of them fails', async () => {
-    const state = generateState('temp/clone-settings/revert-fail/', 'revert-fail');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-settings/revert-fail/`, 'revert-fail');
     const step = new SettingsCloneStep();
 
     (settingsImport.handler as jest.Mock).mockResolvedValue(true);

@@ -44,8 +44,26 @@ const writeConfigFile = (configFile: string, parameters: ConfigurationParameters
   }
 };
 
-export const readConfigFile = (configFile: string): object =>
-  fs.existsSync(configFile) ? JSON.parse(fs.readFileSync(configFile, 'utf-8')) : {};
+export const readConfigFile = (configFile: string, ignoreError?: boolean): object => {
+  if (fs.existsSync(configFile)) {
+    try {
+      return JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    } catch (e) {
+      if (ignoreError) {
+        console.error(
+          `The configuration file at ${configFile} is invalid, its contents will be ignored.\n${e.message}`
+        );
+      } else {
+        console.error(
+          `FATAL - Could not parse JSON configuration. Inspect the configuration file at ${configFile}\n${e.message}`
+        );
+        process.exit(2);
+      }
+    }
+  }
+
+  return {};
+};
 
 export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument>): void => {
   const { clientId, clientSecret, hubId } = argv;

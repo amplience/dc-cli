@@ -13,6 +13,7 @@ import { SettingsCloneStep } from './steps/settings-clone-step';
 import { TypeCloneStep } from './steps/type-clone-step';
 import { CloneHubState } from './model/clone-hub-state';
 import { LogErrorLevel } from '../../common/archive/archive-log';
+import { ExtensionCloneStep } from './steps/extension-clone-step';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -39,7 +40,13 @@ export const desc =
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('hub', 'clone', platform);
 
-export const steps = [new SettingsCloneStep(), new SchemaCloneStep(), new TypeCloneStep(), new ContentCloneStep()];
+export const steps = [
+  new SettingsCloneStep(),
+  new ExtensionCloneStep(),
+  new SchemaCloneStep(),
+  new TypeCloneStep(),
+  new ContentCloneStep()
+];
 
 export const builder = (yargs: Argv): void => {
   yargs

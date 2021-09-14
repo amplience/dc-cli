@@ -83,7 +83,7 @@ describe('content clone step', () => {
   });
 
   it('should call the copy command with arguments from the state', async () => {
-    const state = generateState('temp/clone-content/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-content/run/`, 'run');
 
     const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
     copyCalls.splice(0, copyCalls.length);
@@ -105,7 +105,7 @@ describe('content clone step', () => {
   });
 
   it('should return false when the copy command fails', async () => {
-    const state = generateState('temp/clone-content/fail/', 'fail');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-content/fail/`, 'fail');
 
     const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
     copyCalls.splice(0, copyCalls.length);
@@ -119,7 +119,7 @@ describe('content clone step', () => {
   });
 
   it('should call the copy revert command with arguments from the state', async () => {
-    const state = generateState('temp/clone-content/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-content/run/`, 'run');
     state.revertLog = new FileLog();
 
     const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
@@ -142,7 +142,7 @@ describe('content clone step', () => {
   });
 
   it('should return false when the copy revert command fails', async () => {
-    const state = generateState('temp/clone-content/fail/', 'fail');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-content/fail/`, 'fail');
     state.revertLog = new FileLog();
 
     const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
