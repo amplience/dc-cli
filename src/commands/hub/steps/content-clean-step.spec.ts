@@ -55,7 +55,7 @@ describe('content clean step', () => {
   });
 
   it('should call the copy command with arguments from the state', async () => {
-    const argv = generateState('temp/clean-content/run/', 'run');
+    const argv = generateState(`temp_${process.env.JEST_WORKER_ID}/clean-content/run/`, 'run');
 
     (archive.handler as jest.Mock).mockResolvedValue(true);
 
@@ -70,7 +70,7 @@ describe('content clean step', () => {
   });
 
   it('should return false when the copy command fails', async () => {
-    const argv = generateState('temp/clean-content/fail/', 'fail');
+    const argv = generateState(`temp_${process.env.JEST_WORKER_ID}/clean-content/fail/`, 'fail');
 
     (archive.handler as jest.Mock).mockRejectedValue(false);
 

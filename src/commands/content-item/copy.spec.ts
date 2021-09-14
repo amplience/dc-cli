@@ -183,7 +183,7 @@ describe('content-item copy command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/copy/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/copy/`);
     });
 
     const clearArray = (array: object[]): void => {
@@ -321,7 +321,7 @@ describe('content-item copy command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: openRevertLog('temp/copy/revertMissing.txt')
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/copy/revertMissing.txt`)
       };
       await handler(argv);
 

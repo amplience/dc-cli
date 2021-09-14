@@ -7,6 +7,7 @@ import * as content from './steps/content-clone-step';
 import * as settings from './steps/settings-clone-step';
 import * as schema from './steps/schema-clone-step';
 import * as type from './steps/type-clone-step';
+import * as extension from './steps/extension-clone-step';
 
 import rmdir from 'rimraf';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
@@ -20,7 +21,7 @@ jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
 
-let success = [true, true, true, true];
+let success = [true, true, true, true, true];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
@@ -42,16 +43,20 @@ jest.mock('./steps/settings-clone-step', () => ({
   SettingsCloneStep: mockStep('Clone Settings', 'settings', () => success[0])
 }));
 
+jest.mock('./steps/extension-clone-step', () => ({
+  ExtensionCloneStep: mockStep('Clone Extensions', 'extension', () => success[1])
+}));
+
 jest.mock('./steps/schema-clone-step', () => ({
-  SchemaCloneStep: mockStep('Clone Content Type Schemas', 'schemas', () => success[1])
+  SchemaCloneStep: mockStep('Clone Content Type Schemas', 'schemas', () => success[2])
 }));
 
 jest.mock('./steps/type-clone-step', () => ({
-  TypeCloneStep: mockStep('Clone Content Types', 'types', () => success[2])
+  TypeCloneStep: mockStep('Clone Content Types', 'types', () => success[3])
 }));
 
 jest.mock('./steps/content-clone-step', () => ({
-  ContentCloneStep: mockStep('Clone Content', 'content', () => success[3])
+  ContentCloneStep: mockStep('Clone Content', 'content', () => success[4])
 }));
 
 jest.mock('../../common/log-helpers', () => ({
@@ -68,6 +73,7 @@ function rimraf(dir: string): Promise<Error> {
 function getMocks(): jest.Mock[] {
   return [
     settings.SettingsCloneStep as jest.Mock,
+    extension.ExtensionCloneStep as jest.Mock,
     schema.SchemaCloneStep as jest.Mock,
     type.TypeCloneStep as jest.Mock,
     content.ContentCloneStep as jest.Mock
@@ -234,11 +240,11 @@ describe('hub clone command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/clone/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone/`);
     });
 
     afterAll(async () => {
-      await rimraf('temp/clone/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone/`);
     });
 
     function makeState(argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters>): CloneHubState {
@@ -263,18 +269,18 @@ describe('hub clone command', () => {
 
     it('should call all steps in order with given parameters', async () => {
       clearMocks();
-      success = [true, true, true, true];
+      success = [true, true, true, true, true];
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
         ...config,
 
-        dir: 'temp/clone/steps',
+        dir: `temp_${process.env.JEST_WORKER_ID}/clone/steps`,
 
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-        logFile: createLog('temp/clone/steps/all.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone/steps/all.log`),
 
         force: false,
         validate: false,
@@ -297,26 +303,26 @@ describe('hub clone command', () => {
       });
 
       const loadLog = new FileLog();
-      await loadLog.loadFromFile('temp/clone/steps/all.log');
+      await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone/steps/all.log`);
     });
 
     it('should handle false returns from each of the steps by stopping the process', async () => {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         clearMocks();
-        success = [i != 0, i != 1, i != 2, i != 3];
+        success = [i != 0, i != 1, i != 2, i != 3, i != 4];
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
           ...config,
 
-          dir: 'temp/clone/steps',
+          dir: `temp_${process.env.JEST_WORKER_ID}/clone/steps`,
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: createLog('temp/clone/steps/fail' + i + '.log'),
+          logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone/steps/fail` + i + '.log'),
 
-          mapFile: 'temp/clone/steps/fail' + i + '.json',
+          mapFile: `temp_${process.env.JEST_WORKER_ID}/clone/steps/fail` + i + '.json',
           force: false,
           validate: false,
           skipIncomplete: false,
@@ -340,14 +346,14 @@ describe('hub clone command', () => {
         });
 
         const loadLog = new FileLog();
-        await loadLog.loadFromFile('temp/clone/steps/fail' + i + '.log');
+        await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone/steps/fail` + i + '.log');
       }
     });
 
     it('should start from the step given as a parameter', async () => {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         clearMocks();
-        success = [true, true, true, true];
+        success = [true, true, true, true, true];
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
@@ -355,14 +361,14 @@ describe('hub clone command', () => {
 
           step: steps[i].getId(),
 
-          dir: 'temp/clone/steps',
+          dir: `temp_${process.env.JEST_WORKER_ID}/clone/steps`,
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: createLog('temp/clone/steps/step' + i + '.log'),
+          logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone/steps/step` + i + '.log'),
 
-          mapFile: 'temp/clone/steps/step' + i + '.json',
+          mapFile: `temp_${process.env.JEST_WORKER_ID}/clone/steps/step` + i + '.json',
           force: false,
           validate: false,
           skipIncomplete: false,
@@ -386,7 +392,7 @@ describe('hub clone command', () => {
         });
 
         const loadLog = new FileLog();
-        await loadLog.loadFromFile('temp/clone/steps/step' + i + '.log');
+        await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone/steps/step` + i + '.log');
       }
     });
 
@@ -416,11 +422,11 @@ describe('hub clone command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/clone-revert/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
     });
 
     afterAll(async () => {
-      await rimraf('temp/clone-revert/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
     });
 
     async function prepareFakeLog(path: string): Promise<void> {
@@ -457,23 +463,23 @@ describe('hub clone command', () => {
 
     it('should revert all steps in order with given parameters', async () => {
       clearMocks();
-      success = [true, true, true, true];
-      await ensureDirectoryExists('temp/clone-revert/');
-      await prepareFakeLog('temp/clone-revert/steps.log');
+      success = [true, true, true, true, true];
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
+      await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps.log`);
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
         ...config,
 
-        dir: 'temp/clone-revert/steps',
+        dir: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps`,
 
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-        logFile: createLog('temp/clone-revert/steps/all.log'),
-        revertLog: openRevertLog('temp/clone-revert/steps.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.log`),
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps.log`),
 
-        mapFile: 'temp/clone-revert/steps/all.json',
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.json`,
         force: false,
         validate: false,
         skipIncomplete: false,
@@ -493,30 +499,30 @@ describe('hub clone command', () => {
       });
 
       const loadLog = new FileLog();
-      await loadLog.loadFromFile('temp/clone-revert/steps/all.log');
+      await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.log`);
     });
 
     it('should handle exceptions from each of the revert steps by stopping the process', async () => {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         clearMocks();
-        success = [i != 0, i != 1, i != 2, i != 3];
+        success = [i != 0, i != 1, i != 2, i != 3, i != 4];
 
-        await ensureDirectoryExists('temp/clone-revert/');
-        await prepareFakeLog('temp/clone-revert/fail.log');
+        await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
+        await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/fail.log`);
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
           ...config,
 
-          dir: 'temp/clone-revert/fail',
+          dir: `temp_${process.env.JEST_WORKER_ID}/clone-revert/fail`,
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: createLog('temp/clone-revert/fail/fail' + i + '.log'),
-          revertLog: openRevertLog('temp/clone-revert/fail.log'),
+          logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/fail/fail` + i + '.log'),
+          revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/fail.log`),
 
-          mapFile: 'temp/clone-revert/fail/fail' + i + '.json',
+          mapFile: `temp_${process.env.JEST_WORKER_ID}/clone-revert/fail/fail` + i + '.json',
           force: false,
           validate: false,
           skipIncomplete: false,
@@ -540,28 +546,28 @@ describe('hub clone command', () => {
         });
 
         const loadLog = new FileLog();
-        await loadLog.loadFromFile('temp/clone-revert/fail/fail' + i + '.log');
+        await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone-revert/fail/fail` + i + '.log');
       }
     });
 
     it('should exit early if revert log cannot be read', async () => {
       clearMocks();
-      success = [true, true, true, true];
-      await ensureDirectoryExists('temp/clone-revert/');
+      success = [true, true, true, true, true];
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
         ...config,
 
-        dir: 'temp/clone-revert/steps',
+        dir: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps`,
 
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-        logFile: createLog('temp/clone-revert/steps/early.log'),
-        revertLog: openRevertLog('temp/clone-revert/missing.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/early.log`),
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/missing.log`),
 
-        mapFile: 'temp/clone-revert/steps/all.json',
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.json`,
         force: false,
         validate: false,
         skipIncomplete: false,
@@ -579,16 +585,16 @@ describe('hub clone command', () => {
       });
 
       const loadLog = new FileLog();
-      await loadLog.loadFromFile('temp/clone-revert/steps/early.log');
+      await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/early.log`);
     });
 
     it('should start reverting from the step given as a parameter (steps in decreasing order)', async () => {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         clearMocks();
-        success = [true, true, true, true];
+        success = [true, true, true, true, true];
 
-        await ensureDirectoryExists('temp/clone-revert/');
-        await prepareFakeLog('temp/clone-revert/step.log');
+        await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
+        await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/step.log`);
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
@@ -596,15 +602,15 @@ describe('hub clone command', () => {
 
           step: steps[i].getId(),
 
-          dir: 'temp/clone-revert/step',
+          dir: `temp_${process.env.JEST_WORKER_ID}/clone-revert/step`,
 
           dstHubId: 'hub2-id',
           dstClientId: 'acc2-id',
           dstSecret: 'acc2-secret',
-          logFile: createLog('temp/clone-revert/step/step' + i + '.log'),
-          revertLog: openRevertLog('temp/clone-revert/step.log'),
+          logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/step/step` + i + '.log'),
+          revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/step.log`),
 
-          mapFile: 'temp/clone-revert/step/step' + i + '.json',
+          mapFile: `temp_${process.env.JEST_WORKER_ID}/clone-revert/step/step` + i + '.json',
           force: false,
           validate: false,
           skipIncomplete: false,
@@ -628,7 +634,7 @@ describe('hub clone command', () => {
         });
 
         const loadLog = new FileLog();
-        await loadLog.loadFromFile('temp/clone-revert/step/step' + i + '.log');
+        await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone-revert/step/step` + i + '.log');
       }
     });
   });

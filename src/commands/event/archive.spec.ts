@@ -6,7 +6,9 @@ import readline from 'readline';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { promisify } from 'util';
 import { exists, readFile, unlink } from 'fs';
-import { FileLog } from '../../common/file-log';
+import { FileLog, setVersion } from '../../common/file-log';
+
+setVersion('test-ver');
 
 jest.mock('readline');
 
@@ -76,7 +78,7 @@ describe('event archive command', () => {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
-      expect(logFile.title).toMatch(/^Events Archive Log \- ./);
+      expect(logFile.title).toMatch(/^dc\-cli test\-ver \- Events Archive Log \- ./);
     });
   });
 
@@ -577,7 +579,7 @@ describe('event archive command', () => {
         status: 'DRAFT'
       });
 
-      const logFile = 'tmp/event-archive.log';
+      const logFile = `temp_${process.env.JEST_WORKER_ID}/event-archive.log`;
 
       const argv = {
         ...yargArgs,
@@ -655,8 +657,8 @@ describe('event archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      if (await promisify(exists)('temp/event-archive.log')) {
-        await promisify(unlink)('temp/event-archive.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`);
       }
 
       const { mockGet, mockEditionsList, archiveMock } = mockValues({ status: 'SHCEDULED' });
@@ -665,7 +667,7 @@ describe('event archive command', () => {
         ...yargArgs,
         ...config,
         silent: false,
-        logFile: new FileLog('temp/event-archive.log'),
+        logFile: new FileLog(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`),
         id: '1'
       };
 
@@ -675,11 +677,11 @@ describe('event archive command', () => {
       expect(mockEditionsList).toHaveBeenCalled();
       expect(archiveMock).toHaveBeenCalled();
 
-      const logExists = await promisify(exists)('temp/event-archive.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`);
 
       expect(logExists).toBeTruthy();
 
-      const log = await promisify(readFile)('temp/event-archive.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -691,7 +693,7 @@ describe('event archive command', () => {
 
       expect(total).toEqual(1);
 
-      await promisify(unlink)('temp/event-archive.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`);
     });
   });
 });

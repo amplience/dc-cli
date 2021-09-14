@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`extension import command doCreate should throw an error when extension create fails 1`] = `
+"Error creating extension extension-name:
+
+Error: Error creating extension"
+`;
+
+exports[`extension import command doCreate should throw an error when extension create fails if a string error is returned by the sdk 1`] = `
+"Error creating extension extension-name:
+
+The create-extension action is not available, ensure you have permission to perform this action."
+`;
+
+exports[`extension import command doUpdate should throw an error when unable to get extension during update 1`] = `"Error updating extension matched-name: Error retrieving extension"`;
+
+exports[`extension import command doUpdate should throw an error when unable to update extension during update 1`] = `"Error updating extension not-matched-name: Error saving extension"`;
+
+exports[`extension import command doUpdate should throw an error when unable to update extension during update if a string error is returned by sdk 1`] = `"Error updating extension not-matched-name: undefined"`;
+
+exports[`extension import command handler tests should throw an error when no content found in import directory 1`] = `"No extensions found in my-empty-dir"`;
+
+exports[`extension import command validateNoDuplicateExtensionNames should throw and error when there are duplicate uris 1`] = `
+"Extensions must have unique name values. Duplicate values found:-
+  name: 'extension-name-1' in files: ['file-1', 'file-4']
+  name: 'extension-name-2' in files: ['file-2', 'file-3']"
+`;
