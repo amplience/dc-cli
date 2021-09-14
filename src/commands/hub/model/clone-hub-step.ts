@@ -2,6 +2,7 @@ import { CloneHubState } from './clone-hub-state';
 
 export enum CloneHubStepId {
   Settings = 'settings',
+  Extension = 'extension',
   Schema = 'schema',
   Type = 'type',
   Content = 'content'
