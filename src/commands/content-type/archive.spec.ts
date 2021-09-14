@@ -611,7 +611,9 @@ describe('content-type archive command', () => {
     });
 
     it('should exit cleanly when no content can be archived', async () => {
-      injectTypeMocks([], () => {});
+      injectTypeMocks([], () => {
+        /* */
+      });
 
       const argv = {
         ...yargArgs,

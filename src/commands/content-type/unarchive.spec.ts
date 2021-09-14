@@ -598,7 +598,9 @@ describe('content-type unarchive command', () => {
     });
 
     it('should exit cleanly when no content can be unarchived', async () => {
-      injectTypeMocks([], () => {});
+      injectTypeMocks([], () => {
+        /* */
+      });
 
       const argv = {
         ...yargArgs,

@@ -594,7 +594,9 @@ describe('content-item-schema archive command', () => {
     });
 
     it('should exit cleanly when no content can be archived', async () => {
-      injectSchemaMocks([], () => {});
+      injectSchemaMocks([], () => {
+        /* */
+      });
 
       const argv = {
         ...yargArgs,

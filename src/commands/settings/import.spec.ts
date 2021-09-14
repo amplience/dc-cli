@@ -283,15 +283,13 @@ describe('settings import command', (): void => {
       })
     );
 
-    beforeEach(() => {
-      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
-        hubs: {
-          get: mockGetHub
-        },
-        workflowStates: {
-          get: mockGetState
-        }
-      });
+    (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+      hubs: {
+        get: mockGetHub
+      },
+      workflowStates: {
+        get: mockGetState
+      }
     });
   });
 

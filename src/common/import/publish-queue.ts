@@ -142,7 +142,9 @@ export class PublishQueue {
     }
 
     // We need to wait.
-    let resolver: () => void = () => {};
+    let resolver: () => void = () => {
+      /* */
+    };
     const myPromise = new Promise<void>((resolve): void => {
       resolver = resolve;
     });

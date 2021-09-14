@@ -574,7 +574,9 @@ describe('content-item-schema unarchive command', () => {
     });
 
     it('should exit cleanly when no content can be unarchived', async () => {
-      injectSchemaMocks([], () => {});
+      injectSchemaMocks([], () => {
+        /* */
+      });
 
       const argv = {
         ...yargArgs,
