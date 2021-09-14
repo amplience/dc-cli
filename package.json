@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-cli",
-  "version": "0.11.0",
+  "version": "0.11.2",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
   "man": "./dist/dc-cli.1",
@@ -12,7 +12,7 @@
     "commit": "npx git-cz",
     "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
     "pretest": "npm run lint",
-    "test": "FORCE_COLOR=1 jest --silent --coverage --runInBand",
+    "test": "FORCE_COLOR=1 jest --silent --coverage",
     "fix": "prettier --write '**/*.ts'",
     "reset": "git clean -dfx && git reset --hard && npm ci",
     "prerelease": "npm run reset",

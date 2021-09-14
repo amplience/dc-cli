@@ -7,5 +7,6 @@ module.exports = {
   preset: 'ts-jest',
   coveragePathIgnorePatterns: [
     '^.+\\.mocks\.ts?$'
-  ]
+  ],
+  setupFilesAfterEnv: ['<rootDir>/jest.global.js']
 };

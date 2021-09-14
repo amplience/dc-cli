@@ -660,7 +660,7 @@ describe('content-item archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const logFileName = 'temp/content-item-unarchive.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
       const log = '// Type log test file\n' + 'UNARCHIVE 1\n' + 'UNARCHIVE 2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -708,11 +708,11 @@ describe('content-item archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      if (await promisify(exists)('temp/content-item-unarchive.log')) {
-        await promisify(unlink)('temp/content-item-unarchive.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`);
       }
 
-      const logFileName = 'temp/content-item-unarchive.log';
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
       const log = '// Type log test file\n' + 'UNARCHIVE 1\n' + 'UNARCHIVE 2\n' + 'UNARCHIVE idMissing';
 
       const dir = dirname(logFileName);
@@ -742,8 +742,8 @@ describe('content-item archive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      if (await promisify(exists)('temp/content-item-archive.log')) {
-        await promisify(unlink)('temp/content-item-archive.log');
+      if (await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`)) {
+        await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`);
       }
 
       const { mockItemGetById, mockArchive, contentItems } = mockValues();
@@ -753,7 +753,7 @@ describe('content-item archive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        logFile: createLog('temp/content-item-archive.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`),
         id: '1'
       };
 
@@ -762,11 +762,11 @@ describe('content-item archive command', () => {
       expect(mockItemGetById).toHaveBeenCalled();
       expect(mockArchive).toBeCalled();
 
-      const logExists = await promisify(exists)('temp/content-item-archive.log');
+      const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`);
 
       expect(logExists).toBeTruthy();
 
-      const log = await promisify(readFile)('temp/content-item-archive.log', 'utf8');
+      const log = await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`, 'utf8');
 
       const logLines = log.split('\n');
       let total = 0;
@@ -784,7 +784,7 @@ describe('content-item archive command', () => {
       expect(total).toEqual(1);
       expect(deliveryKeys).toEqual(1);
 
-      await promisify(unlink)('temp/content-item-archive.log');
+      await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`);
     });
   });
 

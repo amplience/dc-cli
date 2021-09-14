@@ -54,11 +54,11 @@ describe('schema clone step', () => {
   });
 
   beforeAll(async () => {
-    await rimraf('temp/clone-schema/');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone-schema/`);
   });
 
   afterAll(async () => {
-    await rimraf('temp/clone-schema/');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone-schema/`);
   });
 
   function generateState(directory: string, logName: string): CloneHubState {
@@ -105,7 +105,7 @@ describe('schema clone step', () => {
   });
 
   it('should call export on the source and import to the destination', async () => {
-    const state = generateState('temp/clone-schema/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-schema/run/`, 'run');
 
     (schemaImport.handler as jest.Mock).mockResolvedValue(true);
     (schemaExport.handler as jest.Mock).mockResolvedValue(true);
@@ -130,7 +130,7 @@ describe('schema clone step', () => {
   });
 
   it('should fail the step when the export or import fails', async () => {
-    const state = generateState('temp/clone-schema/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-schema/run/`, 'run');
 
     (schemaExport.handler as jest.Mock).mockRejectedValue(false);
 
@@ -159,7 +159,7 @@ describe('schema clone step', () => {
     fakeLog.addAction('CREATE', 'type');
     fakeLog.addAction('CREATE', 'type3'); // is archived
 
-    const state = generateState('temp/clone-schema/revert-create/', 'revert-create');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-schema/revert-create/`, 'revert-create');
 
     const client = dynamicContentClientFactory(config);
     await (await client.contentTypeSchemas.get('type3')).related.archive();
@@ -174,14 +174,14 @@ describe('schema clone step', () => {
   });
 
   it('should attempt to fetch and revert to the version of the schema in the revert log', async () => {
-    const state = generateState('temp/clone-schema/revert-update/', 'revert-update');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-schema/revert-update/`, 'revert-update');
 
     const fakeLog = new FileLog();
     fakeLog.switchGroup('Clone Content Type Schemas');
     fakeLog.addAction('CREATE', 'type');
     fakeLog.addAction('UPDATE', 'type2 0 1');
 
-    await ensureDirectoryExists('temp/clone-schema/revert-update/oldType');
+    await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-schema/revert-update/oldType`);
 
     state.revertLog = fakeLog;
 
@@ -195,14 +195,14 @@ describe('schema clone step', () => {
   });
 
   it('should return true when importing types for revert fails (ignore)', async () => {
-    const state = generateState('temp/clone-schema/revert-fail/', 'revert-fail');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-schema/revert-fail/`, 'revert-fail');
 
     const fakeLog = new FileLog();
     fakeLog.switchGroup('Clone Content Type Schemas');
     fakeLog.addAction('CREATE', 'type');
     fakeLog.addAction('UPDATE', 'type2 0 1');
 
-    await ensureDirectoryExists('temp/clone-schema/revert-fail/oldType');
+    await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-schema/revert-fail/oldType`);
 
     state.revertLog = fakeLog;
     mockContent.failSchemaActions = 'all';

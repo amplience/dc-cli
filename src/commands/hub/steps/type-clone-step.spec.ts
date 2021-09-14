@@ -54,11 +54,11 @@ describe('type clone step', () => {
   });
 
   beforeAll(async () => {
-    await rimraf('temp/clone-type/');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone-type/`);
   });
 
   afterAll(async () => {
-    await rimraf('temp/clone-type/');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/clone-type/`);
   });
 
   function generateState(directory: string, logName: string): CloneHubState {
@@ -105,7 +105,7 @@ describe('type clone step', () => {
   });
 
   it('should call export on the source, backup and import to the destination', async () => {
-    const state = generateState('temp/clone-type/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-type/run/`, 'run');
 
     (typeImport.handler as jest.Mock).mockResolvedValue(true);
     (typeExport.handler as jest.Mock).mockResolvedValue(true);
@@ -139,7 +139,7 @@ describe('type clone step', () => {
   });
 
   it('should fail the step when the export, backup or import fails', async () => {
-    const state = generateState('temp/clone-type/run/', 'run');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-type/run/`, 'run');
 
     (typeExport.handler as jest.Mock).mockRejectedValue(false);
 
@@ -179,9 +179,9 @@ describe('type clone step', () => {
     fakeLog.addAction('CREATE', 'type');
     fakeLog.addAction('CREATE', 'type3'); // is archived
 
-    const state = generateState('temp/clone-type/revert-create/', 'revert-create');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-type/revert-create/`, 'revert-create');
 
-    await ensureDirectoryExists('temp/clone-type/revert-create/oldType');
+    await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-type/revert-create/oldType`);
     const client = dynamicContentClientFactory(config);
     await (await client.contentTypes.get('type3')).related.archive();
 
@@ -196,14 +196,14 @@ describe('type clone step', () => {
   });
 
   it('should pass types with the UPDATE action to the type import command on revert, in the oldType folder', async () => {
-    const state = generateState('temp/clone-type/revert-update/', 'revert-update');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-type/revert-update/`, 'revert-update');
 
     const fakeLog = new FileLog();
     fakeLog.switchGroup('Clone Content Types');
     fakeLog.addAction('CREATE', 'type');
     fakeLog.addAction('UPDATE', 'type2 0 1');
 
-    await ensureDirectoryExists('temp/clone-type/revert-update/oldType');
+    await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-type/revert-update/oldType`);
 
     state.revertLog = fakeLog;
 
@@ -225,14 +225,14 @@ describe('type clone step', () => {
   });
 
   it('should return false when importing types for revert fails', async () => {
-    const state = generateState('temp/clone-type/revert-update/', 'revert-update');
+    const state = generateState(`temp_${process.env.JEST_WORKER_ID}/clone-type/revert-update/`, 'revert-update');
 
     const fakeLog = new FileLog();
     fakeLog.switchGroup('Clone Content Types');
     fakeLog.addAction('CREATE', 'type');
     fakeLog.addAction('UPDATE', 'type2 0 1');
 
-    await ensureDirectoryExists('temp/clone-type/revert-update/oldType');
+    await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-type/revert-update/oldType`);
 
     state.revertLog = fakeLog;
     (typeImport.handler as jest.Mock).mockRejectedValue(false);

@@ -163,11 +163,11 @@ describe('content-item import command', () => {
     });
 
     beforeAll(async () => {
-      await rimraf('temp/import/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/`);
     });
 
     afterAll(async () => {
-      await rimraf('temp/import/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/`);
     });
 
     async function createContent(
@@ -235,7 +235,7 @@ describe('content-item import command', () => {
         { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
-      await createContent('temp/import/repo/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/repo/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -244,8 +244,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/repo/',
-        mapFile: 'temp/import/repo.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/repo/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/repo.json`,
         baseRepo: 'targetRepo'
       };
       await handler(argv);
@@ -257,7 +257,7 @@ describe('content-item import command', () => {
       expect(matches.length).toEqual(templates.length);
       expect(mockContent.metrics.itemsLocaleSet).toEqual(1);
 
-      await rimraf('temp/import/repo/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/repo/`);
     });
 
     it('Importing into a baseFolder creates folder structure starting at the given folder (within the specified repository)', async () => {
@@ -270,7 +270,7 @@ describe('content-item import command', () => {
         { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
-      await createContent('temp/import/folder/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/folder/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -280,8 +280,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/folder/',
-        mapFile: 'temp/import/folder.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/folder/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/folder.json`,
         baseFolder: 'targetFolder'
       };
       await handler(argv);
@@ -292,7 +292,7 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
 
-      await rimraf('temp/import/folder/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/folder/`);
     });
 
     it('Folder structure recreation should work with existing, matching folders present without creating more.', async () => {
@@ -308,7 +308,7 @@ describe('content-item import command', () => {
         { label: 'item7doesnt', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/doesnt/nested' }
       ];
 
-      await createContent('temp/import/folder2/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/folder2/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -332,8 +332,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/folder2/',
-        mapFile: 'temp/import/folder2.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/folder2/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/folder2.json`,
         baseFolder: 'targetFolder'
       };
       await handler(argv);
@@ -346,7 +346,7 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
 
-      await rimraf('temp/import/folder2/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/folder2/`);
     });
 
     // == INTERACTIVE PROMPT TESTS ==
@@ -368,7 +368,7 @@ describe('content-item import command', () => {
         { label: 'item4', repoId: 'repo2', typeSchemaUri: 'http://type3', folderPath: 'folderTest/special' }
       ];
 
-      await createContent('temp/import/all/', templates, true);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/all/`, templates, true);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -383,8 +383,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/all/',
-        mapFile: 'temp/import/all.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/all/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/all.json`
       };
       await handler(argv);
 
@@ -396,7 +396,7 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
 
-      await rimraf('temp/import/all/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/all/`);
     });
 
     it('Importing content with no base and a missing repository name will request that it be skipped (then skip it)', async () => {
@@ -420,7 +420,7 @@ describe('content-item import command', () => {
         { label: 'item8', repoId: 'repo2', typeSchemaUri: 'http://type3', folderPath: 'folderTest/special' }
       ];
 
-      await createContent('temp/import/repoMissing/', skipped.concat(added), true);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/repoMissing/`, skipped.concat(added), true);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo2');
@@ -434,8 +434,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/repoMissing/',
-        mapFile: 'temp/import/repoMissing.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/repoMissing/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/repoMissing.json`
       };
       await handler(argv);
 
@@ -450,7 +450,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/repoMissing/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/repoMissing/`);
     });
 
     it('Importing content with a missing content type (but not schema) will request that the content type be created (then create it)', async () => {
@@ -468,7 +468,7 @@ describe('content-item import command', () => {
         { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
-      await createContent('temp/import/missingType/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/missingType/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -481,8 +481,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/missingType/',
-        mapFile: 'temp/import/missingType.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/missingType/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/missingType.json`,
         baseRepo: 'targetRepo'
       };
       await handler(argv);
@@ -500,7 +500,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/missingType/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/missingType/`);
     });
 
     it('Importing content with a missing content type schema will ask if the affected content should be skipped (then create unaffected content)', async () => {
@@ -526,7 +526,7 @@ describe('content-item import command', () => {
         { label: 'item8', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest/special' }
       ];
 
-      await createContent('temp/import/missingSchema/', skipped.concat(added), false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/missingSchema/`, skipped.concat(added), false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -542,8 +542,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/missingSchema/',
-        mapFile: 'temp/import/missingSchema.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/missingSchema/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/missingSchema.json`,
         baseRepo: 'targetRepo'
       };
       await handler(argv);
@@ -557,7 +557,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/missingSchema/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/missingSchema/`);
     });
 
     function genContentTypeWithReference(
@@ -657,13 +657,13 @@ describe('content-item import command', () => {
         { id: 'new5', label: 'item5', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
-      await createContent('temp/import/ref/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/ref/`, templates, false);
 
       // Add an existing mapping for the two items in "oldTemplates".
       const existingMapping = { contentItems: [['ref1', 'new1'], ['ref2', 'new2']] };
-      await ensureDirectoryExists('temp/import/ref/');
-      await rimraf('temp/import/ref.json');
-      await promisify(writeFile)('temp/import/ref.json', JSON.stringify(existingMapping));
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/ref/`);
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/ref.json`);
+      await promisify(writeFile)(`temp_${process.env.JEST_WORKER_ID}/import/ref.json`, JSON.stringify(existingMapping));
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -678,8 +678,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/ref/',
-        mapFile: 'temp/import/ref.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/ref/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/ref.json`,
         baseRepo: 'repo'
       };
       await handler(argv);
@@ -698,7 +698,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/ref/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/ref/`);
     });
 
     it('Importing content with missing cross references should ask if the user wants to continue (and skip all dependant items)', async () => {
@@ -735,11 +735,11 @@ describe('content-item import command', () => {
         }
       ];
 
-      await createContent('temp/import/refMissing/', templates.concat(skips), false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/refMissing/`, templates.concat(skips), false);
 
       // Add an existing mapping for the two items in "oldTemplates".
-      await ensureDirectoryExists('temp/import/refMissing/');
-      await rimraf('temp/import/refMissing.json');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/refMissing/`);
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/refMissing.json`);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -753,8 +753,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/refMissing/',
-        mapFile: 'temp/import/refMissing.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/refMissing/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/refMissing.json`,
         baseRepo: 'repo',
         skipIncomplete: true
       };
@@ -774,7 +774,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/refMissing/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/refMissing/`);
     });
 
     it('Importing content with an existing mapping should ask if the user wants to overwrite existing content items (then overwrite it)', async () => {
@@ -806,13 +806,16 @@ describe('content-item import command', () => {
 
       oldTemplates.forEach(template => (template.label += 'updated')); // Should update existing content with this new label.
 
-      await createContent('temp/import/mapping/', oldTemplates.concat(templates), false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`, oldTemplates.concat(templates), false);
 
       // Add an existing mapping for the two items in "oldTemplates".
       const existingMapping = { contentItems: [['old1', 'new1'], ['old2', 'new2']] };
-      await ensureDirectoryExists('temp/import/mapping/');
-      await rimraf('temp/import/mapping.json');
-      await promisify(writeFile)('temp/import/mapping.json', JSON.stringify(existingMapping));
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`);
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/mapping.json`);
+      await promisify(writeFile)(
+        `temp_${process.env.JEST_WORKER_ID}/import/mapping.json`,
+        JSON.stringify(existingMapping)
+      );
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -824,8 +827,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/mapping/',
-        mapFile: 'temp/import/mapping.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/mapping/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/mapping.json`,
         baseRepo: 'repo'
       };
       await handler(argv);
@@ -847,7 +850,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/mapping/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`);
     });
 
     it('Importing with the `force` flag should not ever await a response, and should skip and automate changes where necessary', async () => {
@@ -910,13 +913,20 @@ describe('content-item import command', () => {
 
       oldTemplates.forEach(template => (template.label += 'updated')); // Should update existing content with this new label.
 
-      await createContent('temp/import/force/', skips.concat(oldTemplates.concat(templates)), true);
+      await createContent(
+        `temp_${process.env.JEST_WORKER_ID}/import/force/`,
+        skips.concat(oldTemplates.concat(templates)),
+        true
+      );
 
       // Add an existing mapping for the two items in "oldTemplates".
       const existingMapping = { contentItems: [['old1', 'new1'], ['old2', 'new2']] };
-      await ensureDirectoryExists('temp/import/force/');
-      await rimraf('temp/import/force.json');
-      await promisify(writeFile)('temp/import/force.json', JSON.stringify(existingMapping));
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/force/`);
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/force.json`);
+      await promisify(writeFile)(
+        `temp_${process.env.JEST_WORKER_ID}/import/force.json`,
+        JSON.stringify(existingMapping)
+      );
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -939,8 +949,8 @@ describe('content-item import command', () => {
         force: true,
         skipIncomplete: true, // Make it easier to detect that "yes" was said to the dependancy question
 
-        dir: 'temp/import/force/',
-        mapFile: 'temp/import/force.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/force/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/force.json`,
         logFile: log
       };
       await handler(argv);
@@ -965,14 +975,14 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
 
-      await rimraf('temp/import/force/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/force/`);
     });
 
     it('should exit without prompt when importing with no base and no content', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses([]);
 
-      await ensureDirectoryExists('temp/import/none/');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/none/`);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -986,23 +996,23 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/none/',
-        mapFile: 'temp/import/none.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/none/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/none.json`
       };
       await handler(argv);
 
       expect(mockContent.items.length).toEqual(0); // Should have done nothing
 
-      await rimraf('temp/import/none/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/none/`);
     });
 
     it("should exit when importing repositories that don't exist on the target, and the prompt to continue is declined", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['n']);
 
-      await ensureDirectoryExists('temp/import/repoMissing/');
-      await ensureDirectoryExists('temp/import/repoMissing/repo');
-      await ensureDirectoryExists('temp/import/repoMissing/repoMissing');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/repoMissing/`);
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/repoMissing/repo`);
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/repoMissing/repoMissing`);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('repo');
@@ -1016,22 +1026,22 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/repoMissing/',
-        mapFile: 'temp/import/repoMissing.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/repoMissing/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/repoMissing.json`
       };
 
       expect(await handler(argv)).toBeFalsy();
 
       expect(mockContent.items.length).toEqual(0); // Should have done nothing
 
-      await rimraf('temp/import/repoMissing/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/repoMissing/`);
     });
 
     it('should exit without prompt when the content service is unreachable (all variants)', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses([]);
 
-      await ensureDirectoryExists('temp/import/netError/');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/netError/`);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.failHubGet = true;
@@ -1040,8 +1050,8 @@ describe('content-item import command', () => {
       const argv0 = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/netError/',
-        mapFile: 'temp/import/netError.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/netError/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/netError.json`
       };
       expect(await handler(argv0)).toBeFalsy();
 
@@ -1053,8 +1063,8 @@ describe('content-item import command', () => {
         ...yargArgs,
         ...config,
         baseFolder: 'ignore',
-        dir: 'temp/import/netError/',
-        mapFile: 'temp/import/netError.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/netError/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/netError.json`
       };
       expect(await handler(argv1)).toBeFalsy();
 
@@ -1062,20 +1072,20 @@ describe('content-item import command', () => {
         ...yargArgs,
         ...config,
         baseRepo: 'ignore',
-        dir: 'temp/import/netError/',
-        mapFile: 'temp/import/netError.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/netError/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/netError.json`
       };
       expect(await handler(argv2)).toBeFalsy();
 
       const argv3 = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/netError/',
-        mapFile: 'temp/import/netError.json'
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/netError/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/netError.json`
       };
       expect(await handler(argv3)).toBeFalsy();
 
-      await rimraf('temp/import/netError/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/netError/`);
     });
 
     it('should call import-revert if passed a revertLog', async () => {
@@ -1086,7 +1096,7 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/unused/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/unused/`,
         revertLog: Promise.resolve(new FileLog())
       };
 
@@ -1121,7 +1131,7 @@ describe('content-item import command', () => {
         { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
-      await createContent('temp/import/publish/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/publish/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -1130,8 +1140,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/publish/',
-        mapFile: 'temp/import/publish.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/publish/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/publish.json`,
         baseRepo: 'targetRepo',
         publish: true
       };
@@ -1143,7 +1153,7 @@ describe('content-item import command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((publish as any).publishCalls.length).toEqual(2);
 
-      await rimraf('temp/import/publish/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/publish/`);
     });
 
     const circularDependancies: ItemTemplate[] = [
@@ -1175,7 +1185,7 @@ describe('content-item import command', () => {
 
       const templates = circularDependancies;
 
-      await createContent('temp/import/circular/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/circular/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -1184,8 +1194,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/circular/',
-        mapFile: 'temp/import/circular.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/circular/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/circular.json`,
         baseRepo: 'targetRepo',
         publish: true
       };
@@ -1203,13 +1213,13 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
 
-      await rimraf('temp/import/circular/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/circular/`);
     });
 
     it('should not import any content if passed --validate', async () => {
       const templates: ItemTemplate[] = [{ label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }];
 
-      await createContent('temp/import/validate/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/validate/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -1218,8 +1228,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/validate/',
-        mapFile: 'temp/import/validate.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/validate/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/validate.json`,
         baseRepo: 'targetRepo',
         validate: true
       };
@@ -1229,7 +1239,7 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsCreated).toEqual(0);
       expect(mockContent.metrics.itemsUpdated).toEqual(0);
 
-      await rimraf('temp/import/validate/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/validate/`);
     });
 
     it('should ask for imported dependancies to be nullified if they are missing, and then skipped if invalid', async () => {
@@ -1240,7 +1250,7 @@ describe('content-item import command', () => {
         { label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', body: dependsOn(['idNotExist']) }
       ];
 
-      await createContent('temp/import/depNull/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/depNull/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -1249,8 +1259,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/depNull/',
-        mapFile: 'temp/import/depNull.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/depNull/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/depNull.json`,
         baseRepo: 'targetRepo'
       };
       await handler(argv);
@@ -1258,7 +1268,7 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsCreated).toEqual(0);
       expect(mockContent.metrics.itemsUpdated).toEqual(0);
 
-      await rimraf('temp/import/depNull/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/depNull/`);
     });
 
     it('should abort when failing to create content', async () => {
@@ -1267,7 +1277,7 @@ describe('content-item import command', () => {
 
       const templates: ItemTemplate[] = [{ label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }];
 
-      await createContent('temp/import/abort1/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/abort1/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.failRepoActions = 'create';
@@ -1277,8 +1287,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/abort1/',
-        mapFile: 'temp/import/abort1.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/abort1/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/abort1.json`,
         baseRepo: 'targetRepo',
         publish: true
       };
@@ -1288,7 +1298,7 @@ describe('content-item import command', () => {
 
       expect(mockContent.metrics.itemsCreated).toEqual(0);
 
-      await rimraf('temp/import/abort1/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/abort1/`);
     });
 
     it('should abort when failing to create content with a circular dependancy', async () => {
@@ -1297,7 +1307,7 @@ describe('content-item import command', () => {
 
       const templates = circularDependancies.slice(0, 3);
 
-      await createContent('temp/import/abort2/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/abort2/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.failRepoActions = 'create';
@@ -1307,8 +1317,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/abort2/',
-        mapFile: 'temp/import/abort2.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/abort2/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/abort2.json`,
         baseRepo: 'targetRepo',
         publish: true
       };
@@ -1318,13 +1328,13 @@ describe('content-item import command', () => {
 
       expect(mockContent.metrics.itemsCreated).toEqual(0);
 
-      await rimraf('temp/import/abort2/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/abort2/`);
     });
 
     it('should call the media rewriter when --media is passed', async () => {
       const templates: ItemTemplate[] = [{ label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }];
 
-      await createContent('temp/import/media1/', templates, false);
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/media1/`, templates, false);
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
       mockContent.createMockRepository('targetRepo');
@@ -1333,8 +1343,8 @@ describe('content-item import command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/import/media1/',
-        mapFile: 'temp/import/media1.json',
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/media1/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/media1.json`,
         baseRepo: 'targetRepo',
         media: true
       };
@@ -1346,7 +1356,7 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsCreated).toEqual(1);
       expect(mockContent.metrics.itemsUpdated).toEqual(0);
 
-      await rimraf('temp/import/media1/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/media1/`);
     });
   });
 });

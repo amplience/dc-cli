@@ -101,7 +101,7 @@ describe('content-item tree command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/tree/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/tree/`);
     });
 
     beforeEach(() => {
@@ -145,12 +145,12 @@ describe('content-item tree command', () => {
     });
 
     it('should print nothing if no content is present', async () => {
-      await ensureDirectoryExists('temp/tree/empty');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/tree/empty`);
 
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/empty'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/empty`
       };
 
       await handler(argv);
@@ -159,7 +159,7 @@ describe('content-item tree command', () => {
     });
 
     it('should print a single content item by itself', async () => {
-      const basePath = 'temp/tree/single/repo1';
+      const basePath = `temp_${process.env.JEST_WORKER_ID}/tree/single/repo1`;
       await ensureDirectoryExists(basePath);
 
       await promisify(writeFile)(join(basePath, 'dummyFile.txt'), 'ignored');
@@ -175,7 +175,7 @@ describe('content-item tree command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/single'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/single`
       };
 
       await handler(argv);
@@ -184,7 +184,7 @@ describe('content-item tree command', () => {
     });
 
     it('should print a tree of content items', async () => {
-      const basePath = 'temp/tree/multiple/repo1';
+      const basePath = `temp_${process.env.JEST_WORKER_ID}/tree/multiple/repo1`;
       await ensureDirectoryExists(basePath);
 
       const shared = { typeSchemaUri: 'http://type.com', repoId: 'repo1' };
@@ -199,7 +199,7 @@ describe('content-item tree command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/multiple'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/multiple`
       };
 
       await handler(argv);
@@ -208,7 +208,7 @@ describe('content-item tree command', () => {
     });
 
     it('should print multiple disjoint trees of content items', async () => {
-      const basePath = 'temp/tree/disjoint/repo1';
+      const basePath = `temp_${process.env.JEST_WORKER_ID}/tree/disjoint/repo1`;
       await ensureDirectoryExists(basePath);
 
       const shared = { typeSchemaUri: 'http://type.com', repoId: 'repo1' };
@@ -226,7 +226,7 @@ describe('content-item tree command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/disjoint'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/disjoint`
       };
 
       await handler(argv);
@@ -235,7 +235,7 @@ describe('content-item tree command', () => {
     });
 
     it('should detect and print circular dependencies with a double line indicator', async () => {
-      const basePath = 'temp/tree/disjoint/repo1';
+      const basePath = `temp_${process.env.JEST_WORKER_ID}/tree/disjoint/repo1`;
       await ensureDirectoryExists(basePath);
 
       const shared = { typeSchemaUri: 'http://type.com', repoId: 'repo1' };
@@ -248,7 +248,7 @@ describe('content-item tree command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/disjoint'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/disjoint`
       };
 
       await handler(argv);
@@ -257,7 +257,7 @@ describe('content-item tree command', () => {
     });
 
     it('should detect intertwined circular dependencies with multiple lines with different position', async () => {
-      const basePath = 'temp/tree/intertwine/repo1';
+      const basePath = `temp_${process.env.JEST_WORKER_ID}/tree/intertwine/repo1`;
       await ensureDirectoryExists(basePath);
 
       const shared = { typeSchemaUri: 'http://type.com', repoId: 'repo1' };
@@ -273,7 +273,7 @@ describe('content-item tree command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/intertwine'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/intertwine`
       };
 
       await handler(argv);
@@ -282,7 +282,7 @@ describe('content-item tree command', () => {
     });
 
     it('should print an error when invalid json is found', async () => {
-      const basePath = 'temp/tree/invalud/repo1';
+      const basePath = `temp_${process.env.JEST_WORKER_ID}/tree/invalud/repo1`;
       await ensureDirectoryExists(basePath);
 
       await createContent(basePath, {
@@ -297,7 +297,7 @@ describe('content-item tree command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/tree/invalud'
+        dir: `temp_${process.env.JEST_WORKER_ID}/tree/invalud`
       };
 
       await handler(argv);
