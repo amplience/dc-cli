@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { LogErrorLevel } from './archive/archive-log';
-import { FileLog } from './file-log';
+import { FileLog, versionedTitle } from './file-log';
 
 export function getDefaultLogPath(type: string, action: string, platform: string = process.platform): string {
   return join(
@@ -16,7 +16,7 @@ export function createLog(logFile: string, title?: string): FileLog {
   if (title !== undefined) {
     const timestamp = Date.now().toString();
 
-    log.title = `${title} - ${timestamp}\n`;
+    log.title = versionedTitle(`${title} - ${timestamp}\n`);
   }
 
   return log;

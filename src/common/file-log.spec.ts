@@ -1,7 +1,9 @@
-import { FileLog } from './file-log';
+import { FileLog, setVersion } from './file-log';
 import { readFile, exists, unlink } from 'fs';
 import { promisify } from 'util';
 import { ensureDirectoryExists } from './import/directory-utils';
+
+setVersion('test-ver');
 
 describe('file-log', () => {
   describe('file-log tests', () => {
@@ -32,6 +34,12 @@ describe('file-log', () => {
       await log.close();
 
       expect(await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`)).toBeTruthy();
+      expect(
+        (await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`, {
+          encoding: 'utf-8'
+        })).split('temp')[0]
+      ).toMatchInlineSnapshot('"// dc-cli test-ver - "');
+
       await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`);
     });
 

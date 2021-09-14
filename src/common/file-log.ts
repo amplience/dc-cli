@@ -1,11 +1,29 @@
 import { ArchiveLog } from './archive/archive-log';
 
+let version = require('../../package.json').version;
+
+export function setVersion(newVersion: string): void {
+  version = newVersion;
+}
+
+export function versionedTitle(title: string): string {
+  return `dc-cli ${version} - ${title}`;
+}
+
+function buildTitle(filename?: string): string {
+  if (filename) {
+    return versionedTitle(filename.replace('<DATE>', Date.now().toString()));
+  } else {
+    return '';
+  }
+}
+
 export class FileLog extends ArchiveLog {
   private openedCount = 0;
   closed: boolean;
 
   constructor(private filename?: string) {
-    super((filename || '').replace('<DATE>', Date.now().toString()));
+    super(buildTitle(filename));
 
     if (this.filename != null) {
       const timestamp = Date.now().toString();

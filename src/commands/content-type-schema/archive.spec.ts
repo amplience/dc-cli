@@ -7,8 +7,10 @@ import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
 import { dirname } from 'path';
 import { promisify } from 'util';
 import readline from 'readline';
-import { FileLog } from '../../common/file-log';
+import { FileLog, setVersion } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+
+setVersion('test-ver');
 
 jest.mock('readline');
 
@@ -91,7 +93,7 @@ describe('content-item-schema archive command', () => {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
-      expect(logFile.title).toMatch(/^Content Type Schema Archive Log \- ./);
+      expect(logFile.title).toMatch(/^dc\-cli test\-ver \- Content Type Schema Archive Log \- ./);
     });
   });
 
