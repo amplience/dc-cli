@@ -1,4 +1,4 @@
-import { builder, command, handler } from './export';
+import { builder, command, handler, LOG_FILENAME } from './export';
 import Yargs from 'yargs/yargs';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Hub, WorkflowState } from 'dc-management-sdk-js';
@@ -7,9 +7,14 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { promisify } from 'util';
 import { exists, unlink } from 'fs';
 import { FileLog } from '../../common/file-log';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('readline');
+jest.mock('../../common/log-helpers', () => ({
+  ...jest.requireActual('../../common/log-helpers'),
+  getDefaultLogPath: jest.fn()
+}));
 
 describe('settings export command', (): void => {
   afterEach((): void => {
@@ -42,6 +47,19 @@ describe('settings export command', (): void => {
         boolean: true,
         describe: 'Overwrite settings without asking.'
       });
+
+      expect(spyOption).toHaveBeenCalledWith('logFile', {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
+      });
+    });
+
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+      LOG_FILENAME();
+
+      expect(getDefaultLogPath).toHaveBeenCalledWith('settings', 'export', process.platform);
     });
   });
 

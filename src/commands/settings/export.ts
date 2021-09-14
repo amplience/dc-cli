@@ -7,10 +7,15 @@ import { nothingExportedExit, promptToExportSettings, writeJsonToFile } from '..
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import * as path from 'path';
 import { FileLog } from '../../common/file-log';
+import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 export const command = 'export <dir>';
 
 export const desc = 'Export Hub Settings';
+
+export const LOG_FILENAME = (platform: string = process.platform): string =>
+  getDefaultLogPath('settings', 'export', platform);
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -23,6 +28,12 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Overwrite settings without asking.'
+    })
+    .option('logFile', {
+      type: 'string',
+      default: LOG_FILENAME,
+      describe: 'Path to a log file to write to.',
+      coerce: createLog
     });
 };
 
@@ -38,6 +49,9 @@ export const processSettings = async (
   if (outputDir.substr(-1) === path.sep) {
     dir = dir.slice(0, -1);
   }
+
+  await ensureDirectoryExists(outputDir);
+
   const file = path.basename(`hub-settings-${id}-${name}`, '.json');
 
   const uniqueFilename = dir + path.sep + file + '.json';
