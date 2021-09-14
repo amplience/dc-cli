@@ -6,8 +6,8 @@ import { ensureDirectoryExists } from '../import/directory-utils';
 
 describe('archive-log', () => {
   describe('archive-log tests', () => {
-    beforeEach(() => {
-      jest.resetAllMocks();
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     it('should return false when writing to file fails', async () => {
@@ -22,7 +22,7 @@ describe('archive-log', () => {
     });
 
     it('should recover the exit code when loading from file', async () => {
-      await ensureDirectoryExists('temp/');
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/`);
 
       // Code -1 is when the file is closed without an error type.
 
@@ -33,7 +33,7 @@ describe('archive-log', () => {
         const errorStr = LogErrorLevel[errorType];
         const closingStr = resultCodes[errorType];
 
-        const path = `temp/exit-${errorStr}.log`;
+        const path = `temp_${process.env.JEST_WORKER_ID}/exit-${errorStr}.log`;
 
         await promisify(writeFile)(path, `// File Title\nACTION 1\n${closingStr}`);
 

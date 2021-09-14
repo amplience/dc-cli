@@ -35,11 +35,11 @@ describe('revert tests', function() {
   };
 
   beforeAll(async () => {
-    await rimraf('temp/revert/');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/`);
   });
 
   afterAll(async () => {
-    await rimraf('temp/revert/');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/`);
   });
 
   async function createLog(logFileName: string, log: string): Promise<void> {
@@ -60,7 +60,10 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/createOnly.txt', 'CREATE id1\nCREATE id2\nCREATE id3\nSUCCESS');
+    await createLog(
+      `temp_${process.env.JEST_WORKER_ID}/revert/createOnly.txt`,
+      'CREATE id1\nCREATE id2\nCREATE id3\nSUCCESS'
+    );
 
     // Create content to import
 
@@ -78,7 +81,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/createOnly.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/createOnly.txt`),
       dir: '.'
     };
     await revert(argv);
@@ -86,14 +89,17 @@ describe('revert tests', function() {
     // check items were archived appropriately
     expect(mockContent.metrics.itemsArchived).toEqual(3);
 
-    await rimraf('temp/revert/createOnly.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/createOnly.txt`);
   });
 
   test('Reverting an import on top of existing content should revert to an older version of the content, and archive content that was created.', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/createImport.txt', 'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS');
+    await createLog(
+      `temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`,
+      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS'
+    );
 
     // Create content to import
 
@@ -111,7 +117,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/createImport.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`),
       dir: '.'
     };
     await revert(argv);
@@ -121,7 +127,7 @@ describe('revert tests', function() {
     // check items were archived appropriately
     expect(mockContent.metrics.itemsArchived).toEqual(1);
 
-    await rimraf('temp/revert/createImport.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`);
   });
 
   test('Attempting to revert an import of content that has since changed should warn the user and continue on prompt.', async () => {
@@ -129,7 +135,7 @@ describe('revert tests', function() {
     (readline as any).setResponses(['y']);
 
     await createLog(
-      'temp/revert/createWarn.txt',
+      `temp_${process.env.JEST_WORKER_ID}/revert/createWarn.txt`,
       'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nUPDATE id4 3 4\nCREATE id5\nSUCCESS'
     );
 
@@ -174,7 +180,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/createWarn.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/createWarn.txt`),
       dir: '.'
     };
     await revert(argv);
@@ -187,14 +193,17 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((readline as any).responsesLeft()).toEqual(0);
 
-    await rimraf('temp/revert/createWarn.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/createWarn.txt`);
   });
 
   test('User responding no to the content changed warning should abort the process.', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses(['n']);
 
-    await createLog('temp/revert/revertAbort.txt', 'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS');
+    await createLog(
+      `temp_${process.env.JEST_WORKER_ID}/revert/revertAbort.txt`,
+      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS'
+    );
 
     // Create content to import
 
@@ -215,7 +224,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/revertAbort.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertAbort.txt`),
       dir: '.'
     };
     const result = await revert(argv);
@@ -230,7 +239,7 @@ describe('revert tests', function() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((readline as any).responsesLeft()).toEqual(0);
 
-    await rimraf('temp/revert/revertAbort.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/revertAbort.txt`);
   });
 
   test('Missing/invalid/non-updated items when reverting (or already in the desired state) should be silently skipped.', async () => {
@@ -238,7 +247,7 @@ describe('revert tests', function() {
     (readline as any).setResponses([]);
 
     await createLog(
-      'temp/revert/revertSkip.txt',
+      `temp_${process.env.JEST_WORKER_ID}/revert/revertSkip.txt`,
       '// Title\n// Comment\nUPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nUPDATE id8 1 1\nUPDATE id9 0 1 invalid\nSUCCESS'
     );
 
@@ -258,7 +267,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/revertSkip.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip.txt`),
       dir: '.'
     };
     const result = await revert(argv);
@@ -270,14 +279,14 @@ describe('revert tests', function() {
     // check items were archived appropriately
     expect(mockContent.metrics.itemsArchived).toEqual(1);
 
-    await rimraf('temp/revert/revertSkip.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip.txt`);
   });
 
   test('Reverting an empty log should not do anything.', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/revertEmpty.txt', '// empty :)');
+    await createLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertEmpty.txt`, '// empty :)');
 
     // Create content to import
 
@@ -295,7 +304,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/revertEmpty.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertEmpty.txt`),
       dir: '.'
     };
     await revert(argv);
@@ -304,7 +313,7 @@ describe('revert tests', function() {
     expect(mockContent.metrics.itemsArchived).toEqual(0);
     expect(mockContent.metrics.itemsUpdated).toEqual(0);
 
-    await rimraf('temp/revert/revertEmpty.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/revertEmpty.txt`);
   });
 
   test('Failed requests should silently skip affected content.', async () => {
@@ -312,7 +321,7 @@ describe('revert tests', function() {
     (readline as any).setResponses([]);
 
     await createLog(
-      'temp/revert/revertSkip.txt',
+      `temp_${process.env.JEST_WORKER_ID}/revert/revertSkip.txt`,
       'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nCREATE id4\nUPDATE id5 3 4\nCREATE id6\nUPDATE id7 23 24\nSUCCESS'
     );
 
@@ -333,7 +342,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/revertSkip.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip.txt`),
       dir: '.'
     };
     const result = await revert(argv);
@@ -345,14 +354,14 @@ describe('revert tests', function() {
     // check items were archived appropriately
     expect(mockContent.metrics.itemsArchived).toEqual(0);
 
-    await rimraf('temp/revert/revertSkip.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip.txt`);
   });
 
   test('When the version request does not fail but updating it to that version does, skip the item.', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses([]);
 
-    await createLog('temp/revert/revertSkip2.txt', 'UPDATE id1 1 2\nSUCCESS');
+    await createLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip2.txt`, 'UPDATE id1 1 2\nSUCCESS');
 
     // Create content to import
 
@@ -369,7 +378,7 @@ describe('revert tests', function() {
     const argv = {
       ...yargArgs,
       ...config,
-      revertLog: openRevertLog('temp/revert/revertSkip2.txt'),
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip2.txt`),
       dir: '.'
     };
     const result = await revert(argv);
@@ -381,7 +390,7 @@ describe('revert tests', function() {
     // check items were archived appropriately
     expect(mockContent.metrics.itemsArchived).toEqual(0);
 
-    await rimraf('temp/revert/revertSkip2.txt');
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/revertSkip2.txt`);
   });
 
   test('Missing log should exit early.', async () => {
@@ -415,7 +424,7 @@ describe('revert tests', function() {
       ...yargArgs,
       ...config,
       dir: '.',
-      revertLog: openRevertLog('temp/revert/missing.txt')
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/missing.txt`)
     };
     const result2 = await revert(argv2);
 
