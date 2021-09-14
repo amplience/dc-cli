@@ -165,7 +165,7 @@ describe('content-item move command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/move/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/move/`);
     });
 
     const clearArray = (array: object[]): void => {
@@ -261,7 +261,10 @@ describe('content-item move command', () => {
       copyCalls.splice(0, copyCalls.length);
       revertCalls.splice(0, revertCalls.length);
 
-      await createLog('temp/move/moveRevert.txt', 'MOVED id1\nMOVED id2\nMOVED id3\nMOVED id4');
+      await createLog(
+        `temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`,
+        'MOVED id1\nMOVED id2\nMOVED id3\nMOVED id4'
+      );
 
       // Create content to revert
 
@@ -303,7 +306,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: openRevertLog('temp/move/moveRevert.txt')
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`)
       };
       await handler(argv);
 
@@ -323,14 +326,14 @@ describe('content-item move command', () => {
         logFile: expect.any(FileLog)
       });
 
-      rimraf('temp/move/moveRevert.txt');
+      rimraf(`temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`);
     });
 
     it('should revert uninterrupted when fetching an item fails', async () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
 
       // NOTE: id3 doesn't exist, but that's OK
-      await createLog('temp/move/moveRevertFetch.txt', 'MOVED id1\nMOVED id2\nMOVED id3');
+      await createLog(`temp_${process.env.JEST_WORKER_ID}/move/moveRevertFetch.txt`, 'MOVED id1\nMOVED id2\nMOVED id3');
 
       // Create content to revert
       const templates: ItemTemplate[] = [
@@ -359,14 +362,14 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: openRevertLog('temp/move/moveRevertFetch.txt')
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/move/moveRevertFetch.txt`)
       };
       await handler(argv);
 
       expect(mockContent.metrics.itemsUnarchived).toEqual(0);
       expect(copyCalls.length).toEqual(0);
 
-      rimraf('temp/move/moveRevertFetch.txt');
+      rimraf(`temp_${process.env.JEST_WORKER_ID}/move/moveRevertFetch.txt`);
     });
 
     // should revert uninterrupted when unarchiving an item fails
@@ -392,7 +395,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        revertLog: openRevertLog('temp/move/moveRevertMissing.txt')
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/move/moveRevertMissing.txt`)
       };
       await handler(argv);
 
@@ -472,7 +475,7 @@ describe('content-item move command', () => {
         validate: false,
         skipIncomplete: false,
 
-        logFile: createFileLog('temp/move/failLog.txt')
+        logFile: createFileLog(`temp_${process.env.JEST_WORKER_ID}/move/failLog.txt`)
       };
       await handler(argv);
 

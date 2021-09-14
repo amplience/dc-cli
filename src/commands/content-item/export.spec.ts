@@ -123,7 +123,7 @@ describe('content-item export command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/export/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/`);
     });
 
     it('should export all content when given only an output directory', async () => {
@@ -142,13 +142,13 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/all/'
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/all/`
       };
       await handler(argv);
 
-      await itemsExist('temp/export/all/', templates);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/all/`, templates);
 
-      await rimraf('temp/export/all/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/all/`);
     });
 
     it('should export content from a specific folder', async () => {
@@ -172,15 +172,15 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/folder1',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/folder1`,
         folderId: 'folder1'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/', exists);
-      await itemsDontExist('temp/export/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/`, skips);
 
-      await rimraf('temp/export/folder1/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/folder1/`);
     });
 
     it('should export content from a multiple folders, with directory structure including both explicitly', async () => {
@@ -206,15 +206,15 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/multi/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/multi/`,
         folderId: ['folder1', 'folder3']
       };
       await handler(argv);
 
-      await itemsExist('temp/export/multi/', exists);
-      await itemsDontExist('temp/export/multi/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/multi/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/multi/`, skips);
 
-      await rimraf('temp/export/multi/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/multi/`);
     });
 
     it('should export content from a single repo, ignoring others', async () => {
@@ -239,15 +239,15 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/repo/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/repo/`,
         repoId: 'repo1'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/repo/', exists);
-      await itemsDontExist('temp/export/repo/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/repo/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/repo/`, skips);
 
-      await rimraf('temp/export/repo/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/repo/`);
     });
 
     it('should export content from a multiple repos, ignoring others', async () => {
@@ -270,15 +270,15 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/repomulti/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/repomulti/`,
         repoId: ['repo1', 'repo2']
       };
       await handler(argv);
 
-      await itemsExist('temp/export/repomulti/', exists, ['repo1', 'repo2']);
-      await itemsDontExist('temp/export/repomulti/', skips, ['repo1', 'repo2']);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/repomulti/`, exists, ['repo1', 'repo2']);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/repomulti/`, skips, ['repo1', 'repo2']);
 
-      await rimraf('temp/export/repomulti/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/repomulti/`);
     });
 
     it('should only export content with a matching type id when specified', async () => {
@@ -303,16 +303,16 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/typeSpecific/folder1',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/typeSpecific/folder1`,
         folderId: 'folder1',
         schemaId: '/typeMatch/'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/typeSpecific/', exists);
-      await itemsDontExist('temp/export/typeSpecific/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/typeSpecific/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/typeSpecific/`, skips);
 
-      await rimraf('temp/export/typeSpecific/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/typeSpecific/`);
     });
 
     it('should only export content with a matching name when specified', async () => {
@@ -339,16 +339,16 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/nameSpecific/folder1',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/nameSpecific/folder1`,
         folderId: 'folder1',
         name: '/nameMatch/'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/nameSpecific/', exists);
-      await itemsDontExist('temp/export/nameSpecific/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/nameSpecific/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/nameSpecific/`, skips);
 
-      await rimraf('temp/export/nameSpecific/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/nameSpecific/`);
     });
 
     it('should respect all filters when specified at the same time', async () => {
@@ -396,7 +396,7 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/allFilter/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/allFilter/`,
         repoId: 'repo2',
         folderId: 'folder1', // folder1 in addition to repo2
         name: '/nameMatch/',
@@ -404,10 +404,10 @@ describe('content-item export command', () => {
       };
       await handler(argv);
 
-      await itemsExist('temp/export/allFilter/', exists, ['repo2']);
-      await itemsDontExist('temp/export/allFilter/', skips, ['repo2']);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/allFilter/`, exists, ['repo2']);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/allFilter/`, skips, ['repo2']);
 
-      await rimraf('temp/export/allFilter/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/allFilter/`);
     });
 
     it('should export content outwith the filter if it is depended on', async () => {
@@ -466,15 +466,15 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/folder1',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/folder1`,
         folderId: 'folder1'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/', exists);
-      await itemsDontExist('temp/export/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/`, skips);
 
-      await rimraf('temp/export/folder1/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/folder1/`);
     });
 
     it('should export archived content if it is depended on, from multiple repos', async () => {
@@ -549,14 +549,14 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/repoDeps'
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/repoDeps`
       };
       await handler(argv);
 
-      await itemsExist('temp/export/repoDeps/', exists, ['repo1', 'repo2']);
-      await itemsDontExist('temp/export/repoDeps/', skips, ['repo1', 'repo2']);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/repoDeps/`, exists, ['repo1', 'repo2']);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/repoDeps/`, skips, ['repo1', 'repo2']);
 
-      await rimraf('temp/export/repoDeps/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/repoDeps/`);
     });
 
     it('should warn when schema validation fails, but not if it succeeds', async () => {
@@ -606,14 +606,14 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/validation/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/validation/`,
         repoId: 'repo1'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/validation/', exists);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/validation/`, exists);
 
-      await rimraf('temp/export/validation/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/validation/`);
     });
 
     it("should skip repositories if items can't be listed from them", async () => {
@@ -636,13 +636,13 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/failRepo/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/failRepo/`,
         repoId: 'repo1'
       };
       await handler(argv);
-      await itemsDontExist('temp/export/failRepo/', templates);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/failRepo/`, templates);
 
-      await rimraf('temp/export/failRepo/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/failRepo/`);
     });
 
     it('should skip content items if they are fetched folder, but the content items endpoints fail', async () => {
@@ -666,14 +666,14 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/failFolder/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/failFolder/`,
         folderId: ['folder1', 'folder2']
       };
       await handler(argv);
 
-      await itemsDontExist('temp/export/failFolder/', templates);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/failFolder/`, templates);
 
-      await rimraf('temp/export/failFolder/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/failFolder/`);
     });
 
     it('should place content items that error when getting the directory name in the base directory', async () => {
@@ -698,17 +698,17 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/failFolder/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/failFolder/`,
         repoId: 'repo1'
       };
       await handler(argv);
 
       exists[0].folderPath = 'nested2'; // nested2 could not be tracked back to the base, so it was placed directly there.
 
-      await itemsExist('temp/export/failFolder/', exists);
-      await itemsDontExist('temp/export/failFolder/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/failFolder/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/failFolder/`, skips);
 
-      await rimraf('temp/export/failFolder/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/failFolder/`);
     });
 
     it('should skip subfolders if the request for them fails', async () => {
@@ -734,15 +734,15 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/failSubfolder/folder1',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/failSubfolder/folder1`,
         folderId: 'folder1'
       };
       await handler(argv);
 
-      await itemsExist('temp/export/failSubfolder/', exists);
-      await itemsDontExist('temp/export/failSubfolder/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/failSubfolder/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/failSubfolder/`, skips);
 
-      await rimraf('temp/export/failSubfolder/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/failSubfolder/`);
     });
 
     it('should fetch the last published version of content when available and --publish is passed', async () => {
@@ -783,16 +783,16 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/version/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/version/`,
         publish: true
       };
       await handler(argv);
 
       expect(content.metrics.itemsVersionGet).toEqual(2);
 
-      await itemsExist('temp/export/version/', templates);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/version/`, templates);
 
-      await rimraf('temp/export/version/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/version/`);
     });
 
     it('should populate exportedIds with the ids of exported content items when present', async () => {
@@ -818,18 +818,18 @@ describe('content-item export command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        dir: 'temp/export/exportedIds',
+        dir: `temp_${process.env.JEST_WORKER_ID}/export/exportedIds`,
         folderId: 'exportedIds',
         exportedIds
       };
       await handler(argv);
 
-      await itemsExist('temp/export/', exists);
-      await itemsDontExist('temp/export/', skips);
+      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/`, exists);
+      await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/`, skips);
 
       expect(exportedIds).toEqual(exists.map(item => item.id as string));
 
-      await rimraf('temp/export/exportedIds/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/exportedIds/`);
     });
   });
 });

@@ -134,11 +134,11 @@ describe('hub clean command', () => {
     };
 
     beforeAll(async () => {
-      await rimraf('temp/clean/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/clean/`);
     });
 
     afterAll(async () => {
-      await rimraf('temp/clean/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/clean/`);
     });
 
     it('should call all steps in order with given parameters', async () => {
@@ -149,7 +149,7 @@ describe('hub clean command', () => {
         ...yargArgs,
         ...config,
 
-        logFile: createLog('temp/clean/steps/all.log'),
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clean/steps/all.log`),
         force: true
       };
 
@@ -166,7 +166,7 @@ describe('hub clean command', () => {
       });
 
       const loadLog = new FileLog();
-      await loadLog.loadFromFile('temp/clean/steps/all.log');
+      await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clean/steps/all.log`);
     });
 
     it('should handle false returns from each of the steps by stopping the process', async () => {
@@ -178,7 +178,7 @@ describe('hub clean command', () => {
           ...yargArgs,
           ...config,
 
-          logFile: createLog('temp/clean/steps/fail' + i + '.log'),
+          logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clean/steps/fail` + i + '.log'),
           force: true
         };
 
@@ -197,7 +197,7 @@ describe('hub clean command', () => {
         });
 
         const loadLog = new FileLog();
-        await loadLog.loadFromFile('temp/clean/steps/fail' + i + '.log');
+        await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clean/steps/fail` + i + '.log');
       }
     });
 
@@ -211,7 +211,7 @@ describe('hub clean command', () => {
           ...config,
 
           step: steps[i].getId(),
-          logFile: createLog('temp/clean/steps/step' + i + '.log'),
+          logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clean/steps/step` + i + '.log'),
           force: true
         };
 
@@ -230,7 +230,7 @@ describe('hub clean command', () => {
         });
 
         const loadLog = new FileLog();
-        await loadLog.loadFromFile('temp/clean/steps/step' + i + '.log');
+        await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clean/steps/step` + i + '.log');
       }
     });
 
