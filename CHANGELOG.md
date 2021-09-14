@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.12.0](https://www.github.com/amplience/dc-cli/compare/v0.11.2...v0.12.0) (2021-09-14)
+
+
+### Features
+
+* **config:** allow using configure command with a custom file ([#80](https://www.github.com/amplience/dc-cli/issues/80)) ([5cc2939](https://www.github.com/amplience/dc-cli/commit/5cc2939ee78f173e045618c8fd51a9f3d06e8d57))
+* **config:** print helpful error if config file is invalid json ([#108](https://www.github.com/amplience/dc-cli/issues/108)) ([ce51fbc](https://www.github.com/amplience/dc-cli/commit/ce51fbcffeb3cf9ffb0e53f8fbe02dee8506980c))
+* **extension:** extension import and export commands, clone step ([#92](https://www.github.com/amplience/dc-cli/issues/92)) ([e322f5d](https://www.github.com/amplience/dc-cli/commit/e322f5d0ed5977c6e1967dda1dc796c674407611))
+* **file-log:** add version to file-log title ([#107](https://www.github.com/amplience/dc-cli/issues/107)) ([c95de01](https://www.github.com/amplience/dc-cli/commit/c95de01fe922f2d364ff9fc5cf6ea8e96ce016d8))
+
+
+### Bug Fixes
+
+* **content-type-schema:** always treat archived schemas as out of date ([#112](https://www.github.com/amplience/dc-cli/issues/112)) ([49085dd](https://www.github.com/amplience/dc-cli/commit/49085ddd471b0a08726ccb175c540bdabaa81763))
+* **settings:** add missing log file option to settings export command ([#103](https://www.github.com/amplience/dc-cli/issues/103)) ([602832c](https://www.github.com/amplience/dc-cli/commit/602832c2a131b6044163a3f8350b3ffe1667d0f5))
+* unit test logging ([#100](https://www.github.com/amplience/dc-cli/issues/100)) ([3c5586f](https://www.github.com/amplience/dc-cli/commit/3c5586f04a5d66e012901a19ef6ca2cce5ba2c0a))
+
 ### [0.11.2](https://www.github.com/amplience/dc-cli/compare/v0.11.1...v0.11.2) (2021-07-21)
 
 
