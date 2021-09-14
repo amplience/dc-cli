@@ -75,7 +75,7 @@ export const doUpdate = async (
 ): Promise<{ contentTypeSchema: ContentTypeSchema; updateStatus: UpdateStatus }> => {
   try {
     let retrievedSchema: ContentTypeSchema = await client.contentTypeSchemas.get(schema.id || '');
-    if (equals(retrievedSchema, schema)) {
+    if (equals(retrievedSchema, schema) && retrievedSchema.status !== Status.ARCHIVED) {
       return { contentTypeSchema: retrievedSchema, updateStatus: UpdateStatus.SKIPPED };
     }
 
