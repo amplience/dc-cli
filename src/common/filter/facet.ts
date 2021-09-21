@@ -135,3 +135,48 @@ export function applyFacet(items: ContentItem[], facetOrString: Facet | string):
     return true;
   });
 }
+
+function escapeForRegex(url: string): string {
+  return url.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+function combineFilters(filters: string[] | string): string {
+  if (!Array.isArray(filters)) {
+    return filters;
+  }
+
+  const regexElements = [];
+
+  for (const filter of filters) {
+    if (filter.length > 2 && filter[0] === '/' && filter[filter.length - 1] === '/') {
+      regexElements.push(`(${filter.substr(1, filter.length - 2)})`);
+    } else {
+      regexElements.push(escapeForRegex(filter));
+    }
+  }
+
+  return `/${regexElements.join('|')}/`;
+}
+
+function getOldFilter(filters: string[] | string, name: string): string {
+  return `${name}:${combineFilters(filters)}`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function withOldFilters(facet: string | undefined, args: any): string | undefined {
+  if (facet || !(args.name || args.schemaId)) {
+    return facet;
+  }
+
+  const resultFilters: string[] = [];
+
+  if (args.name) {
+    resultFilters.push(getOldFilter(args.name, 'name'));
+  }
+
+  if (args.schemaId) {
+    resultFilters.push(getOldFilter(args.schemaId, 'schemaId'));
+  }
+
+  return resultFilters.map(filter => filter.replace(/\,/g, '\\,')).join(',');
+}

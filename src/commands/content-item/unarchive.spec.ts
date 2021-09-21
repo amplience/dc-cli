@@ -288,6 +288,16 @@ describe('content-item unarchive command', () => {
         default: LOG_FILENAME,
         describe: 'Path to a log file to write to.'
       });
+
+      expect(spyOption).toHaveBeenCalledWith('name', {
+        type: 'string',
+        hidden: true
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('schemaId', {
+        type: 'string',
+        hidden: true
+      });
     });
   });
 

@@ -8,7 +8,7 @@ import ArchiveOptions from '../../common/archive/archive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
-import { applyFacet } from '../../common/filter/facet';
+import { applyFacet, withOldFilters } from '../../common/filter/facet';
 
 export const command = 'archive [id]';
 
@@ -69,6 +69,14 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: coerceLog
+    })
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
@@ -267,8 +275,10 @@ export const processItems = async ({
 };
 
 export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, facet } = argv;
+  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId } = argv;
   const client = dynamicContentClientFactory(argv);
+
+  const facet = withOldFilters(argv.facet, argv);
 
   const allContent = !id && !facet && !revertLog && !folderId && !repoId;
 

@@ -12,6 +12,7 @@ import { revert } from './import-revert';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 import { LogErrorLevel } from '../../common/archive/archive-log';
+import { withOldFilters } from '../../common/filter/facet';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -147,6 +148,16 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
@@ -211,7 +222,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,
-        facet: argv.facet,
+        facet: withOldFilters(argv.facet, argv),
         logFile: log,
 
         dir: tempFolder,

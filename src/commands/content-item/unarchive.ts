@@ -7,7 +7,7 @@ import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import { applyFacet } from '../../common/filter/facet';
+import { applyFacet, withOldFilters } from '../../common/filter/facet';
 
 export const command = 'unarchive [id]';
 
@@ -65,6 +65,14 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.'
+    })
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
@@ -278,7 +286,8 @@ export const processItems = async ({
 };
 
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, facet } = argv;
+  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId } = argv;
+  const facet = withOldFilters(argv.facet, argv);
   const client = dynamicContentClientFactory(argv);
 
   const allContent = !id && !facet && !revertLog && !folderId && !repoId;

@@ -1,4 +1,12 @@
-import { applyFacet, parseFacet, dateRangeMatch, relativeDate, parseDateRange, DatePreset } from './facet';
+import {
+  applyFacet,
+  parseFacet,
+  dateRangeMatch,
+  relativeDate,
+  parseDateRange,
+  DatePreset,
+  withOldFilters
+} from './facet';
 import { ContentItem } from 'dc-management-sdk-js';
 
 describe('facet', () => {
@@ -236,6 +244,60 @@ describe('facet', () => {
       const items = [new ContentItem({ label: 'example' }), new ContentItem({ label: 'example2' })];
 
       expect(applyFacet(items, 'name:example')).toEqual([items[0]]);
+    });
+  });
+
+  describe('withOldFilters tests', () => {
+    it('should return facets if present', () => {
+      expect(withOldFilters('oldFacet', {})).toEqual('oldFacet');
+    });
+
+    it('should return undefined if no facets or args are present', () => {
+      expect(withOldFilters(undefined, {})).toBeUndefined();
+    });
+
+    it('should return single values directly', () => {
+      expect(withOldFilters(undefined, { name: 'testSearch' })).toEqual('name:testSearch');
+      expect(withOldFilters(undefined, { schemaId: 'testSearch' })).toEqual('schemaId:testSearch');
+      expect(withOldFilters(undefined, { name: 'testSearch', schemaId: 'testSearch2' })).toEqual(
+        'name:testSearch,schemaId:testSearch2'
+      );
+
+      expect(withOldFilters(undefined, { name: '/regex/' })).toEqual('name:/regex/');
+      expect(withOldFilters(undefined, { schemaId: '/regex/' })).toEqual('schemaId:/regex/');
+      expect(withOldFilters(undefined, { name: '/regex/', schemaId: '/regex2/' })).toEqual(
+        'name:/regex/,schemaId:/regex2/'
+      );
+    });
+
+    it('should combine values and regexes', () => {
+      expect(withOldFilters(undefined, { name: ['one', 'two'] })).toEqual('name:/one|two/');
+      expect(withOldFilters(undefined, { schemaId: ['one', 'two', 'three'] })).toEqual('schemaId:/one|two|three/');
+
+      expect(withOldFilters(undefined, { name: ['/regex/', '/regex2/'] })).toEqual('name:/(regex)|(regex2)/');
+      expect(withOldFilters(undefined, { schemaId: ['/regex/', '/regex2/', '/regex3/'] })).toEqual(
+        'schemaId:/(regex)|(regex2)|(regex3)/'
+      );
+    });
+
+    it('should escape regex characters when combining names into one', () => {
+      expect(withOldFilters(undefined, { name: ['reserved.characters*', 'd.(to)'] })).toEqual(
+        'name:/reserved\\.characters\\*|d\\.\\(to\\)/'
+      );
+    });
+
+    it('should escape commas', () => {
+      expect(withOldFilters(undefined, { name: 'test,Search' })).toEqual('name:test\\,Search');
+      expect(withOldFilters(undefined, { schemaId: 'test,Search' })).toEqual('schemaId:test\\,Search');
+      expect(withOldFilters(undefined, { name: 'test,Search', schemaId: 'test,Search2' })).toEqual(
+        'name:test\\,Search,schemaId:test\\,Search2'
+      );
+
+      expect(withOldFilters(undefined, { name: '/reg,ex/' })).toEqual('name:/reg\\,ex/');
+      expect(withOldFilters(undefined, { schemaId: '/reg,ex/' })).toEqual('schemaId:/reg\\,ex/');
+      expect(withOldFilters(undefined, { name: '/reg,ex/', schemaId: '/reg,ex2/' })).toEqual(
+        'name:/reg\\,ex/,schemaId:/reg\\,ex2/'
+      );
     });
   });
 });

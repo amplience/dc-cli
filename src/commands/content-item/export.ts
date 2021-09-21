@@ -15,7 +15,7 @@ import { ContentDependancyTree, RepositoryContentItem } from '../../common/conte
 import { ContentMapping } from '../../common/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
-import { applyFacet } from '../../common/filter/facet';
+import { applyFacet, withOldFilters } from '../../common/filter/facet';
 
 interface PublishedContentItem {
   lastPublishedVersion?: number;
@@ -61,6 +61,14 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
@@ -211,7 +219,9 @@ const getContentItems = async (
 };
 
 export const handler = async (argv: Arguments<ExportItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, repoId, folderId, facet, logFile, publish } = argv;
+  const { dir, repoId, folderId, logFile, publish } = argv;
+
+  const facet = withOldFilters(argv.facet, argv);
 
   const dummyRepo = new ContentRepository();
 

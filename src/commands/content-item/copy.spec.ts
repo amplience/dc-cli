@@ -170,6 +170,16 @@ describe('content-item copy command', () => {
         describe: 'Path to a log file to write to.',
         coerce: createLog
       });
+
+      expect(spyOption).toHaveBeenCalledWith('name', {
+        type: 'string',
+        hidden: true
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('schemaId', {
+        type: 'string',
+        hidden: true
+      });
     });
   });
 

@@ -142,6 +142,16 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
