@@ -206,6 +206,7 @@ describe('content-item import command', () => {
           folderId: folderId,
           locale: item.locale,
           lastPublishedVersion: item.lastPublishedVersion,
+          lastPublishedDate: item.lastPublishedDate,
 
           body: {
             _meta: {
@@ -1106,18 +1107,18 @@ describe('content-item import command', () => {
       expect((reverter as any).calls[0]).toEqual(argv);
     });
 
-    it('should publish items when --publish is provided, and the items specify a last published version', async () => {
+    it('should publish items when --publish is provided, and the items specify a last published date', async () => {
       // Create content to import
       // 3 out of 4 should publish. item2 publishes item3, so only 2 requests are made.
 
       const templates: ItemTemplate[] = [
-        { label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', lastPublishedVersion: 1 },
+        { label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', lastPublishedDate: '2021-06-09T15:51:07.404Z' },
         {
           label: 'item2',
           repoId: 'repo',
           typeSchemaUri: 'http://type',
           folderPath: 'folderTest',
-          lastPublishedVersion: 1,
+          lastPublishedDate: '2021-06-09T15:51:07.404Z',
           body: dependsOn(['id3'])
         },
         {
@@ -1126,7 +1127,8 @@ describe('content-item import command', () => {
           repoId: 'repo',
           typeSchemaUri: 'http://type',
           folderPath: 'folderTest',
-          lastPublishedVersion: 1 // This item is implicitly published by item 2, so it should NOT be published separately.
+          lastPublishedDate: '2021-06-09T15:51:07.404Z'
+          // This item is implicitly published by item 2, so it should NOT be published separately.
         },
         { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
@@ -1165,7 +1167,7 @@ describe('content-item import command', () => {
         typeSchemaUri: 'http://type',
         folderPath: 'folderTest',
         body: dependsOn(['id1', 'id3']),
-        lastPublishedVersion: 1 // Test publishing a circular dependancy.
+        lastPublishedDate: '2021-06-09T15:51:07.404Z' // Test publishing a circular dependancy.
       },
       {
         id: 'id3',
