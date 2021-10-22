@@ -135,7 +135,8 @@ describe('content-item copy command', () => {
       expect(spyOption).toHaveBeenCalledWith('publish', {
         type: 'boolean',
         boolean: true,
-        describe: 'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
+        describe:
+          'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('republish', {
