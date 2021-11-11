@@ -6,6 +6,8 @@ We have included some NPM scripts to help create various installations of the CL
 - [Package the CLI into executables](#building-executables)
 - [Link the CLI with NPM for local development](#npm-link)
 
+Alternatively, return to [README.md](../README.md) for more information on the DC CLI.
+
 <a name="compiling-typescript"></a>
 
 ### Compiling TypeScript to Javascript
