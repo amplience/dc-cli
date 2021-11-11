@@ -196,6 +196,18 @@ dc-cli content-type register
 
 `dc-cli content-type register --schemaId https://example.com/foo.json --label bar`
 
+##### Add an icon when registering a new content type
+
+`dc-cli content-type register --schemaId https://example.com/foo.json --icons.0.size 256 --icons.0.url "https://example.com/bar.jpg"`
+
+##### Add a visualization when registering a new content type
+
+`dc-cli content-type register --schemaId https://example.com/foo.json --visualizations.0.label "bar" --visualizations.0.templatedUri "https://example.com/baz" --visualizations.0.default true`
+
+##### Add a card when registering a new content type
+
+`dc-cli content-type register --schemaId https://example.com/foo.json —-cards.0.label "bar" —-cards.0.templatedUri "https://schema.localhost.com/baz" —-cards.0.default true`
+
 ### sync
 
 Synchronises a content type, so that it matches the present version of its registered schema.
@@ -265,6 +277,14 @@ dc-cli content-type update <id>
 
 #### Examples
 
-##### Example 1
+##### Add an icon when updating a content type
 
-##### Example 2
+`dc-cli content-type update foo --icons.0.size 256 --icons.0.url "https://example.com/bar.jpg"`
+
+##### Add a visualization when updating a content type
+
+`dc-cli content-type update foo --visualizations.0.label "bar" --visualizations.0.templatedUri "https://example.com/baz" --visualizations.0.default true`
+
+##### Add a card when updating a content type
+
+`dc-cli content-type update foo —-cards.0.label "bar" —-cards.0.templatedUri "https://schema.localhost.com/baz" —-cards.0.default true`
