@@ -151,7 +151,7 @@ function combineFilters(filters: string[] | string): string {
     if (filter.length > 2 && filter[0] === '/' && filter[filter.length - 1] === '/') {
       regexElements.push(`(${filter.substr(1, filter.length - 2)})`);
     } else {
-      regexElements.push(escapeForRegex(filter));
+      regexElements.push(`^${escapeForRegex(filter)}$`);
     }
   }
 
@@ -175,7 +175,7 @@ export function withOldFilters(facet: string | undefined, args: any): string | u
   }
 
   if (args.schemaId) {
-    resultFilters.push(getOldFilter(args.schemaId, 'schemaId'));
+    resultFilters.push(getOldFilter(args.schemaId, 'schema'));
   }
 
   return resultFilters.map(filter => filter.replace(/\,/g, '\\,')).join(',');
