@@ -1,24 +1,19 @@
-import {
-  builder,
-  command,
-  handler,
-  LOG_FILENAME,
-  filterContentItems,
-  getContentItems,
-  processItems
-} from './unarchive';
+import { builder, command, handler, LOG_FILENAME, getContentItems, processItems } from './unarchive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentRepository, ContentItem, Folder } from 'dc-management-sdk-js';
+import { ContentRepository, ContentItem, Folder, Status } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import readline from 'readline';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { dirname } from 'path';
 import { promisify } from 'util';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
+import * as fetchContentModule from '../../common/filter/fetch-content';
 
 jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
+
+jest.mock('../../common/filter/fetch-content');
 
 describe('content-item unarchive command', () => {
   afterEach((): void => {
@@ -46,6 +41,7 @@ describe('content-item unarchive command', () => {
     mockItemGetById: () => void;
     mockRepoGet: () => void;
     mockFolderGet: () => void;
+    mockFacet: () => void;
     contentItems: ContentItem[];
   } => {
     const mockGet = jest.fn();
@@ -56,6 +52,7 @@ describe('content-item unarchive command', () => {
     const mockItemGetById = jest.fn();
     const mockRepoGet = jest.fn();
     const mockFolderGet = jest.fn();
+    const mockFacet = jest.spyOn(fetchContentModule, 'getContent') as jest.Mock;
 
     const item = new ContentItem({
       id: '1',
@@ -202,6 +199,7 @@ describe('content-item unarchive command', () => {
     mockItemUpdate.mockResolvedValue(item);
 
     mockItemsList.mockResolvedValue(new MockPage(ContentItem, contentItems));
+    mockFacet.mockResolvedValue(contentItems);
 
     if (unarchiveError) {
       mockUnarchive.mockRejectedValue(new Error('Error'));
@@ -218,6 +216,7 @@ describe('content-item unarchive command', () => {
       mockItemGetById,
       mockRepoGet,
       mockFolderGet,
+      mockFacet,
       contentItems
     };
   };
@@ -302,11 +301,15 @@ describe('content-item unarchive command', () => {
   });
 
   describe('handler tests', function() {
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
     it('should unarchive all content', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockGet, mockGetList, mockItemsList, mockUnarchive } = mockValues();
+      const { mockGet, mockFacet, mockUnarchive } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -315,8 +318,9 @@ describe('content-item unarchive command', () => {
       await handler(argv);
 
       expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
@@ -359,7 +363,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockRepoGet } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -368,7 +372,10 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockRepoGet).toBeCalledTimes(1);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        repoId: 'repo1',
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
@@ -376,7 +383,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockRepoGet } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -385,15 +392,18 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockRepoGet).toBeCalledTimes(2);
-      expect(mockUnarchive).toBeCalledTimes(4);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        repoId: ['repo1', 'repo2'],
+        status: Status.ARCHIVED
+      });
+      expect(mockUnarchive).toBeCalledTimes(2);
     });
 
     it('should unarchive content by folder id', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockFolderGet, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -403,8 +413,11 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFolderGet).toBeCalledTimes(1);
-      expect(mockItemsList).toBeCalledTimes(1);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        repoId: 'repo123',
+        folderId: 'folder1',
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
@@ -412,7 +425,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockFolderGet, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -421,16 +434,18 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFolderGet).toBeCalledTimes(2);
-      expect(mockItemsList).toBeCalledTimes(2);
-      expect(mockUnarchive).toBeCalledTimes(4);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        folderId: ['folder1', 'folder1'],
+        status: Status.ARCHIVED
+      });
+      expect(mockUnarchive).toBeCalledTimes(2);
     });
 
     it('should unarchive content by name', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockFolderGet, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -440,16 +455,18 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFolderGet).toBeCalledTimes(1);
-      expect(mockItemsList).toBeCalledTimes(1);
-      expect(mockUnarchive).toBeCalledTimes(1);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'name:item1', {
+        folderId: 'folder1',
+        status: Status.ARCHIVED
+      });
+      expect(mockUnarchive).toBeCalledTimes(2);
     });
 
     it('should exit if a facet AND id are provided', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockFolderGet, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFolderGet, mockItemsList, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -459,16 +476,20 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
+      expect(mockFacet).not.toBeCalled();
       expect(mockFolderGet).not.toBeCalled();
       expect(mockItemsList).not.toBeCalled();
       expect(mockUnarchive).not.toBeCalled();
     });
 
-    it("shouldn't unarchive content by name", async () => {
+    it("shouldn't unarchive content when facet returns none", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockUnarchive, mockFolderGet, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
+
+      (mockFacet as jest.Mock).mockReset();
+      (mockFacet as jest.Mock).mockResolvedValue([]);
 
       const argv = {
         ...yargArgs,
@@ -478,8 +499,10 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFolderGet).toBeCalledTimes(1);
-      expect(mockItemsList).toBeCalledTimes(1);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'name:item3', {
+        folderId: 'folder1',
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).not.toBeCalled();
     });
 
@@ -487,7 +510,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['n']);
 
-      const { mockUnarchive, mockFolderGet, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -497,35 +520,18 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFolderGet).toBeCalledTimes(1);
-      expect(mockItemsList).toBeCalledTimes(1);
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'name:item1', {
+        folderId: 'folder1',
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).not.toBeCalled();
-    });
-
-    it('should unarchive content by name regexp', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (readline as any).setResponses(['y']);
-
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues();
-
-      const argv = {
-        ...yargArgs,
-        ...config,
-        facet: 'name:/item/'
-      };
-      await handler(argv);
-
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
-      expect(mockUnarchive).toBeCalledTimes(2);
     });
 
     it('should unarchive content by content type name', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -534,55 +540,17 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
-      expect(mockUnarchive).toBeCalledTimes(1);
-    });
-
-    it('should unarchive content by content type regexp', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (readline as any).setResponses(['y']);
-
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues();
-
-      const argv = {
-        ...yargArgs,
-        ...config,
-        facet: 'schema:/test/'
-      };
-      await handler(argv);
-
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'schema:http://test.com', {
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(2);
-    });
-
-    it("shouldn't unarchive content by content type regexp", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (readline as any).setResponses(['y']);
-
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues();
-
-      const argv = {
-        ...yargArgs,
-        ...config,
-        facet: 'schema:/test123/'
-      };
-      await handler(argv);
-
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
-      expect(mockUnarchive).toBeCalledTimes(0);
     });
 
     it('should unarchive content with ignoreError', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues(true);
+      const { mockUnarchive, mockFacet } = mockValues(true);
 
       const argv = {
         ...yargArgs,
@@ -591,9 +559,9 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
@@ -601,7 +569,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues(true);
+      const { mockUnarchive, mockFacet } = mockValues(true);
 
       const argv = {
         ...yargArgs,
@@ -610,9 +578,9 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(1);
     });
 
@@ -620,7 +588,7 @@ describe('content-item unarchive command', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['input', 'ignored']);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues();
+      const { mockUnarchive, mockFacet } = mockValues();
 
       const argv = {
         ...yargArgs,
@@ -629,9 +597,9 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
@@ -640,7 +608,7 @@ describe('content-item unarchive command', () => {
       (readline as any).setResponses(['y']);
 
       const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
-      const log = '// Type log test file\n' + 'ARCHIVE 1\n' + 'ARCHIVE 2 delivery-key\n' + 'ARCHIVE idMissing';
+      const log = '// Type log test file\n' + 'ARCHIVE 1\n' + 'ARCHIVE 2 delivery-key\n' + 'ARCHIVE idMissing\n';
 
       const dir = dirname(logFileName);
       if (!(await promisify(exists)(dir))) {
@@ -648,7 +616,12 @@ describe('content-item unarchive command', () => {
       }
       await promisify(writeFile)(logFileName, log);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList, mockItemUpdate } = mockValues();
+      const { mockUnarchive, mockItemUpdate, mockItemGetById, contentItems } = mockValues();
+
+      (mockItemGetById as jest.Mock).mockReset();
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[1]);
+      (mockItemGetById as jest.Mock).mockRejectedValue(new Error("Couldn't locate item"));
 
       const argv = {
         ...yargArgs,
@@ -660,20 +633,23 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockItemGetById).toHaveBeenNthCalledWith(1, '1');
+      expect(mockItemGetById).toHaveBeenNthCalledWith(2, '2');
+      expect(mockItemGetById).toHaveBeenNthCalledWith(3, 'idMissing');
       expect(mockItemUpdate).toHaveBeenCalled();
       const updateItem: ContentItem = (mockItemUpdate as jest.Mock).mock.calls[0][0];
       expect(updateItem.body._meta.deliveryKey).toEqual('delivery-key');
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
-    it("shouldn't unarchive content items, getFolder error", async () => {
+    it("shouldn't unarchive content items, getFacet error", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['input', 'ignored']);
 
-      const { mockFolderGet, mockUnarchive, mockItemsList } = mockValues(true);
+      const { mockFacet, mockUnarchive } = mockValues(true);
+
+      (mockFacet as jest.Mock).mockReset();
+      (mockFacet as jest.Mock).mockRejectedValue(new Error('Simulated Error'));
 
       const argv = {
         ...yargArgs,
@@ -682,8 +658,10 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFolderGet).toBeCalledTimes(1);
-      expect(mockItemsList).not.toBeCalled();
+      expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
+        folderId: 'folder1',
+        status: Status.ARCHIVED
+      });
       expect(mockUnarchive).not.toBeCalled();
     });
 
@@ -704,7 +682,7 @@ describe('content-item unarchive command', () => {
       }
       await promisify(writeFile)(logFileName, log);
 
-      const { mockGet, mockGetList, mockUnarchive, mockItemsList } = mockValues(true);
+      const { mockUnarchive, mockItemGetById, mockFacet } = mockValues(true);
 
       const argv = {
         ...yargArgs,
@@ -716,9 +694,8 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockGet).toHaveBeenCalled();
-      expect(mockGetList).toHaveBeenCalled();
-      expect(mockItemsList).toHaveBeenCalled();
+      expect(mockItemGetById).not.toHaveBeenCalled();
+      expect(mockFacet).not.toHaveBeenCalled();
       expect(mockUnarchive).not.toBeCalled();
     });
 
@@ -823,64 +800,6 @@ describe('content-item unarchive command', () => {
 
       if (result) {
         expect(result.contentItems.length).toBe(2);
-      }
-    });
-  });
-
-  describe('filterContentItems tests', () => {
-    it('should filter content items', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems
-      });
-
-      expect(result).toMatchObject({
-        contentItems,
-        missingContent: false
-      });
-    });
-
-    it('should filter content items by content type', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems,
-        facet: 'schema:/test.com/'
-      });
-
-      expect(result).toMatchObject({
-        contentItems: [contentItems[0]],
-        missingContent: false
-      });
-    });
-
-    it('should filter content items by content types', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems,
-        facet: 'schema:/test.?\\.com/'
-      });
-
-      expect(result).toMatchObject({
-        contentItems,
-        missingContent: false
-      });
-    });
-
-    it('should filter content items by name', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems,
-        facet: 'name:/item1/'
-      });
-
-      if (result) {
-        expect(result.contentItems.length).toBeGreaterThanOrEqual(1);
-
-        expect(result.contentItems[0].id).toMatch('1');
       }
     });
   });

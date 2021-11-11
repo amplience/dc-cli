@@ -233,7 +233,7 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   log.appendLine('Retrieving content items, please wait.');
   let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId, publish);
 
-  // Filter using the faced, if present.
+  // Filter using the facet, if present.
   if (facet) {
     const newItems = applyFacet(items.map(item => item.item), facet);
 
