@@ -6,7 +6,7 @@ The **event** category includes interactions with Dynamic Content's events and i
 
 Run `dc-cli event --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
@@ -39,15 +39,20 @@ The following options are available for all **event** commands.
 
 ### Mapping files
 
-When importing content with the DC CLI, this creates or references a mapping file to determine whether the imported event should be created as new, or if an existing one within the Dynamic Content platform should be updated.
+When importing events with the DC CLI, this creates or references a mapping file to determine whether the imported event should be created as new, or if an existing one within the Dynamic Content platform should be updated.
 
 For example exporting an event (eg `111111111111111111111111`) from one hub then importing it to another for the first time will create a new event with a randomly generated UUID (eg `222222222222222222222222`). 
 
-To instruct the DC CLI on which event to update with future actions, a mapping between the source and destination is stored in a mapping file. This mapping file will contain an array of every event mapping identified for jobs using that mapping file. Using the previous examples:
+To instruct the DC CLI on which event to update with future actions, a mapping between the source and destination is stored in a mapping file. This mapping file will contain an array of every event mapping identified for jobs using that mapping file, along with its constituent parts (editions, slots, and snapshots). Using the previous examples:
 
 ```
 {
-	"contentItems": [],
+	"contentItems": [
+		[
+			"111111111111111111111111",
+			"222222222222222222222222"
+		]
+	],
 	"workflowStates": [],
 	"events": [
 		[
@@ -76,7 +81,7 @@ To instruct the DC CLI on which event to update with future actions, a mapping b
 }
 ```
 
-If no mapping file is specified (with the `--mapFile` argument) then a default one will be created, using the destination's resource type (hub, repository, folder) and its ID, and stored within a default location in your user directory. For example:
+If no mapping file is specified (with the `--mapFile` argument) then a default one will be created or updated, using the destination's resource type (hub) and its ID, and stored within a default location in your user directory. For example:
 
 * Mac: `~/.amplience/imports/hub-111111111111111111111111.json`
 * Windows: `%UserProfile%\.amplience\imports\hub-111111111111111111111111.json`
@@ -117,7 +122,7 @@ dc-cli event archive [id]
 
 ##### Archive all events with "Christmas" in their name
 
-`dc-cli event archive --name "/.*Christmas.*/"`
+`dc-cli event archive --name "/Christmas/"`
 
 ### export
 
@@ -126,7 +131,7 @@ Exports events from the targeted Dynamic Content hub into the specified filesyst
 We recommend reading about [snapshots and DC CLI](#snapshots-and-dc-cli) before exporting or importing events.
 
 ```
-dc-cli event archive <dir>
+dc-cli event export <dir>
 ```
 
 #### Options
@@ -157,7 +162,7 @@ We recommend reading about [snapshots and DC CLI](#snapshots-and-dc-cli) before 
 Before importing events you must ensure that a valid [content item](#CONTENT-ITEM.md) exists in the destination hub for each content item contained within each event.
 
 ```
-dc-cli event archive <dir>
+dc-cli event import <dir>
 ```
 
 #### Options

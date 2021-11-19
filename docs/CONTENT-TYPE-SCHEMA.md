@@ -8,7 +8,7 @@ These commands can be used to retrieve information on one or more schemas, creat
 
 Run `dc-cli content-type-schema --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
@@ -66,7 +66,7 @@ dc-cli content-type-schema archive [id]
 
 ##### Archive all active content type schemas containing "Christmas" in their URI
 
-`dc-cli content-type-schema archive --schemaId "/.*Christmas.*/"`
+`dc-cli content-type-schema archive --schemaId "/Christmas/"`
 
 ### create
 
@@ -117,7 +117,7 @@ dc-cli content-type-schema export <dir>
 
 ##### Export all content type schemas with "Christmas" in their URI
 
-`dc-cli content-type-schema export ./myDirectory/schema --schemaId "/.*Christmas.*/"`
+`dc-cli content-type-schema export ./myDirectory/schema --schemaId "/Christmas/"`
 
 ### get
 
@@ -208,4 +208,4 @@ dc-cli content-type-schema unarchive [id]
 
 ##### Unarchive all archived content type schemas containing "Christmas" in their URI
 
-`dc-cli content-type-schema unarchive --schemaId "/.*Christmas.*/"`
+`dc-cli content-type-schema unarchive --schemaId "/Christmas/"`

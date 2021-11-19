@@ -4,11 +4,11 @@
 
 The **content-repository** command category includes a number of interactions with Dynamic Content's repositories.
 
-These commands can be used to get details for a specific, list multiple repositories, or assign or unassign content types from a repository. 
+These commands can be used to get details for a specific repository, list multiple repositories, or assign or unassign content types from a repository. 
 
 Run `dc-cli content-repository --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 

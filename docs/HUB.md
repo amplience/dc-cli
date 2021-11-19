@@ -8,17 +8,17 @@ These commands can be used to copy a hub's settings and content in their entiret
 
 Run `dc-cli hub --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
 - [Common Options](#common-options)
-- [Useful information](#useful-information)
-  - [Mapping files](#mapping-files)
-  - [Media-link rewriting](#media-link-rewriting)
+- [Useful Information](#useful-information)
+    - [Mapping files](#mapping-files)
+    - [Media-link rewriting](#media-link-rewriting)
 - [Commands](#commands)
-  - [clone](#clone)
-  - [clean](#clean)
+    - [clone](#clone)
+    - [clean](#clean)
 
 <!-- /MarkdownTOC -->
 
@@ -59,7 +59,7 @@ To instruct the DC CLI on which content item to update with future actions, a ma
 }
 ```
 
-If no mapping file is specified (with the `--mapFile` argument) then a default one will be created, using the destination's resource type (hub, repository, folder) and its ID, and stored within a default location in your user directory. For example:
+If no mapping file is specified (with the `--mapFile` argument) then a default one will be created or updated, using the destination's resource type (hub) and its ID, and stored within a default location in your user directory. For example:
 
 * Mac: `~/.amplience/imports/hub-111111111111111111111111.json`
 * Windows: `%UserProfile%\.amplience\imports\hub-111111111111111111111111.json`

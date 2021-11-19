@@ -10,12 +10,12 @@ Before importing, copying, or moving content you must ensure that a valid [conte
 
 Run `dc-cli content-item --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
 - [Common Options](#common-options)
-- [Useful information](#useful-information)
+- [Useful Information](#useful-information)
     - [Mapping files](#mapping-files)
     - [Facets](#facets)
     - [Media-link rewriting](#media-link-rewriting)
@@ -137,11 +137,11 @@ dc-cli content-item export <dir>
 
 ##### Export all content items from a specific repository
 
-`dc-cli content-item export ./myDirectory/content --repoId foo`
+`dc-cli content-item export ./myDirectory/content --repoId 111111111111111111111111`
 
 ##### Export all content items with the "banner" schema type, with "Christmas" in their name
 
-`dc-cli content-item export ./myDirectory/content --facet "schema:/.+banner.json/,name:/.*Christmas.*/"`
+`dc-cli content-item export ./myDirectory/content --facet "schema:/.+banner.json$/,name:/Christmas/"`
 
 ### import
 
@@ -181,7 +181,7 @@ dc-cli content-item import <dir>
 
 ##### Import content into a specific repository
 
-`dc-cli content-item import ./myDirectory/content --baseRepo foo`
+`dc-cli content-item import ./myDirectory/content --baseRepo 111111111111111111111111`
 
 ### copy
 
@@ -310,11 +310,11 @@ dc-cli content-item archive [id]
 
 ##### Archive all content items from a specific repository
 
-`dc-cli content-item archive --repoId foo`
+`dc-cli content-item archive --repoId 111111111111111111111111`
 
 ##### Archive all content items with the "banner" schema type, with "Christmas" in their name
 
-`dc-cli content-item archive --facet "schema:/.+banner.json/,name:/.*Christmas.*/"`
+`dc-cli content-item archive --facet "schema:/.+banner.json$/,name:/Christmas/"`
 
 ### unarchive
 
@@ -347,11 +347,11 @@ dc-cli content-item unarchive [id]
 
 ##### Unarchive all content items from a specific repository
 
-`dc-cli content-item unarchive --repoId foo`
+`dc-cli content-item unarchive --repoId 111111111111111111111111`
 
 ##### Unarchive all content items with the "banner" schema type, with "Christmas" in their name
 
-`dc-cli content-item unarchive --facet "schema:/.+banner.json/,name:/.*Christmas.*/"`
+`dc-cli content-item unarchive --facet "schema:/.+banner.json$/,name:/Christmas/"`
 
 ### tree
 

@@ -12,8 +12,8 @@ Run `dc-cli --help` to get a list of available commands.
 
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Command categories](#commands)
-  - [configure](#configure)
+  - [Options](#options)
+- [Command categories](#command-categories)
   - [content-type-schema](#content-type-schema)
   - [content-type](#content-type)
   - [content-item](#content-item)
@@ -120,7 +120,7 @@ This category includes interactions with Algolia search indexes for Dynamic Cont
 
 This category includes interactions with Dynamic Content's repositories.
 
-These commands can be used to get details for a specific, list multiple repositories, or assign or unassign content types from a repository. 
+These commands can be used to get details for a specific repository, list multiple repositories, or assign or unassign content types from a repository. 
 
 [View commands for **content-repository**](docs/CONTENT-REPOSITORY.md)
 

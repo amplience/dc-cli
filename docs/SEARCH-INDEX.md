@@ -6,7 +6,7 @@ The **search-index** command category includes a number of interactions with Alg
 
 Run `dc-cli search-index --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 

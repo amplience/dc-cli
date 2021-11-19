@@ -10,7 +10,7 @@ Before importing content types you must ensure that a valid [content type schema
 
 Run `dc-cli content-type --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
@@ -46,7 +46,7 @@ The following options are available for all **content-type** commands.
 
 ### archive
 
-Archives a content type schema. This hides the schema from the active content type list in the Dynamic Content UI and prevents new content items being created of that type.
+Archives one or more content types. This hides them from the active content type list in the Dynamic Content UI and prevents new content items being created of that type.
 
 ```
 dc-cli content-type archive [id]
@@ -71,7 +71,7 @@ dc-cli content-type archive [id]
 
 ##### Archive all active content types containing "Christmas" in their URI
 
-`dc-cli content-type archive --schemaId "/.*Christmas.*/"`
+`dc-cli content-type archive --schemaId "/Christmas/"`
 
 ### export
 
@@ -100,7 +100,7 @@ dc-cli content-type export <dir>
 
 ##### Export all content types with "Christmas" in their schema URI
 
-`dc-cli content-type export ./myDirectory/type --schemaId "/.*Christmas.*/"`
+`dc-cli content-type export ./myDirectory/type --schemaId "/Christmas/"`
 
 ### get
 
@@ -255,7 +255,7 @@ dc-cli content-type unarchive [id]
 
 ##### Unarchive all archived content types containing "Christmas" in their URI
 
-`dc-cli content-type unarchive --schemaId "/.*Christmas.*/"`
+`dc-cli content-type unarchive --schemaId "/Christmas/"`
 
 ### update
 

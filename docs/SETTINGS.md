@@ -6,16 +6,16 @@ The **settings** command category includes interactions with the supporting prop
 
 Run `dc-cli settings --help` to get a list of available commands.
 
-Return to [README.md](../README.md) for information on other command caterogies.
+Return to [README.md](../README.md) for information on other command categories.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
 - [Common Options](#common-options)
 - [Useful information](#useful-information)
-  - [Mapping files](#mapping-files)
+    - [Mapping files](#mapping-files)
 - [Commands](#commands)
-  - [export](#export)
-  - [import](#import)
+    - [export](#export)
+    - [import](#import)
 
 <!-- /MarkdownTOC -->
 
@@ -55,7 +55,7 @@ To instruct the DC CLI on which workflow state to update with future actions, a 
 }
 ```
 
-If no mapping file is specified (with the `--mapFile` argument) then a default one will be created, using the destination's resource type (hub, repository, folder) and its ID, and stored within a default location in your user directory. For example:
+If no mapping file is specified (with the `--mapFile` argument) then a default one will be created or updated, using the destination's resource type (hub) and its ID, and stored within a default location in your user directory. For example:
 
 * Mac: `~/.amplience/imports/hub-111111111111111111111111.json`
 * Windows: `%UserProfile%\.amplience\imports\hub-111111111111111111111111.json`
