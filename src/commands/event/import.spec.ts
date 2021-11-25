@@ -286,6 +286,10 @@ describe('event import command', () => {
         ]
       `);
       expect(mapping.getSnapshot('snap1')).toEqual('newSnap');
+      expect(content.body.chooser[0].id).toEqual('newSnap');
+      expect(content.body.chooser[0]._meta.rootContentItemId).toEqual('realItem1');
+      expect(content.body.chooser[1].id).toEqual('existingSnap');
+      expect(content.body.chooser[1]._meta.rootContentItemId).toEqual('realItem2');
     });
 
     it('should not create snapshots when content has no references', async function() {

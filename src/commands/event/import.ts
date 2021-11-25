@@ -105,12 +105,13 @@ export const rewriteSnapshots = async (
 
     // Try find the snapshot in the mapping
     let snapshotId = mapping.getSnapshot(entry.id);
+    const itemId = mapping.getContentItem(entry._meta.rootContentItemId) || entry._meta.rootContentItemId;
 
     if (snapshotId == null) {
       // Create a new snapshot based off of the current content state
       const result = await hub.related.snapshots.create([
         new Snapshot({
-          contentRoot: mapping.getContentItem(entry._meta.rootContentItemId) || entry._meta.rootContentItemId,
+          contentRoot: itemId,
           comment: '',
           createdFrom: SnapshotCreator.ContentItem,
           type: SnapshotType.GENERATED
@@ -127,6 +128,7 @@ export const rewriteSnapshots = async (
     }
 
     dep.dependancy.id = snapshotId;
+    entry._meta.rootContentItemId = itemId;
   }
 };
 
