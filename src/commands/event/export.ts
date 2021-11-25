@@ -303,7 +303,6 @@ export const processEvents = async (
   tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, event } of allExports) {
     if (status !== 'UP-TO-DATE') {
-      delete event.id; // do not export id
       writeJsonToFile(filename, event);
     }
     tableStream.write([filename, event.name || '', status]);
