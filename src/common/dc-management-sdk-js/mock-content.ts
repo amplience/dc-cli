@@ -10,7 +10,10 @@ import {
   ContentTypeSchema,
   ContentRepositoryContentType,
   Status,
-  ContentTypeCachedSchema
+  ContentTypeCachedSchema,
+  FacetQuery,
+  Sortable,
+  Pageable
 } from 'dc-management-sdk-js';
 import MockPage from './mock-page';
 
@@ -187,6 +190,39 @@ export class MockContent {
       .mockImplementation(() =>
         Promise.resolve(new MockPage(ContentTypeSchema, Array.from(this.typeSchemaById.values())))
       );
+    const mockItemFacet = jest
+      .fn()
+      .mockImplementation((facetQuery: FacetQuery, options: Pageable & Sortable & { query: string }) => {
+        if (this.failRepoActions == 'list') {
+          throw new Error('Simulated network failure.');
+        }
+
+        let filter = this.items;
+
+        // Some really basic filtering by repo id, as content item export uses it.
+        const repoStartStr = 'contentRepositoryId:"';
+        const repoStart = options.query.indexOf(repoStartStr);
+        if (repoStart !== -1) {
+          const repoEnd = options.query.indexOf('"', repoStart + repoStartStr.length);
+
+          if (repoEnd !== -1) {
+            const repo = options.query.substring(repoStart + repoStartStr.length, repoEnd);
+
+            filter = filter.filter(item => item.contentRepositoryId === repo);
+          }
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const query = options.query;
+        /*
+        if (options.status) {
+          filter = filter.filter(item => item.status === options.status);
+        }
+        */
+
+        return Promise.resolve(new MockPage(ContentItem, filter));
+      });
+
     const mockTypeRegister = jest.fn().mockImplementation((type: ContentType) => {
       this.metrics.typesCreated++;
       type = new ContentType(type);
@@ -199,6 +235,7 @@ export class MockContent {
     mockHub.related.contentTypeSchema.list = mockSchemaList;
     mockHub.related.contentTypes.list = mockTypesList;
     mockHub.related.contentTypes.register = mockTypeRegister;
+    mockHub.related.contentItems.facet = mockItemFacet;
 
     return mockHub;
   }
@@ -502,6 +539,7 @@ export class MockContent {
         label: template.label,
         status: template.status || Status.ACTIVE,
         id: template.id || '0',
+        contentRepositoryId: template.repoId,
         folderId: folderNullOrEmpty ? null : folderId,
         version: template.version,
         lastPublishedVersion: template.lastPublishedVersion,

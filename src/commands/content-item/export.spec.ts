@@ -361,36 +361,78 @@ describe('content-item export command', () => {
 
       const exists: ItemTemplate[] = [
         // repo correct, label and type correct
-        { label: 'item-nameMatch2', repoId: 'repo1', typeSchemaUri: 'http://typeMatch3', folderPath: 'folder1' },
-        { label: 'item-nameMatch3', repoId: 'repo1', typeSchemaUri: 'http://typeMatch5', folderPath: 'folder1/nested' },
+        {
+          label: 'item-nameMatch2',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://typeMatch3',
+          folderPath: 'folder1',
+          id: '0'
+        },
+        {
+          label: 'item-nameMatch3',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://typeMatch5',
+          folderPath: 'folder1/nested',
+          id: '1'
+        },
 
-        { label: 'item-nameMatch7', repoId: 'repo2', typeSchemaUri: 'http://typeMatch7', folderPath: 'folder4' },
-        { label: 'item-nameMatch8', repoId: 'repo2', typeSchemaUri: 'http://typeMatch6', folderPath: 'folder4/nested' }
+        {
+          label: 'item-nameMatch7',
+          repoId: 'repo2',
+          typeSchemaUri: 'http://typeMatch7',
+          folderPath: 'folder4',
+          id: '2'
+        },
+        {
+          label: 'item-nameMatch8',
+          repoId: 'repo2',
+          typeSchemaUri: 'http://typeMatch6',
+          folderPath: 'folder4/nested',
+          id: '3'
+        }
       ];
 
       const skips: ItemTemplate[] = [
         // repo correct, type filtered out
-        { label: 'item-nameMatch5', repoId: 'repo2', typeSchemaUri: 'http://type3', folderPath: 'folder3' },
+        { label: 'item-nameMatch5', repoId: 'repo2', typeSchemaUri: 'http://type3', folderPath: 'folder3', id: '4' },
 
         // repo correct, name filtered out
-        { label: 'item-name7', repoId: 'repo2', typeSchemaUri: 'http://typeMatch3', folderPath: 'folder3' },
-        { label: 'item-name8', repoId: 'repo2', typeSchemaUri: 'http://typeMatch5', folderPath: 'folder3/nested' },
+        { label: 'item-name7', repoId: 'repo2', typeSchemaUri: 'http://typeMatch3', folderPath: 'folder3', id: '5' },
+        {
+          label: 'item-name8',
+          repoId: 'repo2',
+          typeSchemaUri: 'http://typeMatch5',
+          folderPath: 'folder3/nested',
+          id: '6'
+        },
 
         // folder correct, type filtered out
-        { label: 'item-nameMatch6', repoId: 'repo1', typeSchemaUri: 'http://type3', folderPath: 'folder1' },
+        { label: 'item-nameMatch6', repoId: 'repo1', typeSchemaUri: 'http://type3', folderPath: 'folder1', id: '7' },
 
         // folder correct, name filtered out
-        { label: 'item-name7', repoId: 'repo1', typeSchemaUri: 'http://typeMatch3', folderPath: 'folder1' },
-        { label: 'item-name8', repoId: 'repo1', typeSchemaUri: 'http://typeMatch5', folderPath: 'folder1/nested' },
+        { label: 'item-name7', repoId: 'repo1', typeSchemaUri: 'http://typeMatch3', folderPath: 'folder1', id: '8' },
+        {
+          label: 'item-name8',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://typeMatch5',
+          folderPath: 'folder1/nested',
+          id: '9'
+        },
 
         // type and name correct/incorrect, repo and folder incorrect
-        { label: 'item1', repoId: 'repo1', typeSchemaUri: 'http://type2' },
-        { label: 'item-nameMatch1', repoId: 'repo1', typeSchemaUri: 'http://typeMatch2' },
-        { label: 'item4', repoId: 'repo1', typeSchemaUri: 'http://type4', folderPath: 'folder2' },
-        { label: 'item-nameMatch4', repoId: 'repo1', typeSchemaUri: 'http://typeMatch4', folderPath: 'folder2' },
+        { label: 'item1', repoId: 'repo1', typeSchemaUri: 'http://type2', id: '10' },
+        { label: 'item-nameMatch1', repoId: 'repo1', typeSchemaUri: 'http://typeMatch2', id: '11' },
+        { label: 'item4', repoId: 'repo1', typeSchemaUri: 'http://type4', folderPath: 'folder2', id: '12' },
+        {
+          label: 'item-nameMatch4',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://typeMatch4',
+          folderPath: 'folder2',
+          id: '13'
+        },
 
         // folder correct, both filtered out
-        { label: 'item5', repoId: 'repo1', typeSchemaUri: 'http://type1', folderPath: 'folder1' }
+        { label: 'item5', repoId: 'repo1', typeSchemaUri: 'http://type1', folderPath: 'folder1', id: '14' }
       ];
 
       const templates = skips.concat(exists);
