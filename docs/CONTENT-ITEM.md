@@ -147,7 +147,7 @@ dc-cli content-item export <dir>
 
 Imports content items from the specified filesystem location to the targeted Dynamic Content hub.
 
-Before importing content you must ensure that a valid [content type](#CONTENT-TYPE.md) exists in the destination hub for each content item.
+Before importing content you must ensure that a valid [content type](#CONTENT-TYPE.md) exists in the destination hub for each content item. It is also recommended that you check that any content items to be imported are still valid if any changes have been made to your content type schemas. Please see [guidelines for making changes to a content type schema](https://amplience.com/docs/integration/refreshingcontenttypes.html#guidelines) for more information.
 
 ```
 dc-cli content-item import <dir>

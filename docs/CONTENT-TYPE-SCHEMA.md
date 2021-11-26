@@ -141,9 +141,9 @@ dc-cli content-type-schema get <id>
 
 ### import
 
-Imports content type schemas from the specified filesystem location to the targeted Dynamic Content hub.
+Imports content type schemas from the specified filesystem location to the targeted Dynamic Content hub. It is recommended that you check that any content items you intend to import are still valid with any changes you make to your content type schemas. Please see [guidelines for making changes to a content type schema](https://amplience.com/docs/integration/refreshingcontenttypes.html#guidelines) for more information.
 
-More details can be found in [import usage](IMPORT_USAGE.md#CONTENT-TYPE-SCHEMAS).
+More details on schema import can be found in [import usage](IMPORT_USAGE.md#CONTENT-TYPE-SCHEMAS).
 
 ```
 dc-cli content-type-schema import <dir>

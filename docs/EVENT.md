@@ -88,6 +88,8 @@ If no mapping file is specified (with the `--mapFile` argument) then a default o
 
 If a mapping file does not exist at the point of import, then any imported events will be created as new, and a new mapping file will be created. If a mapping file exists, and was provided with the `--mapFile` argument, then any events found within the mapping file will be updated. Any events not contained in the mapping file will will be created as new, and will then be added to the mapping file.
 
+Content items referenced within your events' slots are not imported with the `event import` command, and will need to exist in the destination hub beforehand; these content item references will be reliant on existing mappings from a previous [content item](CONTENT-ITEM.md) import. 
+
 ### Snapshots and DC CLI
 
 The most granular part of an event in Dynamic Content is a snapshot. This is a representation of a content item exactly as it appears at the point when it was added to an edition using the content browser, or when it was saved to an edition in the production view.
@@ -159,7 +161,7 @@ Imports events from the specified filesystem location to the targeted Dynamic Co
 
 We recommend reading about [snapshots and DC CLI](#snapshots-and-dc-cli) before exporting or importing events.
 
-Before importing events you must ensure that a valid [content item](#CONTENT-ITEM.md) exists in the destination hub for each content item contained within each event.
+Before importing events you must ensure that a valid [content item](#CONTENT-ITEM.md) exists in the destination hub for each content item contained within each event, and contains an appropriate mapping within the [mapping file](#mapping-files).
 
 ```
 dc-cli event import <dir>
