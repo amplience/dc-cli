@@ -1,7 +1,22 @@
-import { ContentItem, DynamicContent, FacetedContentItem, FacetQuery, Hub, Status } from 'dc-management-sdk-js';
+import {
+  ContentItem,
+  DynamicContent,
+  FacetedContentItem,
+  FacetQuery,
+  HalResource,
+  Hub,
+  Page,
+  Status
+} from 'dc-management-sdk-js';
 import paginator from '../dc-management-sdk-js/paginator';
 import { applyFacet, Facet, parseDateRange, parseFacet, tryGetArray } from './facet';
 import { isRegexString } from './regex';
+
+// Threshold used to facet enriched content then request individually instead of fetching+filtering all content.
+// Currently, facet should return 20 times less content items than a request for all of them to be used.
+// If there are less than 20 content items, always facet.
+export const facetEnrichThreshold = 20;
+export const facetAlwaysMaximum = 20;
 
 interface FetchContentParams {
   enrichItems?: boolean;
@@ -16,6 +31,67 @@ interface GetContentParams {
   folderId?: string | string[];
   status?: Status;
 }
+
+export const getTotalElements = (page: Page<HalResource>): number => {
+  if (page.page == null || page.page.totalElements == null) {
+    return page.getItems().length;
+  }
+
+  return page.page.totalElements;
+};
+
+export const getItemCount = async (
+  client: DynamicContent,
+  hub: Hub,
+  folderId: string | undefined,
+  repoId: string | undefined,
+  status: Status | undefined
+): Promise<number> => {
+  const options = { status, size: 1 };
+
+  if (folderId != null) {
+    const folder = await client.folders.get(folderId);
+    return getTotalElements(await folder.related.contentItems.list(options));
+  } else if (repoId != null) {
+    const repo = await client.contentRepositories.get(repoId);
+    return getTotalElements(await repo.related.contentItems.list(options));
+  } else {
+    const repos = await paginator(hub.related.contentRepositories.list);
+
+    let result = 0;
+    for (const repo of repos) {
+      const page = await repo.related.contentItems.list(options);
+      result += getTotalElements(page);
+    }
+    return result;
+  }
+};
+
+export const shouldFacetEnriched = async (
+  client: DynamicContent,
+  hub: Hub,
+  facetQuery: FacetQuery,
+  qString: string,
+  folderId: string | undefined,
+  repoId: string | undefined,
+  status: Status | undefined
+): Promise<boolean | 0> => {
+  const facetCount = getTotalElements(await hub.related.contentItems.facet(facetQuery, { query: qString, size: 1 }));
+
+  if (facetCount == 0) {
+    return 0;
+  }
+
+  if (facetCount > facetAlwaysMaximum) {
+    const allCount = await getItemCount(client, hub, folderId, repoId, status);
+
+    if (facetCount * facetEnrichThreshold >= allCount) {
+      return false; // Just get all content items.
+    }
+  }
+
+  return true;
+};
 
 export const tryFetchContent = async (
   client: DynamicContent,
@@ -93,9 +169,18 @@ export const tryFetchContent = async (
   if (enrichItems) {
     // The facets endpoint does not return the content item body, so it must be requested manually.
     // First, check if it's worth it enriching items individually instead of just fetching them all.
+    const qString = query.join('');
+
+    const should = await shouldFacetEnriched(client, hub, facetQuery, qString, folderId, repoId, status);
+
+    if (should === 0) {
+      return [];
+    } else if (!should) {
+      return null;
+    }
 
     const items = await paginator(options =>
-      hub.related.contentItems.facet(facetQuery, { ...options, query: query.join('') })
+      hub.related.contentItems.facet(facetQuery, { ...options, query: qString })
     );
     const enriched: ContentItem[] = [];
 
@@ -134,17 +219,20 @@ export const fetchContent = async (
   if (filtered == null) {
     if (folderId != null) {
       const folder = await client.folders.get(folderId);
+
       return await paginator(folder.related.contentItems.list, options);
     } else if (repoId != null) {
       const repo = await client.contentRepositories.get(repoId);
+
       return await paginator(repo.related.contentItems.list, options);
     } else {
-      const repos = await paginator(hub.related.contentRepositories.list, options);
+      const repos = await paginator(hub.related.contentRepositories.list);
 
       const result: ContentItem[] = [];
       for (const repo of repos) {
         result.push(...(await paginator(repo.related.contentItems.list, options)));
       }
+
       return result;
     }
   }
