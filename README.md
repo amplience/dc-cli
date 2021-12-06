@@ -126,7 +126,7 @@ These commands can be used to get details for a specific repository, list multip
 
 ### event
 
-This category includes interactions with Dynamic Content's events and its constituent parts (Editions, Slots, and Snapshots. These commands can be used to export and import events, and to archive events.
+This category includes interactions with Dynamic Content's events and its constituent parts (Editions, Slots, and Snapshots). These commands can be used to export and import events, and to archive events.
 
 [View commands for **event**](docs/EVENT.md)
 

@@ -68,7 +68,7 @@ If a mapping file does not exist at the point of import, then any imported conte
 
 ### Media-link rewriting
 
-The DC CLI is capable of importing or copying content into a Dynamic Content hub which resides on a distinct Content Hub account to the source by using the `--media` option with the clone command. This will update the `endpoint` value for any `media-link` objects to reflect the endpoint of the destination hub's account, if an asset with a matching name exists in the destination account.
+The DC CLI is capable of importing or copying content into a Dynamic Content hub which resides on a distinct Content Hub account to the source by using the `--media` option with the clone command. This will update the `endpoint`, `id`, and `defaultHost` values for any `media-link` objects to reflect the endpoint of the destination hub's account, if an asset with a matching name exists in the destination account.
 
 This functionality requires additional Content Hub-specific permissions granting to your DC CLI client in order to grant it visibility of the destination account's media assets (`DAM:ASSET STORE:ASSET_STORE_NAME`).
 
@@ -112,11 +112,11 @@ dc-cli hub clone <dir>
 
 ##### Clone hub from scratch
 
-`dc-cli hub clone`
+`dc-cli hub clone ./myDirectory/hub`
 
 ##### Resume a hub clone from the content item step
 
-`dc-cli hub clone --step content`
+`dc-cli hub clone ./myDirectory/hub --step content`
 
 ### clean
 

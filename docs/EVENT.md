@@ -179,8 +179,8 @@ dc-cli event import <dir>
 
 ##### Import events from the filesystem
 
-`dc-cli content-item import ./myDirectory/event`
+`dc-cli event import ./myDirectory/event`
 
 ##### Specify a mapping file when importing
 
-`dc-cli settings event ./myDirectory/event --mapFile ./myDirectory/mappingFile.json`
+`dc-cli event import ./myDirectory/event --mapFile ./myDirectory/mappingFile.json`

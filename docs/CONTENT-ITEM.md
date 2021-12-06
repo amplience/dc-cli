@@ -74,7 +74,7 @@ If a mapping file does not exist at the point of import, then any imported conte
 
 ### Facets
 
-The content item export, copy, move archive and unarchive commands allow the user to provide a facet string to filter the content that the commands work on. Multiple of these can be applied at a time, and you can even match on a regular expressions (RegEx) string. Note that you will need to surround your facet in quotes if it contains a space, which will change how backslash escaping works.
+The content item export, copy, move, archive and unarchive commands allow the user to provide a facet string to filter the content that the commands work on. Multiple of these can be applied at a time, and you can even match on a regular expressions (RegEx) string. Note that you will need to surround your facet in quotes if it contains a space, which will change how backslash escaping works.
 
 - `name`: Filter on content item label. Example: `--facet "name:exact name match"`
 - `schema`: Filter on schema ids. Example: `--facet schema:http://example.com/schema.json`
@@ -103,7 +103,7 @@ You can use regex values on string fields when filtering content. They cannot be
 
 ### Media-link rewriting
 
-The DC CLI is capable of importing or copying content into a Dynamic Content hub which resides on a distinct Content Hub account to the source by using the `--media` option with the import, copy, and move commands. This will update the `endpoint` value for any `media-link` objects to reflect the endpoint of the destination hub's account, if an asset with a matching name exists in the destination account.
+The DC CLI is capable of importing or copying content into a Dynamic Content hub which resides on a distinct Content Hub account to the source by using the `--media` option with the import, copy, and move commands. This will update the `endpoint`, `id`, and `defaultHost` values for any `media-link` objects to reflect the endpoint of the destination hub's account, if an asset with a matching name exists in the destination account.
 
 This functionality requires additional Content Hub-specific permissions granting to your DC CLI client in order to grant it visibility of the destination account's media assets (`DAM:ASSET STORE:ASSET_STORE_NAME`).
 
@@ -119,15 +119,15 @@ dc-cli content-item export <dir>
 
 #### Options
 
-| Option Name | Type                                       | Description                                                  |
-| ----------- | ------------------------------------------ | ------------------------------------------------------------ |
-| --repoId    | [string]                                   | Export content from within a given repository.<br />Directory  structure will start at the specified repository.<br />Will automatically export all contained folders. |
-| --folderId  | [string]                                   | Export content from within a given folder.<br />Directory structure will start at the specified folder.<br />Can be used in addition to repoId. |
-| --facet     | [string]                                   | Export content matching the given facets.<br />Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values.<br />A regex can be provided for text filters, surrounded with forward slashes.<br />For more examples, see [facets](#FACETS). |
-| --schemaId  | [string]                                   | Export content with a given or matching Schema ID.<br />A regex can be provided, surrounded with forward slashes.<br />Can be used in combination with other filters. |
-| --name      | [string]                                   | Export content with a given or matching Name.<br />A regex can be provided, surrounded with forward slashes.<br />Can be used in combination with other filters. |
-| --publish   | [boolean]                                  | When available, export the last published version of a content item rather than its newest version. |
-| --logFile   | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
+| Option Name                    | Type                                       | Description                                                  |
+| ------------------------------ | ------------------------------------------ | ------------------------------------------------------------ |
+| --repoId                       | [string]                                   | Export content from within a given repository.<br />Directory  structure will start at the specified repository.<br />Will automatically export all contained folders. |
+| --folderId                     | [string]                                   | Export content from within a given folder.<br />Directory structure will start at the specified folder.<br />Can be used in addition to repoId. |
+| --facet                        | [string]                                   | Export content matching the given facets.<br />Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values.<br />A regex can be provided for text filters, surrounded with forward slashes.<br />For more examples, see [facets](#FACETS). |
+| --schemaId<br />*(Deprecated)* | [string]                                   | Export content with a given or matching Schema ID.<br />A regex can be provided, surrounded with forward slashes.<br />Can be used in combination with other filters.<br /><br />Deprecated by the [--facet](#facets) option. |
+| --name<br />*(Deprecated)*     | [string]                                   | Export content with a given or matching Name.<br />A regex can be provided, surrounded with forward slashes.<br />Can be used in combination with other filters.<br /><br />Deprecated by the [--facet](#facets) option. |
+| --publish                      | [boolean]                                  | When available, export the last published version of a content item rather than its newest version. |
+| --logFile                      | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
 
 #### Examples
 
@@ -289,18 +289,18 @@ dc-cli content-item archive [id]
 
 #### Options
 
-| Option Name      | Type                                       | Description                                                  |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------------ |
-| --repoId         | [string]                                   | The ID of a content repository to search items in to be archived. |
-| --folderId       | [string]                                   | The ID of a folder to search items in to be archived.        |
-| --facet          | [string]                                   | Export content matching the given facets.<br />Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values.<br />A regex can be provided for text filters, surrounded with forward slashes.<br />For more examples, see [facets](#FACETS). |
-| --name           | [string]                                   | The name of a Content Item to be archived.<br/> A regex can be provided to select multiple items with similar or matching names (eg /.header/).<br/> A single --name option may be given to match a single content item pattern.<br/>Multiple --name options may be given to match multiple content items patterns at the same time, or even multiple regex. |
-| --contentType    | [string]                                   | A pattern which will only archive content items with a matching Content Type Schema ID.<br/>A single --contentType option may be given to match a single schema id pattern.<br/>Multiple --contentType options may be given to match multiple schema patterns at the same time. |
-| --revertLog      | [string]                                   | Path to a log file containing content items unarchived in a previous run of the unarchive command.<br/>When provided, archives all content items listed as UNARCHIVE in the log file. |
-| -f<br />--force  | [boolean]                                  | If present, there will be no confirmation prompt before archiving the found content. |
-| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                    |
-| --ignoreError    | [boolean]                                  | If present, archive requests that fail will not abort the process. |
-| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
+| Option Name                     | Type                                       | Description                                                  |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| --repoId                        | [string]                                   | The ID of a content repository to search items in to be archived. |
+| --folderId                      | [string]                                   | The ID of a folder to search items in to be archived.        |
+| --facet                         | [string]                                   | Export content matching the given facets.<br />Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values.<br />A regex can be provided for text filters, surrounded with forward slashes.<br />For more examples, see [facets](#FACETS). |
+| --name<br />*(Deprecated)*      | [string]                                   | The name of a Content Item to be archived.<br/>A regex can be provided to select multiple items with similar or matching names (eg /.header/).<br/>A single --name option may be given to match a single content item pattern.<br/>Multiple --name options may be given to match multiple content items patterns at the same time, or even multiple regex.<br /><br />Deprecated by the [--facet](#facets) option. |
+| --contentType<br />(Deprecated) | [string]                                   | A pattern which will only archive content items with a matching Content Type Schema ID.<br/>A single --contentType option may be given to match a single schema id pattern.<br/>Multiple --contentType options may be given to match multiple schema patterns at the same time.<br /><br />Deprecated by the [--facet](#facets) option. |
+| --revertLog                     | [string]                                   | Path to a log file containing content items unarchived in a previous run of the unarchive command.<br/>When provided, archives all content items listed as UNARCHIVE in the log file. |
+| -f<br />--force                 | [boolean]                                  | If present, there will be no confirmation prompt before archiving the found content. |
+| -s<br />--silent                | [boolean]                                  | If present, no log file will be produced.                    |
+| --ignoreError                   | [boolean]                                  | If present, archive requests that fail will not abort the process. |
+| --logFile                       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
 
 #### Examples
 
@@ -326,18 +326,18 @@ dc-cli content-item unarchive [id]
 
 #### Options
 
-| Option Name      | Type                                       | Description                                                  |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------------ |
-| --repoId         | [string]                                   | The ID of a content repository to search items in to be unarchived. |
-| --folderId       | [string]                                   | The ID of a folder to search items in to be unarchived.      |
-| --facet          | [string]                                   | Export content matching the given facets.<br />Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values.<br />A regex can be provided for text filters, surrounded with forward slashes.<br />For more examples, see [facets](#FACETS). |
-| --name           | [string]                                   | The name of a Content Item to be unarchived.<br/> A regex can be provided to select multiple items with similar or matching names (eg /.header/).<br/> A single --name option may be given to match a single content item pattern.<br/>Multiple --name options may be given to match multiple content items patterns at the same time, or even multiple regex. |
-| --contentType    | [string]                                   | A pattern which will only unarchive content items with a matching Content Type Schema ID.<br/>A single --contentType option may be given to match a single schema id pattern.<br/>Multiple --contentType options may be given to match multiple schema patterns at the same time. |
-| --revertLog      | [string]                                   | Path to a log file containing content items archived in a previous run of the archive command.<br/>When provided, archives all content items listed as ARCHIVE in the log file. |
-| -f<br />--force  | [boolean]                                  | If present, there will be no confirmation prompt before unarchiving the found content. |
-| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                    |
-| --ignoreError    | [boolean]                                  | If present, unarchive requests that fail will not abort the process. |
-| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
+| Option Name                     | Type                                       | Description                                                  |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| --repoId                        | [string]                                   | The ID of a content repository to search items in to be unarchived. |
+| --folderId                      | [string]                                   | The ID of a folder to search items in to be unarchived.      |
+| --facet                         | [string]                                   | Export content matching the given facets.<br />Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values.<br />A regex can be provided for text filters, surrounded with forward slashes.<br />For more examples, see [facets](#FACETS). |
+| --name<br />*(Deprecated)*      | [string]                                   | The name of a Content Item to be unarchived.<br/>A regex can be provided to select multiple items with similar or matching names (eg /.header/).<br/>A single --name option may be given to match a single content item pattern.<br/>Multiple --name options may be given to match multiple content items patterns at the same time, or even multiple regex.<br /><br />Deprecated by the [--facet](#facets) option. |
+| --contentType<br />(Deprecated) | [string]                                   | A pattern which will only unarchive content items with a matching Content Type Schema ID.<br/>A single --contentType option may be given to match a single schema id pattern.<br/>Multiple --contentType options may be given to match multiple schema patterns at the same time.<br /><br />Deprecated by the [--facet](#facets) option. |
+| --revertLog                     | [string]                                   | Path to a log file containing content items archived in a previous run of the archive command.<br/>When provided, archives all content items listed as ARCHIVE in the log file. |
+| -f<br />--force                 | [boolean]                                  | If present, there will be no confirmation prompt before unarchiving the found content. |
+| -s<br />--silent                | [boolean]                                  | If present, no log file will be produced.                    |
+| --ignoreError                   | [boolean]                                  | If present, unarchive requests that fail will not abort the process. |
+| --logFile                       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
 
 #### Examples
 
