@@ -83,7 +83,6 @@ Exports all of the following (where applicable) from the source hub, then import
 * Content Type Schemas
 * Content Types
 * Content Items
-* Events
 * Search Indexes
 
 ```
