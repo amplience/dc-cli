@@ -20,7 +20,6 @@ Run `dc-cli --help` to get a list of available commands.
   - [extension](#extension)
   - [search-index](#search-index)
   - [content-repository](#content-repository)
-  - [event](#event)
   - [settings](#settings)
   - [hub](#hub)
 - [Building the CLI](#building-the-cli)
@@ -123,12 +122,6 @@ This category includes interactions with Dynamic Content's repositories.
 These commands can be used to get details for a specific repository, list multiple repositories, or assign or unassign content types from a repository. 
 
 [View commands for **content-repository**](docs/CONTENT-REPOSITORY.md)
-
-### event
-
-This category includes interactions with Dynamic Content's events and its constituent parts (Editions, Slots, and Snapshots). These commands can be used to export and import events, and to archive events.
-
-[View commands for **event**](docs/EVENT.md)
 
 ### settings
 
