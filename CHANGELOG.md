@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.13.0](https://www.github.com/amplience/dc-cli/compare/v0.12.0...v0.13.0) (2022-01-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* move dest configuration to the regular config file (#110)
+
+### Features
+
+* **content-item:** make --publish flag publish on update when source publish date is more recent ([#115](https://www.github.com/amplience/dc-cli/issues/115)) ([c0c2174](https://www.github.com/amplience/dc-cli/commit/c0c2174d818840380d76ba35e4ff65748db7ce26))
+* facet argument for content item commands  ([#111](https://www.github.com/amplience/dc-cli/issues/111)) ([dd4ddab](https://www.github.com/amplience/dc-cli/commit/dd4ddabbee775b35614ebf7fbad7759aa2b7afc6))
+* move dest configuration to the regular config file ([#110](https://www.github.com/amplience/dc-cli/issues/110)) ([1a1c180](https://www.github.com/amplience/dc-cli/commit/1a1c18090c907538ad6c3e6912df8b50547cffd8))
+* readme overhaul ([#116](https://www.github.com/amplience/dc-cli/issues/116)) ([49687d6](https://www.github.com/amplience/dc-cli/commit/49687d68c43862e97f501ff1001a4a8ab6726991))
+* **search-index:** add search-index export and import commands ([#105](https://www.github.com/amplience/dc-cli/issues/105)) ([ebfaf0b](https://www.github.com/amplience/dc-cli/commit/ebfaf0bc9a611b78f6ccbd553aadf6ae3044146c))
+
 ## [0.12.0](https://www.github.com/amplience/dc-cli/compare/v0.11.2...v0.12.0) (2021-09-14)
 
 
