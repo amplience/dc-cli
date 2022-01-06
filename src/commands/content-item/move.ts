@@ -109,7 +109,8 @@ export const builder = (yargs: Argv): void => {
     .option('publish', {
       type: 'boolean',
       boolean: true,
-      describe: 'Publish any content items that have an existing publish status in their JSON.'
+      describe:
+        'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
     .option('republish', {
