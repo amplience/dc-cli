@@ -3,7 +3,7 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
-import ArchiveOptions from '../../common/archive/archive-options';
+import ArchiveEventOptions from '../../common/archive/archive-event-options';
 import { Edition, Event, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
@@ -259,7 +259,7 @@ export const processItems = async ({
   }
 };
 
-export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
+export const handler = async (argv: Arguments<ArchiveEventOptions & ConfigurationParameters>): Promise<void> => {
   const { id, logFile, force, silent, name, hubId } = argv;
   const client = dynamicContentClientFactory(argv);
 

@@ -12,6 +12,7 @@ import { revert } from './import-revert';
 import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 import { LogErrorLevel } from '../../common/archive/archive-log';
+import { withOldFilters } from '../../common/filter/facet';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -70,6 +71,12 @@ export const builder = (yargs: Argv): void => {
     .option('dstSecret', {
       type: 'string',
       describe: "Destination account's secret. Must be used alongside dstClientId."
+    })
+
+    .option('facet', {
+      type: 'string',
+      describe:
+        "Copy content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
     })
 
     .option('mapFile', {
@@ -142,6 +149,16 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
@@ -206,8 +223,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,
-        schemaId: argv.schemaId,
-        name: argv.name,
+        facet: withOldFilters(argv.facet, argv),
         logFile: log,
 
         dir: tempFolder,

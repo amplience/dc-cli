@@ -102,6 +102,12 @@ describe('content-item move command', () => {
         describe: "Destination account's secret. Must be used alongside dstClientId."
       });
 
+      expect(spyOption).toHaveBeenCalledWith('facet', {
+        type: 'string',
+        describe:
+          "Move content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+      });
+
       expect(spyOption).toHaveBeenCalledWith('mapFile', {
         type: 'string',
         describe:
@@ -145,6 +151,16 @@ describe('content-item move command', () => {
         default: LOG_FILENAME,
         describe: 'Path to a log file to write to.',
         coerce: createLog
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('name', {
+        type: 'string',
+        hidden: true
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('schemaId', {
+        type: 'string',
+        hidden: true
       });
     });
   });
@@ -220,8 +236,7 @@ describe('content-item move command', () => {
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        schemaId: '/./',
-        name: '/./',
+        facet: 'name:/./,schema/./',
 
         mapFile: 'map.json',
         force: false,
@@ -467,8 +482,7 @@ describe('content-item move command', () => {
         clientId: 'acc2-id',
         clientSecret: 'acc2-secret',
 
-        schemaId: '/./',
-        name: '/./',
+        facet: 'name:/./,schema/./',
 
         mapFile: 'map.json',
         force: false,

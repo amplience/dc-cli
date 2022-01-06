@@ -67,6 +67,12 @@ export const builder = (yargs: Argv): void => {
       describe: "Destination account's secret. Must be used alongside dstClientId."
     })
 
+    .option('facet', {
+      type: 'string',
+      describe:
+        "Move content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+    })
+
     .option('mapFile', {
       type: 'string',
       describe:
@@ -137,6 +143,16 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 

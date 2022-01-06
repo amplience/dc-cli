@@ -12,8 +12,7 @@ export interface CopyItemBuilderOptions {
   dstClientId?: string;
   dstSecret?: string;
 
-  schemaId?: string[] | string;
-  name?: string[] | string;
+  facet?: string;
 
   mapFile?: string;
   force?: boolean;
