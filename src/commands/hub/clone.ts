@@ -4,7 +4,6 @@ import { join } from 'path';
 import { ConfigurationParameters } from '../configure';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
-import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
 
 import { ContentCloneStep } from './steps/content-clone-step';
@@ -101,12 +100,6 @@ export const builder = (yargs: Argv): void => {
       describe: 'Skip any content item that has one or more missing dependancy.'
     })
 
-    .option('copyConfig', {
-      type: 'string',
-      describe:
-        'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-    })
-
     .option('lastPublish', {
       type: 'boolean',
       boolean: true,
@@ -116,7 +109,8 @@ export const builder = (yargs: Argv): void => {
     .option('publish', {
       type: 'boolean',
       boolean: true,
-      describe: 'Publish any content items that have an existing publish status in their JSON.'
+      describe:
+        'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
     .option('republish', {
@@ -167,11 +161,11 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     argv.mapFile = getDefaultMappingPath(`hub-${argv.dstHubId}`);
   }
 
-  const copyConfig = typeof argv.copyConfig !== 'object' ? await loadCopyConfig(argv, log) : argv.copyConfig;
+  const { hubId, clientId, clientSecret } = argv;
 
-  if (copyConfig == null) {
-    return;
-  }
+  const dstHubId = argv.dstHubId || hubId;
+  const dstClientId = argv.dstClientId || clientId;
+  const dstSecret = argv.dstSecret || clientSecret;
 
   const argvCore = {
     $0: argv.$0,
@@ -181,15 +175,15 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
   const state: CloneHubState = {
     argv: argv,
     from: {
-      clientId: copyConfig.srcClientId,
-      clientSecret: copyConfig.srcSecret,
-      hubId: copyConfig.srcHubId,
+      clientId: clientId,
+      clientSecret: clientSecret,
+      hubId: hubId,
       ...argvCore
     },
     to: {
-      clientId: copyConfig.dstClientId,
-      clientSecret: copyConfig.dstSecret,
-      hubId: copyConfig.dstHubId,
+      clientId: dstClientId,
+      clientSecret: dstSecret,
+      hubId: dstHubId,
       ...argvCore
     },
     path: tempFolder,

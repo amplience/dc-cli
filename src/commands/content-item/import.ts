@@ -101,7 +101,8 @@ export const builder = (yargs: Argv): void => {
     .option('publish', {
       type: 'boolean',
       boolean: true,
-      describe: 'Publish any content items that have an existing publish status in their JSON.'
+      describe:
+        'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
     .option('republish', {
@@ -269,9 +270,13 @@ const createOrUpdateContent = async (
   return result;
 };
 
-const itemShouldPublish = (item: ContentItem): boolean => {
+const itemShouldPublish = (item: ContentItem, newItem: ContentItem, updated: boolean): boolean => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (item as any).publish; // Added when creating the filtered content.
+  const sourceDate = (item as any).lastPublish;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const targetDate = (newItem as any).lastPublishedDate;
+
+  return sourceDate && (updated || !targetDate || new Date(targetDate) < new Date(sourceDate)); // Added when creating the filtered content.
 };
 
 const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping, log: FileLog): Promise<void> => {
@@ -384,7 +389,7 @@ const prepareContentForImport = async (
         body: contentJSON.body,
         deliveryId: contentJSON.deliveryId == contentJSON.Id || argv.excludeKeys ? undefined : contentJSON.deliveryId,
         folderId: folder == null ? null : folder.id,
-        publish: contentJSON.lastPublishedVersion != null
+        lastPublish: contentJSON.lastPublishedDate
       };
 
       if (argv.excludeKeys) {
@@ -757,7 +762,7 @@ const importTree = async (
         (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
       );
 
-      if (itemShouldPublish(content) && (newItem.version != oldVersion || argv.republish)) {
+      if (itemShouldPublish(content, newItem, argv.republish || newItem.version != oldVersion)) {
         publishable.push({ item: newItem, node: item });
       }
 
@@ -838,7 +843,7 @@ const importTree = async (
         mapping.registerContentItem(originalId as string, newItem.id as string);
         mapping.registerContentItem(newItem.id as string, newItem.id as string);
       } else {
-        if (itemShouldPublish(content) && (newItem.version != oldVersion || argv.republish)) {
+        if (itemShouldPublish(content, newItem, argv.republish || newItem.version != oldVersion)) {
           publishable.push({ item: newItem, node: item });
         }
       }

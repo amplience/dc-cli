@@ -1,4 +1,3 @@
-import { CopyConfig } from '../common/content-item/copy-config';
 import { FileLog } from '../common/file-log';
 
 export interface CopyItemBuilderOptions {
@@ -12,8 +11,7 @@ export interface CopyItemBuilderOptions {
   dstClientId?: string;
   dstSecret?: string;
 
-  schemaId?: string[] | string;
-  name?: string[] | string;
+  facet?: string;
 
   mapFile?: string;
   force?: boolean;
@@ -21,7 +19,6 @@ export interface CopyItemBuilderOptions {
   skipIncomplete?: boolean;
   media?: boolean;
   logFile: FileLog;
-  copyConfig?: string | CopyConfig;
 
   revertLog: Promise<FileLog | undefined>;
 

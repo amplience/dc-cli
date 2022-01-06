@@ -6,8 +6,8 @@ import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
-import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
+import { applyFacet, withOldFilters } from '../../common/filter/facet';
 
 export const command = 'unarchive [id]';
 
@@ -33,15 +33,10 @@ export const builder = (yargs: Argv): void => {
       describe: 'The ID of a folder to search items in to be unarchived.',
       requiresArg: false
     })
-    .option('name', {
+    .option('facet', {
       type: 'string',
       describe:
-        'The name of a Content Item to be unarchived.\nA regex can be provided to select multiple items with similar or matching names (eg /.header/).\nA single --name option may be given to match a single content item pattern.\nMultiple --name options may be given to match multiple content items patterns at the same time, or even multiple regex.'
-    })
-    .option('contentType', {
-      type: 'string',
-      describe:
-        'A pattern which will only unarchive content items with a matching Content Type Schema ID. A single --contentType option may be given to match a single schema id pattern.\\nMultiple --contentType options may be given to match multiple schema patterns at the same time.'
+        "Unarchive content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
     })
     .option('revertLog', {
       type: 'string',
@@ -70,18 +65,24 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.'
+    })
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
 export const filterContentItems = async ({
   revertLog,
-  name,
-  contentType,
+  facet,
   contentItems
 }: {
   revertLog?: string;
-  name?: string | string[];
-  contentType?: string | string[];
+  facet?: string;
   contentItems: ContentItem[];
 }): Promise<{ contentItems: ContentItem[]; missingContent: boolean } | undefined> => {
   try {
@@ -106,9 +107,7 @@ export const filterContentItems = async ({
         })
         .filter(contentItem => !!contentItem);
 
-      if (contentItemsFiltered.length != archived.length) {
-        missingContent = true;
-      }
+      missingContent = contentItems.length !== archived.length;
 
       return {
         contentItems: contentItemsFiltered as ContentItem[],
@@ -119,23 +118,8 @@ export const filterContentItems = async ({
     // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
     contentItems.forEach(item => delete item.body._meta.deliveryKey);
 
-    if (name != null) {
-      const itemsArray: string[] = Array.isArray(name) ? name : [name];
-      const contentItemsFiltered = contentItems.filter(
-        item => itemsArray.findIndex(id => equalsOrRegex(item.label || '', id)) != -1
-      );
-
-      return {
-        contentItems: contentItemsFiltered,
-        missingContent
-      };
-    }
-
-    if (contentType != null) {
-      const itemsArray: string[] = Array.isArray(contentType) ? contentType : [contentType];
-      const contentItemsFiltered = contentItems.filter(item => {
-        return itemsArray.findIndex(id => equalsOrRegex(item.body._meta.schema, id)) != -1;
-      });
+    if (facet != null) {
+      const contentItemsFiltered = applyFacet(contentItems, facet);
 
       return {
         contentItems: contentItemsFiltered,
@@ -163,8 +147,7 @@ export const getContentItems = async ({
   repoId,
   folderId,
   revertLog,
-  name,
-  contentType
+  facet
 }: {
   client: DynamicContent;
   id?: string;
@@ -172,8 +155,7 @@ export const getContentItems = async ({
   repoId?: string | string[];
   folderId?: string | string[];
   revertLog?: string;
-  name?: string | string[];
-  contentType?: string | string[];
+  facet?: string;
 }): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
   try {
     const contentItems: ContentItem[] = [];
@@ -213,8 +195,7 @@ export const getContentItems = async ({
     return (
       (await filterContentItems({
         revertLog,
-        name,
-        contentType,
+        facet,
         contentItems
       })) || {
         contentItems: [],
@@ -305,17 +286,18 @@ export const processItems = async ({
 };
 
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, name, contentType } = argv;
+  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId } = argv;
+  const facet = withOldFilters(argv.facet, argv);
   const client = dynamicContentClientFactory(argv);
 
-  const allContent = !id && !name && !contentType && !revertLog && !folderId && !repoId;
+  const allContent = !id && !facet && !revertLog && !folderId && !repoId;
 
   if (repoId && id) {
     console.log('ID of content item is specified, ignoring repository ID');
   }
 
-  if (id && name) {
-    console.log('Please specify either a item name or an ID - not both.');
+  if (id && facet) {
+    console.log('Please specify either a facet or an ID - not both.');
     return;
   }
 
@@ -334,8 +316,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     repoId,
     folderId,
     revertLog,
-    contentType,
-    name
+    facet
   });
 
   await processItems({
