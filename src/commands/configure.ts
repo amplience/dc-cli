@@ -1,4 +1,4 @@
-import { Arguments } from 'yargs';
+import { Arguments, Argv } from 'yargs';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import fs from 'fs';
 import { join, dirname } from 'path';
@@ -11,10 +11,32 @@ export const desc = 'Saves the configuration options to a file';
 export const CONFIG_FILENAME = (platform: string = process.platform): string =>
   join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'dc-cli-config.json');
 
+export const builder = (yargs: Argv): void => {
+  yargs
+    .option('dstHubId', {
+      type: 'string',
+      describe: 'Destination hub ID. If not specified, it will be the same as the source.'
+    })
+
+    .option('dstClientId', {
+      type: 'string',
+      describe: "Destination account's client ID. If not specified, it will be the same as the source."
+    })
+
+    .option('dstSecret', {
+      type: 'string',
+      describe: "Destination account's secret. Must be used alongside dstClientId."
+    });
+};
+
 export type ConfigurationParameters = {
   clientId: string;
   clientSecret: string;
   hubId: string;
+
+  dstClientId?: string;
+  dstSecret?: string;
+  dstHubId?: string;
 };
 
 type ConfigArgument = {
@@ -25,6 +47,7 @@ export const configureCommandOptions: CommandOptions = {
   clientId: { type: 'string', demandOption: true },
   clientSecret: { type: 'string', demandOption: true },
   hubId: { type: 'string', demandOption: true },
+
   config: { type: 'string', default: CONFIG_FILENAME() }
 };
 
@@ -69,10 +92,16 @@ export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument
   const { clientId, clientSecret, hubId } = argv;
   const storedConfig = readConfigFile(argv.config);
 
-  if (isEqual(storedConfig, { clientId, clientSecret, hubId })) {
+  const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId };
+
+  if (argv.dstClientId) newConfig.dstClientId = argv.dstClientId;
+  if (argv.dstSecret) newConfig.dstSecret = argv.dstSecret;
+  if (argv.dstHubId) newConfig.dstHubId = argv.dstHubId;
+
+  if (isEqual(storedConfig, newConfig)) {
     console.log('Config file up-to-date.  Please use `--help` for command usage.');
     return;
   }
-  writeConfigFile(argv.config, { clientId, clientSecret, hubId });
+  writeConfigFile(argv.config, newConfig);
   console.log('Config file updated.');
 };

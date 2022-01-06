@@ -8,6 +8,7 @@ import * as settings from './steps/settings-clone-step';
 import * as schema from './steps/schema-clone-step';
 import * as type from './steps/type-clone-step';
 import * as extension from './steps/extension-clone-step';
+import * as index from './steps/index-clone-step';
 
 import rmdir from 'rimraf';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
@@ -21,7 +22,7 @@ jest.mock('readline');
 
 jest.mock('../../services/dynamic-content-client-factory');
 
-let success = [true, true, true, true, true];
+let success = [true, true, true, true, true, true];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
@@ -55,8 +56,12 @@ jest.mock('./steps/type-clone-step', () => ({
   TypeCloneStep: mockStep('Clone Content Types', 'types', () => success[3])
 }));
 
+jest.mock('./steps/index-clone-step', () => ({
+  IndexCloneStep: mockStep('Clone Indexes', 'index', () => success[4])
+}));
+
 jest.mock('./steps/content-clone-step', () => ({
-  ContentCloneStep: mockStep('Clone Content', 'content', () => success[4])
+  ContentCloneStep: mockStep('Clone Content', 'content', () => success[5])
 }));
 
 jest.mock('../../common/log-helpers', () => ({
@@ -76,6 +81,7 @@ function getMocks(): jest.Mock[] {
     extension.ExtensionCloneStep as jest.Mock,
     schema.SchemaCloneStep as jest.Mock,
     type.TypeCloneStep as jest.Mock,
+    index.IndexCloneStep as jest.Mock,
     content.ContentCloneStep as jest.Mock
   ];
 }
@@ -165,12 +171,6 @@ describe('hub clone command', () => {
         describe: 'Skip any content item that has one or more missing dependancy.'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('copyConfig', {
-        type: 'string',
-        describe:
-          'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-      });
-
       expect(spyOption).toHaveBeenCalledWith('lastPublish', {
         type: 'boolean',
         boolean: true,
@@ -180,7 +180,8 @@ describe('hub clone command', () => {
       expect(spyOption).toHaveBeenCalledWith('publish', {
         type: 'boolean',
         boolean: true,
-        describe: 'Publish any content items that have an existing publish status in their JSON.'
+        describe:
+          'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('republish', {
@@ -269,7 +270,7 @@ describe('hub clone command', () => {
 
     it('should call all steps in order with given parameters', async () => {
       clearMocks();
-      success = [true, true, true, true, true];
+      success = [true, true, true, true, true, true];
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
@@ -307,9 +308,9 @@ describe('hub clone command', () => {
     });
 
     it('should handle false returns from each of the steps by stopping the process', async () => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         clearMocks();
-        success = [i != 0, i != 1, i != 2, i != 3, i != 4];
+        success = [i != 0, i != 1, i != 2, i != 3, i != 4, i != 5];
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
@@ -351,9 +352,9 @@ describe('hub clone command', () => {
     });
 
     it('should start from the step given as a parameter', async () => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         clearMocks();
-        success = [true, true, true, true, true];
+        success = [true, true, true, true, true, true];
 
         const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
           ...yargArgs,
@@ -463,7 +464,7 @@ describe('hub clone command', () => {
 
     it('should revert all steps in order with given parameters', async () => {
       clearMocks();
-      success = [true, true, true, true, true];
+      success = [true, true, true, true, true, true];
       await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
       await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps.log`);
 
@@ -503,9 +504,9 @@ describe('hub clone command', () => {
     });
 
     it('should handle exceptions from each of the revert steps by stopping the process', async () => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         clearMocks();
-        success = [i != 0, i != 1, i != 2, i != 3, i != 4];
+        success = [i != 0, i != 1, i != 2, i != 3, i != 4, i != 5];
 
         await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
         await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/fail.log`);
@@ -552,7 +553,7 @@ describe('hub clone command', () => {
 
     it('should exit early if revert log cannot be read', async () => {
       clearMocks();
-      success = [true, true, true, true, true];
+      success = [true, true, true, true, true, true];
       await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
@@ -589,9 +590,9 @@ describe('hub clone command', () => {
     });
 
     it('should start reverting from the step given as a parameter (steps in decreasing order)', async () => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         clearMocks();
-        success = [true, true, true, true, true];
+        success = [true, true, true, true, true, true];
 
         await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
         await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/step.log`);

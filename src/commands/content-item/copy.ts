@@ -9,9 +9,9 @@ import { handler as exporter } from './export';
 import { handler as importer } from './import';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { revert } from './import-revert';
-import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 import { LogErrorLevel } from '../../common/archive/archive-log';
+import { withOldFilters } from '../../common/filter/facet';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -72,6 +72,12 @@ export const builder = (yargs: Argv): void => {
       describe: "Destination account's secret. Must be used alongside dstClientId."
     })
 
+    .option('facet', {
+      type: 'string',
+      describe:
+        "Copy content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+    })
+
     .option('mapFile', {
       type: 'string',
       describe:
@@ -99,12 +105,6 @@ export const builder = (yargs: Argv): void => {
       describe: 'Skip any content item that has one or more missing dependancy.'
     })
 
-    .option('copyConfig', {
-      type: 'string',
-      describe:
-        'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-    })
-
     .option('lastPublish', {
       type: 'boolean',
       boolean: true,
@@ -114,7 +114,8 @@ export const builder = (yargs: Argv): void => {
     .option('publish', {
       type: 'boolean',
       boolean: true,
-      describe: 'Publish any content items that have an existing publish status in their JSON.'
+      describe:
+        'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
     .option('republish', {
@@ -141,6 +142,16 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+
+    .option('name', {
+      type: 'string',
+      hidden: true
+    })
+
+    .option('schemaId', {
+      type: 'string',
+      hidden: true
     });
 };
 
@@ -162,13 +173,11 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   let result = false;
 
-  const copyConfig = typeof argv.copyConfig !== 'object' ? await loadCopyConfig(argv, log) : argv.copyConfig;
+  const { hubId, clientId, clientSecret } = argv;
 
-  if (copyConfig == null) {
-    return false;
-  }
-
-  const { srcHubId, srcClientId, srcSecret, dstHubId, dstClientId, dstSecret } = copyConfig;
+  const dstHubId = argv.dstHubId || hubId;
+  const dstClientId = argv.dstClientId || clientId;
+  const dstSecret = argv.dstSecret || clientSecret;
 
   const revertLog = await argv.revertLog;
 
@@ -199,14 +208,13 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       await exporter({
         ...yargArgs,
-        hubId: srcHubId,
-        clientId: srcClientId,
-        clientSecret: srcSecret,
+        hubId: hubId,
+        clientId: clientId,
+        clientSecret: clientSecret,
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,
-        schemaId: argv.schemaId,
-        name: argv.name,
+        facet: withOldFilters(argv.facet, argv),
         logFile: log,
 
         dir: tempFolder,

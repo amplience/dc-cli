@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`search-index import command doCreate should throw an error when enrichIndex fails 1`] = `
+"Error creating index index-name:
+
+The update-index action is not available, ensure you have permission to perform this action."
+`;
+
+exports[`search-index import command doCreate should throw an error when index create fails 1`] = `
+"Error creating index index-name:
+
+Error: Error creating index"
+`;
+
+exports[`search-index import command doCreate should throw an error when index create fails if a string error is returned by the sdk 1`] = `
+"Error creating index index-name:
+
+The create-index action is not available, ensure you have permission to perform this action."
+`;
+
+exports[`search-index import command doUpdate should throw an error when unable to get index during update 1`] = `"Error updating index matched-name: Error retrieving index"`;
+
+exports[`search-index import command doUpdate should throw an error when unable to update index during update 1`] = `"Error updating index not-matched-name: Error saving index"`;
+
+exports[`search-index import command doUpdate should throw an error when unable to update index during update if a string error is returned by sdk 1`] = `"Error updating index not-matched-name: undefined"`;
+
+exports[`search-index import command handler tests should throw an error when no content found in import directory 1`] = `"No indexes found in my-empty-dir"`;
+
+exports[`search-index import command validateNoDuplicateIndexNames should throw and error when there are duplicate uris 1`] = `
+"Indexes must have unique name values. Duplicate values found:-
+  name: 'index-name-1' in files: ['file-1', 'file-4']
+  name: 'index-name-2' in files: ['file-2', 'file-3']"
+`;

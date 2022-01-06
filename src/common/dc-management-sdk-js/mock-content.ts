@@ -24,6 +24,7 @@ export interface ItemTemplate {
   status?: string;
   locale?: string;
   lastPublishedVersion?: number;
+  lastPublishedDate?: string;
 
   body?: any;
   dependancy?: string;
@@ -504,6 +505,7 @@ export class MockContent {
         folderId: folderNullOrEmpty ? null : folderId,
         version: template.version,
         lastPublishedVersion: template.lastPublishedVersion,
+        lastPublishedDate: template.lastPublishedDate,
         locale: template.locale,
         body: {
           ...template.body,
