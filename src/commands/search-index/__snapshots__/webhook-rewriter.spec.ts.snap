@@ -1,0 +1,48 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`webhook-rewriter tests should escape quotes and backslashes 1`] = `
+"{
+{{#withDeliveryContentItem contentItemId=payload.id account=\\"\\"quotedString\\\\\\\\with\\\\\\\\backslash\\"\\" stagingEnvironment=\\"back\\\\\\\\slash\\"}}
+  {{example1}}
+{{/withDeliveryContentItem}}
+}"
+`;
+
+exports[`webhook-rewriter tests should rewrite a simple webhook 1`] = `
+"{
+{{#withDeliveryContentItem contentItemId=payload.id account=\\"account\\" stagingEnvironment=\\"staging\\"}}
+  \\"content\\" : \\"{{~#each (first (pluck contentBlocks \\"content\\") 4)~}}{{~#each this.values~}}{{#if (eq locale \\"en-GB\\")}}{{{truncate value 1000}}}{{/if}}{{~/each~}}{{#unless @last}};{{/unless~}}{{~/each~}}\\"
+{{/withDeliveryContentItem}}
+}"
+`;
+
+exports[`webhook-rewriter tests should rewrite multiple tags within the same webhook 1`] = `
+"{
+{{#withDeliveryContentItem contentItemId=payload.id account=\\"account\\" stagingEnvironment=\\"staging\\"}}
+  {{example1}}
+{{/withDeliveryContentItem}}
+  \\"key\\": \\"value\\",
+{{#withDeliveryContentItem contentItemId=payload.id account=\\"account\\" stagingEnvironment=\\"staging\\"}}
+  {{example1}}
+{{/withDeliveryContentItem}}
+}"
+`;
+
+exports[`webhook-rewriter tests should rewrite only one argument if the other is not present 1`] = `
+"{
+{{#withDeliveryContentItem contentItemId=payload.id account=\\"account\\"}}
+  {{example1}}
+{{/withDeliveryContentItem}}
+}"
+`;
+
+exports[`webhook-rewriter tests should still replace values with unusual whitespace 1`] = `
+"{
+{{#withDeliveryContentItem 
+    contentItemId=payload.id 
+    account=\\"replaced\\" 
+    stagingEnvironment=\\"whitespace\\"	    }}
+  {{example1}}
+{{/withDeliveryContentItem}}
+}"
+`;

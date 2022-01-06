@@ -12,6 +12,7 @@ Commands:
   dc-cli event                Event
   dc-cli extension            Extension
   dc-cli hub                  Hub
+  dc-cli search-index         Search Index
   dc-cli settings             Settings
 
 Options:

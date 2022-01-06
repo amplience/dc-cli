@@ -5,6 +5,7 @@ export enum CloneHubStepId {
   Extension = 'extension',
   Schema = 'schema',
   Type = 'type',
+  Index = 'index',
   Content = 'content'
 }
 
