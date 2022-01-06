@@ -5,10 +5,8 @@ import { ConfigurationParameters } from '../configure';
 
 import * as copy from './copy';
 
-import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ContentItem, Status } from 'dc-management-sdk-js';
-import { loadCopyConfig } from '../../common/content-item/copy-config';
 import { revert } from './import-revert';
 import { LogErrorLevel } from '../../common/archive/archive-log';
 
@@ -100,12 +98,6 @@ export const builder = (yargs: Argv): void => {
       describe: 'Skip any content item that has one or more missing dependancy.'
     })
 
-    .option('copyConfig', {
-      type: 'string',
-      describe:
-        'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-    })
-
     .option('lastPublish', {
       type: 'boolean',
       boolean: true,
@@ -159,7 +151,12 @@ export const builder = (yargs: Argv): void => {
 export const handler = async (argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
   argv.exportedIds = [];
 
+  const { hubId, clientId, clientSecret } = argv;
+
   const revertLog = await argv.revertLog;
+  const dstHubId = argv.dstHubId || hubId;
+  const dstClientId = argv.dstClientId || clientId;
+  const dstSecret = argv.dstSecret || clientSecret;
 
   if (revertLog) {
     if (revertLog.errorLevel === LogErrorLevel.INVALID) {
@@ -167,17 +164,11 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       return;
     }
 
-    const copyConfig = await loadCopyConfig(argv, new FileLog());
-
-    if (copyConfig == null) {
-      return;
-    }
-
     const client = dynamicContentClientFactory({
       ...argv,
-      hubId: copyConfig.srcHubId,
-      clientId: copyConfig.srcClientId,
-      clientSecret: copyConfig.srcSecret
+      hubId: hubId,
+      clientId: clientId,
+      clientSecret: clientSecret
     });
 
     const toUnarchive = revertLog.getData('MOVED'); // Undo moved content by unarchiving it.
@@ -214,9 +205,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
     await revert({
       ...yargArgs,
 
-      hubId: copyConfig.dstHubId,
-      clientId: copyConfig.dstClientId,
-      clientSecret: copyConfig.dstSecret,
+      hubId: dstHubId,
+      clientId: dstClientId,
+      clientSecret: dstSecret,
 
       dir: '', // unused
 
@@ -227,14 +218,6 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
     const log = argv.logFile.open();
     argv.logFile = log;
 
-    const copyConfig = await loadCopyConfig(argv, log);
-
-    if (copyConfig == null) {
-      return;
-    }
-
-    argv.copyConfig = copyConfig;
-
     const copySuccess = await copy.handler(argv);
 
     if (!copySuccess) {
@@ -243,9 +226,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
     const client = dynamicContentClientFactory({
       ...argv,
-      hubId: copyConfig.srcHubId,
-      clientId: copyConfig.srcClientId,
-      clientSecret: copyConfig.srcSecret
+      hubId: hubId,
+      clientId: clientId,
+      clientSecret: clientSecret
     });
 
     // Only archive the result of the export once the copy has completed.

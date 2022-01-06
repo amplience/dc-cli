@@ -40,6 +40,29 @@ describe('configure command', function() {
     );
   });
 
+  it('should optionally write dst parameters when present', () => {
+    jest
+      .spyOn(fs, 'existsSync')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
+    jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
+
+    const dstFixture = {
+      ...configFixture,
+      dstClientId: 'client-id',
+      dstSecret: 'client-secret',
+      dstHubId: 'hub-id'
+    };
+
+    handler({ ...yargArgs, ...dstFixture, config: CONFIG_FILENAME() });
+
+    expect(fs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp('.amplience/dc-cli-config.json$')),
+      JSON.stringify(dstFixture)
+    );
+  });
+
   it('should write the config file and re-used the .amplience dir', () => {
     jest
       .spyOn(fs, 'existsSync')
