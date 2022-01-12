@@ -53,7 +53,9 @@ describe('event import command', () => {
   const config = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    schedule: false,
+    experimental: true
   };
 
   const commonMock = async (
@@ -77,6 +79,7 @@ describe('event import command', () => {
         ...config,
         dir: '',
         originalIds: false,
+        experimental: true,
         logFile: log,
         ...customArgs
       }
@@ -110,6 +113,13 @@ describe('event import command', () => {
         type: 'string'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('experimental', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Must be passed to use the event import command. Only use this command if you fully understand its limitations.'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('mapFile', {
         type: 'string',
         describe:
@@ -128,6 +138,13 @@ describe('event import command', () => {
         describe: 'Use original ids'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('schedule', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Schedule events in the destination repo if they are scheduled in the source. If any new or updated imported events are scheduled in the past, they will be moved to happen at the time of import.'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('logFile', {
         type: 'string',
         default: LOG_FILENAME,
@@ -144,6 +161,39 @@ describe('event import command', () => {
 
     afterAll(async () => {
       await rimraf('temp/importEvent/');
+    });
+
+    it('should return immediately if experimental is false', async function() {
+      const { getHubMock } = mockValues({});
+
+      const logFile = new FileLog();
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile,
+        dir: 'temp/importEvent/',
+        experimental: false,
+        originalIds: false
+      };
+      const event = new EventWithEditions({ id: 'id-1' });
+
+      (loadJsonFromDirectory as jest.Mock).mockResolvedValue({
+        'event1.json': event
+      });
+
+      const importEvents = jest.spyOn(importModule, 'importEvents').mockResolvedValue();
+      const trySaveMapping = jest.spyOn(importModule, 'trySaveMapping').mockResolvedValue();
+      const getDefaultMappingPath = jest.spyOn(importModule, 'getDefaultMappingPath').mockReturnValue('mapping.json');
+
+      await handler(argv);
+
+      expect(getHubMock).not.toHaveBeenCalled();
+      expect(loadJsonFromDirectory as jest.Mock).not.toHaveBeenCalled();
+
+      expect(importEvents).not.toHaveBeenCalled();
+      expect(getDefaultMappingPath).not.toHaveBeenCalled();
+      expect(trySaveMapping).not.toHaveBeenCalled();
+      expect(logFile.closed).toBeFalsy();
     });
 
     it('should call importEvents with the loaded events, then save the mapping', async function() {

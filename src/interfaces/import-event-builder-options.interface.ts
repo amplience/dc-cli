@@ -4,5 +4,7 @@ export interface ImportEventBuilderOptions {
   dir: string;
   mapFile?: string;
   originalIds: boolean;
+  schedule: boolean;
+  experimental: boolean;
   logFile: FileLog;
 }

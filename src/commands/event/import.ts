@@ -8,11 +8,12 @@ import {
   Hub,
   ContentRepository,
   Snapshot,
-  SnapshotType
+  SnapshotType,
+  PublishingStatus
 } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { loadJsonFromDirectory } from '../../services/import.service';
+import { loadFileFromDirectory, loadJsonFromDirectory } from '../../services/import.service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { ImportEventBuilderOptions } from '../../interfaces/import-event-builder-options.interface';
 import { EditionWithSlots, EventWithEditions } from './export';
@@ -25,6 +26,12 @@ import {
   DependancyContentTypeSchema
 } from '../../common/content-item/content-dependancy-tree';
 import { SnapshotCreator } from 'dc-management-sdk-js/build/main/lib/model/SnapshotCreator';
+import { isEqual } from 'lodash';
+
+const InstantSecondsAllowance = 5;
+const EditionSecondsAllowance = 5;
+const EventSecondsAllowance = 60;
+const ScheduleSecondsAllowance = 5;
 
 export const command = 'import <dir>';
 
@@ -49,6 +56,13 @@ export const builder = (yargs: Argv): void => {
       type: 'string'
     })
 
+    .option('experimental', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        'Must be passed to use the event import command. Only use this command if you fully understand its limitations.'
+    })
+
     .option('mapFile', {
       type: 'string',
       describe:
@@ -60,6 +74,13 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Overwrite existing events, editions, slots and snapshots without asking.'
+    })
+
+    .option('schedule', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        'Schedule events in the destination repo if they are scheduled in the source. If any new or updated imported events are scheduled in the past, they will be moved to happen at the time of import.'
     })
 
     .option('originalIds', {
@@ -86,6 +107,76 @@ interface SlotDependencyMeta {
 interface SlotDependency extends ContentDependancy {
   _meta: SlotDependencyMeta;
 }
+
+export const dateOffset = (seconds: number): Date => {
+  const date = new Date();
+  date.setSeconds(date.getSeconds() + seconds);
+
+  return date;
+};
+
+export const dateMax = (date1: Date, date2: Date): Date => {
+  return date1 > date2 ? date1 : date2;
+};
+
+export const dateMin = (date1: Date, date2: Date): Date => {
+  return date1 <= date2 ? date1 : date2;
+};
+
+interface TimeRange {
+  start?: string;
+  end?: string;
+}
+
+export const boundTimeRange = (realRange: TimeRange, range: TimeRange): void => {
+  // Only update the resource start time if it is in the future, and less than existing.
+  // Only update the resource end time if it is greater than existing.
+  const eventStart = new Date(range.start as string);
+  const realEventStart = new Date(range.start as string);
+  const nowOffset = dateOffset(InstantSecondsAllowance);
+
+  if (new Date(range.end as string) < new Date(realRange.end as string)) {
+    range.end = realRange.end;
+  }
+
+  if (eventStart > realEventStart || realEventStart < nowOffset) {
+    range.start = realRange.start;
+  }
+};
+
+export const shouldUpdateSlot = (realSlot: EditionSlot, slot: EditionSlot): boolean => {
+  return !isEqual(slot.content, realSlot.content);
+};
+
+export const shouldUpdateEvent = (realEvent: Event, event: Event): boolean => {
+  boundTimeRange(realEvent, event);
+
+  return (
+    event.name !== realEvent.name ||
+    event.brief !== realEvent.brief ||
+    event.comment !== realEvent.comment ||
+    event.start !== realEvent.start ||
+    event.end !== realEvent.end
+  );
+};
+
+export const shouldUpdateEdition = (
+  realEdition: Edition,
+  realSlots: EditionSlot[],
+  edition: EditionWithSlots
+): boolean => {
+  boundTimeRange(realEdition, edition);
+
+  return (
+    edition.name !== realEdition.name ||
+    edition.start !== realEdition.start ||
+    edition.end !== realEdition.end ||
+    edition.comment !== realEdition.comment ||
+    edition.activeEndDate !== realEdition.activeEndDate ||
+    edition.slots.length != realSlots.length ||
+    edition.slots.map((x, i) => shouldUpdateSlot(x, realSlots[i])).reduce((a, b) => a && b, true)
+  );
+};
 
 export const rewriteSnapshots = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,6 +275,56 @@ export const importSlots = async (
   }
 };
 
+export const isScheduled = (edition: Edition) =>
+  edition.publishingStatus === PublishingStatus.PUBLISHED ||
+  edition.publishingStatus === PublishingStatus.PUBLISHING ||
+  edition.publishingStatus === PublishingStatus.SCHEDULING ||
+  edition.publishingStatus === PublishingStatus.SCHEDULED;
+
+export const moveDateToFuture = async (date: string, event: Event, offset: number): Promise<string> => {
+  const newDate = dateMax(new Date(date as string), dateOffset(offset));
+
+  if (newDate > new Date(event.end as string)) {
+    event.end = dateOffset(EventSecondsAllowance).toISOString();
+
+    await event.related.update(event);
+  }
+
+  return newDate.toISOString();
+};
+
+export const prepareEditionForSchedule = async (edition: Edition, event: Event): Promise<void> => {
+  if (isScheduled(edition)) {
+    // This edition must start in the future for it to be scheduled.
+    edition.start = await moveDateToFuture(edition.start as string, event, EditionSecondsAllowance);
+    edition.end = await moveDateToFuture(edition.end as string, event, ScheduleSecondsAllowance);
+  }
+};
+
+export const scheduleEdition = async (edition: Edition, log: FileLog) => {
+  const warning = await edition.related.schedule(false);
+
+  if (warning.errors) {
+    for (const error of warning.errors) {
+      if (error.level === 'WARNING') {
+        let message = `${error.code}: ${error.message}`;
+
+        if (error.overlaps) {
+          message += ` (${error.overlaps
+            .map(overlap => `${overlap.name} - ${overlap.editionId} ${overlap.start}`)
+            .join(', ')})`;
+        }
+
+        log.warn(message);
+      } else {
+        log.error(`${error.code}: ${error.message}`);
+      }
+    }
+
+    await edition.related.schedule(true);
+  }
+};
+
 export const importEditions = async (
   editions: EditionWithSlots[],
   mapping: ContentMapping,
@@ -214,11 +355,17 @@ export const importEditions = async (
       start: edition.start,
       end: edition.end,
       comment: edition.comment,
-      activeEndDate: edition.activeEndDate
+      activeEndDate: edition.activeEndDate,
+      publishingStatus: edition.publishingStatus
     });
+
+    let update = true;
+    let schedule = argv.schedule;
 
     if (realEdition == null) {
       // Create a new edition based off of the file.
+      await prepareEditionForSchedule(filteredEdition, event);
+
       realEdition = await event.related.editions.create(filteredEdition);
 
       log.addComment(`Created edition ${realEdition.name}.`);
@@ -226,15 +373,63 @@ export const importEditions = async (
 
       mapping.registerEdition(edition.id as string, realEdition.id as string);
     } else {
-      // Update the existing edition based off of the file.
-      realEdition = await realEdition.related.update(filteredEdition);
+      const slots = await paginator(realEdition.related.slots.list);
 
-      log.addComment(`Updated edition ${realEdition.name}.`);
-      log.addAction('EDITION-UPDATE', realEdition.id as string);
+      if (
+        shouldUpdateEdition(realEdition, slots, edition) ||
+        (schedule && !isScheduled(realEdition) && isScheduled(edition))
+      ) {
+        // If the edition has already published, it cannot be modified.
+        // Copy back start/end in case they were modified above.
+        filteredEdition.start = edition.start;
+        filteredEdition.end = edition.end;
+
+        if (
+          realEdition.publishingStatus == PublishingStatus.SCHEDULED ||
+          realEdition.publishingStatus == PublishingStatus.SCHEDULING
+        ) {
+          // If the edition is scheduled, it must first be unscheduled.
+          try {
+            await realEdition.related.unschedule();
+            realEdition.publishingStatus = PublishingStatus.UNSCHEDULING;
+            schedule = true; // Must reschedule after update.
+
+            // Must fetch the edition again to get the update action
+            while (realEdition.publishingStatus === PublishingStatus.UNSCHEDULING) {
+              realEdition = await client.editions.get(realEdition.id as string);
+            }
+          } catch {
+            update = false; // Can't update, as we weren't able to unschedule.
+          }
+        } else if (isScheduled(realEdition)) {
+          update = false; // Can't update, as the edition was already published.
+        }
+
+        if (update) {
+          await prepareEditionForSchedule(filteredEdition, event);
+
+          // Update the existing edition based off of the file.
+          realEdition = await realEdition.related.update(filteredEdition);
+
+          log.addComment(`Updated edition ${realEdition.name}.`);
+          log.addAction('EDITION-UPDATE', realEdition.id as string);
+        } else {
+          log.appendLine(`Skipped updating ${realEdition.name}, as it has already published.`);
+        }
+      } else {
+        update = false;
+      }
     }
 
-    // Attempt to create slots
-    await importSlots(edition.slots, mapping, hub, realEdition, argv, log);
+    if (update) {
+      // Attempt to create/update slots.
+      await importSlots(edition.slots, mapping, hub, realEdition, argv, log);
+    }
+
+    // If the original edition was scheduled, attempt to schedule the new one.
+    if (schedule && !isScheduled(realEdition) && isScheduled(edition)) {
+      await scheduleEdition(realEdition, log);
+    }
   }
 };
 
@@ -278,7 +473,7 @@ export const importEvents = async (
       log.addAction('EVENT-CREATE', realEvent.id as string);
 
       mapping.registerEvent(event.id as string, realEvent.id as string);
-    } else {
+    } else if (shouldUpdateEvent(realEvent, event)) {
       // Update the existing event based off of the file.
       realEvent = await realEvent.related.update(filteredEvent);
 
@@ -306,7 +501,14 @@ export const trySaveMapping = async (
 };
 
 export const handler = async (argv: Arguments<ImportEventBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, logFile } = argv;
+  const { dir, logFile, experimental } = argv;
+
+  if (!experimental) {
+    console.log(
+      'Event import is an experimental feature, only use it if you fully understand its limitations. To use this command, pass the --experimental flag.'
+    );
+    return;
+  }
 
   const client = dynamicContentClientFactory(argv);
   const log = logFile.open();

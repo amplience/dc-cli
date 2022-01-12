@@ -51,6 +51,8 @@ export class EventCloneStep implements CloneHubStep {
         dir: join(state.path, 'event'),
         logFile: state.logFile,
         originalIds: false,
+        schedule: true,
+        experimental: true,
         ...state.to
       });
     } catch (e) {
@@ -85,6 +87,8 @@ export class EventCloneStep implements CloneHubStep {
             dir: join(state.path, 'oldEvent'),
             logFile: state.logFile,
             originalIds: true,
+            schedule: true,
+            experimental: true,
             ...state.to
           }
           /*,

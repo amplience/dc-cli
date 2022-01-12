@@ -156,6 +156,8 @@ describe('event clone step', () => {
     expect(eventImport.handler).toBeCalledWith({
       dir: join(state.path, 'event'),
       originalIds: false,
+      schedule: true,
+      experimental: true,
       logFile: state.logFile,
       ...state.to
     });
@@ -238,6 +240,8 @@ describe('event clone step', () => {
     expect(eventImport.handler).toBeCalledWith({
       dir: join(state.path, 'oldEvent'),
       originalIds: true,
+      schedule: true,
+      experimental: true,
       logFile: state.logFile,
       ...state.to
     });
