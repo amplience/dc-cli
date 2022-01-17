@@ -11,7 +11,7 @@ import {
 } from './import';
 import * as importModule from './import';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { Event, Edition, Hub, EditionSlot, Snapshot, DynamicContent } from 'dc-management-sdk-js';
+import { Event, Edition, Hub, EditionSlot, Snapshot, DynamicContent, PublishingStatus } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 
@@ -23,6 +23,7 @@ import { EditionWithSlots, EventWithEditions } from './export';
 import { ImportEventBuilderOptions } from '../../interfaces/import-event-builder-options.interface';
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { dateOffset } from '../../common/import/date-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/import.service');
@@ -55,7 +56,8 @@ describe('event import command', () => {
     clientSecret: 'client-id',
     hubId: 'hub-id',
     schedule: false,
-    experimental: true
+    experimental: true,
+    catchup: true
   };
 
   const commonMock = async (
@@ -142,7 +144,13 @@ describe('event import command', () => {
         type: 'boolean',
         boolean: true,
         describe:
-          'Schedule events in the destination repo if they are scheduled in the source. If any new or updated imported events are scheduled in the past, they will be moved to happen at the time of import.'
+          'Schedule events in the destination repo if they are scheduled in the source. If any new or updated scheduled events started in the past, they will be moved to happen at the time of import. If they ended in the past, they will be skipped by default.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('catchup', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Scheduling events that ended in the past will move to the current date, so that their publishes run.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('logFile', {
@@ -173,6 +181,7 @@ describe('event import command', () => {
         logFile,
         dir: 'temp/importEvent/',
         experimental: false,
+        catchup: false,
         originalIds: false
       };
       const event = new EventWithEditions({ id: 'id-1' });
@@ -276,6 +285,388 @@ describe('event import command', () => {
       expect(getDefaultMappingPath).not.toHaveBeenCalled();
       expect(trySaveMapping).toHaveBeenCalledWith(argv.mapFile, expect.any(ContentMapping), logFile);
       expect(logFile.closed).toBeTruthy();
+    });
+  });
+
+  describe('shouldUpdateSlot tests', function() {
+    it('should return false if content matches, true otherwise', async function() {
+      const slot1 = new EditionSlot({ content: { example: 'test', example2: { deep: 'is here' } } });
+      const slot1dupe = new EditionSlot({ content: { example: 'test', example2: { deep: 'is here' } } });
+      const slot2 = new EditionSlot({ content: { example: 'test', example2: { deep: 'mismatch' } } });
+      const slot3 = new EditionSlot({ content: { example2: 'diff' } });
+
+      expect(importModule.shouldUpdateSlot(slot1, slot1dupe)).toBeFalsy();
+      expect(importModule.shouldUpdateSlot(slot1, slot2)).toBeTruthy();
+      expect(importModule.shouldUpdateSlot(slot2, slot3)).toBeTruthy();
+      expect(importModule.shouldUpdateSlot(slot1, slot3)).toBeTruthy();
+    });
+  });
+
+  describe('shouldUpdateEvent tests', function() {
+    it('should call boundTimeRange, return false if fields match, true otherwise', async function() {
+      const event1 = new Event({ name: 'name', brief: '//brief', comment: 'comment', start: '1', end: '2' });
+      const event1dupe = new Event({ name: 'name', brief: '//brief', comment: 'comment', start: '1', end: '2' });
+      const event2 = new Event({ name: 'name2', brief: '//brief', comment: 'comment', start: '1', end: '2' });
+      const event3 = new Event({ name: 'name', brief: '//brief2', comment: 'comment', start: '1', end: '2' });
+      const event4 = new Event({ name: 'name', brief: '//brief', comment: 'comment2', start: '1', end: '2' });
+      const event5 = new Event({ name: 'name', brief: '//brief', comment: 'comment', start: '1.5', end: '2' });
+      const event6 = new Event({ name: 'name', brief: '//brief', comment: 'comment', start: '1', end: '2.5' });
+
+      jest.spyOn(importModule, 'boundTimeRange').mockReturnValue();
+
+      expect(importModule.shouldUpdateEvent(event1, event1dupe)).toBeFalsy();
+
+      expect(importModule.boundTimeRange).toHaveBeenCalledWith(event1, event1dupe);
+
+      expect(importModule.shouldUpdateEvent(event1, event2)).toBeTruthy();
+      expect(importModule.shouldUpdateEvent(event1, event3)).toBeTruthy();
+      expect(importModule.shouldUpdateEvent(event1, event4)).toBeTruthy();
+      expect(importModule.shouldUpdateEvent(event1, event5)).toBeTruthy();
+      expect(importModule.shouldUpdateEvent(event1, event6)).toBeTruthy();
+      expect(importModule.shouldUpdateEvent(event3, event4)).toBeTruthy();
+
+      jest.resetAllMocks();
+    });
+  });
+
+  describe('shouldUpdateEdition tests', function() {
+    it('should call boundTimeRange, return false if fields match, true otherwise', async function() {
+      const edition1 = new Edition({ name: 'name', activeEndDate: false, comment: 'comment', start: '1', end: '2' });
+      const edition1dupe = new EditionWithSlots({
+        name: 'name',
+        activeEndDate: false,
+        comment: 'comment',
+        start: '1',
+        end: '2',
+        slots: []
+      });
+      const edition2 = new EditionWithSlots({
+        name: 'name2',
+        activeEndDate: false,
+        comment: 'comment',
+        start: '1',
+        end: '2',
+        slots: []
+      });
+      const edition3 = new EditionWithSlots({
+        name: 'name',
+        activeEndDate: true,
+        comment: 'comment',
+        start: '1',
+        end: '2',
+        slots: []
+      });
+      const edition4 = new EditionWithSlots({
+        name: 'name',
+        activeEndDate: false,
+        comment: 'comment2',
+        start: '1',
+        end: '2',
+        slots: []
+      });
+      const edition5 = new EditionWithSlots({
+        name: 'name',
+        activeEndDate: false,
+        comment: 'comment',
+        start: '1.5',
+        end: '2',
+        slots: []
+      });
+      const edition6 = new EditionWithSlots({
+        name: 'name',
+        activeEndDate: false,
+        comment: 'comment',
+        start: '1',
+        end: '2.5',
+        slots: []
+      });
+
+      jest.spyOn(importModule, 'boundTimeRange').mockReturnValue();
+
+      expect(importModule.shouldUpdateEdition(edition1, [], edition1dupe)).toBeFalsy();
+
+      expect(importModule.boundTimeRange).toHaveBeenCalledWith(edition1, edition1dupe);
+
+      expect(importModule.shouldUpdateEdition(edition1, [], edition2)).toBeTruthy();
+      expect(importModule.shouldUpdateEdition(edition1, [], edition3)).toBeTruthy();
+      expect(importModule.shouldUpdateEdition(edition1, [], edition4)).toBeTruthy();
+      expect(importModule.shouldUpdateEdition(edition1, [], edition5)).toBeTruthy();
+      expect(importModule.shouldUpdateEdition(edition1, [], edition6)).toBeTruthy();
+      expect(importModule.shouldUpdateEdition(edition3, [], edition4)).toBeTruthy();
+
+      jest.resetAllMocks();
+    });
+
+    it('should call boundTimeRange, return false if slots match, true otherwise', async function() {
+      const edition1 = new Edition({ name: 'name', activeEndDate: false, comment: 'comment', start: '1', end: '2' });
+      const edition1dupe = new EditionWithSlots({
+        name: 'name',
+        activeEndDate: false,
+        comment: 'comment',
+        start: '1',
+        end: '2',
+        slots: [new EditionSlot(), new EditionSlot()]
+      });
+
+      jest.spyOn(importModule, 'boundTimeRange').mockReturnValue();
+      const spyShouldUpdateSlot = jest.spyOn(importModule, 'shouldUpdateSlot');
+
+      // Length different, return true immediately
+      expect(importModule.shouldUpdateEdition(edition1, [], edition1dupe)).toBeTruthy();
+      expect(importModule.boundTimeRange).toHaveBeenCalledWith(edition1, edition1dupe);
+      expect(importModule.shouldUpdateEdition(edition1, [new EditionSlot()], edition1dupe)).toBeTruthy();
+      expect(
+        importModule.shouldUpdateEdition(
+          edition1,
+          [new EditionSlot(), new EditionSlot(), new EditionSlot()],
+          edition1dupe
+        )
+      ).toBeTruthy();
+
+      expect(importModule.shouldUpdateSlot).not.toHaveBeenCalled();
+
+      // Identical
+      spyShouldUpdateSlot.mockReturnValueOnce(false);
+      spyShouldUpdateSlot.mockReturnValueOnce(false);
+      expect(
+        importModule.shouldUpdateEdition(edition1, [new EditionSlot(), new EditionSlot()], edition1dupe)
+      ).toBeFalsy();
+
+      // First different
+      spyShouldUpdateSlot.mockReturnValueOnce(true);
+      spyShouldUpdateSlot.mockReturnValueOnce(false);
+      expect(
+        importModule.shouldUpdateEdition(edition1, [new EditionSlot(), new EditionSlot()], edition1dupe)
+      ).toBeTruthy();
+
+      // Second different
+      spyShouldUpdateSlot.mockReturnValueOnce(false);
+      spyShouldUpdateSlot.mockReturnValueOnce(true);
+      expect(
+        importModule.shouldUpdateEdition(edition1, [new EditionSlot(), new EditionSlot()], edition1dupe)
+      ).toBeTruthy();
+
+      // Both different
+      spyShouldUpdateSlot.mockReturnValueOnce(true);
+      spyShouldUpdateSlot.mockReturnValueOnce(true);
+      expect(
+        importModule.shouldUpdateEdition(edition1, [new EditionSlot(), new EditionSlot()], edition1dupe)
+      ).toBeTruthy();
+
+      jest.resetAllMocks();
+    });
+  });
+
+  describe('moveDateToFuture tests', function() {
+    it('should return the input date if it is in the future', async function() {
+      const future = new Date();
+      const event = new Event();
+      event.related.update = jest.fn();
+      future.setSeconds(future.getSeconds() + 60);
+
+      expect(await importModule.moveDateToFuture(future.toISOString(), event, 10)).toEqual(future.toISOString());
+
+      expect(event.related.update).not.toHaveBeenCalled();
+    });
+
+    it('should choose a date the given offset from the current date if it is in the past', async function() {
+      const past = new Date();
+      const futureEvent = new Date();
+      const event = new Event();
+      event.related.update = jest.fn();
+      past.setSeconds(past.getSeconds() - 5);
+      futureEvent.setSeconds(futureEvent.getSeconds() + 60);
+      event.end = futureEvent.toISOString();
+
+      const result = new Date(await importModule.moveDateToFuture(past.toISOString(), event, 10));
+      const expected = new Date();
+      const error = 500;
+      expected.setSeconds(expected.getSeconds() + 10);
+      expect(Math.abs(result.getTime() - expected.getTime())).toBeLessThan(error);
+
+      expect(event.related.update).not.toHaveBeenCalled();
+    });
+
+    it("should update the given event's end date if the new date ends up being after it ends", async function() {
+      const past = new Date();
+      const futureEvent = new Date();
+      const event = new Event();
+      event.related.update = jest.fn();
+      past.setSeconds(past.getSeconds() - 5);
+      futureEvent.setSeconds(futureEvent.getSeconds() + 60);
+      event.end = futureEvent.toISOString();
+
+      const result = new Date(await importModule.moveDateToFuture(past.toISOString(), event, 120));
+      const expected = new Date();
+      const error = 500;
+      expected.setSeconds(expected.getSeconds() + 120);
+      expect(Math.abs(result.getTime() - expected.getTime())).toBeLessThan(error);
+
+      expect(event.related.update).toHaveBeenCalled();
+      const updateEvent = (event.related.update as jest.Mock).mock.calls[0][0];
+      expect(Math.abs(new Date(updateEvent.end).getTime() - expected.getTime())).toBeLessThan(error);
+    });
+  });
+
+  describe('prepareEditionForSchedule tests', function() {
+    it('should move the start and end dates to the future if the edition is scheduled', async function() {
+      const edition = new Edition({ start: '1', end: '2', publishingStatus: PublishingStatus.DRAFT });
+      const event = new Event();
+
+      const futureSpy = jest.spyOn(importModule, 'moveDateToFuture');
+      futureSpy.mockResolvedValueOnce('3');
+      futureSpy.mockResolvedValueOnce('4');
+
+      importModule.prepareEditionForSchedule(edition, event);
+      expect(importModule.moveDateToFuture).not.toHaveBeenCalled();
+
+      edition.publishingStatus = PublishingStatus.SCHEDULED;
+      await importModule.prepareEditionForSchedule(edition, event);
+      expect(importModule.moveDateToFuture).toHaveBeenNthCalledWith(
+        1,
+        '1',
+        event,
+        importModule.EditionSecondsAllowance
+      );
+      expect(importModule.moveDateToFuture).toHaveBeenNthCalledWith(
+        2,
+        '2',
+        event,
+        importModule.ScheduleSecondsAllowance
+      );
+      expect(edition.start).toEqual('3');
+      expect(edition.end).toEqual('4');
+
+      jest.resetAllMocks();
+    });
+  });
+
+  describe('skipScheduleIfNeeded tests', function() {
+    it('should remove scheduled status if the event end is in the past and catchup is false', async function() {
+      const date = new Date();
+      date.setSeconds(date.getSeconds() - 10);
+
+      const edition = new Edition({ end: date.toISOString(), publishingStatus: PublishingStatus.SCHEDULED });
+
+      importModule.skipScheduleIfNeeded(edition, false);
+
+      expect(edition.publishingStatus).toEqual(PublishingStatus.DRAFT);
+    });
+
+    it('should not remove scheduled status if the event end is in the future', async function() {
+      const date = new Date();
+      date.setSeconds(date.getSeconds() + 10);
+
+      const edition = new Edition({ end: date.toISOString(), publishingStatus: PublishingStatus.SCHEDULED });
+
+      importModule.skipScheduleIfNeeded(edition, false);
+
+      expect(edition.publishingStatus).toEqual(PublishingStatus.SCHEDULED);
+    });
+
+    it('should leave the edition unscheduled if it was before', async function() {
+      const date = new Date();
+      date.setSeconds(date.getSeconds() - 10);
+
+      const edition = new Edition({ end: date.toISOString(), publishingStatus: PublishingStatus.DRAFT });
+
+      importModule.skipScheduleIfNeeded(edition, false);
+
+      expect(edition.publishingStatus).toEqual(PublishingStatus.DRAFT);
+    });
+
+    it('should not remove scheduled status if catchup is true, even if the event end is in the past', async function() {
+      const date = new Date();
+      date.setSeconds(date.getSeconds() - 10);
+
+      const edition = new Edition({ end: date.toISOString(), publishingStatus: PublishingStatus.SCHEDULED });
+
+      importModule.skipScheduleIfNeeded(edition, true);
+
+      expect(edition.publishingStatus).toEqual(PublishingStatus.SCHEDULED);
+    });
+  });
+
+  describe('scheduleEdition tests', function() {
+    it('should schedule without logging anything if no warnings are returned', async function() {
+      const edition = new Edition();
+      const log = new FileLog();
+
+      edition.related.schedule = jest.fn().mockResolvedValue({});
+
+      await importModule.scheduleEdition(edition, log);
+
+      expect(edition.related.schedule).toHaveBeenCalledTimes(1);
+      expect(edition.related.schedule).toHaveBeenCalledWith(false);
+      expect(log.accessGroup).toEqual([]);
+    });
+    it('should log warnings/errors if they are returned, and try again with ignoreWarnings true', async function() {
+      const edition = new Edition();
+      const log = new FileLog();
+
+      edition.related.schedule = jest.fn().mockResolvedValue({
+        errors: [
+          {
+            level: 'WARNING',
+            code: 'EDITION_SCHEDULE_OVERLAP',
+            message: 'Edition Schedule Overlap. Please try again later.',
+            overlaps: [
+              {
+                editionId: 'edition-id',
+                name: 'Test schedule edition',
+                start: '2022-01-07T15:31:47.337Z'
+              }
+            ]
+          },
+          {
+            level: 'WARNING',
+            code: 'EDITION_CONTAINS_SLOT_COLLISIONS',
+            message: 'Edition contains slots that collide with other editions.'
+          },
+          {
+            level: 'ERROR',
+            code: 'FAKE_ERROR',
+            message: 'This is an error.'
+          }
+        ]
+      });
+
+      await importModule.scheduleEdition(edition, log);
+
+      expect(edition.related.schedule).toHaveBeenCalledTimes(2);
+      expect(edition.related.schedule).toHaveBeenNthCalledWith(1, false);
+      expect(edition.related.schedule).toHaveBeenNthCalledWith(2, true);
+      expect(log.accessGroup).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "action": "WARNING",
+    "comment": false,
+    "data": "",
+  },
+  Object {
+    "comment": true,
+    "data": "WARNING: EDITION_SCHEDULE_OVERLAP: Edition Schedule Overlap. Please try again later. (Test schedule edition - edition-id 2022-01-07T15:31:47.337Z)",
+  },
+  Object {
+    "action": "WARNING",
+    "comment": false,
+    "data": "",
+  },
+  Object {
+    "comment": true,
+    "data": "WARNING: EDITION_CONTAINS_SLOT_COLLISIONS: Edition contains slots that collide with other editions.",
+  },
+  Object {
+    "action": "ERROR",
+    "comment": false,
+    "data": "",
+  },
+  Object {
+    "comment": true,
+    "data": "ERROR: FAKE_ERROR: This is an error.",
+  },
+]
+`);
     });
   });
 
@@ -546,6 +937,255 @@ describe('event import command', () => {
       expect(realEvent.related.editions.create).toHaveBeenCalledTimes(1);
 
       expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
+    });
+
+    it('should try schedule an edition if its scheduled status indicates that it was in the source', async function() {
+      const { mockEditionGet, mockEditionUpdate } = mockValues({});
+
+      const realEdition = new Edition({ id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT });
+      (mockEditionUpdate as jest.Mock).mockResolvedValue(realEdition);
+
+      const { client, hub, argv, log, mapping } = await commonMock();
+
+      argv.schedule = true;
+      mapping.registerEdition('id-1', 'id-2');
+
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
+      const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
+      const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
+
+      const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
+      const importTest = [
+        new EditionWithSlots({
+          id: 'id-1',
+          name: 'Edition',
+          start: dateOffset(10).toISOString(),
+          end: dateOffset(15).toISOString(),
+          publishingStatus: PublishingStatus.SCHEDULED,
+          comment: 'comment',
+          slots
+        })
+      ];
+
+      const realEvent = new Event({
+        start: dateOffset(5).toISOString(),
+        end: dateOffset(20).toISOString()
+      });
+
+      await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
+
+      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(mockEditionUpdate).toHaveBeenCalledTimes(1);
+
+      expect(skipSchedule).toHaveBeenCalledWith(importTest[0], true);
+      expect(prepareEdition).toHaveBeenCalledWith(expect.any(Edition), realEvent);
+
+      expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
+      expect(scheduleEdition).toHaveBeenCalledWith(expect.any(Edition), log);
+    });
+
+    it('should try unschedule the existing edition if already scheduled, update if succeeded, reschedule', async function() {
+      const { mockEditionGet, mockEditionUpdate, mockEditionUnschedule, mockSlotsList, mockEdition } = mockValues({
+        status: PublishingStatus.SCHEDULED
+      });
+
+      const baseEdition = { id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT };
+      (mockEditionGet as jest.Mock).mockReset();
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(mockEdition);
+
+      const newEdition = new Edition(baseEdition);
+      newEdition.related.update = mockEdition.related.update;
+      (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
+      (mockEditionUpdate as jest.Mock).mockResolvedValue(newEdition);
+      (mockEditionUnschedule as jest.Mock).mockResolvedValue(undefined);
+
+      const { client, hub, argv, log, mapping } = await commonMock();
+
+      argv.schedule = true;
+      mapping.registerEdition('id-1', 'id-2');
+
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
+      const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
+      const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
+
+      const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
+      const importTest = [
+        new EditionWithSlots({
+          id: 'id-1',
+          name: 'Edition',
+          start: dateOffset(10).toISOString(),
+          end: dateOffset(15).toISOString(),
+          publishingStatus: PublishingStatus.SCHEDULED,
+          comment: 'comment',
+          slots
+        })
+      ];
+
+      const realEvent = new Event({
+        start: dateOffset(5).toISOString(),
+        end: dateOffset(20).toISOString()
+      });
+
+      await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
+
+      expect(mockEditionUnschedule).toHaveBeenCalled();
+      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(mockEditionUpdate).toHaveBeenCalledTimes(1);
+
+      expect(skipSchedule).toHaveBeenCalledWith(importTest[0], true);
+      expect(prepareEdition).toHaveBeenCalledWith(expect.any(Edition), realEvent);
+
+      expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, newEdition, argv, log);
+      expect(scheduleEdition).toHaveBeenCalledWith(expect.any(Edition), log);
+    });
+
+    it('should try unschedule the existing edition if already scheduled, do not update if failed', async function() {
+      const { mockEditionGet, mockEditionUpdate, mockEditionUnschedule, mockSlotsList, mockEdition } = mockValues({
+        status: PublishingStatus.SCHEDULED
+      });
+
+      const baseEdition = { id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT };
+      (mockEditionGet as jest.Mock).mockReset();
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(mockEdition);
+
+      const newEdition = new Edition(baseEdition);
+      newEdition.related.update = mockEdition.related.update;
+      (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
+      (mockEditionUnschedule as jest.Mock).mockRejectedValue(new Error('Unschedule Failed'));
+
+      const { client, hub, argv, log, mapping } = await commonMock();
+
+      argv.schedule = true;
+      mapping.registerEdition('id-1', 'id-2');
+
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
+      const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
+      const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
+
+      const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
+      const importTest = [
+        new EditionWithSlots({
+          id: 'id-1',
+          name: 'Edition',
+          start: dateOffset(10).toISOString(),
+          end: dateOffset(15).toISOString(),
+          publishingStatus: PublishingStatus.SCHEDULED,
+          comment: 'comment',
+          slots
+        })
+      ];
+
+      const realEvent = new Event({
+        start: dateOffset(5).toISOString(),
+        end: dateOffset(20).toISOString()
+      });
+
+      await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
+
+      expect(mockEditionUnschedule).toHaveBeenCalled();
+      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(mockEditionUpdate).not.toHaveBeenCalled();
+
+      expect(skipSchedule).toHaveBeenCalledWith(importTest[0], true);
+      expect(prepareEdition).not.toHaveBeenCalled();
+
+      expect(importSlots).not.toHaveBeenCalled();
+      expect(scheduleEdition).not.toHaveBeenCalled();
+    });
+
+    it('should not unschedule or update an edition published in the past', async function() {
+      const { mockEditionGet, mockEditionUpdate, mockEditionUnschedule, mockSlotsList, mockEdition } = mockValues({
+        status: PublishingStatus.PUBLISHED
+      });
+
+      const baseEdition = { id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT };
+      (mockEditionGet as jest.Mock).mockReset();
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(mockEdition);
+
+      const newEdition = new Edition(baseEdition);
+      newEdition.related.update = mockEdition.related.update;
+      (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
+
+      const { client, hub, argv, log, mapping } = await commonMock();
+
+      argv.schedule = true;
+      mapping.registerEdition('id-1', 'id-2');
+
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
+      const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
+      const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
+
+      const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
+      const importTest = [
+        new EditionWithSlots({
+          id: 'id-1',
+          name: 'Edition',
+          start: dateOffset(-20).toISOString(),
+          end: dateOffset(-15).toISOString(),
+          publishingStatus: PublishingStatus.PUBLISHED,
+          comment: 'comment',
+          slots
+        })
+      ];
+
+      const realEvent = new Event({
+        start: dateOffset(-25).toISOString(),
+        end: dateOffset(-10).toISOString()
+      });
+
+      await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
+
+      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(mockEditionUnschedule).not.toHaveBeenCalled();
+      expect(mockEditionUpdate).not.toHaveBeenCalled();
+
+      expect(skipSchedule).toHaveBeenCalledWith(importTest[0], true);
+      expect(prepareEdition).not.toHaveBeenCalled();
+
+      expect(importSlots).not.toHaveBeenCalled();
+      expect(scheduleEdition).not.toHaveBeenCalled();
+    });
+
+    it('should not update edition if it is identical', async function() {
+      const { mockEditionGet, mockEditionUpdate } = mockValues({});
+
+      const realEdition = new Edition({ id: 'id-2', name: 'updated' });
+      (mockEditionUpdate as jest.Mock).mockResolvedValue(realEdition);
+
+      const { client, hub, argv, log, mapping } = await commonMock();
+
+      mapping.registerEdition('id-1', 'id-2');
+
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const shouldUpdate = jest.spyOn(importModule, 'shouldUpdateEdition').mockReturnValue(false);
+      const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
+      const importTest = [
+        new EditionWithSlots({
+          id: 'id-1',
+          name: 'Edition',
+          start: '0',
+          end: '1',
+          comment: 'comment',
+          slots
+        })
+      ];
+
+      const realEvent = new Event();
+
+      await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
+
+      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(shouldUpdate).toHaveBeenCalled();
+      expect(mockEditionUpdate).not.toHaveBeenCalled();
+
+      expect(importSlots).not.toHaveBeenCalled();
     });
   });
 

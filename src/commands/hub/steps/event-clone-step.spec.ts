@@ -158,6 +158,7 @@ describe('event clone step', () => {
       originalIds: false,
       schedule: true,
       experimental: true,
+      catchup: false,
       logFile: state.logFile,
       ...state.to
     });
@@ -242,6 +243,7 @@ describe('event clone step', () => {
       originalIds: true,
       schedule: true,
       experimental: true,
+      catchup: false,
       logFile: state.logFile,
       ...state.to
     });

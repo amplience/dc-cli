@@ -53,6 +53,7 @@ export class EventCloneStep implements CloneHubStep {
         originalIds: false,
         schedule: true,
         experimental: true,
+        catchup: false,
         ...state.to
       });
     } catch (e) {
@@ -89,6 +90,7 @@ export class EventCloneStep implements CloneHubStep {
             originalIds: true,
             schedule: true,
             experimental: true,
+            catchup: false,
             ...state.to
           }
           /*,

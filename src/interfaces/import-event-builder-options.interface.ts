@@ -6,5 +6,6 @@ export interface ImportEventBuilderOptions {
   originalIds: boolean;
   schedule: boolean;
   experimental: boolean;
+  catchup: boolean;
   logFile: FileLog;
 }

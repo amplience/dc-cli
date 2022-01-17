@@ -27,11 +27,12 @@ import {
 } from '../../common/content-item/content-dependancy-tree';
 import { SnapshotCreator } from 'dc-management-sdk-js/build/main/lib/model/SnapshotCreator';
 import { isEqual } from 'lodash';
+import { dateMax, dateOffset, sortByEndDate, TimeRange } from '../../common/import/date-helpers';
 
-const InstantSecondsAllowance = 5;
-const EditionSecondsAllowance = 5;
-const EventSecondsAllowance = 60;
-const ScheduleSecondsAllowance = 5;
+export const InstantSecondsAllowance = 5;
+export const EditionSecondsAllowance = 5;
+export const EventSecondsAllowance = 60;
+export const ScheduleSecondsAllowance = 5;
 
 export const command = 'import <dir>';
 
@@ -80,7 +81,13 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe:
-        'Schedule events in the destination repo if they are scheduled in the source. If any new or updated imported events are scheduled in the past, they will be moved to happen at the time of import.'
+        'Schedule events in the destination repo if they are scheduled in the source. If any new or updated scheduled events started in the past, they will be moved to happen at the time of import. If they ended in the past, they will be skipped by default.'
+    })
+
+    .option('catchup', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Scheduling events that ended in the past will move to the current date, so that their publishes run.'
     })
 
     .option('originalIds', {
@@ -106,26 +113,6 @@ interface SlotDependencyMeta {
 
 interface SlotDependency extends ContentDependancy {
   _meta: SlotDependencyMeta;
-}
-
-export const dateOffset = (seconds: number): Date => {
-  const date = new Date();
-  date.setSeconds(date.getSeconds() + seconds);
-
-  return date;
-};
-
-export const dateMax = (date1: Date, date2: Date): Date => {
-  return date1 > date2 ? date1 : date2;
-};
-
-export const dateMin = (date1: Date, date2: Date): Date => {
-  return date1 <= date2 ? date1 : date2;
-};
-
-interface TimeRange {
-  start?: string;
-  end?: string;
 }
 
 export const boundTimeRange = (realRange: TimeRange, range: TimeRange): void => {
@@ -174,7 +161,7 @@ export const shouldUpdateEdition = (
     edition.comment !== realEdition.comment ||
     edition.activeEndDate !== realEdition.activeEndDate ||
     edition.slots.length != realSlots.length ||
-    edition.slots.map((x, i) => shouldUpdateSlot(x, realSlots[i])).reduce((a, b) => a && b, true)
+    edition.slots.map((x, i) => shouldUpdateSlot(x, realSlots[i])).reduce((a, b) => a || b, false)
   );
 };
 
@@ -285,7 +272,7 @@ export const moveDateToFuture = async (date: string, event: Event, offset: numbe
   const newDate = dateMax(new Date(date as string), dateOffset(offset));
 
   if (newDate > new Date(event.end as string)) {
-    event.end = dateOffset(EventSecondsAllowance).toISOString();
+    event.end = dateMax(dateOffset(EventSecondsAllowance), newDate).toISOString();
 
     await event.related.update(event);
   }
@@ -325,6 +312,13 @@ export const scheduleEdition = async (edition: Edition, log: FileLog) => {
   }
 };
 
+export const skipScheduleIfNeeded = (edition: Edition, catchup: boolean): void => {
+  if (!catchup && isScheduled(edition) && new Date(edition.end as string) < new Date()) {
+    // Skip publish of events fully in the past, if catchup events are not to be created.
+    edition.publishingStatus = PublishingStatus.DRAFT;
+  }
+};
+
 export const importEditions = async (
   editions: EditionWithSlots[],
   mapping: ContentMapping,
@@ -361,6 +355,8 @@ export const importEditions = async (
 
     let update = true;
     let schedule = argv.schedule;
+
+    skipScheduleIfNeeded(edition, argv.catchup);
 
     if (realEdition == null) {
       // Create a new edition based off of the file.
@@ -482,7 +478,7 @@ export const importEvents = async (
     }
 
     // Attempt to create editions
-    await importEditions(event.editions, mapping, client, hub, realEvent, argv, log);
+    await importEditions(sortByEndDate(event.editions), mapping, client, hub, realEvent, argv, log);
   }
 };
 
@@ -527,7 +523,7 @@ export const handler = async (argv: Arguments<ImportEventBuilderOptions & Config
     log.appendLine(`Creating new mapping file at '${mapFile}'.`);
   }
 
-  await importEvents(Object.values(events), mapping, client, hub, argv, log);
+  await importEvents(sortByEndDate(Object.values(events)), mapping, client, hub, argv, log);
 
   await trySaveMapping(mapFile, mapping, log);
 

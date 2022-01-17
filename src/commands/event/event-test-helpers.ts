@@ -25,6 +25,8 @@ export const mockValues = ({
   mockSnapshotGet: () => void;
   mockSnapshotItem: () => void;
   mockSnapshotCreate: () => void;
+  mockEditionUnschedule: () => void;
+  mockEdition: Edition;
 } => {
   const mockGet = jest.fn();
   const getHubMock = jest.fn();
@@ -39,6 +41,7 @@ export const mockValues = ({
   const mockSnapshotGet = jest.fn();
   const mockSnapshotItem = jest.fn();
   const mockSnapshotCreate = jest.fn();
+  const mockEditionUnschedule = jest.fn();
 
   (dynamicContentClientFactory as jest.Mock).mockReturnValue({
     hubs: {
@@ -322,6 +325,7 @@ export const mockValues = ({
   );
 
   editions[0].related.update = mockEditionUpdate;
+  editions[0].related.unschedule = mockEditionUnschedule;
   slots[0].related.content = mockSlotContent;
   mockEditionGet.mockResolvedValue(editions[0]);
 
@@ -351,6 +355,7 @@ export const mockValues = ({
     mockEditionsList,
     mockEditionGet,
     mockEditionUpdate,
+    mockEditionUnschedule,
     mockEventsList,
     mockEventUpdate,
     mockEventCreate,
@@ -358,6 +363,7 @@ export const mockValues = ({
     mockSlotContent,
     mockSnapshotGet,
     mockSnapshotItem,
-    mockSnapshotCreate
+    mockSnapshotCreate,
+    mockEdition: editions[0]
   };
 };
