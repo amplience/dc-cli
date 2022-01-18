@@ -33,6 +33,7 @@ import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
+import _, { Dictionary } from 'lodash';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -710,6 +711,28 @@ const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, 
   }
 };
 
+const sortDependencies = (a: ItemContentDependancies, b: ItemContentDependancies): number => {
+  // if b depends on a, a should be sorted first, and vice versa
+  if (
+    _.includes(
+      _.map(a.dependants, (d: ContentDependancyInfo) => d.resolved && d.resolved.owner.content.id),
+      b.owner.content.id
+    )
+  ) {
+    return -1;
+  } else if (
+    _.includes(
+      _.map(b.dependants, (d: ContentDependancyInfo) => d.resolved && d.resolved.owner.content.id),
+      a.owner.content.id
+    )
+  ) {
+    return 1;
+  }
+
+  // otherwise, create the one with the most dependants first
+  return a.dependants.length > b.dependants.length ? -1 : 1;
+};
+
 const importTree = async (
   client: DynamicContent,
   tree: ContentDependancyTree,
@@ -796,14 +819,15 @@ const importTree = async (
 
   // Create circular dependancies with all the mappings we have, and update the mapping.
   // Do a second pass that updates the existing assets to point to the new ones.
-  const newDependants: ContentItem[] = [];
+  const dependents: Dictionary<ContentItem> = {};
 
   for (let pass = 0; pass < 2; pass++) {
     const mode = pass === 0 ? 'Creating' : 'Resolving';
     log.appendLine(`${mode} circular dependants.`);
 
-    for (let i = 0; i < tree.circularLinks.length; i++) {
-      const item = tree.circularLinks[i];
+    const circularLinksSorted = tree.circularLinks.sort(sortDependencies);
+    for (let i = 0; i < circularLinksSorted.length; i++) {
+      const item = circularLinksSorted[i];
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
@@ -819,7 +843,7 @@ const importTree = async (
         const result = await createOrUpdateContent(
           client,
           item.owner.repo,
-          newDependants[i] || mapping.getContentItem(originalId as string),
+          dependents[originalId] || mapping.getContentItem(originalId as string),
           content
         );
         newItem = result.newItem;
@@ -839,7 +863,8 @@ const importTree = async (
           (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
         );
 
-        newDependants[i] = newItem;
+        dependents[originalId] = newItem;
+        content.id = originalId;
         mapping.registerContentItem(originalId as string, newItem.id as string);
         mapping.registerContentItem(newItem.id as string, newItem.id as string);
       } else {
@@ -920,7 +945,7 @@ export const handler = async (
     mapFile = getDefaultMappingPath(importTitle);
   }
 
-  if (mapping.load(mapFile)) {
+  if (await mapping.load(mapFile)) {
     log.appendLine(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
   } else {
     log.appendLine(`Creating new mapping file at '${mapFile}'.`);
