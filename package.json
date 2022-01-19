@@ -8,6 +8,7 @@
     "dc-cli": "./dist/index.js"
   },
   "scripts": {
+    "prepare": "npm run build",
     "precommit": "npm run lint",
     "commit": "npx git-cz",
     "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
