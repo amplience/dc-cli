@@ -89,7 +89,14 @@ export const rewriteIndexNames = (
     [filename: string]: EnrichedSearchIndex;
   }
 ): void | never => {
+  const toRewrite: SearchIndex[] = [...Object.values(importedIndexes)];
   for (const index of Object.values(importedIndexes)) {
+    if (index.replicas) {
+      toRewrite.push(...index.replicas);
+    }
+  }
+
+  for (const index of toRewrite) {
     const name = index.name as string;
     const firstDot = name.indexOf('.');
 

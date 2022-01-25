@@ -855,7 +855,12 @@ describe('search-index import command', (): void => {
     it("should rewrite index names to contain the given hub's name", () => {
       const indexesToProcess = {
         'file-1': new EnrichedSearchIndex({
-          name: 'oldHub.index-name-1'
+          name: 'oldHub.index-name-1',
+          replicas: [
+            new EnrichedReplica({
+              name: 'oldHub.index-name-1_sort-example'
+            })
+          ]
         }),
         'file-2': new EnrichedSearchIndex({
           name: 'index-name-2'
@@ -868,6 +873,7 @@ describe('search-index import command', (): void => {
 
       expect(indexesToProcess['file-1'].name).toEqual('newHub.index-name-1');
       expect(indexesToProcess['file-2'].name).toEqual('newHub.index-name-2');
+      expect(indexesToProcess['file-1'].replicas[0].name).toEqual('newHub.index-name-1_sort-example');
     });
   });
 
