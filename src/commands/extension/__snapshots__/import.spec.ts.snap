@@ -18,8 +18,6 @@ exports[`extension import command doUpdate should throw an error when unable to 
 
 exports[`extension import command doUpdate should throw an error when unable to update extension during update if a string error is returned by sdk 1`] = `"Error updating extension not-matched-name: undefined"`;
 
-exports[`extension import command handler tests should throw an error when no content found in import directory 1`] = `"No extensions found in my-empty-dir"`;
-
 exports[`extension import command validateNoDuplicateExtensionNames should throw and error when there are duplicate uris 1`] = `
 "Extensions must have unique name values. Duplicate values found:-
   name: 'extension-name-1' in files: ['file-1', 'file-4']
