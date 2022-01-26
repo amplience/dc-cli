@@ -353,7 +353,9 @@ export const handler = async (
   const log = logFile.open();
   const indexes = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
   if (Object.keys(indexes).length === 0) {
-    throw new Error(`No indexes found in ${dir}`);
+    log.appendLine(`No search indexes found in ${dir}`);
+    await log.close();
+    return;
   }
 
   validateNoDuplicateIndexNames(indexes);

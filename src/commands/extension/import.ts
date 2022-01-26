@@ -157,7 +157,9 @@ export const handler = async (
   const log = logFile.open();
   const extensions = loadJsonFromDirectory<Extension>(dir, Extension);
   if (Object.keys(extensions).length === 0) {
-    throw new Error(`No extensions found in ${dir}`);
+    log.appendLine(`No extensions found in ${dir}`);
+    await log.close();
+    return;
   }
 
   validateNoDuplicateExtensionNames(extensions);

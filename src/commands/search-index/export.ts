@@ -440,7 +440,15 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const previouslyExportedIndexes = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
   validateNoDuplicateIndexNames(previouslyExportedIndexes);
 
-  const allStoredIndexes = await paginator(searchIndexList(hub));
+  let allStoredIndexes: SearchIndex[];
+  try {
+    allStoredIndexes = await paginator(searchIndexList(hub));
+  } catch (e) {
+    log.warn('Could not get Search Indexes for the given hub - they may be disabled.', e);
+    await log.close();
+    return;
+  }
+
   const { storedIndexes, allReplicas } = separateReplicas(allStoredIndexes);
 
   const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
