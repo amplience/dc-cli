@@ -437,17 +437,16 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const hub = await client.hubs.get(argv.hubId);
   const log = logFile.open();
 
-  const previouslyExportedIndexes = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
-  validateNoDuplicateIndexNames(previouslyExportedIndexes);
-
-  let allStoredIndexes: SearchIndex[];
-  try {
-    allStoredIndexes = await paginator(searchIndexList(hub));
-  } catch (e) {
-    log.warn('Could not get Search Indexes for the given hub - they may be disabled.', e);
+  if (!(hub._links && hub._links.hasOwnProperty('algolia-search-indexes'))) {
+    log.warn('Search Indexes link missing for the given hub - they are likely disabled for this account.');
     await log.close();
     return;
   }
+
+  const previouslyExportedIndexes = loadJsonFromDirectory<EnrichedSearchIndex>(dir, EnrichedSearchIndex);
+  validateNoDuplicateIndexNames(previouslyExportedIndexes);
+
+  const allStoredIndexes = await paginator(searchIndexList(hub));
 
   const { storedIndexes, allReplicas } = separateReplicas(allStoredIndexes);
 
