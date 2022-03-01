@@ -1,6 +1,6 @@
 {
   "name": "@dlillyatx/dc-cli",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
   "man": "./dist/dc-cli.1",
