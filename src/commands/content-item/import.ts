@@ -5,6 +5,8 @@ import { revert } from './import-revert';
 import { FileLog } from '../../common/file-log';
 import { dirname, basename, join, relative, resolve, extname } from 'path';
 
+import { AxiosHttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js';
+
 import { lstat, readdir, readFile } from 'fs';
 import { promisify } from 'util';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
@@ -34,6 +36,7 @@ import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import _, { Dictionary } from 'lodash';
+import { StatusCodes } from 'http-status-codes';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -761,6 +764,10 @@ const importTree = async (
       const originalId = content.id;
       content.id = mapping.getContentItem(content.id as string) || '';
 
+      if (_.isEmpty(content.id)) {
+        delete (content as any).id;
+      }
+
       let newItem: ContentItem;
       let oldVersion: number;
       try {
@@ -777,6 +784,8 @@ const importTree = async (
         abort(e);
         return false;
       }
+
+      content.id = originalId;
 
       const updated = oldVersion > 0;
       log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
@@ -836,6 +845,10 @@ const importTree = async (
 
       const originalId = content.id;
       content.id = mapping.getContentItem(content.id) || '';
+
+      if (_.isEmpty(content.id)) {
+        delete (content as any).id;
+      }
 
       let newItem: ContentItem;
       let oldVersion: number;
@@ -906,6 +919,37 @@ const importTree = async (
 export const handler = async (
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
+  // monkey patch the AxiosHttpClient that dc-management-sdk-js uses to capture requests and responses
+  // let _request = AxiosHttpClient.prototype.request
+  // AxiosHttpClient.prototype.request = async function (request: HttpRequest): Promise<HttpResponse> {
+  //   try {
+  //     let start = new Date()
+  //     let startString = start.valueOf()
+  //     let requestId = `${startString}-${request.method}-${request.url.split('/').pop()?.split('?')?.[0]}`
+  //     let response: HttpResponse = await _request.call(this, request)
+  //     let duration = new Date().valueOf() - start.valueOf()
+
+  //     if (response.status !== 200 && request.method === 'POST') {
+  //       // let's log this request and response
+  //       console.log(`[ ${startString} ] ${request.method} | ${request.url} | ${response.status} | ${StatusCodes[response.status]} | ${duration}ms`)
+
+  //       let subDir = response.status > 400 ? `error` : `success`
+
+  //       console.log(JSON.stringify(request.data, undefined, 4))
+  //       console.log(JSON.stringify(response, undefined, 4))
+
+  //       // let requestLogDir = `${context.tempDir}/requests/${subDir}/${requestId}`
+  //       // fs.mkdirpSync(requestLogDir)
+  //       // fs.writeJSONSync(`${requestLogDir}/request.json`, request)
+  //       // fs.writeJSONSync(`${requestLogDir}/response.json`, response)
+  //     }
+  //     return response
+  //   } catch (error) {
+  //     // logger.info(error)
+  //     throw error
+  //   }
+  // }
+
   if (await argv.revertLog) {
     return revert(argv);
   }
