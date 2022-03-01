@@ -5,6 +5,8 @@ import { revert } from './import-revert';
 import { FileLog } from '../../common/file-log';
 import { dirname, basename, join, relative, resolve, extname } from 'path';
 
+import { AxiosHttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js';
+
 import { lstat, readdir, readFile } from 'fs';
 import { promisify } from 'util';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
@@ -33,6 +35,8 @@ import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
+import _, { Dictionary } from 'lodash';
+import { StatusCodes } from 'http-status-codes';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -710,6 +714,28 @@ const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, 
   }
 };
 
+const sortDependencies = (a: ItemContentDependancies, b: ItemContentDependancies): number => {
+  // if b depends on a, a should be sorted first, and vice versa
+  if (
+    _.includes(
+      _.map(a.dependants, (d: ContentDependancyInfo) => d.resolved && d.resolved.owner.content.id),
+      b.owner.content.id
+    )
+  ) {
+    return -1;
+  } else if (
+    _.includes(
+      _.map(b.dependants, (d: ContentDependancyInfo) => d.resolved && d.resolved.owner.content.id),
+      a.owner.content.id
+    )
+  ) {
+    return 1;
+  }
+
+  // otherwise, create the one with the most dependants first
+  return a.dependants.length > b.dependants.length ? -1 : 1;
+};
+
 const importTree = async (
   client: DynamicContent,
   tree: ContentDependancyTree,
@@ -738,6 +764,10 @@ const importTree = async (
       const originalId = content.id;
       content.id = mapping.getContentItem(content.id as string) || '';
 
+      if (_.isEmpty(content.id)) {
+        delete (content as any).id;
+      }
+
       let newItem: ContentItem;
       let oldVersion: number;
       try {
@@ -754,6 +784,8 @@ const importTree = async (
         abort(e);
         return false;
       }
+
+      content.id = originalId;
 
       const updated = oldVersion > 0;
       log.addComment(`${updated ? 'Updated' : 'Created'} ${content.label}.`);
@@ -796,14 +828,15 @@ const importTree = async (
 
   // Create circular dependancies with all the mappings we have, and update the mapping.
   // Do a second pass that updates the existing assets to point to the new ones.
-  const newDependants: ContentItem[] = [];
+  const dependents: Dictionary<ContentItem> = {};
 
   for (let pass = 0; pass < 2; pass++) {
     const mode = pass === 0 ? 'Creating' : 'Resolving';
     log.appendLine(`${mode} circular dependants.`);
 
-    for (let i = 0; i < tree.circularLinks.length; i++) {
-      const item = tree.circularLinks[i];
+    const circularLinksSorted = tree.circularLinks.sort(sortDependencies);
+    for (let i = 0; i < circularLinksSorted.length; i++) {
+      const item = circularLinksSorted[i];
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
@@ -813,13 +846,17 @@ const importTree = async (
       const originalId = content.id;
       content.id = mapping.getContentItem(content.id) || '';
 
+      if (_.isEmpty(content.id)) {
+        delete (content as any).id;
+      }
+
       let newItem: ContentItem;
       let oldVersion: number;
       try {
         const result = await createOrUpdateContent(
           client,
           item.owner.repo,
-          newDependants[i] || mapping.getContentItem(originalId as string),
+          dependents[originalId] || mapping.getContentItem(originalId as string),
           content
         );
         newItem = result.newItem;
@@ -839,7 +876,8 @@ const importTree = async (
           (newItem.id || 'unknown') + (updated ? ` ${oldVersion} ${newItem.version}` : '')
         );
 
-        newDependants[i] = newItem;
+        dependents[originalId] = newItem;
+        content.id = originalId;
         mapping.registerContentItem(originalId as string, newItem.id as string);
         mapping.registerContentItem(newItem.id as string, newItem.id as string);
       } else {
@@ -881,6 +919,37 @@ const importTree = async (
 export const handler = async (
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
+  // monkey patch the AxiosHttpClient that dc-management-sdk-js uses to capture requests and responses
+  // let _request = AxiosHttpClient.prototype.request
+  // AxiosHttpClient.prototype.request = async function (request: HttpRequest): Promise<HttpResponse> {
+  //   try {
+  //     let start = new Date()
+  //     let startString = start.valueOf()
+  //     let requestId = `${startString}-${request.method}-${request.url.split('/').pop()?.split('?')?.[0]}`
+  //     let response: HttpResponse = await _request.call(this, request)
+  //     let duration = new Date().valueOf() - start.valueOf()
+
+  //     if (response.status !== 200 && request.method === 'POST') {
+  //       // let's log this request and response
+  //       console.log(`[ ${startString} ] ${request.method} | ${request.url} | ${response.status} | ${StatusCodes[response.status]} | ${duration}ms`)
+
+  //       let subDir = response.status > 400 ? `error` : `success`
+
+  //       console.log(JSON.stringify(request.data, undefined, 4))
+  //       console.log(JSON.stringify(response, undefined, 4))
+
+  //       // let requestLogDir = `${context.tempDir}/requests/${subDir}/${requestId}`
+  //       // fs.mkdirpSync(requestLogDir)
+  //       // fs.writeJSONSync(`${requestLogDir}/request.json`, request)
+  //       // fs.writeJSONSync(`${requestLogDir}/response.json`, response)
+  //     }
+  //     return response
+  //   } catch (error) {
+  //     // logger.info(error)
+  //     throw error
+  //   }
+  // }
+
   if (await argv.revertLog) {
     return revert(argv);
   }
@@ -920,7 +989,7 @@ export const handler = async (
     mapFile = getDefaultMappingPath(importTitle);
   }
 
-  if (mapping.load(mapFile)) {
+  if (await mapping.load(mapFile)) {
     log.appendLine(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);
   } else {
     log.appendLine(`Creating new mapping file at '${mapFile}'.`);

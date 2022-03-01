@@ -1,6 +1,6 @@
 {
-  "name": "@amplience/dc-cli",
-  "version": "0.13.0",
+  "name": "@dlillyatx/dc-cli",
+  "version": "0.13.3",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
   "man": "./dist/dc-cli.1",
@@ -8,6 +8,7 @@
     "dc-cli": "./dist/index.js"
   },
   "scripts": {
+    "prepare": "npm run build",
     "precommit": "npm run lint",
     "commit": "npx git-cz",
     "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
@@ -46,12 +47,6 @@
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm test",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
   "commitlint": {
@@ -112,10 +107,12 @@
     "typescript": "^3.9.10"
   },
   "dependencies": {
+    "@types/node": "^17.0.21",
     "ajv": "^6.12.3",
     "axios": "^0.21.1",
     "chalk": "^2.4.2",
     "dc-management-sdk-js": "^1.14.0",
+    "http-status-codes": "^2.2.0",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.1",
     "promise-retry": "^2.0.1",
