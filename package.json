@@ -49,11 +49,6 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm test"
-    }
-  },
   "commitlint": {
     "extends": [
       "@commitlint/config-conventional"
