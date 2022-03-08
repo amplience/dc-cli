@@ -342,6 +342,10 @@ describe('fetch-content', () => {
             {
               facetAs: 'DATE',
               field: 'lastModifiedDate',
+              filter: {
+                type: 'DATE',
+                values: ['-7:DAYS,NOW']
+              },
               range: { start: 'NOW', end: '-7:DAYS' }
             }
           ],
