@@ -143,6 +143,10 @@ export const tryFetchContent = async (
     facetQuery.fields.push({
       facetAs: 'DATE',
       field: 'lastModifiedDate',
+      filter: {
+        type: 'DATE',
+        values: [`${range.end},${range.start}`]
+      },
       range
     });
   }
