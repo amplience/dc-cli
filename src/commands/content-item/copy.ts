@@ -253,6 +253,8 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       if (importResult) {
         log.appendLine('=== Done! ===');
         result = true;
+      } else {
+        log.appendLine('=== Importing content failed or was aborted. ===');
       }
     } catch (e) {
       log.appendLine('An unexpected error occurred: \n' + e.toString());

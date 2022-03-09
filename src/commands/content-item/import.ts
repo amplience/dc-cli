@@ -1011,7 +1011,7 @@ export const handler = async (
     tree = await prepareContentForImport(client, hub, importRepos, null, mapping, log, argv);
   }
 
-  let result = true;
+  let result = tree != null;
 
   if (tree != null) {
     if (!validate) {
