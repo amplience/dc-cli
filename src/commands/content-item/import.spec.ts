@@ -266,7 +266,7 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
       expect(mockContent.metrics.itemsLocaleSet).toEqual(1);
-      expect(argv.importedIds).toEqual(['id1', 'id2', 'id3', 'id4']);
+      expect(argv.importedIds.sort()).toEqual(['id1', 'id2', 'id3', 'id4']);
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/repo/`);
     });
@@ -567,7 +567,7 @@ describe('content-item import command', () => {
       expect(matches.length).toEqual(added.length);
 
       // Should only include content that wasn't skipped.
-      expect(argv.importedIds).toEqual(['id5', 'id6', 'id7', 'id8']);
+      expect(argv.importedIds.sort()).toEqual(['id5', 'id6', 'id7', 'id8']);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
