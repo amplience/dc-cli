@@ -804,7 +804,24 @@ describe('content-item export command', () => {
 
       const exists: ItemTemplate[] = [
         { id: 'id1', label: 'item2', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'exportedIds' },
-        { id: 'id2', label: 'item3', repoId: 'repo1', typeSchemaUri: 'http://type', folderPath: 'exportedIds/nested' }
+        {
+          id: 'id2',
+          label: 'item3',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'exportedIds/nested',
+          body: dependsOn(['id3'])
+        },
+
+        // Dependency - Included in export, but _not_ present in exportedIds list (as it was not explicitly selected)
+        {
+          id: 'id3',
+          label: 'item5',
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folder2',
+          dependancy: 'exportedIds'
+        }
       ];
 
       const skips: ItemTemplate[] = [
@@ -830,7 +847,7 @@ describe('content-item export command', () => {
       await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/`, exists);
       await itemsDontExist(`temp_${process.env.JEST_WORKER_ID}/export/`, skips);
 
-      expect(exportedIds).toEqual(exists.map(item => item.id as string));
+      expect(exportedIds).toEqual(exists.slice(0, 2).map(item => item.id as string));
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/exportedIds/`);
     });

@@ -15,4 +15,5 @@ export interface ImportItemBuilderOptions {
   logFile: FileLog;
 
   revertLog: Promise<FileLog | undefined>;
+  importedIds?: string[];
 }

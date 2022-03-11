@@ -247,7 +247,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
         media: argv.media,
         logFile: log,
-        revertLog: Promise.resolve(undefined)
+        revertLog: Promise.resolve(undefined),
+
+        importedIds: argv.importedIds
       });
 
       if (importResult) {

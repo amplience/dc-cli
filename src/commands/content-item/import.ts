@@ -1014,8 +1014,13 @@ export const handler = async (
   let result = tree != null;
 
   if (tree != null) {
+    const importIds = tree.all.map(dep => dep.owner.content.id);
     if (!validate) {
       result = await importTree(client, tree, mapping, log, argv);
+
+      if (result && argv.importedIds) {
+        argv.importedIds.push(...importIds);
+      }
     } else {
       log.appendLine('--validate was passed, so no content was imported.');
     }

@@ -2,12 +2,14 @@ import { CopyItemBuilderOptions } from '../../../interfaces/copy-item-builder-op
 import { ConfigurationParameters } from '../../configure';
 import { Arguments } from 'yargs';
 
-let outputIds: string[];
+let exportIds: string[];
+let importIds: string[];
 let forceFail = false;
 export const calls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = [];
 
-export const setOutputIds = (ids: string[]): void => {
-  outputIds = ids;
+export const setOutputIds = (exports: string[], imports: string[]): void => {
+  exportIds = exports;
+  importIds = imports;
 };
 
 export const setForceFail = (fail: boolean): void => {
@@ -16,10 +18,15 @@ export const setForceFail = (fail: boolean): void => {
 
 export const handler = async (argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters>): Promise<boolean> => {
   calls.push(argv);
-  const idOut = argv.exportedIds as string[];
+  const importedIds = argv.importedIds as string[];
+  const exportedIds = argv.exportedIds as string[];
 
-  if (idOut) {
-    idOut.push(...outputIds);
+  if (importedIds) {
+    importedIds.push(...importIds);
+  }
+
+  if (exportedIds) {
+    exportedIds.push(...exportIds);
   }
 
   return !forceFail;

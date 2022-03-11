@@ -29,4 +29,5 @@ export interface CopyItemBuilderOptions {
   excludeKeys?: boolean;
 
   exportedIds?: string[];
+  importedIds?: string[];
 }

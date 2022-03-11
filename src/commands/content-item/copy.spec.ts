@@ -250,12 +250,18 @@ describe('content-item copy command', () => {
         republish: true,
 
         excludeKeys: true,
-        media: true
+        media: true,
+
+        exportedIds: ['1'],
+        importedIds: ['2']
       };
       await handler(argv);
 
       expect(exportCalls.length).toEqual(1);
       expect(importCalls.length).toEqual(1);
+
+      expect(exportCalls[0].exportedIds).toEqual(['1']);
+      expect(importCalls[0].importedIds).toEqual(['2']);
 
       expect(exportCalls[0].clientId).toEqual(config.clientId);
       expect(exportCalls[0].clientSecret).toEqual(config.clientSecret);

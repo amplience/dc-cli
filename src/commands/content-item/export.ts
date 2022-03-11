@@ -242,6 +242,10 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     }
   }
 
+  if (argv.exportedIds) {
+    argv.exportedIds.push(...items.map(({ item }) => item.id as string));
+  }
+
   log.appendLine('Scanning for dependancies.');
 
   const repoItems: RepositoryContentItem[] = items.map(item => ({ repo: dummyRepo, content: item.item }));
@@ -338,10 +342,6 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
     filenames.push(resolvedPath);
     log.appendLine(resolvedPath);
     await ensureDirectoryExists(directory);
-
-    if (argv.exportedIds) {
-      argv.exportedIds.push(item.id as string);
-    }
 
     writeJsonToFile(resolvedPath, item);
   }

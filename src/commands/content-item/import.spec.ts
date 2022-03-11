@@ -231,10 +231,17 @@ describe('content-item import command', () => {
       // Create content to import
 
       const templates: ItemTemplate[] = [
-        { label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
-        { label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
-        { label: 'item3', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest', locale: 'en-us' },
-        { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
+        { id: 'id1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
+        { id: 'id2', label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
+        {
+          id: 'id3',
+          label: 'item3',
+          repoId: 'repo',
+          typeSchemaUri: 'http://type',
+          folderPath: 'folderTest',
+          locale: 'en-us'
+        },
+        { id: 'id4', label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
       await createContent(`temp_${process.env.JEST_WORKER_ID}/import/repo/`, templates, false);
@@ -248,7 +255,8 @@ describe('content-item import command', () => {
         ...config,
         dir: `temp_${process.env.JEST_WORKER_ID}/import/repo/`,
         mapFile: `temp_${process.env.JEST_WORKER_ID}/import/repo.json`,
-        baseRepo: 'targetRepo'
+        baseRepo: 'targetRepo',
+        importedIds: []
       };
       await handler(argv);
 
@@ -258,6 +266,7 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
       expect(mockContent.metrics.itemsLocaleSet).toEqual(1);
+      expect(argv.importedIds).toEqual(['id1', 'id2', 'id3', 'id4']);
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/repo/`);
     });
@@ -515,17 +524,17 @@ describe('content-item import command', () => {
 
       const skipped: ItemTemplate[] = [
         // Repo 1 is missing, these should not be created.
-        { label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
-        { label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
-        { label: 'item3', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
-        { label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
+        { id: 'id1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
+        { id: 'id2', label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
+        { id: 'id3', label: 'item3', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
+        { id: 'id4', label: 'item4', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest/nested' }
       ];
 
       const added: ItemTemplate[] = [
-        { label: 'item5', repoId: 'repo', typeSchemaUri: 'http://type2' },
-        { label: 'item6', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest' },
-        { label: 'item7', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest' },
-        { label: 'item8', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest/special' }
+        { id: 'id5', label: 'item5', repoId: 'repo', typeSchemaUri: 'http://type2' },
+        { id: 'id6', label: 'item6', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest' },
+        { id: 'id7', label: 'item7', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest' },
+        { id: 'id8', label: 'item8', repoId: 'repo', typeSchemaUri: 'http://type2', folderPath: 'folderTest/special' }
       ];
 
       await createContent(`temp_${process.env.JEST_WORKER_ID}/import/missingSchema/`, skipped.concat(added), false);
@@ -546,7 +555,8 @@ describe('content-item import command', () => {
         ...config,
         dir: `temp_${process.env.JEST_WORKER_ID}/import/missingSchema/`,
         mapFile: `temp_${process.env.JEST_WORKER_ID}/import/missingSchema.json`,
-        baseRepo: 'targetRepo'
+        baseRepo: 'targetRepo',
+        importedIds: []
       };
       await handler(argv);
 
@@ -555,6 +565,9 @@ describe('content-item import command', () => {
       const matches = await mockContent.filterMatch(added, '', false);
 
       expect(matches.length).toEqual(added.length);
+
+      // Should only include content that wasn't skipped.
+      expect(argv.importedIds).toEqual(['id5', 'id6', 'id7', 'id8']);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((readline as any).responsesLeft()).toEqual(0); // All responses consumed.
