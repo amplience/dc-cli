@@ -162,6 +162,7 @@ export const updateWebhookIfDifferent = async (webhook: Webhook, newWebhook: Web
 };
 
 export const enrichIndex = async (
+  hub: Hub,
   index: SearchIndex,
   enrichedIndex: EnrichedSearchIndex,
   webhooks: Map<string, Webhook> | undefined
@@ -179,6 +180,9 @@ export const enrichIndex = async (
 
   // Update the search index settings.
   await index.related.settings.update(enrichedIndex.settings, false);
+
+  // Updating the settings might have changed the available hal links, so refetch it.
+  index = await hub.related.searchIndexes.get(index.id as string);
 
   if (replicas.size) {
     // Replica settings must also be updated. The replicas may have changed, so fetch them again.
@@ -247,13 +251,13 @@ export const doCreate = async (
 
     const createdIndex = await hub.related.searchIndexes.create(toCreate);
 
-    await enrichIndex(createdIndex, index, webhooks);
+    await enrichIndex(hub, createdIndex, index, webhooks);
 
     log.addAction('CREATE', `${createdIndex.id}`);
 
     return createdIndex;
   } catch (err) {
-    throw new Error(`Error creating index ${index.name}:\n\n${err}`);
+    throw new Error(`Error creating index ${index.name}: ${err}`);
   }
 };
 
@@ -279,13 +283,13 @@ export const doUpdate = async (
 
     const updatedIndex = await retrievedIndex.related.update(retrievedIndex);
 
-    await enrichIndex(updatedIndex, index, webhooks);
+    await enrichIndex(hub, updatedIndex, index, webhooks);
 
     log.addAction('UPDATE', `${retrievedIndex.id}`);
 
     return { index: updatedIndex, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
-    throw new Error(`Error updating index ${index.name}: ${err.message}`);
+    throw new Error(`Error updating index ${index.name}: ${err}`);
   }
 };
 
