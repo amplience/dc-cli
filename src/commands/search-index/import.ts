@@ -83,6 +83,17 @@ export const validateNoDuplicateIndexNames = (importedIndexes: {
   }
 };
 
+const rewriteIndexName = (hub: Hub, index: SearchIndex): void => {
+  const name = index.name as string;
+  const firstDot = name.indexOf('.');
+
+  if (firstDot == -1) {
+    index.name = `${hub.name}.${name}`;
+  } else {
+    index.name = `${hub.name}${name.substring(firstDot)}`;
+  }
+};
+
 export const rewriteIndexNames = (
   hub: Hub,
   importedIndexes: {
@@ -91,19 +102,24 @@ export const rewriteIndexNames = (
 ): void | never => {
   const toRewrite: SearchIndex[] = [...Object.values(importedIndexes)];
   for (const index of Object.values(importedIndexes)) {
+    rewriteIndexName(hub, index);
+
     if (index.replicas) {
+      for (const replica of index.replicas) {
+        const name = replica.name;
+        rewriteIndexName(hub, replica);
+
+        const sReplicas: string[] = index.settings.replicas;
+
+        if (sReplicas) {
+          for (let i = 0; i < sReplicas.length; i++) {
+            if (sReplicas[i] === name) {
+              sReplicas[i] = replica.name as string;
+            }
+          }
+        }
+      }
       toRewrite.push(...index.replicas);
-    }
-  }
-
-  for (const index of toRewrite) {
-    const name = index.name as string;
-    const firstDot = name.indexOf('.');
-
-    if (firstDot == -1) {
-      index.name = `${hub.name}.${name}`;
-    } else {
-      index.name = `${hub.name}${name.substring(firstDot)}`;
     }
   }
 };

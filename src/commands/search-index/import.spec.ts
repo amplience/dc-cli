@@ -860,7 +860,10 @@ describe('search-index import command', (): void => {
             new EnrichedReplica({
               name: 'oldHub.index-name-1_sort-example'
             })
-          ]
+          ],
+          settings: {
+            replicas: ['oldHub.index-name-1_sort-example']
+          }
         }),
         'file-2': new EnrichedSearchIndex({
           name: 'index-name-2'
@@ -874,6 +877,7 @@ describe('search-index import command', (): void => {
       expect(indexesToProcess['file-1'].name).toEqual('newHub.index-name-1');
       expect(indexesToProcess['file-2'].name).toEqual('newHub.index-name-2');
       expect(indexesToProcess['file-1'].replicas[0].name).toEqual('newHub.index-name-1_sort-example');
+      expect(indexesToProcess['file-1'].settings.replicas[0]).toEqual('newHub.index-name-1_sort-example');
     });
   });
 
