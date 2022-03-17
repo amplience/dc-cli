@@ -286,6 +286,45 @@ describe('event import command', () => {
       expect(trySaveMapping).toHaveBeenCalledWith(argv.mapFile, expect.any(ContentMapping), logFile);
       expect(logFile.closed).toBeTruthy();
     });
+
+    it('should save the mapping even if importEvents throws', async function() {
+      const { getHubMock } = mockValues({});
+
+      const logFile = new FileLog();
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile,
+        dir: 'temp/importEvent/',
+        originalIds: false
+      };
+      const event = new EventWithEditions({ id: 'id-1' });
+
+      (loadJsonFromDirectory as jest.Mock).mockResolvedValue({
+        'event1.json': event
+      });
+
+      const importEvents = jest.spyOn(importModule, 'importEvents').mockRejectedValue(new Error('Example'))
+      const trySaveMapping = jest.spyOn(importModule, 'trySaveMapping').mockResolvedValue();
+      const getDefaultMappingPath = jest.spyOn(importModule, 'getDefaultMappingPath').mockReturnValue('mapping.json');
+
+      await handler(argv);
+
+      expect(getHubMock).toHaveBeenCalledWith('hub-id'); //from returned hub
+      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith('temp/importEvent/', EventWithEditions);
+
+      expect(importEvents).toHaveBeenCalledWith(
+        [event],
+        expect.any(ContentMapping),
+        expect.any(Object),
+        expect.any(Hub),
+        argv,
+        logFile
+      );
+      expect(getDefaultMappingPath).toHaveBeenCalledWith('hub-1');
+      expect(trySaveMapping).toHaveBeenCalledWith('mapping.json', expect.any(ContentMapping), logFile);
+      expect(logFile.closed).toBeTruthy();
+    });
   });
 
   describe('shouldUpdateSlot tests', function() {
@@ -1335,8 +1374,4 @@ Array [
       expect(fakeMapping.save).not.toHaveBeenCalled();
     });
   });
-
-  /*
-  describe('handler tests', function() {});
-  */
 });
