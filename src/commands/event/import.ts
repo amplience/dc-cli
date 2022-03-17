@@ -523,7 +523,11 @@ export const handler = async (argv: Arguments<ImportEventBuilderOptions & Config
     log.appendLine(`Creating new mapping file at '${mapFile}'.`);
   }
 
-  await importEvents(sortByEndDate(Object.values(events)), mapping, client, hub, argv, log);
+  try {
+    await importEvents(sortByEndDate(Object.values(events)), mapping, client, hub, argv, log);
+  } catch (e) {
+    log.error('Failed to import events.', e);
+  }
 
   await trySaveMapping(mapFile, mapping, log);
 
