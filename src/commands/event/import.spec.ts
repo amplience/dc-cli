@@ -304,7 +304,7 @@ describe('event import command', () => {
         'event1.json': event
       });
 
-      const importEvents = jest.spyOn(importModule, 'importEvents').mockRejectedValue(new Error('Example'))
+      const importEvents = jest.spyOn(importModule, 'importEvents').mockRejectedValue(new Error('Example'));
       const trySaveMapping = jest.spyOn(importModule, 'trySaveMapping').mockResolvedValue();
       const getDefaultMappingPath = jest.spyOn(importModule, 'getDefaultMappingPath').mockReturnValue('mapping.json');
 
@@ -1037,6 +1037,7 @@ Array [
       newEdition.related.update = mockEdition.related.update;
       (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
       (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
+      (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
       (mockEditionUpdate as jest.Mock).mockResolvedValue(newEdition);
       (mockEditionUnschedule as jest.Mock).mockResolvedValue(undefined);
 
@@ -1071,7 +1072,8 @@ Array [
       await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
 
       expect(mockEditionUnschedule).toHaveBeenCalled();
-      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(mockEditionGet).toHaveBeenNthCalledWith(1, 'id-2');
+      expect(mockEditionGet).toHaveBeenNthCalledWith(3, 'id-2');
       expect(mockEditionUpdate).toHaveBeenCalledTimes(1);
 
       expect(skipSchedule).toHaveBeenCalledWith(importTest[0], true);

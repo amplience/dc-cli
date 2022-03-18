@@ -13,7 +13,7 @@ import {
 } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { loadFileFromDirectory, loadJsonFromDirectory } from '../../services/import.service';
+import { loadJsonFromDirectory } from '../../services/import.service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { ImportEventBuilderOptions } from '../../interfaces/import-event-builder-options.interface';
 import { EditionWithSlots, EventWithEditions } from './export';
@@ -262,7 +262,7 @@ export const importSlots = async (
   }
 };
 
-export const isScheduled = (edition: Edition) =>
+export const isScheduled = (edition: Edition): boolean =>
   edition.publishingStatus === PublishingStatus.PUBLISHED ||
   edition.publishingStatus === PublishingStatus.PUBLISHING ||
   edition.publishingStatus === PublishingStatus.SCHEDULING ||
@@ -288,7 +288,7 @@ export const prepareEditionForSchedule = async (edition: Edition, event: Event):
   }
 };
 
-export const scheduleEdition = async (edition: Edition, log: FileLog) => {
+export const scheduleEdition = async (edition: Edition, log: FileLog): Promise<void> => {
   const warning = await edition.related.schedule(false);
 
   if (warning.errors) {
@@ -424,6 +424,10 @@ export const importEditions = async (
 
     // If the original edition was scheduled, attempt to schedule the new one.
     if (schedule && !isScheduled(realEdition) && isScheduled(edition)) {
+      if (update && edition.slots.length > 0) {
+        // Refetch the edition to make sure it's up to date before scheduling.
+        realEdition = await client.editions.get(realEdition.id as string);
+      }
       await scheduleEdition(realEdition, log);
     }
   }
