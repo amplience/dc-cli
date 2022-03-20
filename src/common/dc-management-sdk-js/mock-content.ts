@@ -10,9 +10,11 @@ import {
   ContentTypeSchema,
   ContentRepositoryContentType,
   Status,
-  ContentTypeCachedSchema
+  ContentTypeCachedSchema,
+  Snapshot
 } from 'dc-management-sdk-js';
 import MockPage from './mock-page';
+import { PublishingHub } from '../../augment/model/PublishingHub';
 
 export interface ItemTemplate {
   label: string;
@@ -90,10 +92,18 @@ export class MockContent {
 
   constructor(private contentService: jest.Mock<DynamicContent>) {
     const mockHub = this.createMockHub();
+    const mockPublishingHub = this.createMockPublishingHub();
 
     const mockFolderGet = jest.fn(id => Promise.resolve(this.folderById.get(id) as Folder));
     const mockRepoGet = jest.fn(id => {
       return Promise.resolve((this.repoById.get(id) as MockRepository).repo);
+    });
+
+    const mockPublishingHubGet = jest.fn(() => {
+      if (this.failHubGet) {
+        throw new Error('Simulated Netowrk Failure.');
+      }
+      return Promise.resolve(mockPublishingHub);
     });
 
     const mockHubGet = jest.fn(() => {
@@ -118,6 +128,9 @@ export class MockContent {
     });
 
     contentService.mockReturnValue(({
+      publishinghubs: {
+        get: mockPublishingHubGet
+      },
       hubs: {
         get: mockHubGet,
         list: mockHubList
@@ -148,6 +161,18 @@ export class MockContent {
     }
 
     return folderName;
+  }
+
+  private createMockPublishingHub(): PublishingHub {
+    const mockPublishingHub = new PublishingHub();
+
+    const mockSnapshotsList = jest.fn().mockImplementation((snapshots: Snapshot[]) => {
+      return Promise.resolve(new MockPage(Snapshot, snapshots));
+    });
+
+    mockPublishingHub.related.snapshots.create = mockSnapshotsList;
+
+    return mockPublishingHub;
   }
 
   private createMockHub(): Hub {
