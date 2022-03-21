@@ -17,6 +17,8 @@ export class EventCloneStep implements CloneHubStep {
     return 'Clone Events';
   }
 
+  isExperimental = true;
+
   async run(state: CloneHubState): Promise<boolean> {
     try {
       state.logFile.appendLine(`Exporting existing events from destination.`);

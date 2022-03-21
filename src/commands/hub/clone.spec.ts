@@ -32,12 +32,13 @@ function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mockStep(name: string, id: string, success: () => boolean): any {
+function mockStep(name: string, id: string, success: () => boolean, isExperimental?: boolean): any {
   return jest.fn().mockImplementation(() => ({
     run: succeedOrFail(jest.fn(), success),
     revert: succeedOrFail(jest.fn(), success),
     getName: jest.fn().mockReturnValue(name),
-    getId: jest.fn().mockReturnValue(id)
+    getId: jest.fn().mockReturnValue(id),
+    isExperimental
   }));
 }
 
@@ -66,7 +67,7 @@ jest.mock('./steps/content-clone-step', () => ({
 }));
 
 jest.mock('./steps/event-clone-step', () => ({
-  EventCloneStep: mockStep('Clone Event', 'event', () => success[5])
+  EventCloneStep: mockStep('Clone Event', 'event', () => success[6], true)
 }));
 
 jest.mock('../../common/log-helpers', () => ({
@@ -135,6 +136,13 @@ describe('hub clone command', () => {
         describe:
           'Directory to export content to, then import from. This must be set to the previous directory for a revert.',
         type: 'string'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('experimental', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Must be passed to use the event clone step. Only use this argument if you fully understand its limitations.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('dstHubId', {
@@ -242,6 +250,7 @@ describe('hub clone command', () => {
       clientId: 'client-id',
       clientSecret: 'client-id',
       hubId: 'hub-id',
+      experimental: true,
 
       revertLog: Promise.resolve(undefined)
     };
@@ -403,6 +412,50 @@ describe('hub clone command', () => {
       }
     });
 
+    it('should exclude experimental steps if experimental is false', async () => {
+      clearMocks();
+      success = [true, true, true, true, true, true, true];
+
+      const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
+        ...yargArgs,
+        ...config,
+        experimental: false,
+
+        dir: `temp_${process.env.JEST_WORKER_ID}/clone/steps`,
+
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone/steps/all.log`),
+
+        force: false,
+        validate: false,
+        skipIncomplete: false,
+        media: true
+      };
+
+      const stepConfig = makeState(argv);
+
+      await handler(argv);
+
+      stepConfig.argv.mapFile = expect.any(String);
+
+      const mocks = getMocks();
+
+      mocks.forEach(mock => {
+        const instance = mock.mock.results[0].value;
+
+        if (instance.isExperimental) {
+          expect(instance.run).not.toHaveBeenCalled();
+        } else {
+          expect(instance.run).toHaveBeenCalledWith(stepConfig);
+        }
+      });
+
+      const loadLog = new FileLog();
+      await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone/steps/all.log`);
+    });
+
     it('should only have one of each type of step', () => {
       const stepsSoFar = new Set<CloneHubStepId>();
 
@@ -425,7 +478,8 @@ describe('hub clone command', () => {
     const config = {
       clientId: 'client-id',
       clientSecret: 'client-id',
-      hubId: 'hub-id'
+      hubId: 'hub-id',
+      experimental: true
     };
 
     beforeAll(async () => {
@@ -643,6 +697,52 @@ describe('hub clone command', () => {
         const loadLog = new FileLog();
         await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone-revert/step/step` + i + '.log');
       }
+    });
+
+    it('should exclude experimental steps if experimental is false', async () => {
+      clearMocks();
+      success = [true, true, true, true, true, true, true];
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
+      await prepareFakeLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps.log`);
+
+      const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
+        ...yargArgs,
+        ...config,
+        experimental: false,
+
+        dir: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps`,
+
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+        logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.log`),
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps.log`),
+
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.json`,
+        force: false,
+        validate: false,
+        skipIncomplete: false,
+        media: true
+      };
+
+      const stepConfig = makeState(argv);
+
+      await handler(argv);
+
+      const mocks = getMocks();
+
+      mocks.forEach(mock => {
+        const instance = mock.mock.results[0].value;
+
+        if (instance.isExperimental) {
+          expect(instance.revert).not.toHaveBeenCalled();
+        } else {
+          expect(instance.revert).toHaveBeenCalledWith(stepConfig);
+        }
+      });
+
+      const loadLog = new FileLog();
+      await loadLog.loadFromFile(`temp_${process.env.JEST_WORKER_ID}/clone-revert/steps/all.log`);
     });
   });
 });

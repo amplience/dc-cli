@@ -44,6 +44,7 @@ describe('content clone step', () => {
       ...yargArgs,
       ...config,
       logFile: new FileLog(),
+      experimental: false,
 
       dir: directory,
 

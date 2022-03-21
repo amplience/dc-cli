@@ -15,6 +15,7 @@ import { CloneHubState } from './model/clone-hub-state';
 import { LogErrorLevel } from '../../common/archive/archive-log';
 import { ExtensionCloneStep } from './steps/extension-clone-step';
 import { EventCloneStep } from './steps/event-clone-step';
+import { CloneHubStep } from './model/clone-hub-step';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -42,7 +43,7 @@ export const desc =
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('hub', 'clone', platform);
 
-export const steps = [
+export const steps: CloneHubStep[] = [
   new SettingsCloneStep(),
   new ExtensionCloneStep(),
   new SchemaCloneStep(),
@@ -58,6 +59,13 @@ export const builder = (yargs: Argv): void => {
       describe:
         'Directory to export content to, then import from. This must be set to the previous directory for a revert.',
       type: 'string'
+    })
+
+    .option('experimental', {
+      type: 'boolean',
+      boolean: true,
+      describe:
+        'Must be passed to use the event clone step. Only use this argument if you fully understand its limitations.'
     })
 
     .option('dstHubId', {
@@ -163,7 +171,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     argv.mapFile = getDefaultMappingPath(`hub-${argv.dstHubId}`);
   }
 
-  const { hubId, clientId, clientSecret } = argv;
+  const { hubId, clientId, clientSecret, experimental } = argv;
 
   const dstHubId = argv.dstHubId || hubId;
   const dstClientId = argv.dstClientId || clientId;
@@ -213,6 +221,10 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     for (let i = stepIndex; i < steps.length; i++) {
       const step = steps[i];
 
+      if (step.isExperimental && !experimental) {
+        continue;
+      }
+
       log.switchGroup(step.getName());
       revertLog.switchGroup(step.getName());
       log.appendLine(`=== Reverting Step ${i} - ${step.getName()} ===`);
@@ -231,6 +243,10 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
   } else {
     for (let i = stepIndex; i < steps.length; i++) {
       const step = steps[i];
+
+      if (step.isExperimental && !experimental) {
+        continue;
+      }
 
       log.switchGroup(step.getName());
       log.appendLine(`=== Running Step ${i} - ${step.getName()} ===`);
