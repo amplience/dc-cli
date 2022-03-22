@@ -90,6 +90,7 @@ describe('event clone step', () => {
       ...config,
       logFile: new FileLog(),
       experimental: true,
+      mapFile: 'mapping.json',
 
       dir: directory,
 
@@ -159,6 +160,7 @@ describe('event clone step', () => {
       originalIds: false,
       schedule: true,
       experimental: true,
+      mapFile: 'mapping.json',
       catchup: false,
       logFile: state.logFile,
       ...state.to
@@ -244,6 +246,7 @@ describe('event clone step', () => {
       originalIds: true,
       schedule: true,
       experimental: true,
+      mapFile: 'mapping.json',
       catchup: false,
       logFile: state.logFile,
       ...state.to

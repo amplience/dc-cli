@@ -52,6 +52,7 @@ export class EventCloneStep implements CloneHubStep {
       await importEvent({
         dir: join(state.path, 'event'),
         logFile: state.logFile,
+        mapFile: state.argv.mapFile,
         originalIds: false,
         schedule: true,
         experimental: true,
@@ -89,6 +90,7 @@ export class EventCloneStep implements CloneHubStep {
           {
             dir: join(state.path, 'oldEvent'),
             logFile: state.logFile,
+            mapFile: state.argv.mapFile,
             originalIds: true,
             schedule: true,
             experimental: true,
