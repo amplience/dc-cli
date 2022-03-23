@@ -5,7 +5,9 @@ export class PublishingHub extends HalResource {
   public readonly related = {
     snapshots: {
       create: (resource: Snapshot[]): Promise<PublishingSnapshotResultList> =>
-        this.performActionThatReturnsResource('batch-create-snapshots', {}, resource, PublishingSnapshotResultList)
+        this.performActionThatReturnsResource('batch-create-snapshots', {}, resource, PublishingSnapshotResultList),
+      list: (): Promise<PublishingSnapshotResultList> =>
+        this.fetchLinkedResource('snapshots', {}, PublishingSnapshotResultList)
     }
   };
 }

@@ -1,19 +1,24 @@
 import { Arguments, Argv } from 'yargs';
-import { ConfigurationParameters } from '../configure';
-import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import augmentedDynamicContentClientFactory from '../../services/augmented-dynamic-content-client-factory';
-import { FileLog } from '../../common/file-log';
-import { PublishItemBuilderOptions } from '../../interfaces/publish-item-builder-options.interface';
-import paginator from '../../common/dc-management-sdk-js/paginator';
+import { ConfigurationParameters } from './configure';
+import dynamicContentClientFactory from '../services/dynamic-content-client-factory';
+import augmentedDynamicContentClientFactory from '../services/augmented-dynamic-content-client-factory';
+import { FileLog } from '../common/file-log';
+import { PublishItemBuilderOptions } from '../interfaces/publish-item-builder-options.interface';
+import paginator from '../common/dc-management-sdk-js/paginator';
 import { ContentItem, Folder, DynamicContent, Hub, Snapshot, SnapshotType } from 'dc-management-sdk-js';
-import { getDefaultLogPath } from '../../common/log-helpers';
-import { applyFacet, withOldFilters } from '../../common/filter/facet';
+import { getDefaultLogPath } from '../common/log-helpers';
+import { applyFacet, withOldFilters } from '../common/filter/facet';
 
-import { PublishingSnapshotResultList } from '../../augment/model/PublishingSnapshotResultList';
-import { PublishingSnapshotCreator } from '../../augment/model/PublishingSnapshotCreator';
+import { PublishingSnapshotResultList } from '../augment/model/PublishingSnapshotResultList';
+import { PublishingSnapshot } from '../augment/model/PublishingSnapshot';
+import { PublishingJob } from '../augment/model/PublishingJob';
+
+export const command = 'publish';
+
+export const desc = 'Publish Content Items';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
-  getDefaultLogPath('item', 'export', platform);
+  getDefaultLogPath('item', 'publish', platform);
 
 export const builder = (yargs: Argv): void => {
   yargs
@@ -50,10 +55,6 @@ const getContentItems = async (
 ): Promise<ContentItem[]> => {
   const items: ContentItem[] = [];
 
-  const folderIds: string[] = [];
-
-  const repoItems: ContentItem[] = [];
-
   const repoIds = typeof repoId === 'string' ? [repoId] : repoId || [];
 
   const repositories = await (repoId != null
@@ -63,58 +64,14 @@ const getContentItems = async (
   for (let i = 0; i < repositories.length; i++) {
     const repository = repositories[i];
 
-    // Add content items in repo base folder. Cache the other items so we don't have to request them again.
-    let newItems: ContentItem[];
     try {
       const allItems = await paginator(repository.related.contentItems.list, { status: 'ACTIVE' });
 
-      Array.prototype.push.apply(repoItems, allItems);
-      newItems = allItems.filter(item => item.folderId == null);
+      Array.prototype.push.apply(items, allItems);
     } catch (e) {
       log.warn(`Could not get items from repository ${repository.name} (${repository.id})`, e);
       continue;
     }
-
-    Array.prototype.push.apply(items, newItems);
-  }
-
-  const parallelism = 10;
-  const folders = await Promise.all(folderIds.map(id => client.folders.get(id)));
-  log.appendLine(`Found ${folders.length} base folders.`);
-
-  const nextFolders: Folder[] = [];
-  let processFolders = folders;
-
-  while (processFolders.length > 0) {
-    const promises = processFolders.map(
-      async (folder: Folder): Promise<void> => {
-        let newItems: ContentItem[];
-        // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
-        // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
-        newItems = repoItems.filter(item => item.folderId == folder.id);
-        if (newItems.length == 0) {
-          log.appendLine(`Fetching additional folder: ${folder.name}`);
-          try {
-            newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
-          } catch (e) {
-            log.warn(`Could not get items from folder ${folder.name} (${folder.id})`, e);
-            return;
-          }
-        }
-        Array.prototype.push.apply(items, newItems);
-
-        try {
-          const subfolders = await paginator(folder.related.folders.list);
-          Array.prototype.push.apply(nextFolders, subfolders);
-        } catch (e) {
-          log.warn(`Could not get subfolders from folder ${folder.name} (${folder.id})`, e);
-        }
-      }
-    );
-
-    await Promise.all(promises);
-
-    processFolders = nextFolders.splice(0, Math.min(nextFolders.length, parallelism));
   }
 
   return items;
@@ -146,14 +103,16 @@ export const handler = async (argv: Arguments<PublishItemBuilderOptions & Config
         new Snapshot({
           contentRoot: item.id,
           comment: '',
-          createdFrom: PublishingSnapshotCreator.CONTENTITEM,
+          createdFrom: 'content-item',
           type: SnapshotType.USER
         })
     )
   );
 
-  snapshotList.snapshots.forEach(snapshot => {
-    snapshot.related.publish(new Date());
+  snapshotList.snapshots.forEach(async snapshot => {
+    const fetchedSnapshot: PublishingSnapshot = await snapshot.related.self();
+    const publishingJob: PublishingJob = await fetchedSnapshot.related.publish(new Date());
+    log.appendLine(`Content item snapshot published: ${snapshot.id}, created on ${publishingJob.createdDate}`);
   });
 
   await log.close();

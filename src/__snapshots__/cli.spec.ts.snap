@@ -10,7 +10,9 @@ Commands:
   dc-cli content-type-schema  Content Type Schema
   dc-cli content-type         Content Type
   dc-cli event                Event
+  dc-cli publish              Publish Content Items
   dc-cli settings             Settings
+  dc-cli workflow             Change workflow of Content Items
 
 Options:
   --help          Show help                                            [boolean]
