@@ -112,7 +112,9 @@ export const handler = async (argv: Arguments<PublishItemBuilderOptions & Config
   snapshotList.snapshots.forEach(async snapshot => {
     const fetchedSnapshot: PublishingSnapshot = await snapshot.related.self();
     const publishingJob: PublishingJob = await fetchedSnapshot.related.publish(new Date());
-    log.appendLine(`Content item snapshot published: ${snapshot.id}, created on ${publishingJob.createdDate}`);
+    log.appendLine(
+      `Content item snapshot published: ${snapshot.rootContentItem.label}, ${snapshot.locale}, ${snapshot.rootContentItem.id}, created on ${publishingJob.createdDate}`
+    );
   });
 
   await log.close();
