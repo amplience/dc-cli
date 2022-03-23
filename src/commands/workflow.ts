@@ -98,14 +98,7 @@ export const handler = async (argv: Arguments<WorkflowItemBuilderOptions & Confi
   if (targetState) {
     log.appendLine(`Target workflow state: ${targetState.label}, id ${targetState.id}`);
     items.forEach(async item => {
-      const updateContentItem: ContentItem = await item.related.update(
-        new ContentItem({
-          workflow: {
-            state: targetState.id
-          },
-          version: item.version
-        })
-      );
+      const updateContentItem: ContentItem = await item.related.assignWorkflowState(targetState);
       log.appendLine(
         `Updating workflow state of ${item.label}, ${item.locale}, ${item.version} to '${targetState.label}'`
       );
