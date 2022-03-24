@@ -1,17 +1,17 @@
 import { Arguments, Argv } from 'yargs';
-import { ConfigurationParameters } from './configure';
-import dynamicContentClientFactory from '../services/dynamic-content-client-factory';
-import augmentedDynamicContentClientFactory from '../services/augmented-dynamic-content-client-factory';
-import { FileLog } from '../common/file-log';
-import { PublishItemBuilderOptions } from '../interfaces/publish-item-builder-options.interface';
-import paginator from '../common/dc-management-sdk-js/paginator';
-import { ContentItem, Folder, DynamicContent, Hub, Snapshot, SnapshotType, Status } from 'dc-management-sdk-js';
-import { getDefaultLogPath } from '../common/log-helpers';
-import { applyFacet, withOldFilters } from '../common/filter/facet';
+import { ConfigurationParameters } from '../configure';
+import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import augmentedDynamicContentClientFactory from '../../services/augmented-dynamic-content-client-factory';
+import { FileLog } from '../../common/file-log';
+import { PublishItemBuilderOptions } from '../../interfaces/publish-item-builder-options.interface';
+import paginator from '../../common/dc-management-sdk-js/paginator';
+import { ContentItem, DynamicContent, Hub, Snapshot, SnapshotType, Status } from 'dc-management-sdk-js';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { applyFacet, withOldFilters } from '../../common/filter/facet';
 
-import { PublishingSnapshotResultList } from '../augment/model/PublishingSnapshotResultList';
-import { PublishingSnapshot } from '../augment/model/PublishingSnapshot';
-import { PublishingJob } from '../augment/model/PublishingJob';
+import { PublishingSnapshotResultList } from '../../augment/model/PublishingSnapshotResultList';
+import { PublishingSnapshot } from '../../augment/model/PublishingSnapshot';
+import { PublishingJob } from '../../augment/model/PublishingJob';
 
 export const command = 'publish';
 
@@ -97,25 +97,46 @@ export const handler = async (argv: Arguments<PublishItemBuilderOptions & Config
   const augmentedDynamicContent = augmentedDynamicContentClientFactory(argv);
   const publishingHub = await augmentedDynamicContent.publishinghubs.get(argv.hubId);
 
-  const snapshotList: PublishingSnapshotResultList = await publishingHub.related.snapshots.create(
-    items.map(
-      item =>
-        new Snapshot({
-          contentRoot: item.id,
-          comment: '',
-          createdFrom: 'content-item',
-          type: SnapshotType.USER
-        })
-    )
-  );
+  log.appendLine(`Publishing ${items.length} items.`);
 
-  snapshotList.snapshots.forEach(async snapshot => {
-    const fetchedSnapshot: PublishingSnapshot = await snapshot.related.self();
-    const publishingJob: PublishingJob = await fetchedSnapshot.related.publish(new Date());
-    log.appendLine(
-      `Content item snapshot published: ${snapshot.rootContentItem.label}, ${snapshot.locale}, ${snapshot.rootContentItem.id}, created on ${publishingJob.createdDate}`
-    );
-  });
+  const limit = 20;
+  log.appendLine(`Publishing snapshots in batches of ${limit} items.`);
+
+  let offset = 0;
+  for (let i = 0; i + offset < items.length; i += limit) {
+    const batch = items.slice(i + offset, i + offset + limit);
+
+    try {
+      const snapshotList: PublishingSnapshotResultList = await publishingHub.related.snapshots.create(
+        batch.map(
+          item =>
+            new Snapshot({
+              contentRoot: item.id,
+              comment: '',
+              createdFrom: 'content-item',
+              type: SnapshotType.USER
+            })
+        )
+      );
+
+      snapshotList.snapshots.forEach(async snapshot => {
+        const fetchedSnapshot: PublishingSnapshot = await snapshot.related.self();
+        const publishingJob: PublishingJob = await fetchedSnapshot.related.publish(new Date());
+        log.appendLine(
+          `Content item snapshot published: ${snapshot.rootContentItem.label}, ${snapshot.locale}, ${snapshot.rootContentItem.id}, created on ${publishingJob.createdDate}`
+        );
+      });
+    } catch (e) {
+      log.appendLine(
+        `Error caught while publishing batch: ${e.message}, this is likely due to an archived item. Skipping the whole batch. Check the log for more details.`
+      );
+      continue;
+    }
+
+    if (i == limit) {
+      offset += limit;
+    }
+  }
 
   await log.close();
 };
