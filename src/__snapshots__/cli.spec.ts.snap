@@ -12,8 +12,10 @@ Commands:
   dc-cli event                Event
   dc-cli extension            Extension
   dc-cli hub                  Hub
+  dc-cli publish              Publish Content Items
   dc-cli search-index         Search Index
   dc-cli settings             Settings
+  dc-cli workflow             Change workflow of Content Items
 
 Options:
   --help          Show help                                            [boolean]

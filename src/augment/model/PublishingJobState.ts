@@ -1,0 +1,9 @@
+export declare enum PublishingJobState {
+  CREATED = 'CREATED',
+  CANCELLED = 'CANCELLED',
+  PREPARING = 'PREPARING',
+  WAITING = 'WAITING',
+  PUBLISHING = 'PUBLISHING',
+  FAILED = 'FAILED',
+  COMPLETED = 'COMPLETED'
+}
