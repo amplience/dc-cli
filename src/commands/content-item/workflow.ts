@@ -1,12 +1,12 @@
 import { Arguments, Argv } from 'yargs';
-import { ConfigurationParameters } from './configure';
-import dynamicContentClientFactory from '../services/dynamic-content-client-factory';
-import { FileLog } from '../common/file-log';
-import { WorkflowItemBuilderOptions } from '../interfaces/workflow-item-builder-options.interface';
-import paginator from '../common/dc-management-sdk-js/paginator';
+import { ConfigurationParameters } from '../configure';
+import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { FileLog } from '../../common/file-log';
+import { WorkflowItemBuilderOptions } from '../../interfaces/workflow-item-builder-options.interface';
+import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentItem, DynamicContent, Hub, Status, WorkflowState } from 'dc-management-sdk-js';
-import { getDefaultLogPath } from '../common/log-helpers';
-import { applyFacet, withOldFilters } from '../common/filter/facet';
+import { getDefaultLogPath } from '../../common/log-helpers';
+import { applyFacet, withOldFilters } from '../../common/filter/facet';
 
 export const command = 'workflow';
 
@@ -90,20 +90,40 @@ export const handler = async (argv: Arguments<WorkflowItemBuilderOptions & Confi
 
   const targetStates: WorkflowState[] = await paginator(hub.related.workflowStates.list);
   const targetState: WorkflowState | undefined = targetStates.find(i => i.label === targetWorkflowLabel);
+
   //Filter using the facet, if present.
   if (facet) {
     items = applyFacet(items, facet);
   }
 
   if (targetState) {
-    log.appendLine(`Target workflow state: ${targetState.label}, id ${targetState.id}`);
-    items.forEach(async item => {
-      const updateContentItem: ContentItem = await item.related.assignWorkflowState(targetState);
-      log.appendLine(
-        `Updating workflow state of ${item.label}, ${item.locale}, ${item.version} to '${targetState.label}'`
-      );
-      log.appendLine(JSON.stringify(updateContentItem));
-    });
+    log.appendLine(`Target workflow state: ${targetState.label}, id ${targetState.id} updating ${items.length} items.`);
+
+    const limit = 20;
+    log.appendLine(`Updating in batches of ${limit} items.`);
+
+    let offset = 0;
+    for (let i = 0; i + offset < items.length; i += limit) {
+      const batch = items.slice(i + offset, i + offset + limit);
+
+      try {
+        batch.forEach(async item => {
+          await item.related.assignWorkflowState(targetState);
+          log.appendLine(
+            `Updating workflow state of ${item.label}, locale: ${item.locale}, version: ${item.version} to '${targetState.label}'`
+          );
+        });
+      } catch (e) {
+        log.appendLine(
+          `Error caught while updating batch: ${e.message}. Skipping the whole batch. Check the log for more details.`
+        );
+        continue;
+      }
+
+      if (i == limit) {
+        offset += limit;
+      }
+    }
   } else {
     log.appendLine(`Workflow not found ${argv.targetWorkflowLabel} - please check spelling`);
   }

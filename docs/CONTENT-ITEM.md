@@ -27,6 +27,8 @@ Return to [README.md](../README.md) for information on other command categories.
     - [archive](#archive)
     - [unarchive](#unarchive)
     - [tree](#tree)
+    - [publish](#publish)
+    - [workflow](#workflow)
 
 <!-- /MarkdownTOC -->
 
@@ -74,7 +76,7 @@ If a mapping file does not exist at the point of import, then any imported conte
 
 ### Facets
 
-The content item export, copy, move, archive and unarchive commands allow the user to provide a facet string to filter the content that the commands work on. Multiple of these can be applied at a time, and you can even match on a regular expressions (RegEx) string. Note that you will need to surround your facet in quotes if it contains a space, which will change how backslash escaping works.
+The content item export, copy, move, publish, workflow, archive and unarchive commands allow the user to provide a facet string to filter the content that the commands work on. Multiple of these can be applied at a time, and you can even match on a regular expressions (RegEx) string. Note that you will need to surround your facet in quotes if it contains a space, which will change how backslash escaping works.
 
 - `name`: Filter on content item label. Example: `--facet "name:exact name match"`
 - `schema`: Filter on schema ids. Example: `--facet schema:http://example.com/schema.json`
@@ -370,3 +372,23 @@ The tree command only uses [common options](#Common Options)
 ##### Generate a content item tree for a filesystem directory
 
 `dc-cli content-item tree ./myDirectory/content`
+
+### publish
+
+Snapshots and publishes content-items.
+
+#### Examples
+
+##### Publish a batch of content-items specified by the facet
+
+`dc-cli content-item publish --facet "schema:/Teaser|Homepage/" --repoId aaa11122aaff333ff22ff`
+
+### workflow
+
+Updates the workflow of the content-items to the target workflow.
+
+#### Examples
+
+##### Update the workflow of a batch of content-items specified by the facet
+
+`dc-cli content-item workflow --targetWorkflowLabel "Ready For Translation" --facet "schema:/Teaser|Homepage/" --repoId aaa11122aaff333ff22ff`
