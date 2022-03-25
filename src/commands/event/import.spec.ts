@@ -643,32 +643,39 @@ describe('event import command', () => {
       const edition = new Edition();
       const log = new FileLog();
 
-      edition.related.schedule = jest.fn().mockResolvedValue({
-        errors: [
-          {
-            level: 'WARNING',
-            code: 'EDITION_SCHEDULE_OVERLAP',
-            message: 'Edition Schedule Overlap. Please try again later.',
-            overlaps: [
-              {
-                editionId: 'edition-id',
-                name: 'Test schedule edition',
-                start: '2022-01-07T15:31:47.337Z'
-              }
-            ]
-          },
-          {
-            level: 'WARNING',
-            code: 'EDITION_CONTAINS_SLOT_COLLISIONS',
-            message: 'Edition contains slots that collide with other editions.'
-          },
-          {
-            level: 'ERROR',
-            code: 'FAKE_ERROR',
-            message: 'This is an error.'
+      edition.related.schedule = jest
+        .fn()
+        .mockRejectedValueOnce({
+          response: {
+            data: {
+              errors: [
+                {
+                  level: 'WARNING',
+                  code: 'EDITION_SCHEDULE_OVERLAP',
+                  message: 'Edition Schedule Overlap. Please try again later.',
+                  overlaps: [
+                    {
+                      editionId: 'edition-id',
+                      name: 'Test schedule edition',
+                      start: '2022-01-07T15:31:47.337Z'
+                    }
+                  ]
+                },
+                {
+                  level: 'WARNING',
+                  code: 'EDITION_CONTAINS_SLOT_COLLISIONS',
+                  message: 'Edition contains slots that collide with other editions.'
+                },
+                {
+                  level: 'ERROR',
+                  code: 'FAKE_ERROR',
+                  message: 'This is an error.'
+                }
+              ]
+            }
           }
-        ]
-      });
+        })
+        .mockResolvedValueOnce({}); // Second call is resolved.
 
       await importModule.scheduleEdition(edition, log);
 

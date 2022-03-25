@@ -28,6 +28,7 @@ import {
 import { SnapshotCreator } from 'dc-management-sdk-js/build/main/lib/model/SnapshotCreator';
 import { isEqual } from 'lodash';
 import { dateMax, dateOffset, sortByEndDate, TimeRange } from '../../common/import/date-helpers';
+import { EditionScheduleStatus } from '../../common/dc-management-sdk-js/event-schedule-error';
 
 export const InstantSecondsAllowance = 5;
 export const EditionSecondsAllowance = 5;
@@ -289,26 +290,37 @@ export const prepareEditionForSchedule = async (edition: Edition, event: Event):
 };
 
 export const scheduleEdition = async (edition: Edition, log: FileLog): Promise<void> => {
-  const warning = await edition.related.schedule(false);
+  try {
+    await edition.related.schedule(false);
+  } catch (e) {
+    if (e.response && e.response.data && typeof e.response.data === 'object') {
+      // Attempt to parse the response data.
 
-  if (warning.errors) {
-    for (const error of warning.errors) {
-      if (error.level === 'WARNING') {
-        let message = `${error.code}: ${error.message}`;
+      const warning = new EditionScheduleStatus(e.response.data);
 
-        if (error.overlaps) {
-          message += ` (${error.overlaps
-            .map(overlap => `${overlap.name} - ${overlap.editionId} ${overlap.start}`)
-            .join(', ')})`;
+      if (warning.errors) {
+        for (const error of warning.errors) {
+          if (error.level === 'WARNING') {
+            let message = `${error.code}: ${error.message}`;
+
+            if (error.overlaps) {
+              message += ` (${error.overlaps
+                .map(overlap => `${overlap.name} - ${overlap.editionId} ${overlap.start}`)
+                .join(', ')})`;
+            }
+
+            log.warn(message);
+          } else {
+            log.error(`${error.code}: ${error.message}`);
+          }
         }
 
-        log.warn(message);
-      } else {
-        log.error(`${error.code}: ${error.message}`);
+        // Errors the second time will be thrown (ignoreWarnings is passed).
+        await edition.related.schedule(true);
       }
+    } else {
+      throw e;
     }
-
-    await edition.related.schedule(true);
   }
 };
 
