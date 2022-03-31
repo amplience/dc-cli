@@ -4,4 +4,5 @@ export interface PublishItemBuilderOptions {
   facet?: string;
   logFile?: FileLog;
   repoId?: string[] | string;
+  dryRun?: boolean;
 }
