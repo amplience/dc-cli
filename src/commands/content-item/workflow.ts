@@ -19,11 +19,13 @@ export const builder = (yargs: Argv): void => {
   yargs
     .option('repoId', {
       type: 'string',
+      demandOption: true,
       describe:
         'Change workflow of content from within a given repository. Directory structure will start at the specified repository'
     })
     .option('facet', {
       type: 'string',
+      demandOption: true,
       describe:
         "Change workflow of content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
     })
@@ -35,6 +37,10 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.'
+    })
+    .option('dryRun', {
+      type: 'boolean',
+      hidden: true
     })
     .option('name', {
       type: 'string',
@@ -77,19 +83,40 @@ const getContentItems = async (
 };
 
 export const handler = async (argv: Arguments<WorkflowItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { repoId, logFile, targetWorkflowLabel } = argv;
+  const { repoId, logFile, targetWorkflowLabel, dryRun } = argv;
 
   const facet = withOldFilters(argv.facet, argv);
 
-  const client = dynamicContentClientFactory(argv);
   const log = typeof logFile === 'string' || logFile == null ? new FileLog(logFile) : logFile;
+
+  if (!dryRun) {
+    log.appendLine(
+      `Due to the wide impact of this command, please ensure you are satisfied with the impact by first running with the 'dryRun' option.`
+    );
+  } else {
+    log.appendLine(`Running in dry run mode.`);
+  }
+
+  const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
 
   log.appendLine('Retrieving content items, please wait.');
   let items: ContentItem[] = await getContentItems(client, hub, log, repoId);
 
+  if (items.length === 0) {
+    log.appendLine('No items found. Exiting.');
+    await log.close();
+    return;
+  }
+
   const targetStates: WorkflowState[] = await paginator(hub.related.workflowStates.list);
   const targetState: WorkflowState | undefined = targetStates.find(i => i.label === targetWorkflowLabel);
+
+  if (!targetState) {
+    log.appendLine(`--targetWorkflowLabel '${targetWorkflowLabel}' not found. Exiting.`);
+    await log.close();
+    return;
+  }
 
   //Filter using the facet, if present.
   if (facet) {
@@ -108,9 +135,13 @@ export const handler = async (argv: Arguments<WorkflowItemBuilderOptions & Confi
 
       try {
         batch.forEach(async item => {
-          await item.related.assignWorkflowState(targetState);
+          if (!dryRun) {
+            await item.related.assignWorkflowState(targetState);
+          }
           log.appendLine(
-            `Updating workflow state of ${item.label}, locale: ${item.locale}, version: ${item.version} to '${targetState.label}'`
+            `Updating workflow state of ${item.label}, locale: ${item.locale}, version: ${item.version} from id ${
+              item.workflow ? item.workflow.state : "'none'"
+            } to ${targetState.id} (${targetState.label})'`
           );
         });
       } catch (e) {

@@ -5,4 +5,5 @@ export interface WorkflowItemBuilderOptions {
   logFile?: FileLog;
   repoId?: string[] | string;
   targetWorkflowLabel?: string;
+  dryRun?: boolean;
 }

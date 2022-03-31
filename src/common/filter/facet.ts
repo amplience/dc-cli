@@ -11,6 +11,7 @@ interface Facet {
   name?: string;
   schema?: string;
   status?: string;
+  workflowId?: string;
   lastModifiedDate?: FacetRange | DatePreset;
 }
 
@@ -128,6 +129,7 @@ export function applyFacet(items: ContentItem[], facetOrString: Facet | string):
     if (facet.name && !equalsOrRegex(item.label, facet.name)) return false;
     if (facet.schema && !equalsOrRegex(item.body._meta.schema, facet.schema)) return false;
     if (facet.status && !equalsOrRegex(item.status, facet.status)) return false;
+    if (facet.workflowId && (!item.workflow || !equalsOrRegex(item.workflow.state, facet.workflowId))) return false;
 
     // Date range checks.
     if (facet.lastModifiedDate && !dateRangeMatch(item.lastModifiedDate, facet.lastModifiedDate)) return false;
