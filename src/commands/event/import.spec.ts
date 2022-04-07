@@ -628,7 +628,7 @@ describe('event import command', () => {
 
   describe('scheduleEdition tests', function() {
     it('should schedule without logging anything if no warnings are returned', async function() {
-      const edition = new Edition();
+      const edition = new Edition({ lastModifiedDate: 'date' });
       const log = new FileLog();
 
       edition.related.schedule = jest.fn().mockResolvedValue({});
@@ -636,11 +636,11 @@ describe('event import command', () => {
       await importModule.scheduleEdition(edition, log);
 
       expect(edition.related.schedule).toHaveBeenCalledTimes(1);
-      expect(edition.related.schedule).toHaveBeenCalledWith(false);
+      expect(edition.related.schedule).toHaveBeenCalledWith(false, 'date');
       expect(log.accessGroup).toEqual([]);
     });
     it('should log warnings/errors if they are returned, and try again with ignoreWarnings true', async function() {
-      const edition = new Edition();
+      const edition = new Edition({ lastModifiedDate: 'date' });
       const log = new FileLog();
 
       edition.related.schedule = jest
@@ -680,8 +680,8 @@ describe('event import command', () => {
       await importModule.scheduleEdition(edition, log);
 
       expect(edition.related.schedule).toHaveBeenCalledTimes(2);
-      expect(edition.related.schedule).toHaveBeenNthCalledWith(1, false);
-      expect(edition.related.schedule).toHaveBeenNthCalledWith(2, true);
+      expect(edition.related.schedule).toHaveBeenNthCalledWith(1, false, 'date');
+      expect(edition.related.schedule).toHaveBeenNthCalledWith(2, true, 'date');
       expect(log.accessGroup).toMatchInlineSnapshot(`
 Array [
   Object {

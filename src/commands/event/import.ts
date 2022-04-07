@@ -291,7 +291,7 @@ export const prepareEditionForSchedule = async (edition: Edition, event: Event):
 
 export const scheduleEdition = async (edition: Edition, log: FileLog): Promise<void> => {
   try {
-    await edition.related.schedule(false);
+    await edition.related.schedule(false, edition.lastModifiedDate);
   } catch (e) {
     if (e.response && e.response.data && typeof e.response.data === 'object') {
       // Attempt to parse the response data.
@@ -316,7 +316,7 @@ export const scheduleEdition = async (edition: Edition, log: FileLog): Promise<v
         }
 
         // Errors the second time will be thrown (ignoreWarnings is passed).
-        await edition.related.schedule(true);
+        await edition.related.schedule(true, edition.lastModifiedDate);
       }
     } else {
       throw e;
