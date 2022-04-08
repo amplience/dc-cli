@@ -46,7 +46,7 @@ export const steps = [
   new ExtensionCloneStep(),
   new SchemaCloneStep(),
   new TypeCloneStep(),
-  new IndexCloneStep(),
+  // new IndexCloneStep(), # Algolia error (o.O) Ampleinece is workiung on a fix - until then we will skip this step
   new ContentCloneStep()
 ];
 
