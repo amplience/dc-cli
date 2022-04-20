@@ -556,11 +556,41 @@ describe('event import command', () => {
       futureSpy.mockResolvedValueOnce('3');
       futureSpy.mockResolvedValueOnce('4');
 
-      importModule.prepareEditionForSchedule(edition, event);
+      await importModule.prepareEditionForSchedule(edition, event);
       expect(importModule.moveDateToFuture).not.toHaveBeenCalled();
 
       edition.publishingStatus = PublishingStatus.SCHEDULED;
       await importModule.prepareEditionForSchedule(edition, event);
+      expect(importModule.moveDateToFuture).toHaveBeenNthCalledWith(
+        1,
+        '1',
+        event,
+        importModule.EditionSecondsAllowance
+      );
+      expect(importModule.moveDateToFuture).toHaveBeenNthCalledWith(
+        2,
+        '2',
+        event,
+        importModule.ScheduleSecondsAllowance
+      );
+      expect(edition.start).toEqual('3');
+      expect(edition.end).toEqual('4');
+
+      jest.resetAllMocks();
+    });
+
+    it('should move the start and end dates to the future if the force parameter is true', async function() {
+      const edition = new Edition({ start: '1', end: '2', publishingStatus: PublishingStatus.DRAFT });
+      const event = new Event();
+
+      const futureSpy = jest.spyOn(importModule, 'moveDateToFuture');
+      futureSpy.mockResolvedValueOnce('3');
+      futureSpy.mockResolvedValueOnce('4');
+
+      await importModule.prepareEditionForSchedule(edition, event);
+      expect(importModule.moveDateToFuture).not.toHaveBeenCalled();
+
+      await importModule.prepareEditionForSchedule(edition, event, true);
       expect(importModule.moveDateToFuture).toHaveBeenNthCalledWith(
         1,
         '1',
@@ -811,7 +841,7 @@ Array [
 
       mapping.registerSlot('id-1', 'id-2');
 
-      const rewriteSnapshots = jest.spyOn(importModule, 'rewriteSnapshots').mockResolvedValue();
+      const rewriteSnapshots = jest.spyOn(importModule, 'rewriteSnapshots').mockResolvedValue(false);
       const importTest = [
         new EditionSlot({
           id: 'id-1',
@@ -822,7 +852,9 @@ Array [
       const realEdition = new Edition();
       realEdition.related.slots.list = jest.fn().mockResolvedValue(new MockPage(EditionSlot, [realSlot]));
 
-      await importSlots(importTest, mapping, hub, realEdition, argv, log);
+      const result = await importSlots(importTest, mapping, hub, realEdition, argv, log);
+
+      expect(result).toBeFalsy(); // rewriteSnapshots returns false.
 
       expect(realEdition.related.slots.list).toHaveBeenCalledTimes(1);
       expect(realSlot.related.content).toHaveBeenCalledTimes(1);
@@ -838,7 +870,7 @@ Array [
 
       const { hub, argv, log, mapping } = await commonMock({ originalIds: true });
 
-      const rewriteSnapshots = jest.spyOn(importModule, 'rewriteSnapshots').mockResolvedValue();
+      const rewriteSnapshots = jest.spyOn(importModule, 'rewriteSnapshots').mockResolvedValue(false);
       const importTest = [
         new EditionSlot({
           id: 'id-1',
@@ -865,7 +897,7 @@ Array [
 
       const { hub, argv, log, mapping } = await commonMock({ originalIds: false });
 
-      const rewriteSnapshots = jest.spyOn(importModule, 'rewriteSnapshots').mockResolvedValue();
+      const rewriteSnapshots = jest.spyOn(importModule, 'rewriteSnapshots').mockResolvedValue(false);
       const importTest = [
         new EditionSlot({
           id: 'id-1',
@@ -887,6 +919,44 @@ Array [
 
       expect(rewriteSnapshots).toHaveBeenCalledWith('{ "content": "test" }', mapping, hub, log);
     });
+
+    it('should return true if any rewriteSnapshots call returns true', async function() {
+      mockValues({});
+
+      const realSlot = new EditionSlot({ id: 'id-new', content: 'updated' });
+      realSlot.related.content = jest.fn().mockResolvedValue(realSlot);
+
+      const { hub, argv, log, mapping } = await commonMock({ originalIds: false });
+
+      const rewriteSnapshots = jest
+        .spyOn(importModule, 'rewriteSnapshots')
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+      const importTest = [
+        new EditionSlot({
+          id: 'id-1',
+          content: '{ "content": "test" }'
+        }),
+        new EditionSlot({
+          id: 'id-2',
+          content: '{ "content": "test" }'
+        })
+      ];
+
+      const realEdition = new Edition();
+      realEdition.related.slots.create = jest.fn().mockResolvedValue(new MockPage(EditionSlot, [realSlot]));
+      realEdition.related.slots.list = jest.fn().mockResolvedValue(new MockPage(EditionSlot, []));
+
+      const result = await importSlots(importTest, mapping, hub, realEdition, argv, log);
+
+      expect(result).toBeTruthy();
+
+      expect(realEdition.related.slots.list).toHaveBeenCalledTimes(1);
+      expect(realEdition.related.slots.create).toHaveBeenCalledTimes(2);
+      expect(realSlot.related.content).toHaveBeenCalledTimes(2);
+
+      expect(rewriteSnapshots).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('importEditions tests', function() {
@@ -900,7 +970,7 @@ Array [
 
       mapping.registerEdition('id-1', 'id-2');
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
       const importTest = [
         new EditionWithSlots({
@@ -931,7 +1001,7 @@ Array [
 
       const { client, hub, argv, log, mapping } = await commonMock({ originalIds: true });
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
       const importTest = [
         new EditionWithSlots({
@@ -963,7 +1033,7 @@ Array [
 
       const { client, hub, argv, log, mapping } = await commonMock({ originalIds: false });
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
       const importTest = [
         new EditionWithSlots({
@@ -996,7 +1066,7 @@ Array [
       argv.schedule = true;
       mapping.registerEdition('id-1', 'id-2');
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
       const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
       const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
@@ -1053,7 +1123,7 @@ Array [
       argv.schedule = true;
       mapping.registerEdition('id-1', 'id-2');
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
       const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
       const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
@@ -1110,7 +1180,7 @@ Array [
       argv.schedule = true;
       mapping.registerEdition('id-1', 'id-2');
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
       const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
       const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
@@ -1165,7 +1235,7 @@ Array [
       argv.schedule = true;
       mapping.registerEdition('id-1', 'id-2');
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
       const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
       const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockResolvedValue();
@@ -1211,7 +1281,7 @@ Array [
 
       mapping.registerEdition('id-1', 'id-2');
 
-      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue();
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(false);
       const shouldUpdate = jest.spyOn(importModule, 'shouldUpdateEdition').mockReturnValue(false);
       const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
       const importTest = [
@@ -1234,6 +1304,57 @@ Array [
       expect(mockEditionUpdate).not.toHaveBeenCalled();
 
       expect(importSlots).not.toHaveBeenCalled();
+    });
+
+    it('should refetch and update editions so that their start dates are not in the past after snapshot creation when publishing', async function() {
+      const { mockEditionGet, mockEditionUpdate } = mockValues({});
+
+      const realEdition = new Edition({ id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT });
+      (mockEditionUpdate as jest.Mock).mockResolvedValue(realEdition);
+
+      const { client, hub, argv, log, mapping } = await commonMock();
+
+      argv.schedule = true;
+      mapping.registerEdition('id-1', 'id-2');
+
+      // Indicate that the snapshot creation has happened.
+      const importSlots = jest.spyOn(importModule, 'importSlots').mockResolvedValue(true);
+      const scheduleEdition = jest.spyOn(importModule, 'scheduleEdition').mockResolvedValue();
+      const skipSchedule = jest.spyOn(importModule, 'skipScheduleIfNeeded').mockReturnValue();
+      const prepareEdition = jest.spyOn(importModule, 'prepareEditionForSchedule').mockImplementation(async edition => {
+        edition.start = dateOffset(5).toISOString();
+      });
+
+      const slots = [new EditionSlot({ id: 'slot1' }), new EditionSlot({ id: 'slot2' })];
+      const importTest = [
+        new EditionWithSlots({
+          id: 'id-1',
+          name: 'Edition',
+          start: dateOffset(-10).toISOString(),
+          end: dateOffset(15).toISOString(),
+          publishingStatus: PublishingStatus.SCHEDULED,
+          comment: 'comment',
+          slots
+        })
+      ];
+
+      const realEvent = new Event({
+        start: dateOffset(-10).toISOString(),
+        end: dateOffset(20).toISOString()
+      });
+
+      await importEditions(importTest, mapping, client, hub, realEvent, argv, log);
+
+      expect(mockEditionGet).toHaveBeenCalledWith('id-2');
+      expect(mockEditionUpdate).toHaveBeenCalledTimes(2);
+
+      expect(skipSchedule).toHaveBeenCalledWith(importTest[0], true);
+      expect(prepareEdition).toHaveBeenCalledWith(expect.any(Edition), realEvent);
+
+      expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
+      expect(scheduleEdition).toHaveBeenCalledWith(expect.any(Edition), log);
+
+      expect(importModule.prepareEditionForSchedule).toBeCalledTimes(2); // This should be called again just before schedule.
     });
   });
 

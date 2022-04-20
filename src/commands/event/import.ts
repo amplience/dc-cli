@@ -172,12 +172,14 @@ export const rewriteSnapshots = async (
   mapping: ContentMapping,
   hub: Hub,
   log: FileLog
-): Promise<void> => {
+): Promise<boolean> => {
   // Search for links/references in the slot content.
   const dummyRepo = new ContentRepository();
   const tree = new ContentDependancyTree([{ repo: dummyRepo, content }], new ContentMapping());
 
   const dependencies = tree.all[0].dependancies;
+
+  let snapshotCreated = false;
 
   for (const dep of dependencies) {
     const entry = dep.dependancy as SlotDependency;
@@ -204,11 +206,14 @@ export const rewriteSnapshots = async (
       mapping.registerSnapshot(entry.id as string, snapshotId);
 
       log.addAction('SNAPSHOT-CREATE', snapshotId);
+      snapshotCreated = true;
     }
 
     dep.dependancy.id = snapshotId;
     entry._meta.rootContentItemId = itemId;
   }
+
+  return snapshotCreated;
 };
 
 export const importSlots = async (
@@ -218,8 +223,9 @@ export const importSlots = async (
   edition: Edition,
   argv: ImportEventBuilderOptions,
   log: FileLog
-): Promise<void> => {
+): Promise<boolean> => {
   const editionSlots = await paginator(edition.related.slots.list);
+  let snapshot = false;
 
   for (const slot of slots) {
     let realSlot: EditionSlot | undefined = undefined;
@@ -254,13 +260,15 @@ export const importSlots = async (
     }
 
     // Update the existing slot based off of the file.
-    await rewriteSnapshots(slot.content, mapping, hub, log);
+    snapshot = snapshot || (await rewriteSnapshots(slot.content, mapping, hub, log));
 
     realSlot = await realSlot.related.content(slot.content);
 
     log.addComment(`${updated ? 'Updated' : 'Created'} slot ${realSlot.slotId}.`);
     log.addAction(`SLOT-${updated ? 'UPDATE' : 'CREATE'}`, realSlot.id as string);
   }
+
+  return snapshot;
 };
 
 export const isScheduled = (edition: Edition): boolean =>
@@ -281,8 +289,8 @@ export const moveDateToFuture = async (date: string, event: Event, offset: numbe
   return newDate.toISOString();
 };
 
-export const prepareEditionForSchedule = async (edition: Edition, event: Event): Promise<void> => {
-  if (isScheduled(edition)) {
+export const prepareEditionForSchedule = async (edition: Edition, event: Event, force = false): Promise<void> => {
+  if (force || isScheduled(edition)) {
     // This edition must start in the future for it to be scheduled.
     edition.start = await moveDateToFuture(edition.start as string, event, EditionSecondsAllowance);
     edition.end = await moveDateToFuture(edition.end as string, event, ScheduleSecondsAllowance);
@@ -429,9 +437,11 @@ export const importEditions = async (
       }
     }
 
+    let createdSnapshots = false;
+
     if (update) {
       // Attempt to create/update slots.
-      await importSlots(edition.slots, mapping, hub, realEdition, argv, log);
+      createdSnapshots = await importSlots(edition.slots, mapping, hub, realEdition, argv, log);
     }
 
     // If the original edition was scheduled, attempt to schedule the new one.
@@ -439,6 +449,17 @@ export const importEditions = async (
       if (update && edition.slots.length > 0) {
         // Refetch the edition to make sure it's up to date before scheduling.
         realEdition = await client.editions.get(realEdition.id as string);
+
+        if (createdSnapshots) {
+          // We might need to move the edition into the future again,
+          // as creating snapshots may have taken more time than our scheduling grace period.
+          const lastStart = realEdition.start;
+          await prepareEditionForSchedule(realEdition, event, true);
+
+          if (realEdition.start != lastStart) {
+            realEdition = await realEdition.related.update(realEdition);
+          }
+        }
       }
       await scheduleEdition(realEdition, log);
     }
