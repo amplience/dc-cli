@@ -260,7 +260,7 @@ export const importSlots = async (
     }
 
     // Update the existing slot based off of the file.
-    snapshot = snapshot || (await rewriteSnapshots(slot.content, mapping, hub, log));
+    snapshot = (await rewriteSnapshots(slot.content, mapping, hub, log)) || snapshot;
 
     realSlot = await realSlot.related.content(slot.content);
 
