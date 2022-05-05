@@ -16,6 +16,7 @@ import { ContentMapping } from '../../common/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { applyFacet, withOldFilters } from '../../common/filter/facet';
+import { fetchContent } from '../../common/filter/fetch-content';
 
 interface PublishedContentItem {
   lastPublishedVersion?: number;
@@ -109,6 +110,7 @@ const getContentItems = async (
   log: FileLog,
   repoId?: string | string[],
   folderId?: string | string[],
+  facet?: string,
   publish?: boolean
 ): Promise<{ path: string; item: ContentItem }[]> => {
   const items: { path: string; item: ContentItem }[] = [];
@@ -116,6 +118,8 @@ const getContentItems = async (
   const folderIds = typeof folderId === 'string' ? [folderId] : folderId || [];
 
   const repoItems: ContentItem[] = [];
+  const repoFolders = new Set<string>();
+  const itemsByFolderId = new Map<string, ContentItem[]>();
 
   const repoIds = typeof repoId === 'string' ? [repoId] : repoId || [];
 
@@ -135,12 +139,29 @@ const getContentItems = async (
         folderIds.push(folder.id as string);
       }
       folderToPathMap.set(folder.id as string, join(baseDir, `${sanitize(folder.name as string)}/`));
+      repoFolders.add(folder.id as string);
     });
 
-    // Add content items in repo base folder. Cache the other items so we don't have to request them again.
+    // Add content items from this repo.
     let newItems: ContentItem[];
     try {
-      const allItems = await paginator(repository.related.contentItems.list, { status: Status.ACTIVE });
+      const allItems = await fetchContent(client, hub, facet, {
+        repoId: repository.id,
+        status: Status.ACTIVE,
+        enrichItems: true
+      });
+
+      for (const item of allItems) {
+        if (item.folderId != null) {
+          let folderItems = itemsByFolderId.get(item.folderId);
+          if (folderItems == null) {
+            folderItems = [];
+            itemsByFolderId.set(item.folderId, folderItems);
+          }
+
+          folderItems.push(item);
+        }
+      }
 
       Array.prototype.push.apply(repoItems, allItems);
       newItems = allItems.filter(item => item.folderId == null);
@@ -173,11 +194,11 @@ const getContentItems = async (
         const path = await getOrAddFolderPath(folderToPathMap, client, folder, log);
         log.appendLine(`Processing ${path}...`);
 
-        let newItems: ContentItem[];
         // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
         // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
-        newItems = repoItems.filter(item => item.folderId == folder.id);
-        if (newItems.length == 0) {
+        const folderItemsObtained = repoFolders.has(folder.id as string);
+        let newItems: ContentItem[] | undefined;
+        if (!folderItemsObtained) {
           log.appendLine(`Fetching additional folder: ${folder.name}`);
           try {
             newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
@@ -185,11 +206,23 @@ const getContentItems = async (
             log.warn(`Could not get items from folder ${folder.name} (${folder.id})`, e);
             return;
           }
+        } else {
+          newItems = itemsByFolderId.get(folder.id as string);
         }
-        Array.prototype.push.apply(items, newItems.map(item => ({ item, path: path })));
+
+        if (newItems) {
+          Array.prototype.push.apply(items, newItems.map(item => ({ item, path: path })));
+        }
 
         try {
           const subfolders = await paginator(folder.related.folders.list);
+
+          if (folderItemsObtained) {
+            for (const subfolder of subfolders) {
+              repoFolders.add(subfolder.id as string);
+            }
+          }
+
           Array.prototype.push.apply(nextFolders, subfolders);
         } catch (e) {
           log.warn(`Could not get subfolders from folder ${folder.name} (${folder.id})`, e);
@@ -231,9 +264,9 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
   const hub = await client.hubs.get(argv.hubId);
 
   log.appendLine('Retrieving content items, please wait.');
-  let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId, publish);
+  let items = await getContentItems(folderToPathMap, client, hub, dir, log, repoId, folderId, facet, publish);
 
-  // Filter using the faced, if present.
+  // Filter using the facet, if present.
   if (facet) {
     const newItems = applyFacet(items.map(item => item.item), facet);
 

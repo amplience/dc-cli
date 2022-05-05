@@ -5,12 +5,13 @@ import {
   relativeDate,
   parseDateRange,
   DatePreset,
-  withOldFilters
+  withOldFilters,
+  tryGetArray
 } from './facet';
 import { ContentItem } from 'dc-management-sdk-js';
 
 describe('facet', () => {
-  describe('parseFilter tests', () => {
+  describe('parseFacet tests', () => {
     it('should parse an empty string as an empty facet', () => {
       expect(parseFacet('')).toEqual({});
     });
@@ -166,6 +167,53 @@ describe('facet', () => {
   const schemaContentItem = (schema: string, label?: string): ContentItem => {
     return new ContentItem({ body: { _meta: { schema } }, label });
   };
+
+  describe('tryGetArray tests', () => {
+    it('should return null if the facet is undefined', () => {
+      expect(tryGetArray(undefined, false)).toBeNull();
+    });
+
+    it('should return the input wrapped in an array if not given a regex value', () => {
+      expect(tryGetArray('regular text', false)).toEqual(['regular text']);
+      expect(tryGetArray('\\!@£$%^&*(){}[]/', false)).toEqual(['\\!@£$%^&*(){}[]/']);
+    });
+
+    it('should return null if the provided regex is not in an exact match format, and exactMatch is true', () => {
+      expect(tryGetArray('/inexact/', true)).toBeNull();
+      expect(tryGetArray('/(inexact)/', true)).toBeNull();
+      expect(tryGetArray('/a/', true)).toBeNull();
+
+      expect(tryGetArray('/^test1$|test2/', true)).toBeNull();
+      expect(tryGetArray('/^test1$|(test2)/', true)).toBeNull();
+    });
+
+    it('should match expected regex patterns and extract arrays from them', () => {
+      expect(tryGetArray('/^exact$/', false)).toEqual(['exact']);
+      expect(tryGetArray('/(inexact1)/', false)).toEqual(['inexact1']);
+      expect(tryGetArray('/inexact2/', false)).toEqual(['inexact2']);
+
+      expect(tryGetArray('/^item1$|^item2$|^item3$/', true)).toEqual(['item1', 'item2', 'item3']);
+      expect(tryGetArray('/(inex1)|(inex2)|(inex3)/', false)).toEqual(['inex1', 'inex2', 'inex3']);
+      expect(tryGetArray('/test1|test2|test3/', false)).toEqual(['test1', 'test2', 'test3']);
+
+      expect(tryGetArray('/test1|^test2$|(test3)/', false)).toEqual(['test1', 'test2', 'test3']);
+
+      expect(tryGetArray('/\\*escaped\\/specials\\[|two\\$test/', false)).toEqual(['*escaped/specials[', 'two$test']);
+    });
+
+    it('should return null if regex special characters are used without escapes', () => {
+      expect(tryGetArray('/regex*/', false)).toBeNull();
+      expect(tryGetArray('/[]/', false)).toBeNull();
+      expect(tryGetArray('/fine|not?fine/', false)).toBeNull();
+    });
+
+    it('should split only on unescaped pipe character', () => {
+      expect(tryGetArray('/simple|split|regex/', false)).toEqual(['simple', 'split', 'regex']);
+      expect(tryGetArray('/sim\\|ple|spl\\|it|reg\\|ex/', false)).toEqual(['sim|ple', 'spl|it', 'reg|ex']);
+      expect(tryGetArray('/doubleEscape\\\\|split/', false)).toEqual(['doubleEscape\\', 'split']);
+      expect(tryGetArray('/tripleEscape\\\\\\|split/', false)).toEqual(['tripleEscape\\|split']);
+    });
+  });
 
   describe('applyFilter tests', () => {
     const fakeDate = new Date('2021-04-15T12:00:00.000Z');

@@ -2,13 +2,13 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
-import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
-import { applyFacet, withOldFilters } from '../../common/filter/facet';
+import { withOldFilters } from '../../common/filter/facet';
+import { getContent } from '../../common/filter/fetch-content';
 
 export const command = 'archive [id]';
 
@@ -80,53 +80,6 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const filterContentItems = async ({
-  revertLog,
-  facet,
-  contentItems
-}: {
-  revertLog?: string;
-  facet?: string;
-  contentItems: ContentItem[];
-}): Promise<{ contentItems: ContentItem[]; missingContent: boolean } | undefined> => {
-  try {
-    let missingContent = false;
-
-    if (revertLog != null) {
-      const log = await new ArchiveLog().loadFromFile(revertLog);
-      const ids = log.getData('UNARCHIVE');
-      const contentItemsFiltered = contentItems.filter(contentItem => ids.indexOf(contentItem.id || '') != -1);
-
-      missingContent = contentItems.length !== ids.length;
-
-      return {
-        contentItems: contentItemsFiltered,
-        missingContent
-      };
-    }
-
-    if (facet != null) {
-      const contentItemsFiltered = applyFacet(contentItems, facet);
-
-      return {
-        contentItems: contentItemsFiltered,
-        missingContent
-      };
-    }
-
-    return {
-      contentItems,
-      missingContent
-    };
-  } catch (err) {
-    console.log(err);
-    return {
-      contentItems: [],
-      missingContent: false
-    };
-  }
-};
-
 export const getContentItems = async ({
   client,
   id,
@@ -145,53 +98,38 @@ export const getContentItems = async ({
   facet?: string;
 }): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
   try {
-    const contentItems: ContentItem[] = [];
+    let contentItems: ContentItem[] = [];
+
+    if (revertLog != null) {
+      const log = await new ArchiveLog().loadFromFile(revertLog);
+      id = log.getData('UNARCHIVE');
+    }
 
     if (id != null) {
       const itemIds = Array.isArray(id) ? id : [id];
-      const items = await Promise.all(itemIds.map(id => client.contentItems.get(id)));
-      contentItems.push(...items);
+      const items: ContentItem[] = [];
+
+      for (const id of itemIds) {
+        try {
+          items.push(await client.contentItems.get(id));
+        } catch {
+          // Missing item.
+        }
+      }
+
+      contentItems.push(...items.filter(item => item.status === Status.ACTIVE));
 
       return {
         contentItems,
-        missingContent: false
+        missingContent: contentItems.length != itemIds.length
       };
     }
 
     const hub = await client.hubs.get(hubId);
-    const repoIds = typeof repoId === 'string' ? [repoId] : repoId || [];
-    const folderIds = typeof folderId === 'string' ? [folderId] : folderId || [];
-    const contentRepositories = await (repoId != null
-      ? Promise.all(repoIds.map(id => client.contentRepositories.get(id)))
-      : paginator(hub.related.contentRepositories.list));
 
-    const folders = folderId != null ? await Promise.all(folderIds.map(id => client.folders.get(id))) : [];
+    contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE });
 
-    folderId != null
-      ? await Promise.all(
-          folders.map(async source => {
-            const items = await paginator(source.related.contentItems.list);
-
-            contentItems.push(...items.filter(item => item.status == 'ACTIVE'));
-          })
-        )
-      : await Promise.all(
-          contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: Status.ACTIVE });
-            contentItems.push(...items);
-          })
-        );
-
-    return (
-      (await filterContentItems({
-        revertLog,
-        facet,
-        contentItems
-      })) || {
-        contentItems: [],
-        missingContent: false
-      }
-    );
+    return { contentItems, missingContent: false };
   } catch (err) {
     console.log(err);
 
