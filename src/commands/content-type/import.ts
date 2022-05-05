@@ -320,12 +320,15 @@ export const handler = async (
   idFilter?: string[]
 ): Promise<void> => {
   const { dir, sync, logFile, skipAssign } = argv;
+  const log = logFile.open();
   const importedContentTypes = loadJsonFromDirectory<ContentTypeWithRepositoryAssignments>(
     dir,
     ContentTypeWithRepositoryAssignments
   );
   if (Object.keys(importedContentTypes).length === 0) {
-    throw new Error(`No content types found in ${dir}`);
+    log.appendLine(`No content types found in ${dir}`);
+    await log.close();
+    return;
   }
   validateNoDuplicateContentTypeUris(importedContentTypes);
 
@@ -335,7 +338,6 @@ export const handler = async (
 
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
-  const log = logFile.open();
 
   const activeContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
   const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });

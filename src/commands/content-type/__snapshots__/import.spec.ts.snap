@@ -12,8 +12,6 @@ exports[`content-type import command doUpdate should throw an error when unable 
 
 exports[`content-type import command doUpdate should throw an error when unable to update content type during update if a string error is returned by sdk 1`] = `"Error updating content type stored-id: The update action is not available, ensure you have permission to perform this action."`;
 
-exports[`content-type import command handler tests should throw an error when no content found in import directory 1`] = `"No content types found in my-empty-dir"`;
-
 exports[`content-type import command validateNoDuplicateContentTypeUris should throw and error when there are duplicate uris 1`] = `
 "Content Types must have unique uri values. Duplicate values found:-
   uri: 'type-uri-1' in files: ['file-1', 'file-4']

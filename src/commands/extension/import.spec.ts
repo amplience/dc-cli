@@ -499,12 +499,22 @@ describe('extension import command', (): void => {
       );
     });
 
-    it('should throw an error when no content found in import directory', async (): Promise<void> => {
+    it('should exit early when no content found in import directory', async (): Promise<void> => {
       const argv = { ...yargArgs, ...config, dir: 'my-empty-dir', logFile: new FileLog() };
 
       (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
 
-      await expect(handler(argv)).rejects.toThrowErrorMatchingSnapshot();
+      await handler(argv);
+
+      expect(argv.logFile.closed).toBeTruthy();
+      expect(argv.logFile.accessGroup).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "comment": true,
+    "data": "No extensions found in my-empty-dir",
+  },
+]
+`);
     });
   });
 });

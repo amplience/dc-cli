@@ -12,8 +12,6 @@ exports[`search-index import command doUpdate should throw an error when unable 
 
 exports[`search-index import command doUpdate should throw an error when unable to update index during update if a string error is returned by sdk 1`] = `"Error updating index not-matched-name: The update action is not available, ensure you have permission to perform this action."`;
 
-exports[`search-index import command handler tests should throw an error when no content found in import directory 1`] = `"No indexes found in my-empty-dir"`;
-
 exports[`search-index import command validateNoDuplicateIndexNames should throw and error when there are duplicate uris 1`] = `
 "Indexes must have unique name values. Duplicate values found:-
   name: 'index-name-1' in files: ['file-1', 'file-4']

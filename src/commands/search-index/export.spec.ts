@@ -1213,12 +1213,14 @@ describe('search-index export command', (): void => {
     let mockList: jest.Mock;
 
     beforeEach(() => {
+      jest.resetAllMocks();
       (loadJsonFromDirectory as jest.Mock).mockReturnValue([]);
 
       const listResponse = new MockPage(SearchIndex, indexesToExport);
       mockList = jest.fn().mockResolvedValue(listResponse);
 
       mockGetHub = jest.fn().mockResolvedValue({
+        _links: { 'algolia-search-indexes': {} },
         related: {
           searchIndexes: {
             list: mockList
@@ -1293,6 +1295,32 @@ describe('search-index export command', (): void => {
         expect.any(FileLog),
         false
       );
+    });
+
+    it('should exit early if algolia-search-indexes link is missing', async (): Promise<void> => {
+      const argv = { ...yargArgs, ...config, dir: 'my-dir', logFile: new FileLog() };
+
+      jest.spyOn(exportModule, 'enrichIndex');
+      jest.spyOn(exportModule, 'filterIndexesById');
+
+      const listMock = jest.fn();
+
+      mockGetHub.mockReturnValue({
+        related: {
+          searchIndexes: {
+            list: listMock
+          }
+        }
+      });
+
+      await handler(argv);
+
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(listMock).not.toHaveBeenCalled();
+      expect(loadJsonFromDirectory).not.toHaveBeenCalledWith();
+      expect(validateNoDuplicateIndexNames).not.toHaveBeenCalled();
+      expect(exportModule.filterIndexesById).not.toHaveBeenCalled();
+      expect(exportModule.processIndexes).not.toHaveBeenCalled();
     });
   });
 });
