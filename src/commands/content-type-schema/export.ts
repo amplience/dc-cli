@@ -21,6 +21,7 @@ import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { equalsOrRegex } from '../../common/filter/filter';
 
 export const streamTableOptions = {
   ...baseTableConfig,
@@ -60,7 +61,7 @@ export const builder = (yargs: Argv): void => {
     .option('schemaId', {
       type: 'string',
       describe:
-        'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
+        'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA regex can be provided to select multiple type schemas with similar or matching schema ids (eg /schema(0-9)\\.json/).\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
       requiresArg: true
     })
     .alias('f', 'force')
@@ -175,7 +176,9 @@ export const filterContentTypeSchemasBySchemaId = (
     return listToFilter;
   }
 
-  const unmatchedIdList: string[] = listToMatch.filter(id => !listToFilter.some(schema => schema.schemaId === id));
+  const unmatchedIdList: string[] = listToMatch.filter(
+    match => !listToFilter.some(schema => equalsOrRegex(schema.schemaId as string, match))
+  );
   if (unmatchedIdList.length > 0) {
     throw new Error(
       `The following schema ID(s) could not be found: [${unmatchedIdList
@@ -184,7 +187,7 @@ export const filterContentTypeSchemasBySchemaId = (
     );
   }
 
-  return listToFilter.filter(schema => listToMatch.some(id => schema.schemaId === id));
+  return listToFilter.filter(schema => listToMatch.some(match => equalsOrRegex(schema.schemaId as string, match)));
 };
 
 export const getContentTypeSchemaExports = (

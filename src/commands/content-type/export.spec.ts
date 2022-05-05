@@ -58,7 +58,7 @@ describe('content-type export command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('schemaId', {
         type: 'string',
         describe:
-          'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
+          'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA regex can be provided to select multiple types with similar or matching schema ids (eg /schema(0-9)\\.json/).\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
         requiresArg: true
       });
       expect(spyOption).toHaveBeenCalledWith('f', {
@@ -331,6 +331,11 @@ describe('content-type export command', (): void => {
     it('should return the content types matching the given uris', async () => {
       const result = filterContentTypesByUri(listToFilter, ['content-type-uri-1', 'content-type-uri-3']);
       expect(result).toEqual(expect.arrayContaining([listToFilter[0], listToFilter[2]]));
+    });
+
+    it('should return the content types matching the given regex', async () => {
+      const result = filterContentTypesByUri(listToFilter, ['/2|3/']);
+      expect(result).toEqual(expect.arrayContaining([listToFilter[1], listToFilter[2]]));
     });
 
     it('should return all the content types because there are no URIs to filter', async () => {

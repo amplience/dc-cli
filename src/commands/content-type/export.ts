@@ -20,6 +20,7 @@ import { ExportBuilderOptions } from '../../interfaces/export-builder-options.in
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { equalsOrRegex } from '../../common/filter/filter';
 
 export const command = 'export <dir>';
 
@@ -37,7 +38,7 @@ export const builder = (yargs: Argv): void => {
     .option('schemaId', {
       type: 'string',
       describe:
-        'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
+        'The Schema ID of a Content Type to be exported.\nIf no --schemaId option is given, all content types for the hub are exported.\nA regex can be provided to select multiple types with similar or matching schema ids (eg /schema(0-9)\\.json/).\nA single --schemaId option may be given to export a single content type.\nMultiple --schemaId options may be given to export multiple content types at the same time.',
       requiresArg: true
     })
     .alias('f', 'force')
@@ -78,7 +79,7 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
   }
 
   const unmatchedContentTypeUriList: string[] = contentTypeUriList.filter(
-    uri => !listToFilter.some(contentType => contentType.contentTypeUri === uri)
+    match => !listToFilter.some(contentType => equalsOrRegex(contentType.contentTypeUri as string, match))
   );
   if (unmatchedContentTypeUriList.length > 0) {
     throw new Error(
@@ -88,7 +89,9 @@ export const filterContentTypesByUri = (listToFilter: ContentType[], contentType
     );
   }
 
-  return listToFilter.filter(contentType => contentTypeUriList.some(uri => contentType.contentTypeUri === uri));
+  return listToFilter.filter(contentType =>
+    contentTypeUriList.some(match => equalsOrRegex(contentType.contentTypeUri as string, match))
+  );
 };
 
 export const getReposNamesForContentType = (

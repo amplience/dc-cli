@@ -148,6 +148,57 @@ Array [
 ]
 `;
 
+exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should return the content types matching the given regex 1`] = `
+Array [
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-07/schema#\\",
+	\\"$id\\": \\"https://schema.localhost.com/remote-test-2.json\\",
+
+	\\"title\\": \\"Test Schema 2\\",
+	\\"description\\": \\"Test Schema 2\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-2",
+    "validationLevel": "CONTENT_TYPE",
+  },
+  Object {
+    "body": "{
+	\\"$schema\\": \\"http://json-schema.org/draft-07/schema#\\",
+	\\"$id\\": \\"https://schema.localhost.com/remote-test-3.json\\",
+
+	\\"title\\": \\"Test Schema 3\\",
+	\\"description\\": \\"Test Schema 3\\",
+
+	\\"allOf\\": [
+		{
+			\\"$ref\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content\\"
+		}
+	],
+	
+	\\"type\\": \\"object\\",
+	\\"properties\\": {
+		
+	},
+	\\"propertyOrder\\": []
+}",
+    "schemaId": "content-type-schema-id-3",
+    "validationLevel": "CONTENT_TYPE",
+  },
+]
+`;
+
 exports[`content-type-schema export command filterContentTypeSchemasBySchemaId should return the content types matching the given schemaIds 1`] = `
 Array [
   Object {

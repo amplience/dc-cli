@@ -61,7 +61,7 @@ describe('content-type-schema export command', (): void => {
       expect(spyOption).toHaveBeenCalledWith('schemaId', {
         type: 'string',
         describe:
-          'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
+          'The Schema ID of a Content Type Schema to be exported.\nIf no --schemaId option is given, all content type schemas for the hub are exported.\nA regex can be provided to select multiple type schemas with similar or matching schema ids (eg /schema(0-9)\\.json/).\nA single --schemaId option may be given to export a single content type schema.\nMultiple --schemaId options may be given to export multiple content type schemas at the same time.',
         requiresArg: true
       });
       expect(spyOption).toHaveBeenCalledWith('f', {
@@ -589,6 +589,11 @@ describe('content-type-schema export command', (): void => {
         'content-type-schema-id-1',
         'content-type-schema-id-3'
       ]);
+      expect(result).toMatchSnapshot();
+    });
+
+    it('should return the content types matching the given regex', async () => {
+      const result = filterContentTypeSchemasBySchemaId(listToFilter, ['/2|3/']);
       expect(result).toMatchSnapshot();
     });
 
