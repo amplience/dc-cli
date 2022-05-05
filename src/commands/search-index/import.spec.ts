@@ -177,7 +177,7 @@ describe('search-index import command', (): void => {
         ]
       `);
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ ...indexBase, assignedContentTypes }));
-      expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
+      expect(importModule.enrichIndex).toHaveBeenCalledWith(mockHub, newIndex, index, webhooks);
       expect(result).toEqual(newIndex);
     });
 
@@ -237,7 +237,7 @@ describe('search-index import command', (): void => {
       ).rejects.toThrowErrorMatchingSnapshot();
 
       expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ ...indexBase, assignedContentTypes }));
-      expect(importModule.enrichIndex).toHaveBeenCalledWith(newIndex, index, webhooks);
+      expect(importModule.enrichIndex).toHaveBeenCalledWith(mockHub, newIndex, index, webhooks);
       expect(log.getData('CREATE')).toEqual([]);
     });
   });
@@ -251,7 +251,10 @@ describe('search-index import command', (): void => {
     }
 
     it('should fetch settings, content types for comparison with the index to be enriched', async () => {
+      const mockHub = new Hub();
+
       const index = new SearchIndex({
+        id: 'id-1',
         name: 'index-1',
         label: 'index-1'
       });
@@ -266,17 +269,24 @@ describe('search-index import command', (): void => {
       index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, []));
       index.related.assignedContentTypes.create = jest.fn();
 
-      await enrichIndex(index, enrichedIndex, undefined);
+      mockHub.related.searchIndexes.get = jest.fn().mockResolvedValue(index);
+
+      await enrichIndex(mockHub, index, enrichedIndex, undefined);
 
       expect(enrichedIndex.settings.replicas).toEqual([]);
       expect(index.related.settings.get).toHaveBeenCalled();
       expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
       expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
+
+      expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
     });
 
     it("should update settings with a union of both source and destination replicas, then update each replica's settings", async () => {
+      const mockHub = new Hub();
+
       const index = new SearchIndex({
+        id: 'id-1',
         name: 'index-1',
         label: 'index-1'
       });
@@ -314,7 +324,9 @@ describe('search-index import command', (): void => {
       index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, []));
       index.related.assignedContentTypes.create = jest.fn();
 
-      await enrichIndex(index, enrichedIndex, undefined);
+      mockHub.related.searchIndexes.get = jest.fn().mockResolvedValue(index);
+
+      await enrichIndex(mockHub, index, enrichedIndex, undefined);
 
       expect(enrichedIndex.settings.replicas).toEqual(expect.arrayContaining(['replica-1', 'replica-2', 'replica-3']));
       expect(enrichedIndex.settings.replicas.length).toEqual(3);
@@ -329,10 +341,15 @@ describe('search-index import command', (): void => {
 
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
       expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
+
+      expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
     });
 
     it('should assign any content types that are not yet assigned on the destination index, removing any that are no longer present', async () => {
+      const mockHub = new Hub();
+
       const index = new SearchIndex({
+        id: 'id-1',
         name: 'index-1',
         label: 'index-1'
       });
@@ -365,7 +382,9 @@ describe('search-index import command', (): void => {
         return type;
       });
 
-      await enrichIndex(index, enrichedIndex, undefined);
+      mockHub.related.searchIndexes.get = jest.fn().mockResolvedValue(index);
+
+      await enrichIndex(mockHub, index, enrichedIndex, undefined);
 
       expect(created).toEqual([enrichedIndex.assignedContentTypes[0]]);
 
@@ -377,10 +396,15 @@ describe('search-index import command', (): void => {
       expect(index.related.settings.get).toHaveBeenCalled();
       expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
+
+      expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
     });
 
     it('should update webhooks for the destination index when they are available', async () => {
+      const mockHub = new Hub();
+
       const index = new SearchIndex({
+        id: 'id-1',
         name: 'index-1',
         label: 'index-1'
       });
@@ -411,7 +435,9 @@ describe('search-index import command', (): void => {
       index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, [type]));
       index.related.assignedContentTypes.create = jest.fn();
 
-      await enrichIndex(index, enrichedIndex, enrichedWebhooks);
+      mockHub.related.searchIndexes.get = jest.fn().mockResolvedValue(index);
+
+      await enrichIndex(mockHub, index, enrichedIndex, enrichedWebhooks);
 
       expect(type.related.unassign).not.toHaveBeenCalled();
       expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
@@ -438,6 +464,8 @@ describe('search-index import command', (): void => {
       expect(index.related.settings.get).toHaveBeenCalled();
       expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
+
+      expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
     });
   });
 
@@ -487,7 +515,7 @@ describe('search-index import command', (): void => {
       `);
       expect(hub.related.searchIndexes.get).toHaveBeenCalledWith('stored-id');
       expect(exportModule.enrichIndex).toHaveBeenCalledWith(expect.any(Map), replicas, storedIndex);
-      expect(importModule.enrichIndex).toHaveBeenCalledWith(updatedIndex, mutatedIndex, webhooks);
+      expect(importModule.enrichIndex).toHaveBeenCalledWith(hub, updatedIndex, mutatedIndex, webhooks);
       expect(result).toEqual({ index: updatedIndex, updateStatus: UpdateStatus.UPDATED });
       expect(mockUpdate.mock.calls[0][0].toJSON()).toEqual(expectedIndex.toJSON());
     });
@@ -855,7 +883,15 @@ describe('search-index import command', (): void => {
     it("should rewrite index names to contain the given hub's name", () => {
       const indexesToProcess = {
         'file-1': new EnrichedSearchIndex({
-          name: 'oldHub.index-name-1'
+          name: 'oldHub.index-name-1',
+          replicas: [
+            new EnrichedReplica({
+              name: 'oldHub.index-name-1_sort-example'
+            })
+          ],
+          settings: {
+            replicas: ['oldHub.index-name-1_sort-example']
+          }
         }),
         'file-2': new EnrichedSearchIndex({
           name: 'index-name-2'
@@ -868,6 +904,8 @@ describe('search-index import command', (): void => {
 
       expect(indexesToProcess['file-1'].name).toEqual('newHub.index-name-1');
       expect(indexesToProcess['file-2'].name).toEqual('newHub.index-name-2');
+      expect(indexesToProcess['file-1'].replicas[0].name).toEqual('newHub.index-name-1_sort-example');
+      expect(indexesToProcess['file-1'].settings.replicas[0]).toEqual('newHub.index-name-1_sort-example');
     });
   });
 

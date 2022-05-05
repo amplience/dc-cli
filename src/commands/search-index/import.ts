@@ -83,20 +83,43 @@ export const validateNoDuplicateIndexNames = (importedIndexes: {
   }
 };
 
+const rewriteIndexName = (hub: Hub, index: SearchIndex): void => {
+  const name = index.name as string;
+  const firstDot = name.indexOf('.');
+
+  if (firstDot == -1) {
+    index.name = `${hub.name}.${name}`;
+  } else {
+    index.name = `${hub.name}${name.substring(firstDot)}`;
+  }
+};
+
 export const rewriteIndexNames = (
   hub: Hub,
   importedIndexes: {
     [filename: string]: EnrichedSearchIndex;
   }
 ): void | never => {
+  const toRewrite: SearchIndex[] = [...Object.values(importedIndexes)];
   for (const index of Object.values(importedIndexes)) {
-    const name = index.name as string;
-    const firstDot = name.indexOf('.');
+    rewriteIndexName(hub, index);
 
-    if (firstDot == -1) {
-      index.name = `${hub.name}.${name}`;
-    } else {
-      index.name = `${hub.name}${name.substring(firstDot)}`;
+    if (index.replicas) {
+      for (const replica of index.replicas) {
+        const name = replica.name;
+        rewriteIndexName(hub, replica);
+
+        const sReplicas: string[] = index.settings.replicas;
+
+        if (sReplicas) {
+          for (let i = 0; i < sReplicas.length; i++) {
+            if (sReplicas[i] === name) {
+              sReplicas[i] = replica.name as string;
+            }
+          }
+        }
+      }
+      toRewrite.push(...index.replicas);
     }
   }
 };
@@ -139,6 +162,7 @@ export const updateWebhookIfDifferent = async (webhook: Webhook, newWebhook: Web
 };
 
 export const enrichIndex = async (
+  hub: Hub,
   index: SearchIndex,
   enrichedIndex: EnrichedSearchIndex,
   webhooks: Map<string, Webhook> | undefined
@@ -156,6 +180,9 @@ export const enrichIndex = async (
 
   // Update the search index settings.
   await index.related.settings.update(enrichedIndex.settings, false);
+
+  // Updating the settings might have changed the available hal links, so refetch it.
+  index = await hub.related.searchIndexes.get(index.id as string);
 
   if (replicas.size) {
     // Replica settings must also be updated. The replicas may have changed, so fetch them again.
@@ -224,13 +251,13 @@ export const doCreate = async (
 
     const createdIndex = await hub.related.searchIndexes.create(toCreate);
 
-    await enrichIndex(createdIndex, index, webhooks);
+    await enrichIndex(hub, createdIndex, index, webhooks);
 
     log.addAction('CREATE', `${createdIndex.id}`);
 
     return createdIndex;
   } catch (err) {
-    throw new Error(`Error creating index ${index.name}:\n\n${err}`);
+    throw new Error(`Error creating index ${index.name}: ${err}`);
   }
 };
 
@@ -256,13 +283,13 @@ export const doUpdate = async (
 
     const updatedIndex = await retrievedIndex.related.update(retrievedIndex);
 
-    await enrichIndex(updatedIndex, index, webhooks);
+    await enrichIndex(hub, updatedIndex, index, webhooks);
 
     log.addAction('UPDATE', `${retrievedIndex.id}`);
 
     return { index: updatedIndex, updateStatus: UpdateStatus.UPDATED };
   } catch (err) {
-    throw new Error(`Error updating index ${index.name}: ${err.message}`);
+    throw new Error(`Error updating index ${index.name}: ${err}`);
   }
 };
 
