@@ -208,12 +208,17 @@ describe('content-item move command', () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
 
       copierAny.setForceFail(false);
-      const exportIds = ['example-id', 'example-id2'];
-      copierAny.setOutputIds(exportIds);
+      const importIds = ['example-id', 'example-id2', 'example-id-skip1'];
+      const exportIds = ['example-id', 'example-id2', 'example-id-skip2'];
+      copierAny.setOutputIds(exportIds, importIds);
 
       const templates: ItemTemplate[] = [
         { id: 'example-id', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
-        { id: 'example-id2', label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' }
+        { id: 'example-id2', label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' },
+        // These two should not be archived on copy, due to being only in the export/import, not both.
+        // (indicates either a copied dependency, or a skipped content import)
+        { id: 'example-id-skip1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
+        { id: 'example-id-skip2', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }
       ];
 
       const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
@@ -260,6 +265,7 @@ describe('content-item move command', () => {
       expect(copyCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
       expect(copyCalls[0].media).toEqual(argv.media);
 
+      expect(argv.importedIds).toEqual(importIds);
       expect(argv.exportedIds).toEqual(exportIds);
 
       expect(mockContent.metrics.itemsArchived).toEqual(2);
@@ -419,8 +425,8 @@ describe('content-item move command', () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
 
       // These should not be archived
-      const exportIds = ['example-id', 'example-id2'];
-      copierAny.setOutputIds(exportIds);
+      const ids = ['example-id', 'example-id2'];
+      copierAny.setOutputIds(ids, ids);
       copierAny.setForceFail(true);
 
       // Create content, shouldn't be reverted.
@@ -452,8 +458,8 @@ describe('content-item move command', () => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
 
       copierAny.setForceFail(false);
-      const exportIds = ['example-id', 'example-id2'];
-      copierAny.setOutputIds(exportIds);
+      const ids = ['example-id', 'example-id2'];
+      copierAny.setOutputIds(ids, ids);
 
       const templates: ItemTemplate[] = [
         { id: 'example-id', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' },
@@ -492,7 +498,8 @@ describe('content-item move command', () => {
 
       expect(copyCalls.length).toEqual(1);
 
-      expect(argv.exportedIds).toEqual(exportIds);
+      expect(argv.importedIds).toEqual(ids);
+      expect(argv.exportedIds).toEqual(ids);
 
       expect(mockContent.metrics.itemsArchived).toEqual(0);
     });

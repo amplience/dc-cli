@@ -247,12 +247,16 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
         media: argv.media,
         logFile: log,
-        revertLog: Promise.resolve(undefined)
+        revertLog: Promise.resolve(undefined),
+
+        importedIds: argv.importedIds
       });
 
       if (importResult) {
         log.appendLine('=== Done! ===');
         result = true;
+      } else {
+        log.appendLine('=== Importing content failed or was aborted. ===');
       }
     } catch (e) {
       log.appendLine('An unexpected error occurred: \n' + e.toString());

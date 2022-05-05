@@ -150,6 +150,7 @@ export const builder = (yargs: Argv): void => {
 
 export const handler = async (argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters>): Promise<void> => {
   argv.exportedIds = [];
+  argv.importedIds = [];
 
   const { hubId, clientId, clientSecret } = argv;
 
@@ -231,13 +232,22 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       clientSecret: clientSecret
     });
 
-    // Only archive the result of the export once the copy has completed.
+    // Only archive the result of the import once the copy has completed.
+    // Just archive content that was selected by the export (not a dependency) and imported (not skipped by user action)
+    // All other content was not successfully "moved", or was copied due to being a dependency, so should not be archived.
     // This ensures the content is always active in one location if something goes wrong.
 
     const exported = argv.exportedIds;
+    const imported = new Set(argv.importedIds);
 
-    for (let i = 0; i < exported.length; i++) {
-      const item = await client.contentItems.get(exported[i]);
+    const ids = exported.filter(id => imported.has(id));
+
+    console.log(exported);
+    console.log(imported);
+    console.log(ids);
+
+    for (let i = 0; i < ids.length; i++) {
+      const item = await client.contentItems.get(ids[i]);
 
       try {
         await item.related.archive();
