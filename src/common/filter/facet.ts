@@ -1,12 +1,13 @@
-import { ContentItem } from 'dc-management-sdk-js';
+import { ContentItem, FacetedContentItem } from 'dc-management-sdk-js';
 import { equalsOrRegex } from './filter';
+import { isRegexString, hasRegexSpecialCharacter, removeEscapes } from './regex';
 
 interface FacetRange {
   start: string;
   end: string;
 }
 
-interface Facet {
+export interface Facet {
   locale?: string;
   name?: string;
   schema?: string;
@@ -115,6 +116,60 @@ export function dateRangeMatch(dateString: string, range: DatePreset | FacetRang
   return date > lower && date <= higher;
 }
 
+export function tryGetArray(facetValue: string | undefined, onlyExact: boolean): string[] | null {
+  if (facetValue == null) {
+    return null;
+  }
+
+  if (isRegexString(facetValue)) {
+    const regex = facetValue.substr(1, facetValue.length - 2);
+
+    const split = regex.split(/((?:[^\\]|^)(?:\\\\)*)\|/);
+
+    // Since js doesn't support regex lookback, merge together the [^\\] capture with the rest of each item
+    for (let i = 0; i < split.length - 1; i++) {
+      split[i] = split[i] + split[i + 1];
+      split.splice(i + 1, 1);
+    }
+
+    const result: string[] = [];
+
+    for (let item of split) {
+      // Three cases:
+      // Within ^$: exact match. The request we make to the facets endpoint may not be exact, but a followup filter can fix that.
+      // Within (): converted regex.
+      // None: user specified regex.
+
+      if (item.length > 2) {
+        const start = item[0];
+        const end = item[item.length - 1];
+        if ((start === '^' && end === '$') || (start === '(' && end === ')')) {
+          if (onlyExact && start !== '^') {
+            return null;
+          }
+          item = item.substr(1, item.length - 2);
+        } else if (onlyExact) {
+          return null;
+        }
+      } else if (onlyExact) {
+        return null;
+      }
+
+      if (!hasRegexSpecialCharacter(item)) {
+        item = removeEscapes(item);
+      } else {
+        return null; // Cannot be used.
+      }
+
+      result.push(item);
+    }
+
+    return result;
+  }
+
+  return [facetValue];
+}
+
 export function applyFacet(items: ContentItem[], facetOrString: Facet | string): ContentItem[] {
   let facet: Facet;
   if (typeof facetOrString === 'string') {
@@ -126,7 +181,12 @@ export function applyFacet(items: ContentItem[], facetOrString: Facet | string):
   return items.filter(item => {
     if (facet.locale && (!item.locale || !equalsOrRegex(item.locale, facet.locale))) return false;
     if (facet.name && !equalsOrRegex(item.label, facet.name)) return false;
-    if (facet.schema && !equalsOrRegex(item.body._meta.schema, facet.schema)) return false;
+    if (
+      facet.schema &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      !equalsOrRegex(((item as any) as FacetedContentItem).schema || item.body._meta.schema, facet.schema)
+    )
+      return false;
     if (facet.status && !equalsOrRegex(item.status, facet.status)) return false;
 
     // Date range checks.

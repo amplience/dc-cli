@@ -2,12 +2,12 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
-import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import { applyFacet, withOldFilters } from '../../common/filter/facet';
+import { withOldFilters } from '../../common/filter/facet';
+import { getContent } from '../../common/filter/fetch-content';
 
 export const command = 'unarchive [id]';
 
@@ -76,70 +76,6 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const filterContentItems = async ({
-  revertLog,
-  facet,
-  contentItems
-}: {
-  revertLog?: string;
-  facet?: string;
-  contentItems: ContentItem[];
-}): Promise<{ contentItems: ContentItem[]; missingContent: boolean } | undefined> => {
-  try {
-    let missingContent = false;
-
-    if (revertLog != null) {
-      const log = await new ArchiveLog().loadFromFile(revertLog);
-      const archived = log.getData('ARCHIVE');
-      const items = archived.map(args => args.split(' '));
-
-      // The archive actions may include delivery keys that were removed.
-      // Add these back to the content item, which will cause the unarchive to assign them later.
-      const contentItemsFiltered = contentItems
-        .map(contentItem => {
-          const entry = items.find(item => item[0] === contentItem.id || '');
-          if (entry) {
-            contentItem.body._meta.deliveryKey = entry[1];
-            return contentItem;
-          } else {
-            return null;
-          }
-        })
-        .filter(contentItem => !!contentItem);
-
-      missingContent = contentItems.length !== archived.length;
-
-      return {
-        contentItems: contentItemsFiltered as ContentItem[],
-        missingContent
-      };
-    }
-
-    // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
-    contentItems.forEach(item => delete item.body._meta.deliveryKey);
-
-    if (facet != null) {
-      const contentItemsFiltered = applyFacet(contentItems, facet);
-
-      return {
-        contentItems: contentItemsFiltered,
-        missingContent
-      };
-    }
-
-    return {
-      contentItems,
-      missingContent
-    };
-  } catch (err) {
-    console.log(err);
-    return {
-      contentItems: [],
-      missingContent: false
-    };
-  }
-};
-
 export const getContentItems = async ({
   client,
   id,
@@ -150,7 +86,7 @@ export const getContentItems = async ({
   facet
 }: {
   client: DynamicContent;
-  id?: string;
+  id?: string | string[];
   hubId: string;
   repoId?: string | string[];
   folderId?: string | string[];
@@ -158,50 +94,49 @@ export const getContentItems = async ({
   facet?: string;
 }): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
   try {
-    const contentItems: ContentItem[] = [];
+    let contentItems: ContentItem[] = [];
+    let revertItems: string[][] = [];
+
+    if (revertLog != null) {
+      const log = await new ArchiveLog().loadFromFile(revertLog);
+      revertItems = log.getData('ARCHIVE').map(args => args.split(' '));
+      id = revertItems.map(item => item[0]);
+    }
 
     if (id != null) {
-      contentItems.push(await client.contentItems.get(id));
+      const itemIds = Array.isArray(id) ? id : [id];
+      const items: ContentItem[] = [];
+
+      for (let i = 0; i < itemIds.length; i++) {
+        const id = itemIds[i];
+        try {
+          const contentItem = await client.contentItems.get(id);
+          items.push(contentItem);
+
+          if (revertItems.length == itemIds.length) {
+            contentItem.body._meta.deliveryKey = revertItems[i][1];
+          }
+        } catch {
+          // Missing item.
+        }
+      }
+
+      contentItems.push(...items.filter(item => item.status === Status.ARCHIVED));
 
       return {
         contentItems,
-        missingContent: false
+        missingContent: contentItems.length != itemIds.length
       };
     }
 
     const hub = await client.hubs.get(hubId);
-    const repoIds = typeof repoId === 'string' ? [repoId] : repoId || [];
-    const folderIds = typeof folderId === 'string' ? [folderId] : folderId || [];
-    const contentRepositories = await (repoId != null
-      ? Promise.all(repoIds.map(id => client.contentRepositories.get(id)))
-      : paginator(hub.related.contentRepositories.list));
 
-    const folders = folderId != null ? await Promise.all(folderIds.map(id => client.folders.get(id))) : [];
+    contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ARCHIVED });
 
-    folderId != null
-      ? await Promise.all(
-          folders.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: Status.ARCHIVED });
-            contentItems.push(...items);
-          })
-        )
-      : await Promise.all(
-          contentRepositories.map(async source => {
-            const items = await paginator(source.related.contentItems.list, { status: Status.ARCHIVED });
-            contentItems.push(...items);
-          })
-        );
+    // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
+    contentItems.forEach(item => delete item.body._meta.deliveryKey);
 
-    return (
-      (await filterContentItems({
-        revertLog,
-        facet,
-        contentItems
-      })) || {
-        contentItems: [],
-        missingContent: false
-      }
-    );
+    return { contentItems, missingContent: false };
   } catch (err) {
     console.log(err);
 
