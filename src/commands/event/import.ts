@@ -58,7 +58,7 @@ export const builder = (yargs: Argv): void => {
       type: 'string'
     })
 
-    .option('experimental', {
+    .option('acceptSnapshotLimits', {
       type: 'boolean',
       boolean: true,
       describe:
@@ -534,11 +534,11 @@ export const trySaveMapping = async (
 };
 
 export const handler = async (argv: Arguments<ImportEventBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { dir, logFile, experimental } = argv;
+  const { dir, logFile, acceptSnapshotLimits } = argv;
 
-  if (!experimental) {
+  if (!acceptSnapshotLimits) {
     console.log(
-      'Event import is an experimental feature, only use it if you fully understand its limitations. To use this command, pass the --experimental flag.'
+      'Event import may result in a different state from the export due to snapshots of referenced content items being taken at the time of creation. Only use it if you fully understand its limitations. To use this command, pass the --acceptSnapshotLimits flag.'
     );
     return;
   }

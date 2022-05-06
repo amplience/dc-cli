@@ -5,7 +5,7 @@ export interface ImportEventBuilderOptions {
   mapFile?: string;
   originalIds: boolean;
   schedule: boolean;
-  experimental: boolean;
+  acceptSnapshotLimits: boolean;
   catchup: boolean;
   logFile: FileLog;
 }

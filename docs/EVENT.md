@@ -12,7 +12,7 @@ Return to [README.md](../README.md) for information on other command categories.
 
 - [Common Options](#common-options)
 - [Useful Information](#useful-information)
-	- [Experimental: Export & Import](#experimental-export--import)
+	- [Export & Import limitations](#export--import-limitations)
 	- [Mapping files](#mapping-files)
 	
 - [Commands](#commands)
@@ -38,13 +38,26 @@ The following options are available for all **event** commands.
 
 ## Useful Information
 
-### Experimental: Export & Import
+### Export & Import limitations
 
-The most granular part of an event in Dynamic Content is a snapshot. This is a representation of a content item exactly as it appears at the point when it was added to an edition using the content browser, or when it was saved to an edition in the production view.
+When exporting and importing events with the DC CLI, it is important to understand that these commands have some limitations in regards to the snapshot components of events.
+
+Events, Editions, and Slots will be exported and imported much like with the other export and import commands in the CLI. However the most granular part of an event in Dynamic Content, the Snapshot,  is a representation of a content item exactly as it appears at the point when it was added to an edition using the content browser, or when it was saved to an edition in the production view.
 
 Due to this nature of snapshots, the event import command will not always result in an exact copy of the events exported with the event export command. Whilst the properties of the parent edition and event will match those of the source, the snapshots will be created as new. If a snapshotted content item in the source hub's exported events have been updated since the snapshot was created, then it will be the updated version of that content item which will be created as snapshots in the destination hub.
 
-As such, these commands should be considered an experimental feature, and should be used at your own risk if you understand these limitations. To use the import command, you must pass the `--experimental` argument along with any others.
+Snapshots can still optionally be exported to your file system by passing the `--snapshots` argument with your export command, however these will not be used during import and would only be used for reference purposes.
+
+The below table details what will and will not be included with the export and import commands:
+
+| Component | Exported with `export` command?               | Imported with `import` command?                              |
+| --------- | --------------------------------------------- | ------------------------------------------------------------ |
+| Events    | Yes                                           | Yes                                                          |
+| Editions  | Yes                                           | Yes                                                          |
+| Slots     | Yes                                           | Yes                                                          |
+| Snapshots | Yes*<br /><br />(With `--snapshots` argument) | No<br /><br />Snapshots are always created from the latest version of content items in the destination hub. |
+
+If you accept the above limitations and wish use the import command, you must pass the `--acceptSnapshotLimits` argument along with any others.
 
 ### Mapping files
 
@@ -172,14 +185,14 @@ dc-cli event import <dir>
 
 #### Options
 
-| Option Name     | Type      | Description                                                  |
-| --------------- | --------- | ------------------------------------------------------------ |
-| --experimental  | [boolean] | Must be passed to use the event import command.<br />Only use this command if you fully understand its [limitations](#experimental-export--import). |
-| --mapFile       | [string]  | Mapping file to use when updating content that already exists.<br />Updated with any new mappings that are generated.<br />If not present, will be created.<br />For more information, see [mapping files](#MAPPING-FILES). |
-| -f<br />--force | [boolean] | Overwrite existing events, editions, slots and snapshots without asking. |
-| --schedule      | [boolean] | Schedule events in the destination repo if they are scheduled in the source.<br />If any new or updated scheduled events started in the past, they will be moved to happen at the time of import.<br />If they ended in the past, they will be skipped by default. |
-| --catchup       | [boolean] | Scheduling events that ended in the past will move to the current date, so that their publishes run. |
-| --originalIds   | [boolean] | Use original IDs.                                            |
+| Option Name            | Type      | Description                                                  |
+| ---------------------- | --------- | ------------------------------------------------------------ |
+| --acceptSnapshotLimits | [boolean] | Must be passed to use the event import command.<br />Only use this command if you fully understand its [limitations](#export--import-limitations). |
+| --mapFile              | [string]  | Mapping file to use when updating content that already exists.<br />Updated with any new mappings that are generated.<br />If not present, will be created.<br />For more information, see [mapping files](#MAPPING-FILES). |
+| -f<br />--force        | [boolean] | Overwrite existing events, editions, slots and snapshots without asking. |
+| --schedule             | [boolean] | Schedule events in the destination repo if they are scheduled in the source.<br />If any new or updated scheduled events started in the past, they will be moved to happen at the time of import.<br />If they ended in the past, they will be skipped by default. |
+| --catchup              | [boolean] | Scheduling events that ended in the past will move to the current date, so that their publishes run. |
+| --originalIds          | [boolean] | Use original IDs.                                            |
 
 #### Examples
 

@@ -56,7 +56,7 @@ describe('event import command', () => {
     clientSecret: 'client-id',
     hubId: 'hub-id',
     schedule: false,
-    experimental: true,
+    acceptSnapshotLimits: true,
     catchup: true
   };
 
@@ -81,7 +81,7 @@ describe('event import command', () => {
         ...config,
         dir: '',
         originalIds: false,
-        experimental: true,
+        acceptSnapshotLimits: true,
         logFile: log,
         ...customArgs
       }
@@ -115,7 +115,7 @@ describe('event import command', () => {
         type: 'string'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('experimental', {
+      expect(spyOption).toHaveBeenCalledWith('acceptSnapshotLimits', {
         type: 'boolean',
         boolean: true,
         describe:
@@ -171,7 +171,7 @@ describe('event import command', () => {
       await rimraf('temp/importEvent/');
     });
 
-    it('should return immediately if experimental is false', async function() {
+    it('should return immediately if acceptSnapshotLimits is false', async function() {
       const { getHubMock } = mockValues({});
 
       const logFile = new FileLog();
@@ -180,7 +180,7 @@ describe('event import command', () => {
         ...config,
         logFile,
         dir: 'temp/importEvent/',
-        experimental: false,
+        acceptSnapshotLimits: false,
         catchup: false,
         originalIds: false
       };

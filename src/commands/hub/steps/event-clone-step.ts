@@ -55,7 +55,7 @@ export class EventCloneStep implements CloneHubStep {
         mapFile: state.argv.mapFile,
         originalIds: false,
         schedule: true,
-        experimental: true,
+        acceptSnapshotLimits: true,
         catchup: false,
         ...state.to
       });
@@ -93,7 +93,7 @@ export class EventCloneStep implements CloneHubStep {
             mapFile: state.argv.mapFile,
             originalIds: true,
             schedule: true,
-            experimental: true,
+            acceptSnapshotLimits: true,
             catchup: false,
             ...state.to
           }
