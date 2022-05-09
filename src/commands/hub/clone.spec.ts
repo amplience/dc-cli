@@ -32,13 +32,13 @@ function succeedOrFail(mock: any, succeed: () => boolean): jest.Mock {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mockStep(name: string, id: string, success: () => boolean, isExperimental?: boolean): any {
+function mockStep(name: string, id: string, success: () => boolean, isLimited?: boolean): any {
   return jest.fn().mockImplementation(() => ({
     run: succeedOrFail(jest.fn(), success),
     revert: succeedOrFail(jest.fn(), success),
     getName: jest.fn().mockReturnValue(name),
     getId: jest.fn().mockReturnValue(id),
-    isExperimental
+    isLimited
   }));
 }
 
@@ -138,7 +138,7 @@ describe('hub clone command', () => {
         type: 'string'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('experimental', {
+      expect(spyOption).toHaveBeenCalledWith('acceptSnapshotLimits', {
         type: 'boolean',
         boolean: true,
         describe:
@@ -250,7 +250,7 @@ describe('hub clone command', () => {
       clientId: 'client-id',
       clientSecret: 'client-id',
       hubId: 'hub-id',
-      experimental: true,
+      acceptSnapshotLimits: true,
 
       revertLog: Promise.resolve(undefined)
     };
@@ -412,14 +412,14 @@ describe('hub clone command', () => {
       }
     });
 
-    it('should exclude experimental steps if experimental is false', async () => {
+    it('should exclude acceptSnapshotLimits steps if acceptSnapshotLimits is false', async () => {
       clearMocks();
       success = [true, true, true, true, true, true, true];
 
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
         ...config,
-        experimental: false,
+        acceptSnapshotLimits: false,
 
         dir: `temp_${process.env.JEST_WORKER_ID}/clone/steps`,
 
@@ -445,7 +445,7 @@ describe('hub clone command', () => {
       mocks.forEach(mock => {
         const instance = mock.mock.results[0].value;
 
-        if (instance.isExperimental) {
+        if (instance.isLimited) {
           expect(instance.run).not.toHaveBeenCalled();
         } else {
           expect(instance.run).toHaveBeenCalledWith(stepConfig);
@@ -479,7 +479,7 @@ describe('hub clone command', () => {
       clientId: 'client-id',
       clientSecret: 'client-id',
       hubId: 'hub-id',
-      experimental: true
+      acceptSnapshotLimits: true
     };
 
     beforeAll(async () => {
@@ -699,7 +699,7 @@ describe('hub clone command', () => {
       }
     });
 
-    it('should exclude experimental steps if experimental is false', async () => {
+    it('should exclude acceptSnapshotLimits steps if acceptSnapshotLimits is false', async () => {
       clearMocks();
       success = [true, true, true, true, true, true, true];
       await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/clone-revert/`);
@@ -708,7 +708,7 @@ describe('hub clone command', () => {
       const argv: Arguments<CloneHubBuilderOptions & ConfigurationParameters> = {
         ...yargArgs,
         ...config,
-        experimental: false,
+        acceptSnapshotLimits: false,
 
         dir: `temp_${process.env.JEST_WORKER_ID}/clone-revert/steps`,
 
@@ -734,7 +734,7 @@ describe('hub clone command', () => {
       mocks.forEach(mock => {
         const instance = mock.mock.results[0].value;
 
-        if (instance.isExperimental) {
+        if (instance.isLimited) {
           expect(instance.revert).not.toHaveBeenCalled();
         } else {
           expect(instance.revert).toHaveBeenCalledWith(stepConfig);

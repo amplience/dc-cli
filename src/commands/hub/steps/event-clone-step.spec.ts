@@ -89,7 +89,7 @@ describe('event clone step', () => {
       ...yargArgs,
       ...config,
       logFile: new FileLog(),
-      experimental: true,
+      acceptSnapshotLimits: true,
       mapFile: 'mapping.json',
 
       dir: directory,

@@ -13,7 +13,7 @@ export enum CloneHubStepId {
 export interface CloneHubStep {
   getId(): CloneHubStepId;
   getName(): string;
-  isExperimental?: boolean;
+  isLimited?: boolean;
   run(state: CloneHubState): Promise<boolean>;
   revert(state: CloneHubState): Promise<boolean>;
 }

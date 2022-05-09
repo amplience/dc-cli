@@ -17,7 +17,7 @@ export class EventCloneStep implements CloneHubStep {
     return 'Clone Events';
   }
 
-  isExperimental = true;
+  isLimited = true;
 
   async run(state: CloneHubState): Promise<boolean> {
     try {

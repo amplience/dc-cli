@@ -42,7 +42,7 @@ The following options are available for all **event** commands.
 
 When exporting and importing events with the DC CLI, it is important to understand that these commands have some limitations in regards to the snapshot components of events.
 
-Events, Editions, and Slots will be exported and imported much like with the other export and import commands in the CLI. However the most granular part of an event in Dynamic Content, the Snapshot,  is a representation of a content item exactly as it appears at the point when it was added to an edition using the content browser, or when it was saved to an edition in the production view.
+Events, Editions, and Slots will be exported and imported much like with the other export and import commands in the CLI. However the most granular part of an event in Dynamic Content, the Snapshot, is a representation of a content item exactly as it appears at the point when it was added to an edition using the content browser, or when it was saved to an edition in the production view.
 
 Due to this nature of snapshots, the event import command will not always result in an exact copy of the events exported with the event export command. Whilst the properties of the parent edition and event will match those of the source, the snapshots will be created as new. If a snapshotted content item in the source hub's exported events have been updated since the snapshot was created, then it will be the updated version of that content item which will be created as snapshots in the destination hub.
 
@@ -198,8 +198,8 @@ dc-cli event import <dir>
 
 ##### Import events from the filesystem
 
-`dc-cli event import ./myDirectory/event --experimental`
+`dc-cli event import ./myDirectory/event --acceptSnapshotLimits`
 
 ##### Specify a mapping file when importing
 
-`dc-cli event import ./myDirectory/event --mapFile ./myDirectory/mappingFile.json --experimental`
+`dc-cli event import ./myDirectory/event --mapFile ./myDirectory/mappingFile.json --acceptSnapshotLimits`

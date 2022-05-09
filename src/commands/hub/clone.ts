@@ -61,7 +61,7 @@ export const builder = (yargs: Argv): void => {
       type: 'string'
     })
 
-    .option('experimental', {
+    .option('acceptSnapshotLimits', {
       type: 'boolean',
       boolean: true,
       describe:
@@ -171,7 +171,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     argv.mapFile = getDefaultMappingPath(`hub-${argv.dstHubId}`);
   }
 
-  const { hubId, clientId, clientSecret, experimental } = argv;
+  const { hubId, clientId, clientSecret, acceptSnapshotLimits } = argv;
 
   const dstHubId = argv.dstHubId || hubId;
   const dstClientId = argv.dstClientId || clientId;
@@ -221,7 +221,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     for (let i = stepIndex; i < steps.length; i++) {
       const step = steps[i];
 
-      if (step.isExperimental && !experimental) {
+      if (step.isLimited && !acceptSnapshotLimits) {
         continue;
       }
 
@@ -244,7 +244,7 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     for (let i = stepIndex; i < steps.length; i++) {
       const step = steps[i];
 
-      if (step.isExperimental && !experimental) {
+      if (step.isLimited && !acceptSnapshotLimits) {
         continue;
       }
 

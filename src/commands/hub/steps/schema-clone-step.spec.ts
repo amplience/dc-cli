@@ -66,7 +66,7 @@ describe('schema clone step', () => {
       ...yargArgs,
       ...config,
       logFile: new FileLog(),
-      experimental: false,
+      acceptSnapshotLimits: false,
 
       dir: directory,
 
