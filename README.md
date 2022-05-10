@@ -67,11 +67,11 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 ##### Create/Update configuration file for single hub
 
-`dc-cli configure --clientId foo --clientId bar --hubId baz`
+`dc-cli configure --clientId foo --clientSecret bar --hubId baz`
 
 ##### Create/Update configuration file for two-hub usage (copy/move/clone)
 
-`dc-cli configure --clientId foo --clientId bar --hubId baz --dstClientId qux --dstSecret quux --dstHubId quuz`
+`dc-cli configure --clientId foo --clientSecret bar --hubId baz --dstClientId qux --dstSecret quux --dstHubId quuz`
 
 ## Command categories
 
