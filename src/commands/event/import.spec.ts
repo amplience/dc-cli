@@ -24,6 +24,7 @@ import { ImportEventBuilderOptions } from '../../interfaces/import-event-builder
 import { loadJsonFromDirectory } from '../../services/import.service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { dateOffset } from '../../common/import/date-helpers';
+import { ensureDirectoryExists } from '../../common/import/directory-utils';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../services/import.service');
@@ -164,11 +165,11 @@ describe('event import command', () => {
 
   describe('handler tests', function() {
     beforeAll(async () => {
-      await rimraf('temp/importEvent/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/importEvent/`);
     });
 
     afterAll(async () => {
-      await rimraf('temp/importEvent/');
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/importEvent/`);
     });
 
     it('should return immediately if acceptSnapshotLimits is false', async function() {
@@ -179,7 +180,7 @@ describe('event import command', () => {
         ...yargArgs,
         ...config,
         logFile,
-        dir: 'temp/importEvent/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
         acceptSnapshotLimits: false,
         catchup: false,
         originalIds: false
@@ -213,7 +214,7 @@ describe('event import command', () => {
         ...yargArgs,
         ...config,
         logFile,
-        dir: 'temp/importEvent/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
         originalIds: false
       };
       const event = new EventWithEditions({ id: 'id-1' });
@@ -229,7 +230,10 @@ describe('event import command', () => {
       await handler(argv);
 
       expect(getHubMock).toHaveBeenCalledWith('hub-id'); //from returned hub
-      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith('temp/importEvent/', EventWithEditions);
+      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith(
+        `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
+        EventWithEditions
+      );
 
       expect(importEvents).toHaveBeenCalledWith(
         [event],
@@ -252,8 +256,8 @@ describe('event import command', () => {
         ...yargArgs,
         ...config,
         logFile,
-        mapFile: 'temp/importEvent/importEvent.json',
-        dir: 'temp/importEvent/',
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/importEvent/importEvent.json`,
+        dir: `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
         originalIds: false
       };
       const event = new EventWithEditions({ id: 'id-1' });
@@ -266,13 +270,18 @@ describe('event import command', () => {
       const trySaveMapping = jest.spyOn(importModule, 'trySaveMapping').mockResolvedValue();
       const getDefaultMappingPath = jest.spyOn(importModule, 'getDefaultMappingPath');
 
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/importEvent/`);
+
       const existingMapping = new ContentMapping();
       await existingMapping.save(argv.mapFile);
 
       await handler(argv);
 
       expect(getHubMock).toHaveBeenCalledWith('hub-id'); //from returned hub
-      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith('temp/importEvent/', EventWithEditions);
+      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith(
+        `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
+        EventWithEditions
+      );
 
       expect(importEvents).toHaveBeenCalledWith(
         [event],
@@ -295,7 +304,7 @@ describe('event import command', () => {
         ...yargArgs,
         ...config,
         logFile,
-        dir: 'temp/importEvent/',
+        dir: `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
         originalIds: false
       };
       const event = new EventWithEditions({ id: 'id-1' });
@@ -311,7 +320,10 @@ describe('event import command', () => {
       await handler(argv);
 
       expect(getHubMock).toHaveBeenCalledWith('hub-id'); //from returned hub
-      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith('temp/importEvent/', EventWithEditions);
+      expect(loadJsonFromDirectory as jest.Mock).toHaveBeenCalledWith(
+        `temp_${process.env.JEST_WORKER_ID}/importEvent/`,
+        EventWithEditions
+      );
 
       expect(importEvents).toHaveBeenCalledWith(
         [event],
@@ -1112,6 +1124,7 @@ Array [
 
       const newEdition = new Edition(baseEdition);
       newEdition.related.update = mockEdition.related.update;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
       (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
       (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
@@ -1171,6 +1184,7 @@ Array [
 
       const newEdition = new Edition(baseEdition);
       newEdition.related.update = mockEdition.related.update;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
       (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
       (mockEditionUnschedule as jest.Mock).mockRejectedValue(new Error('Unschedule Failed'));
@@ -1227,6 +1241,7 @@ Array [
 
       const newEdition = new Edition(baseEdition);
       newEdition.related.update = mockEdition.related.update;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newEdition as any).client = { fetchLinkedResource: mockSlotsList };
       (mockEditionGet as jest.Mock).mockResolvedValueOnce(newEdition);
 
