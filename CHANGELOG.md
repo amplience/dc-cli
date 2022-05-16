@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.15.0](https://www.github.com/amplience/dc-cli/compare/v0.14.0...v0.15.0) (2022-05-16)
+
+
+### Features
+
+* **event:** add event import/export commands and clone step ([#114](https://www.github.com/amplience/dc-cli/issues/114)) ([85a8889](https://www.github.com/amplience/dc-cli/commit/85a8889d7425aaa334c254d5c8204fb37e571841))
+
 ## [0.14.0](https://www.github.com/amplience/dc-cli/compare/v0.13.0...v0.14.0) (2022-05-05)
 
 
