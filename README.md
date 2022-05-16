@@ -20,6 +20,7 @@ Run `dc-cli --help` to get a list of available commands.
   - [extension](#extension)
   - [search-index](#search-index)
   - [content-repository](#content-repository)
+  - [event](#event)
   - [settings](#settings)
   - [hub](#hub)
 - [Building the CLI](#building-the-cli)
@@ -123,6 +124,12 @@ These commands can be used to get details for a specific repository, list multip
 
 [View commands for **content-repository**](docs/CONTENT-REPOSITORY.md)
 
+### event
+
+This category includes interactions with Dynamic Content's events and its constituent parts (Editions, Slots, and Snapshots). These commands can be used to export and import events, and to archive events.
+
+[View commands for **event**](docs/EVENT.md)
+
 ### settings
 
 This category includes interactions with the supporting properties of a Dynamic Content hub. These commands can be used to export and import a hub's breakpoint settings for visualization, preview applications, workflow states, and locales.
@@ -166,4 +173,3 @@ Outlined below are the detailed permissions required to run each command of the 
 | `content-type-schema list`                        | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                         |
 | `content-type-schema update <id>`                 | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                         |
 | `content-type-schema import <dir>`                | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |
-

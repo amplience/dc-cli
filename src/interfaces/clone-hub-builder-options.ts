@@ -23,4 +23,5 @@ export interface CloneHubBuilderOptions {
   republish?: boolean;
 
   excludeKeys?: boolean;
+  acceptSnapshotLimits: boolean;
 }

@@ -6,12 +6,14 @@ export enum CloneHubStepId {
   Schema = 'schema',
   Type = 'type',
   Index = 'index',
-  Content = 'content'
+  Content = 'content',
+  Event = 'event'
 }
 
 export interface CloneHubStep {
   getId(): CloneHubStepId;
   getName(): string;
+  isLimited?: boolean;
   run(state: CloneHubState): Promise<boolean>;
   revert(state: CloneHubState): Promise<boolean>;
 }

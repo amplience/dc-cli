@@ -1,0 +1,468 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`event export command enrichEditions tests should request and populate slots for each of the provided editions 1`] = `
+Array [
+  Object {
+    "id": "ed1",
+    "name": "ed1",
+    "publishingStatus": "DRAFT",
+    "slots": Array [
+      Object {
+        "conflicts": false,
+        "content": Object {
+          "body": Object {
+            "_meta": Object {
+              "name": "example-slot-test",
+              "schema": "http://schema.com/test.json",
+            },
+            "link": Array [
+              Object {
+                "_meta": Object {
+                  "locked": "true",
+                  "rootContentItemId": "content-item-1",
+                  "schema": "http://bigcontent.io/cms/schema/v1/core#/definitions/content-link",
+                },
+                "contentType": "http://schema.com/test.json",
+                "id": "snapshot1",
+              },
+            ],
+          },
+        },
+        "contentTypeId": "testType",
+        "createdDate": "2021-05-06T09:52:27.065Z",
+        "editionId": "ed1",
+        "empty": false,
+        "eventId": "test1",
+        "id": "slot1",
+        "lastModifiedDate": "2021-05-06T09:52:27.065Z",
+        "locale": null,
+        "slotId": "testSlotId",
+        "slotLabel": "example-slot-test",
+        "slotStatus": "ACTIVE",
+        "status": "VALID",
+      },
+    ],
+  },
+]
+`;
+
+exports[`event export command enrichEvents tests should request and populate editions for each of the provided events 1`] = `
+Array [
+  Object {
+    "editions": Array [
+      Object {
+        "id": "ed1",
+        "name": "ed1",
+        "publishingStatus": "DRAFT",
+        "slots": Array [
+          Object {
+            "conflicts": false,
+            "content": Object {
+              "body": Object {
+                "_meta": Object {
+                  "name": "example-slot-test",
+                  "schema": "http://schema.com/test.json",
+                },
+                "link": Array [
+                  Object {
+                    "_meta": Object {
+                      "locked": "true",
+                      "rootContentItemId": "content-item-1",
+                      "schema": "http://bigcontent.io/cms/schema/v1/core#/definitions/content-link",
+                    },
+                    "contentType": "http://schema.com/test.json",
+                    "id": "snapshot1",
+                  },
+                ],
+              },
+            },
+            "contentTypeId": "testType",
+            "createdDate": "2021-05-06T09:52:27.065Z",
+            "editionId": "ed1",
+            "empty": false,
+            "eventId": "test1",
+            "id": "slot1",
+            "lastModifiedDate": "2021-05-06T09:52:27.065Z",
+            "locale": null,
+            "slotId": "testSlotId",
+            "slotLabel": "example-slot-test",
+            "slotStatus": "ACTIVE",
+            "status": "VALID",
+          },
+        ],
+      },
+    ],
+    "end": "2021-05-06T12:00:00.000Z",
+    "id": "test1",
+    "name": "test1",
+    "start": "2021-05-05T12:00:00.000Z",
+  },
+  Object {
+    "editions": Array [
+      Object {
+        "id": "ed1",
+        "name": "ed1",
+        "publishingStatus": "DRAFT",
+        "slots": Array [
+          Object {
+            "conflicts": false,
+            "content": Object {
+              "body": Object {
+                "_meta": Object {
+                  "name": "example-slot-test",
+                  "schema": "http://schema.com/test.json",
+                },
+                "link": Array [
+                  Object {
+                    "_meta": Object {
+                      "locked": "true",
+                      "rootContentItemId": "content-item-1",
+                      "schema": "http://bigcontent.io/cms/schema/v1/core#/definitions/content-link",
+                    },
+                    "contentType": "http://schema.com/test.json",
+                    "id": "snapshot1",
+                  },
+                ],
+              },
+            },
+            "contentTypeId": "testType",
+            "createdDate": "2021-05-06T09:52:27.065Z",
+            "editionId": "ed1",
+            "empty": false,
+            "eventId": "test1",
+            "id": "slot1",
+            "lastModifiedDate": "2021-05-06T09:52:27.065Z",
+            "locale": null,
+            "slotId": "testSlotId",
+            "slotLabel": "example-slot-test",
+            "slotStatus": "ACTIVE",
+            "status": "VALID",
+          },
+        ],
+      },
+    ],
+    "end": "2021-05-08T12:00:00.000Z",
+    "id": "test2",
+    "name": "test2",
+    "start": "2021-05-07T12:00:00.000Z",
+  },
+]
+`;
+
+exports[`event export command handler tests should exit early if getting the hub fails 1`] = `
+"// dc-cli test-ver - temp/exportEvent/noHub.log
+ERROR 
+// ERROR: Couldn't get hub with id hub-id, aborting.
+// Error: Error
+FAILURE"
+`;
+
+exports[`event export command handler tests should export snapshots when --snapshots is provided 1`] = `
+Array [
+  "{
+  \\"name\\": \\"test1\\",
+  \\"id\\": \\"1\\",
+  \\"start\\": \\"2021-05-05T12:00:00.000Z\\",
+  \\"end\\": \\"2021-05-06T12:00:00.000Z\\",
+  \\"editions\\": [
+    {
+      \\"name\\": \\"ed1\\",
+      \\"id\\": \\"ed1\\",
+      \\"publishingStatus\\": \\"DRAFT\\",
+      \\"slots\\": [
+        {
+          \\"id\\": \\"slot1\\",
+          \\"eventId\\": \\"test1\\",
+          \\"editionId\\": \\"ed1\\",
+          \\"createdDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"lastModifiedDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"content\\": {
+            \\"body\\": {
+              \\"_meta\\": {
+                \\"schema\\": \\"http://schema.com/test.json\\",
+                \\"name\\": \\"example-slot-test\\"
+              },
+              \\"link\\": [
+                {
+                  \\"_meta\\": {
+                    \\"schema\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content-link\\",
+                    \\"rootContentItemId\\": \\"content-item-1\\",
+                    \\"locked\\": \\"true\\"
+                  },
+                  \\"contentType\\": \\"http://schema.com/test.json\\",
+                  \\"id\\": \\"snapshot1\\"
+                }
+              ]
+            }
+          },
+          \\"status\\": \\"VALID\\",
+          \\"slotStatus\\": \\"ACTIVE\\",
+          \\"contentTypeId\\": \\"testType\\",
+          \\"slotId\\": \\"testSlotId\\",
+          \\"slotLabel\\": \\"example-slot-test\\",
+          \\"conflicts\\": false,
+          \\"locale\\": null,
+          \\"empty\\": false
+        }
+      ]
+    }
+  ]
+}",
+  "{
+  \\"id\\": \\"snapshot-1\\",
+  \\"comment\\": \\"\\",
+  \\"createdDate\\": \\"2018-04-04T16:00:06.945Z\\",
+  \\"createdBy\\": \\"user\\",
+  \\"createdFrom\\": \\"content-item\\",
+  \\"type\\": \\"USER\\",
+  \\"meta\\": [],
+  \\"taggedEditions\\": [
+    {
+      \\"editionId\\": \\"ed1\\",
+      \\"createdDate\\": \\"2018-04-04T16:00:07Z\\",
+      \\"createdBy\\": \\"user\\"
+    }
+  ],
+  \\"locale\\": null,
+  \\"rootContentItem\\": {
+    \\"label\\": \\"Content Item\\",
+    \\"contentTypeUri\\": \\"http://schema.com/test.json\\",
+    \\"id\\": \\"content-item-1\\"
+  },
+  \\"rootContentItems\\": [
+    {
+      \\"label\\": \\"Content Item\\",
+      \\"contentTypeUri\\": \\"http://schema.com/test.json\\",
+      \\"id\\": \\"content-item-1\\"
+    }
+  ],
+  \\"content\\": [
+    {
+      \\"id\\": \\"content-item-1\\",
+      \\"contentRepositoryId\\": \\"repo1\\",
+      \\"body\\": {
+        \\"_meta\\": {
+          \\"name\\": \\"test\\",
+          \\"schema\\": \\"http://schema.com/test.json\\"
+        },
+        \\"simpleContent\\": \\"test\\"
+      },
+      \\"version\\": 9,
+      \\"label\\": \\"Content Item\\",
+      \\"status\\": \\"ACTIVE\\"
+    }
+  ]
+}",
+]
+`;
+
+exports[`event export command handler tests should export snapshots when --snapshots is provided 2`] = `
+"// dc-cli test-ver - temp/exportEvent/snapshots.log
+// Exporting single event test1.
+// Fetching test1 with editions.
+// Scanning slots for snapshots.
+// Saving 1 snapshots to './snapshots/'.
+// Fetching snapshot snapshot1.
+// Done.
+SUCCESS"
+`;
+
+exports[`event export command handler tests should list and export a single edition 1`] = `
+Array [
+  "{
+  \\"name\\": \\"test1\\",
+  \\"id\\": \\"1\\",
+  \\"start\\": \\"2021-05-05T12:00:00.000Z\\",
+  \\"end\\": \\"2021-05-06T12:00:00.000Z\\",
+  \\"editions\\": [
+    {
+      \\"name\\": \\"ed1\\",
+      \\"id\\": \\"ed1\\",
+      \\"publishingStatus\\": \\"DRAFT\\",
+      \\"slots\\": [
+        {
+          \\"id\\": \\"slot1\\",
+          \\"eventId\\": \\"test1\\",
+          \\"editionId\\": \\"ed1\\",
+          \\"createdDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"lastModifiedDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"content\\": {
+            \\"body\\": {
+              \\"_meta\\": {
+                \\"schema\\": \\"http://schema.com/test.json\\",
+                \\"name\\": \\"example-slot-test\\"
+              },
+              \\"link\\": [
+                {
+                  \\"_meta\\": {
+                    \\"schema\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content-link\\",
+                    \\"rootContentItemId\\": \\"content-item-1\\",
+                    \\"locked\\": \\"true\\"
+                  },
+                  \\"contentType\\": \\"http://schema.com/test.json\\",
+                  \\"id\\": \\"snapshot1\\"
+                }
+              ]
+            }
+          },
+          \\"status\\": \\"VALID\\",
+          \\"slotStatus\\": \\"ACTIVE\\",
+          \\"contentTypeId\\": \\"testType\\",
+          \\"slotId\\": \\"testSlotId\\",
+          \\"slotLabel\\": \\"example-slot-test\\",
+          \\"conflicts\\": false,
+          \\"locale\\": null,
+          \\"empty\\": false
+        }
+      ]
+    }
+  ]
+}",
+]
+`;
+
+exports[`event export command handler tests should list and export a single edition 2`] = `
+"// dc-cli test-ver - temp/exportEvent/single.log
+// Exporting single event test1.
+// Fetching test1 with editions.
+// Done.
+SUCCESS"
+`;
+
+exports[`event export command handler tests should list and export all editions 1`] = `
+Array [
+  "{
+  \\"id\\": \\"test1\\",
+  \\"name\\": \\"test1\\",
+  \\"start\\": \\"2021-05-05T12:00:00.000Z\\",
+  \\"end\\": \\"2021-05-06T12:00:00.000Z\\",
+  \\"editions\\": [
+    {
+      \\"name\\": \\"ed1\\",
+      \\"id\\": \\"ed1\\",
+      \\"publishingStatus\\": \\"DRAFT\\",
+      \\"slots\\": [
+        {
+          \\"id\\": \\"slot1\\",
+          \\"eventId\\": \\"test1\\",
+          \\"editionId\\": \\"ed1\\",
+          \\"createdDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"lastModifiedDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"content\\": {
+            \\"body\\": {
+              \\"_meta\\": {
+                \\"schema\\": \\"http://schema.com/test.json\\",
+                \\"name\\": \\"example-slot-test\\"
+              },
+              \\"link\\": [
+                {
+                  \\"_meta\\": {
+                    \\"schema\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content-link\\",
+                    \\"rootContentItemId\\": \\"content-item-1\\",
+                    \\"locked\\": \\"true\\"
+                  },
+                  \\"contentType\\": \\"http://schema.com/test.json\\",
+                  \\"id\\": \\"snapshot1\\"
+                }
+              ]
+            }
+          },
+          \\"status\\": \\"VALID\\",
+          \\"slotStatus\\": \\"ACTIVE\\",
+          \\"contentTypeId\\": \\"testType\\",
+          \\"slotId\\": \\"testSlotId\\",
+          \\"slotLabel\\": \\"example-slot-test\\",
+          \\"conflicts\\": false,
+          \\"locale\\": null,
+          \\"empty\\": false
+        }
+      ]
+    }
+  ]
+}",
+  "{
+  \\"id\\": \\"test2\\",
+  \\"name\\": \\"test2\\",
+  \\"start\\": \\"2021-05-07T12:00:00.000Z\\",
+  \\"end\\": \\"2021-05-08T12:00:00.000Z\\",
+  \\"editions\\": [
+    {
+      \\"name\\": \\"ed1\\",
+      \\"id\\": \\"ed1\\",
+      \\"publishingStatus\\": \\"DRAFT\\",
+      \\"slots\\": [
+        {
+          \\"id\\": \\"slot1\\",
+          \\"eventId\\": \\"test1\\",
+          \\"editionId\\": \\"ed1\\",
+          \\"createdDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"lastModifiedDate\\": \\"2021-05-06T09:52:27.065Z\\",
+          \\"content\\": {
+            \\"body\\": {
+              \\"_meta\\": {
+                \\"schema\\": \\"http://schema.com/test.json\\",
+                \\"name\\": \\"example-slot-test\\"
+              },
+              \\"link\\": [
+                {
+                  \\"_meta\\": {
+                    \\"schema\\": \\"http://bigcontent.io/cms/schema/v1/core#/definitions/content-link\\",
+                    \\"rootContentItemId\\": \\"content-item-1\\",
+                    \\"locked\\": \\"true\\"
+                  },
+                  \\"contentType\\": \\"http://schema.com/test.json\\",
+                  \\"id\\": \\"snapshot1\\"
+                }
+              ]
+            }
+          },
+          \\"status\\": \\"VALID\\",
+          \\"slotStatus\\": \\"ACTIVE\\",
+          \\"contentTypeId\\": \\"testType\\",
+          \\"slotId\\": \\"testSlotId\\",
+          \\"slotLabel\\": \\"example-slot-test\\",
+          \\"conflicts\\": false,
+          \\"locale\\": null,
+          \\"empty\\": false
+        }
+      ]
+    }
+  ]
+}",
+]
+`;
+
+exports[`event export command handler tests should list and export all editions 2`] = `
+"// dc-cli test-ver - temp/exportEvent/all.log
+// Exporting 2 of 2 events...
+// Fetching test1 with editions.
+// Fetching test2 with editions.
+// Done.
+SUCCESS"
+`;
+
+exports[`event export command handler tests should log an error when getting a single event fails 1`] = `
+"// dc-cli test-ver - temp/exportEvent/singleError.log
+ERROR 
+// ERROR: Failed to get event with id missing, aborting.
+// Error: Error
+FAILURE"
+`;
+
+exports[`event export command handler tests should log an error when listing events fails 1`] = `
+"// dc-cli test-ver - temp/exportEvent/listError.log
+ERROR 
+// ERROR: Failed to list events.
+// Error: Error
+// No events to export from this hub, exiting.
+// Done.
+FAILURE"
+`;
+
+exports[`event export command handler tests should pass from and to date parameters to filterEvents 2`] = `
+"// dc-cli test-ver - temp/exportEvent/date.log
+// Exporting 0 of 2 events...
+// No events to export from this hub, exiting.
+// Done.
+SUCCESS"
+`;

@@ -66,6 +66,7 @@ describe('type clone step', () => {
       ...yargArgs,
       ...config,
       logFile: new FileLog(),
+      acceptSnapshotLimits: false,
 
       dir: directory,
 

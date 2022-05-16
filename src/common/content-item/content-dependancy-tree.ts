@@ -2,7 +2,7 @@ import { ContentItem, ContentRepository } from 'dc-management-sdk-js';
 import { ContentMapping } from '../content-mapping';
 import { Body } from './body';
 
-type DependancyContentTypeSchema =
+export type DependancyContentTypeSchema =
   | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
   | 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'
   | '_hierarchy'; // Used internally for parent dependancies.
