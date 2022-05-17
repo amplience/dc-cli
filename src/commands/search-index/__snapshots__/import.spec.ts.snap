@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`search-index import command doCreate should error if the index never appears after a 504 1`] = `"Error creating index index-name: Error: waitOnTimeout"`;
+
 exports[`search-index import command doCreate should throw an error when enrichIndex fails 1`] = `"Error creating index index-name: The update-index action is not available, ensure you have permission to perform this action."`;
 
 exports[`search-index import command doCreate should throw an error when index create fails 1`] = `"Error creating index index-name: Error: Error creating index"`;

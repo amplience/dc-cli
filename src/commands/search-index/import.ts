@@ -1,8 +1,10 @@
 import chalk from 'chalk';
 import { Hub, Page, Pageable, SearchIndex, Settings, Sortable, Webhook } from 'dc-management-sdk-js';
+import { isEqual } from 'lodash';
 import { join } from 'path';
 import { table } from 'table';
 import { Arguments, Argv } from 'yargs';
+import { waitOnTimeout } from '../../common/content-item/retry-helpers';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
@@ -165,7 +167,8 @@ export const enrichIndex = async (
   hub: Hub,
   index: SearchIndex,
   enrichedIndex: EnrichedSearchIndex,
-  webhooks: Map<string, Webhook> | undefined
+  webhooks: Map<string, Webhook> | undefined,
+  log: FileLog
 ): Promise<void> => {
   // Union the replicas on the server and the replicas being imported.
   // This avoids replicas being detached from their parents, and thus becoming unusable.
@@ -178,8 +181,17 @@ export const enrichIndex = async (
   }
   enrichedIndex.settings.replicas = Array.from(replicas);
 
-  // Update the search index settings.
-  await index.related.settings.update(enrichedIndex.settings, false);
+  // Update the search index settings. This may take a while if it ends up creating replicas, so wait if it times out.
+  await waitOnTimeout(
+    log,
+    async () => await index.related.settings.update(enrichedIndex.settings, false),
+    async () => {
+      // Request the settings and check if they match.
+      const settings = await index.related.settings.get();
+
+      return isEqual(settings, enrichedIndex.settings);
+    }
+  );
 
   // Updating the settings might have changed the available hal links, so refetch it.
   index = await hub.related.searchIndexes.get(index.id as string);
@@ -249,9 +261,28 @@ export const doCreate = async (
 
     const toCreate = new SearchIndex({ ...getIndexProperties(index), assignedContentTypes });
 
-    const createdIndex = await hub.related.searchIndexes.create(toCreate);
+    let creatingIndex: SearchIndex | undefined;
 
-    await enrichIndex(hub, createdIndex, index, webhooks);
+    // Create the search index. This may take a while, so wait if it times out.
+    await waitOnTimeout(
+      log,
+      async () => {
+        creatingIndex = await hub.related.searchIndexes.create(toCreate);
+      },
+      async () => {
+        // Request the indexes and see if any of them match our creation request.
+
+        const indexes = await paginator(searchIndexList(hub));
+
+        creatingIndex = indexes.find(newIndex => index.name === newIndex.name);
+
+        return creatingIndex != null;
+      }
+    );
+
+    const createdIndex = creatingIndex as SearchIndex; // Should be non-null coming out of waitOnTimeout
+
+    await enrichIndex(hub, createdIndex, index, webhooks, log);
 
     log.addAction('CREATE', `${createdIndex.id}`);
 
@@ -283,7 +314,7 @@ export const doUpdate = async (
 
     const updatedIndex = await retrievedIndex.related.update(retrievedIndex);
 
-    await enrichIndex(hub, updatedIndex, index, webhooks);
+    await enrichIndex(hub, updatedIndex, index, webhooks, log);
 
     log.addAction('UPDATE', `${retrievedIndex.id}`);
 
