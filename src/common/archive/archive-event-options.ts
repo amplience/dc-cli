@@ -2,8 +2,11 @@ import { FileLog } from '../file-log';
 
 export default interface ArchiveOptions {
   id?: string | string[];
-
   name?: string | string[];
+  fromDate?: string;
+  toDate?: string;
+
+  editions?: boolean;
 
   logFile: FileLog;
   force?: boolean;

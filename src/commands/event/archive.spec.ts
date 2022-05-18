@@ -1,4 +1,5 @@
-import { builder, command, handler, LOG_FILENAME, getEvents, coerceLog } from './archive';
+import { builder, command, handler, LOG_FILENAME, getEvents, coerceLog, filterEvents, filterEditions } from './archive';
+import * as archive from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Event, Edition, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
@@ -504,6 +505,30 @@ describe('event archive command', () => {
       expect(archiveMock).toHaveBeenCalledTimes(2);
     });
 
+    it('should delete 1 edition without archiving events if editions option is given', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockEditionsList, deleteMock, archiveMock, mockGet } = mockValues({
+        status: 'DRAFT',
+        mixedEditions: true
+      });
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        id: '1',
+        name: 'test',
+        editions: true
+      };
+      await handler(argv);
+
+      expect(mockGet).toHaveBeenCalled();
+      expect(mockEditionsList).toHaveBeenCalled();
+      expect(deleteMock).toHaveBeenCalledTimes(1);
+      expect(archiveMock).toHaveBeenCalledTimes(1);
+    });
+
     it('should answer no', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['n']);
@@ -621,6 +646,10 @@ describe('event archive command', () => {
   });
 
   describe('getEvents tests', () => {
+    beforeEach(() => {
+      mockValues({});
+    });
+
     it('should get event by id', async () => {
       const result = await getEvents({
         client: dynamicContentClientFactory({
@@ -650,6 +679,107 @@ describe('event archive command', () => {
 
       if (result) {
         expect(result.length).toBe(2);
+      }
+    });
+
+    it('should filter events by from and to date', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(input => input);
+
+      const from = new Date();
+      const to = new Date();
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        from,
+        to
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+      expect(filterEditionSpy).not.toHaveBeenCalled();
+
+      if (result) {
+        expect(result.length).toBe(2);
+      }
+    });
+
+    it('should filter events by name and date at the same time', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+
+      const from = new Date();
+      const to = new Date();
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        name: '/test1/',
+        from,
+        to
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+
+      if (result) {
+        expect(result.length).toBe(1);
+      }
+    });
+
+    it('should filter editions by from and to date if editions argument passed', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(input => input);
+
+      const from = new Date();
+      const to = new Date();
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        from,
+        to,
+        editions: true
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+      expect(filterEditionSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+
+      if (result) {
+        expect(result.length).toBe(2);
+      }
+    });
+
+    it('should not return events with no editions if editions argument is provided', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(_ => []);
+
+      const from = new Date();
+      const to = new Date();
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        from,
+        to,
+        editions: true
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+      expect(filterEditionSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+
+      if (result) {
+        expect(result.length).toBe(0);
       }
     });
 
@@ -694,6 +824,70 @@ describe('event archive command', () => {
       expect(total).toEqual(1);
 
       await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/event-archive.log`);
+    });
+  });
+
+  describe('filterEvents tests', () => {
+    const testEvents = [
+      new Event({ start: '2021-01-01T12:00:00.000Z', end: '2021-05-05T12:00:00.000Z' }),
+      new Event({ start: '2021-04-04T12:00:00.000Z', end: '2021-06-06T12:00:00.000Z' }),
+      new Event({ start: '2021-08-08T12:00:00.000Z', end: '2021-09-09T12:00:00.000Z' }),
+      new Event({ start: '2021-01-01T12:00:00.000Z', end: '2021-10-10T12:00:00.000Z' })
+    ];
+
+    it('should return the input events if from and to are undefined', async () => {
+      expect(filterEvents(testEvents, undefined, undefined)).toEqual(testEvents);
+    });
+
+    it('should filter out events from before the from date when provided', async () => {
+      expect(filterEvents(testEvents, new Date('2021-08-08T12:00:00.000Z'), undefined)).toEqual(testEvents.slice(2));
+    });
+
+    it('should filter out events from after the to date when provided', async () => {
+      expect(filterEvents(testEvents, undefined, new Date('2021-07-07T12:00:00.000Z'))).toEqual([
+        testEvents[0],
+        testEvents[1],
+        testEvents[3]
+      ]);
+    });
+
+    it('should filter out events outwith the from and to dates when both are provided', async () => {
+      expect(
+        filterEvents(testEvents, new Date('2021-05-06T12:00:00.000Z'), new Date('2021-07-07T12:00:00.000Z'))
+      ).toEqual([testEvents[1], testEvents[3]]);
+    });
+  });
+
+  describe('filterEditions tests', () => {
+    const testEditions = [
+      new Edition({ start: '2021-01-01T12:00:00.000Z', end: '2021-05-05T12:00:00.000Z' }),
+      new Edition({ start: '2021-04-04T12:00:00.000Z', end: '2021-06-06T12:00:00.000Z' }),
+      new Edition({ start: '2021-08-08T12:00:00.000Z', end: '2021-09-09T12:00:00.000Z' }),
+      new Edition({ start: '2021-01-01T12:00:00.000Z', end: '2021-10-10T12:00:00.000Z' })
+    ];
+
+    it('should return the input editions if from and to are undefined', async () => {
+      expect(filterEditions(testEditions, undefined, undefined)).toEqual(testEditions);
+    });
+
+    it('should filter out editions from before the from date when provided', async () => {
+      expect(filterEditions(testEditions, new Date('2021-08-08T12:00:00.000Z'), undefined)).toEqual(
+        testEditions.slice(2)
+      );
+    });
+
+    it('should filter out editions from after the to date when provided', async () => {
+      expect(filterEditions(testEditions, undefined, new Date('2021-07-07T12:00:00.000Z'))).toEqual([
+        testEditions[0],
+        testEditions[1],
+        testEditions[3]
+      ]);
+    });
+
+    it('should filter out editions outwith the from and to dates when both are provided', async () => {
+      expect(
+        filterEditions(testEditions, new Date('2021-05-06T12:00:00.000Z'), new Date('2021-07-07T12:00:00.000Z'))
+      ).toEqual([testEditions[1], testEditions[3]]);
     });
   });
 });
