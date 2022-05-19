@@ -6,6 +6,7 @@ export default interface ArchiveOptions {
   fromDate?: string;
   toDate?: string;
 
+  onlyInactive?: boolean;
   editions?: boolean;
 
   logFile: FileLog;

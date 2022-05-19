@@ -46,7 +46,8 @@ describe('event archive command', () => {
 
       expect(spyPositional).toHaveBeenCalledWith('id', {
         type: 'string',
-        describe: 'The ID of an Event to be archived. If id is not provided, this command will not archive something.'
+        describe:
+          'The ID of an Event to be archived. If id is not provided, this command will not archive something. Ignores other filters, and archives regardless of whether the event is active or not.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('name', {
@@ -65,6 +66,29 @@ describe('event archive command', () => {
         type: 'boolean',
         boolean: true,
         describe: 'If present, no log file will be produced.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('editions', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Only archive and delete editions, not events.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('onlyInactive', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Only archive and delete inactive editons and events.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('fromDate', {
+        describe:
+          'Start date for filtering events. Either "NOW" or in the format "<number>:<unit>", example: "-7:DAYS".',
+        type: 'string'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('toDate', {
+        describe: 'To date for filtering events. Either "NOW" or in the format "<number>:<unit>", example: "-7:DAYS".',
+        type: 'string'
       });
 
       expect(spyOption).toHaveBeenCalledWith('logFile', {
@@ -89,7 +113,9 @@ describe('event archive command', () => {
     deleteResource = false,
     mixedEditions = false,
     getHubError = false,
-    getEventError = false
+    getEventError = false,
+    start = '',
+    end = ''
   }): {
     mockGet: () => void;
     mockEditionsList: () => void;
@@ -150,6 +176,8 @@ describe('event archive command', () => {
         new Event({
           id: 'test1',
           name: 'test1',
+          start,
+          end,
           client: {
             fetchLinkedResource: mockEditionsList,
             performActionThatReturnsResource: archiveMock,
@@ -178,6 +206,8 @@ describe('event archive command', () => {
         new Event({
           id: 'test2',
           name: 'test2',
+          start,
+          end,
           client: {
             fetchLinkedResource: mockEditionsList,
             performActionThatReturnsResource: archiveMock,
@@ -210,6 +240,8 @@ describe('event archive command', () => {
       new Event({
         name: 'test1',
         id: '1',
+        start,
+        end,
         client: {
           fetchLinkedResource: mockEditionsList,
           performActionThatReturnsResource: archiveMock,
@@ -242,6 +274,8 @@ describe('event archive command', () => {
         name: 'ed1',
         id: 'ed1',
         publishingStatus: status,
+        start,
+        end,
         client: {
           fetchLinkedResource: mockEditionsList,
           performActionThatReturnsResource: archiveMock,
@@ -271,6 +305,8 @@ describe('event archive command', () => {
           name: 'ed2',
           id: 'ed2',
           publishingStatus: 'PUBLISHED',
+          start,
+          end,
           client: {
             fetchLinkedResource: mockEventsList,
             performActionThatReturnsResource: archiveMock,
@@ -751,6 +787,120 @@ describe('event archive command', () => {
 
       expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
       expect(filterEditionSpy).toHaveBeenCalledWith(expect.any(Array), from, to);
+
+      if (result) {
+        expect(result.length).toBe(2);
+      }
+    });
+
+    it('should filter out active events if onlyInactive is true', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(input => input);
+
+      const from = new Date();
+      from.setDate(from.getDate() - 1);
+      const to = new Date();
+      to.setDate(to.getDate() + 1);
+
+      mockValues({ start: from.toISOString(), end: to.toISOString() });
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        onlyInactive: true
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), undefined, undefined);
+      expect(filterEditionSpy).not.toHaveBeenCalled();
+
+      if (result) {
+        expect(result.length).toBe(0);
+      }
+    });
+
+    it('should not filter out inactive events if onlyInactive is true', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(input => input);
+
+      const from = new Date();
+      from.setDate(from.getDate() - 2);
+      const to = new Date();
+      to.setDate(to.getDate() - 1);
+
+      mockValues({ start: from.toISOString(), end: to.toISOString() });
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        onlyInactive: true
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), undefined, undefined);
+      expect(filterEditionSpy).not.toHaveBeenCalled();
+
+      if (result) {
+        expect(result.length).toBe(2);
+      }
+    });
+
+    it('should filter out active editions if onlyInactive and editions are true', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(input => input);
+
+      const from = new Date();
+      from.setDate(from.getDate() - 1);
+      const to = new Date();
+      to.setDate(to.getDate() + 1);
+
+      mockValues({ start: from.toISOString(), end: to.toISOString() });
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        onlyInactive: true,
+        editions: true
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), undefined, undefined);
+      expect(filterEditionSpy).toHaveBeenCalledWith(expect.any(Array), undefined, undefined);
+
+      if (result) {
+        expect(result.length).toBe(0);
+      }
+    });
+
+    it('should not filter out inactive editions if onlyInactive and editions are true', async () => {
+      const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(input => input);
+
+      const from = new Date();
+      from.setDate(from.getDate() - 2);
+      const to = new Date();
+      to.setDate(to.getDate() - 1);
+
+      mockValues({ start: from.toISOString(), end: to.toISOString() });
+
+      const result = await getEvents({
+        client: dynamicContentClientFactory({
+          ...config,
+          ...yargArgs
+        }),
+        hubId: 'hub1',
+        onlyInactive: true,
+        editions: true
+      });
+
+      expect(filterEventSpy).toHaveBeenCalledWith(expect.any(Array), undefined, undefined);
+      expect(filterEditionSpy).toHaveBeenCalledWith(expect.any(Array), undefined, undefined);
 
       if (result) {
         expect(result.length).toBe(2);

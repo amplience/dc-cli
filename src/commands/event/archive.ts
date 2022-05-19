@@ -24,7 +24,8 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       type: 'string',
-      describe: 'The ID of an Event to be archived. If id is not provided, this command will not archive something.'
+      describe:
+        'The ID of an Event to be archived. If id is not provided, this command will not archive something. Ignores other filters, and archives regardless of whether the event is active or not.'
     })
     .option('name', {
       type: 'string',
@@ -47,6 +48,11 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Only archive and delete editions, not events.'
+    })
+    .option('onlyInactive', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Only archive and delete inactive editons and events.'
     })
     .option('fromDate', {
       describe: 'Start date for filtering events. Either "NOW" or in the format "<number>:<unit>", example: "-7:DAYS".',
@@ -122,6 +128,47 @@ const getEventUntilSuccess = async ({
   return resourceEvent;
 };
 
+type EventEntry = {
+  event: Event;
+  editions: Edition[];
+  archiveEditions: Edition[];
+  deleteEditions: Edition[];
+  unscheduleEditions: Edition[];
+  command: string;
+};
+
+export const preprocessEvents = (entries: EventEntry[], editions?: boolean, onlyInactive?: boolean): EventEntry[] => {
+  if (onlyInactive) {
+    const now = new Date();
+
+    entries = entries.filter(entry => {
+      if (editions) {
+        // Archive editions if the current date doesn't fall within the edition date.
+        entry.editions = entry.editions.filter(edition => {
+          const start = new Date(edition.start as string);
+          const end = new Date(edition.end as string);
+
+          return now < start || now > end;
+        });
+
+        return entry.editions.length != 0;
+      } else {
+        // Only archive an event if the current date doesn't fall within the event date.
+        const start = new Date(entry.event.start as string);
+        const end = new Date(entry.event.end as string);
+
+        return now < start || now > end;
+      }
+    });
+  }
+
+  if (editions) {
+    entries = entries.filter(entry => entry.editions.length != 0);
+  }
+
+  return entries;
+};
+
 export const getEvents = async ({
   id,
   client,
@@ -129,7 +176,8 @@ export const getEvents = async ({
   name,
   from,
   to,
-  editions
+  editions,
+  onlyInactive
 }: {
   id?: string | string[];
   hubId: string;
@@ -137,17 +185,9 @@ export const getEvents = async ({
   from?: Date;
   to?: Date;
   editions?: boolean;
+  onlyInactive?: boolean;
   client: DynamicContent;
-}): Promise<
-  {
-    event: Event;
-    editions: Edition[];
-    archiveEditions: Edition[];
-    deleteEditions: Edition[];
-    unscheduleEditions: Edition[];
-    command: string;
-  }[]
-> => {
+}): Promise<EventEntry[]> => {
   try {
     if (id != null) {
       const ids = Array.isArray(id) ? id : [id];
@@ -172,7 +212,7 @@ export const getEvents = async ({
         })
       );
 
-      return editions ? result.filter(entry => entry.editions.length != 0) : result;
+      return preprocessEvents(result, editions, onlyInactive);
     }
 
     const hub = await client.hubs.get(hubId);
@@ -208,7 +248,7 @@ export const getEvents = async ({
       })
     );
 
-    return editions ? result.filter(entry => entry.editions.length != 0) : result;
+    return preprocessEvents(result, editions, onlyInactive);
   } catch (e) {
     console.log(e);
     return [];
@@ -346,7 +386,7 @@ export const processItems = async ({
 };
 
 export const handler = async (argv: Arguments<ArchiveEventOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, name, hubId, fromDate, toDate, editions } = argv;
+  const { id, logFile, force, silent, name, hubId, fromDate, toDate, editions, onlyInactive } = argv;
   const client = dynamicContentClientFactory(argv);
 
   const from = fromDate === undefined ? undefined : relativeDate(fromDate);
@@ -370,7 +410,8 @@ export const handler = async (argv: Arguments<ArchiveEventOptions & Configuratio
     name,
     from,
     to,
-    editions
+    editions,
+    onlyInactive
   });
 
   if (events.length == 0) {
