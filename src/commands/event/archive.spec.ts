@@ -909,7 +909,7 @@ describe('event archive command', () => {
 
     it('should not return events with no editions if editions argument is provided', async () => {
       const filterEventSpy = jest.spyOn(archive, 'filterEvents').mockImplementation(input => input);
-      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(_ => []);
+      const filterEditionSpy = jest.spyOn(archive, 'filterEditions').mockImplementation(() => []);
 
       const from = new Date();
       const to = new Date();
