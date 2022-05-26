@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.15.1](https://www.github.com/amplience/dc-cli/compare/v0.15.0...v0.15.1) (2022-05-26)
+
+
+### Bug Fixes
+
+* **event:** fix event slots list pagination ([#141](https://www.github.com/amplience/dc-cli/issues/141)) ([d3119aa](https://www.github.com/amplience/dc-cli/commit/d3119aad92e45c6147f463ccf9a54c9608c3ffc7))
+
 ## [0.15.0](https://www.github.com/amplience/dc-cli/compare/v0.14.0...v0.15.0) (2022-05-16)
 
 
