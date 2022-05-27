@@ -8,6 +8,7 @@ import { Edition, Event, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
+import { relativeDate } from '../../common/filter/facet';
 const maxAttempts = 30;
 
 export const command = 'archive [id]';
@@ -23,7 +24,8 @@ export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       type: 'string',
-      describe: 'The ID of an Event to be archived. If id is not provided, this command will not archive something.'
+      describe:
+        'The ID of an Event to be archived. If id is not provided, this command will not archive something. Ignores other filters, and archives regardless of whether the event is active or not.'
     })
     .option('name', {
       type: 'string',
@@ -42,12 +44,64 @@ export const builder = (yargs: Argv): void => {
       boolean: true,
       describe: 'If present, no log file will be produced.'
     })
+    .option('editions', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Only archive and delete editions, not events.'
+    })
+    .option('onlyInactive', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Only archive and delete inactive editons and events.'
+    })
+    .option('fromDate', {
+      describe: 'Start date for filtering events. Either "NOW" or in the format "<number>:<unit>", example: "-7:DAYS".',
+      type: 'string'
+    })
+    .option('toDate', {
+      describe: 'To date for filtering events. Either "NOW" or in the format "<number>:<unit>", example: "-7:DAYS".',
+      type: 'string'
+    })
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: coerceLog
     });
+};
+
+export const filterEvents = (events: Event[], from: Date | undefined, to: Date | undefined): Event[] => {
+  return events.filter(event => {
+    const eventStart = new Date(event.start as string);
+    const eventEnd = new Date(event.end as string);
+
+    if (from && eventEnd < from) {
+      return false;
+    }
+
+    if (to && eventStart > to) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
+export const filterEditions = (editions: Edition[], from: Date | undefined, to: Date | undefined): Edition[] => {
+  return editions.filter(edition => {
+    const editionStart = new Date(edition.start as string);
+    const editionEnd = new Date(edition.end as string);
+
+    if (from && editionEnd < from) {
+      return false;
+    }
+
+    if (to && editionStart > to) {
+      return false;
+    }
+
+    return true;
+  });
 };
 
 const getEventUntilSuccess = async ({
@@ -74,38 +128,82 @@ const getEventUntilSuccess = async ({
   return resourceEvent;
 };
 
+type EventEntry = {
+  event: Event;
+  editions: Edition[];
+  archiveEditions: Edition[];
+  deleteEditions: Edition[];
+  unscheduleEditions: Edition[];
+  command: string;
+};
+
+export const preprocessEvents = (entries: EventEntry[], editions?: boolean, onlyInactive?: boolean): EventEntry[] => {
+  if (onlyInactive) {
+    const now = new Date();
+
+    entries = entries.filter(entry => {
+      if (editions) {
+        // Archive editions if the current date doesn't fall within the edition date.
+        entry.editions = entry.editions.filter(edition => {
+          const start = new Date(edition.start as string);
+          const end = new Date(edition.end as string);
+
+          return now < start || now > end;
+        });
+
+        return entry.editions.length != 0;
+      } else {
+        // Only archive an event if the current date doesn't fall within the event date.
+        const start = new Date(entry.event.start as string);
+        const end = new Date(entry.event.end as string);
+
+        return now < start || now > end;
+      }
+    });
+  }
+
+  if (editions) {
+    entries = entries.filter(entry => entry.editions.length != 0);
+  }
+
+  return entries;
+};
+
 export const getEvents = async ({
   id,
   client,
   hubId,
-  name
+  name,
+  from,
+  to,
+  editions,
+  onlyInactive
 }: {
   id?: string | string[];
   hubId: string;
   name?: string | string[];
+  from?: Date;
+  to?: Date;
+  editions?: boolean;
+  onlyInactive?: boolean;
   client: DynamicContent;
-}): Promise<
-  {
-    event: Event;
-    editions: Edition[];
-    archiveEditions: Edition[];
-    deleteEditions: Edition[];
-    unscheduleEditions: Edition[];
-    command: string;
-  }[]
-> => {
+}): Promise<EventEntry[]> => {
   try {
     if (id != null) {
       const ids = Array.isArray(id) ? id : [id];
 
-      return await Promise.all(
+      const result = await Promise.all(
         ids.map(async id => {
           const event = await client.events.get(id);
-          const editions = await paginator(event.related.editions.list);
+          let foundEditions = await paginator(event.related.editions.list);
+
+          if (editions) {
+            foundEditions = filterEditions(foundEditions, from, to);
+          }
 
           return {
             event,
-            editions,
+            editions: foundEditions,
             command: 'ARCHIVE',
             unscheduleEditions: [],
             deleteEditions: [],
@@ -113,10 +211,12 @@ export const getEvents = async ({
           };
         })
       );
+
+      return preprocessEvents(result, editions, onlyInactive);
     }
 
     const hub = await client.hubs.get(hubId);
-    const eventsList = await paginator(hub.related.events.list);
+    const eventsList = filterEvents(await paginator(hub.related.events.list), from, to);
     let events: Event[] = eventsList;
 
     if (name != null) {
@@ -129,16 +229,26 @@ export const getEvents = async ({
       );
     }
 
-    return await Promise.all(
-      events.map(async event => ({
-        event,
-        editions: await paginator(event.related.editions.list),
-        command: 'ARCHIVE',
-        unscheduleEditions: [],
-        deleteEditions: [],
-        archiveEditions: []
-      }))
+    const result = await Promise.all(
+      events.map(async event => {
+        let foundEditions = await paginator(event.related.editions.list);
+
+        if (editions) {
+          foundEditions = filterEditions(foundEditions, from, to);
+        }
+
+        return {
+          event,
+          editions: foundEditions,
+          command: 'ARCHIVE',
+          unscheduleEditions: [],
+          deleteEditions: [],
+          archiveEditions: []
+        };
+      })
     );
+
+    return preprocessEvents(result, editions, onlyInactive);
   } catch (e) {
     console.log(e);
     return [];
@@ -151,7 +261,8 @@ export const processItems = async ({
   force,
   silent,
   missingContent,
-  logFile
+  logFile,
+  editions
 }: {
   client: DynamicContent;
   events: {
@@ -167,6 +278,7 @@ export const processItems = async ({
   logFile: FileLog;
   missingContent: boolean;
   ignoreError?: boolean;
+  editions?: boolean;
 }): Promise<void> => {
   try {
     for (let i = 0; i < events.length; i++) {
@@ -187,8 +299,15 @@ export const processItems = async ({
 
     console.log('The following events are processing:');
     events.forEach(({ event, command = '', deleteEditions, unscheduleEditions, archiveEditions }) => {
-      console.log(`${command}: ${event.name} (${event.id})`);
-      if (deleteEditions.length || unscheduleEditions.length) {
+      const hasEditions = deleteEditions.length || unscheduleEditions.length;
+
+      if (!editions) {
+        console.log(`${command}: ${event.name} (${event.id})`);
+      } else if (hasEditions) {
+        console.log(`${event.name} (${event.id})`);
+      }
+
+      if (hasEditions) {
         console.log(' Editions:');
         deleteEditions.forEach(({ name, id }) => {
           console.log(`   DELETE: ${name} (${id})`);
@@ -213,36 +332,43 @@ export const processItems = async ({
     const log = logFile.open();
 
     let successCount = 0;
+    let editionSuccessCount = 0;
 
     for (let i = 0; i < events.length; i++) {
       try {
         await Promise.all(events[i].unscheduleEditions.map(edition => edition.related.unschedule()));
 
-        if (events[i].command === 'ARCHIVE') {
-          await Promise.all(events[i].deleteEditions.map(edition => edition.related.delete()));
+        if (events[i].command === 'ARCHIVE' || editions) {
+          await Promise.all(
+            events[i].deleteEditions.map(edition => edition.related.delete().then(() => editionSuccessCount++))
+          );
 
-          await Promise.all(events[i].archiveEditions.map(edition => edition.related.archive()));
+          await Promise.all(
+            events[i].archiveEditions.map(edition => edition.related.archive().then(() => editionSuccessCount++))
+          );
         }
 
-        const resource = await getEventUntilSuccess({
-          id: events[i].event.id || '',
-          resource: events[i].command.toLowerCase(),
-          client
-        });
+        if (!editions) {
+          const resource = await getEventUntilSuccess({
+            id: events[i].event.id || '',
+            resource: events[i].command.toLowerCase(),
+            client
+          });
 
-        if (!resource) {
-          log.addComment(`${events[i].command} FAILED: ${events[i].event.id}`);
-          log.addComment(`You don't have access to perform this action, try again later or contact support.`);
-        }
+          if (!resource) {
+            log.addComment(`${events[i].command} FAILED: ${events[i].event.id}`);
+            log.addComment(`You don't have access to perform this action, try again later or contact support.`);
+          }
 
-        if (events[i].command === 'DELETE') {
-          resource && (await resource.related.delete());
-          log.addAction(events[i].command, `${events[i].event.id}\n`);
-          successCount++;
-        } else {
-          resource && (await resource.related.archive());
-          log.addAction(events[i].command, `${events[i].event.id}\n`);
-          successCount++;
+          if (events[i].command === 'DELETE') {
+            resource && (await resource.related.delete());
+            log.addAction(events[i].command, `${events[i].event.id}\n`);
+            successCount++;
+          } else {
+            resource && (await resource.related.archive());
+            log.addAction(events[i].command, `${events[i].event.id}\n`);
+            successCount++;
+          }
         }
       } catch (e) {
         console.log(e);
@@ -253,15 +379,18 @@ export const processItems = async ({
 
     await log.close(!silent);
 
-    return console.log(`Processed ${successCount} events.`);
+    return console.log(`Processed ${successCount} events, ${editionSuccessCount} editions.`);
   } catch (e) {
     return;
   }
 };
 
 export const handler = async (argv: Arguments<ArchiveEventOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, name, hubId } = argv;
+  const { id, logFile, force, silent, name, hubId, fromDate, toDate, editions, onlyInactive } = argv;
   const client = dynamicContentClientFactory(argv);
+
+  const from = fromDate === undefined ? undefined : relativeDate(fromDate);
+  const to = toDate === undefined ? undefined : relativeDate(toDate);
 
   const missingContent = false;
 
@@ -269,8 +398,8 @@ export const handler = async (argv: Arguments<ArchiveEventOptions & Configuratio
     console.log('ID of event is specified, ignoring name');
   }
 
-  if (!name && !id) {
-    console.log('No ID or name is specified');
+  if (!name && !id && !from && !to) {
+    console.log('No date range, ID or name is specified');
     return;
   }
 
@@ -278,7 +407,11 @@ export const handler = async (argv: Arguments<ArchiveEventOptions & Configuratio
     id,
     client,
     hubId,
-    name
+    name,
+    from,
+    to,
+    editions,
+    onlyInactive
   });
 
   if (events.length == 0) {
@@ -292,7 +425,8 @@ export const handler = async (argv: Arguments<ArchiveEventOptions & Configuratio
     missingContent,
     logFile,
     force,
-    silent
+    silent,
+    editions
   });
 };
 
