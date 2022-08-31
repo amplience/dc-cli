@@ -79,6 +79,7 @@
   "devDependencies": {
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-conventional": "^8.2.0",
+    "@types/async": "^3.2.15",
     "@types/chalk": "^2.2.0",
     "@types/jest": "^24.0.18",
     "@types/lodash": "^4.14.144",
@@ -109,6 +110,7 @@
   "dependencies": {
     "@types/node": "^17.0.21",
     "ajv": "^6.12.3",
+    "async": "^3.2.4",
     "axios": "^0.21.1",
     "chalk": "^2.4.2",
     "dc-management-sdk-js": "^1.14.0",

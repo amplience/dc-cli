@@ -33,10 +33,10 @@ import { Body } from '../../common/content-item/body';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
-import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import _, { Dictionary } from 'lodash';
 import { StatusCodes } from 'http-status-codes';
+import RateLimitedPublishQueue from '../../common/import/rate-limit-publish-queue';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -889,7 +889,7 @@ const importTree = async (
   }
 
   if (argv.publish) {
-    const pubQueue = new PublishQueue(argv);
+    const pubQueue = RateLimitedPublishQueue.getInstance(argv);
     log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
 
     for (let i = 0; i < publishable.length; i++) {
@@ -904,11 +904,12 @@ const importTree = async (
     }
 
     log.appendLine(`Waiting for all publishes to complete...`);
-    await pubQueue.waitForAll();
+    const jobResults = await pubQueue.waitForAll();
+    const failedJobs = jobResults.filter(job => job.state === 'FAILED');
 
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
-    pubQueue.failedJobs.forEach(job => {
-      log.appendLine(` - ${job.item.label}`);
+    log.appendLine(`Finished publishing, with ${failedJobs.length} failed publishes total.`);
+    failedJobs.forEach(job => {
+      log.appendLine(` - ${job.id}`);
     });
   }
 
