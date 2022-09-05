@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { OAuth2Client, ContentItem, AccessToken } from 'dc-management-sdk-js';
 import { PublishingJob, PublishQueue } from './publish-queue';
+import * as publishQueueModule from './publish-queue';
 
 jest.mock('node-fetch');
 jest.mock('dc-management-sdk-js/build/main/lib/oauth2/services/OAuth2Client');
@@ -34,6 +35,8 @@ describe('publish-queue', () => {
       totalRequests = 0;
       totalPolls = 0;
       authRequests = 0;
+
+      jest.spyOn(publishQueueModule, 'delay').mockResolvedValue();
     });
 
     afterEach((): void => {
@@ -372,6 +375,9 @@ describe('publish-queue', () => {
       await queue.waitForAll();
 
       expect(totalPolls).toEqual(10);
+
+      // Since we process requests instantly, the rate limit delay will be hit for each publish.
+      expect(publishQueueModule.delay).toHaveBeenCalledTimes(5);
     });
 
     it('should error publishes when waiting for a publish job exceeds the maxAttempts number', async () => {

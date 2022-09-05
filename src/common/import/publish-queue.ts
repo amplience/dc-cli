@@ -13,11 +13,11 @@ export interface PublishingJob {
   _links?: { [name: string]: HalLink };
 }
 
-async function delay(duration: number): Promise<void> {
+export const delay = (duration: number): Promise<void> => {
   return new Promise<void>((resolve): void => {
     setTimeout(resolve, duration);
   });
-}
+};
 
 export interface JobRequest {
   item: ContentItem;
@@ -25,16 +25,18 @@ export interface JobRequest {
 }
 
 export class PublishQueue {
-  maxWaiting = 10;
+  maxWaiting = 100;
   maxAttempts = 30;
   attemptDelay = 1000;
+  attemptRateLimit = 60000 / 100; // 100 publishes a minute.
   failedJobs: JobRequest[] = [];
 
   private inProgressJobs: JobRequest[] = [];
   private waitingList: { promise: Promise<void>; resolver: () => void }[] = [];
   private auth: OAuth2Client;
   private awaitingAll: boolean;
-
+  private delayUntil: number[] = [];
+  private delayId = 0;
   waitInProgress = false;
 
   constructor(credentials: ConfigurationParameters) {
@@ -138,6 +140,18 @@ export class PublishQueue {
   }
 
   private async rateLimit(): Promise<void> {
+    // Rate limit by time.
+    const now = Date.now();
+
+    if (now < this.delayUntil[this.delayId] || 0) {
+      await delay(this.delayUntil[this.delayId] - now);
+    }
+
+    this.delayUntil[this.delayId] = now + this.attemptRateLimit * this.maxWaiting;
+    this.delayId = (this.delayId + 1) % this.maxWaiting;
+
+    // Rate limit by concurrent volume.
+
     if (this.inProgressJobs.length != this.maxWaiting) {
       return;
     }
