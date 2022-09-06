@@ -132,6 +132,32 @@ describe('content-item move command', () => {
         describe: 'Skip any content item that has one or more missing dependancy.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('lastPublish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'When available, export the last published version of a content item rather than its newest version.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('publish', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('batchPublish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Batch publish requests up to the rate limit. (100/min)'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('republish', {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('excludeKeys', {
         type: 'boolean',
         boolean: true,
@@ -235,6 +261,10 @@ describe('content-item move command', () => {
 
         facet: 'name:/./,schema/./',
 
+        publish: true,
+        lastPublish: true,
+        batchPublish: true,
+
         mapFile: 'map.json',
         force: false,
         validate: false,
@@ -259,6 +289,10 @@ describe('content-item move command', () => {
       expect(copyCalls[0].validate).toEqual(argv.validate);
       expect(copyCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
       expect(copyCalls[0].media).toEqual(argv.media);
+
+      expect(copyCalls[0].publish).toEqual(argv.publish);
+      expect(copyCalls[0].lastPublish).toEqual(argv.lastPublish);
+      expect(copyCalls[0].batchPublish).toEqual(argv.batchPublish);
 
       expect(argv.exportedIds).toEqual(exportIds);
 

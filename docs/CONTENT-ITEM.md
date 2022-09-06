@@ -164,6 +164,7 @@ dc-cli content-item import <dir>
 | -v<br />--validate | [boolean]                                  | Only recreate folder structure - content is validated but not imported. |
 | --skipIncomplete   | [boolean]                                  | Skip any content items that has one or more missing dependancy. |
 | --publish          | [boolean]                                  | Publish any content items that have an existing publish status in their JSON. |
+| --batchPublish     | [boolean]                                  | Batch publish requests up to the rate limit. (100/min) |
 | --republish        | [boolean]                                  | Republish content items regardless of whether the import changed them or not.<br />(--publish not required) |
 | --excludeKeys      | [boolean]                                  | Exclude delivery keys when importing content items.          |
 | --media            | [boolean]                                  | Detect and rewrite media links to match assets in the target account's Content Hub. Your client must have Content Hub permissions configured. |
@@ -212,6 +213,7 @@ dc-cli content-item copy <dir>
 | --skipIncomplete   | [boolean]                                  | Skip any content item that has one or more missing dependancy. |
 | --lastPublish      | [boolean]                                  | When available, export the last published version of a content item rather than its newest version. |
 | --publish          | [boolean]                                  | Publish any content items that have an existing publish status in their JSON. |
+| --batchPublish     | [boolean]                                  | Batch publish requests up to the rate limit. (100/min) |
 | --republish        | [boolean]                                  | Republish content items regardless of whether the import changed them or not.<br />(--publish not required) |
 | --excludeKeys      | [boolean]                                  | Exclude delivery keys when importing content items.          |
 | --media            | [boolean]                                  | Detect and rewrite media links to match assets in the target account's DAM.<br />Your client must have DAM permissions configured. |
@@ -260,6 +262,7 @@ dc-cli content-item move <dir>
 | --skipIncomplete   | [boolean]                                  | Skip any content item that has one or more missing dependancy. |
 | --lastPublish      | [boolean]                                  | When available, export the last published version of a content item rather than its newest version. |
 | --publish          | [boolean]                                  | Publish any content items that have an existing publish status in their JSON. |
+| --batchPublish     | [boolean]                                  | Batch publish requests up to the rate limit. (100/min) |
 | --republish        | [boolean]                                  | Republish content items regardless of whether the import changed them or not.<br />(--publish not required) |
 | --excludeKeys      | [boolean]                                  | Exclude delivery keys when importing content items.          |
 | --media            | [boolean]                                  | Detect and rewrite media links to match assets in the target account's DAM.<br />Your client must have DAM permissions configured. |
