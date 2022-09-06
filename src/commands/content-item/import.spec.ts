@@ -111,6 +111,12 @@ describe('content-item import command', () => {
           'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('batchPublish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Batch publish requests up to the rate limit. (100/min)'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('republish', {
         type: 'boolean',
         boolean: true,
@@ -1146,7 +1152,8 @@ describe('content-item import command', () => {
         dir: `temp_${process.env.JEST_WORKER_ID}/import/publish/`,
         mapFile: `temp_${process.env.JEST_WORKER_ID}/import/publish.json`,
         baseRepo: 'targetRepo',
-        publish: true
+        publish: true,
+        batchPublish: true
       };
       await handler(argv);
 
@@ -1200,7 +1207,8 @@ describe('content-item import command', () => {
         dir: `temp_${process.env.JEST_WORKER_ID}/import/circular/`,
         mapFile: `temp_${process.env.JEST_WORKER_ID}/import/circular.json`,
         baseRepo: 'targetRepo',
-        publish: true
+        publish: true,
+        batchPublish: false
       };
       await handler(argv);
 

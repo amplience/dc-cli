@@ -138,6 +138,12 @@ describe('content-item copy command', () => {
           'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
       });
 
+      expect(spyOption).toHaveBeenCalledWith('batchPublish', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Batch publish requests up to the rate limit. (100/min)'
+      });
+
       expect(spyOption).toHaveBeenCalledWith('republish', {
         type: 'boolean',
         boolean: true,
@@ -247,6 +253,7 @@ describe('content-item copy command', () => {
 
         lastPublish: true,
         publish: true,
+        batchPublish: true,
         republish: true,
 
         excludeKeys: true,
@@ -275,6 +282,7 @@ describe('content-item copy command', () => {
       expect(importCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
 
       expect(importCalls[0].publish).toEqual(argv.publish);
+      expect(importCalls[0].batchPublish).toEqual(argv.batchPublish);
       expect(importCalls[0].republish).toEqual(argv.republish);
 
       expect(importCalls[0].excludeKeys).toEqual(argv.excludeKeys);
