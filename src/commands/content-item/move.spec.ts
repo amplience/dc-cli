@@ -148,7 +148,7 @@ describe('content-item move command', () => {
       expect(spyOption).toHaveBeenCalledWith('batchPublish', {
         type: 'boolean',
         boolean: true,
-        describe: 'Batch publish requests up to the rate limit. (100/min)'
+        describe: 'Batch publish requests up to the rate limit. (35/min)'
       });
 
       expect(spyOption).toHaveBeenCalledWith('republish', {

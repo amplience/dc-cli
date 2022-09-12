@@ -25,10 +25,10 @@ export interface JobRequest {
 }
 
 export class PublishQueue {
-  maxWaiting = 100;
+  maxWaiting = 35;
   maxAttempts = 30;
   attemptDelay = 1000;
-  attemptRateLimit = 60000 / 100; // 100 publishes a minute.
+  attemptRateLimit = 60000 / 35; // 35 publishes a minute.
   failedJobs: JobRequest[] = [];
 
   private inProgressJobs: JobRequest[] = [];
