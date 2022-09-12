@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.16.0](https://www.github.com/amplience/dc-cli/compare/v0.15.1...v0.16.0) (2022-09-12)
+
+
+### Features
+
+* concurrent publish queue with --batchPublish option ([#146](https://www.github.com/amplience/dc-cli/issues/146)) ([632033c](https://www.github.com/amplience/dc-cli/commit/632033cb2339efa4f6207189fd08aaf22a374840))
+
 ### [0.15.1](https://www.github.com/amplience/dc-cli/compare/v0.15.0...v0.15.1) (2022-05-26)
 
 
