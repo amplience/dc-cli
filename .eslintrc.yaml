@@ -9,3 +9,4 @@ parserOptions:
   ecmaVersion: 2018
 rules:
   "@typescript-eslint/no-parameter-properties": off
+  "@typescript-eslint/camelcase": off
