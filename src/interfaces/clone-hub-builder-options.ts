@@ -20,6 +20,7 @@ export interface CloneHubBuilderOptions {
 
   lastPublish?: boolean;
   publish?: boolean;
+  batchPublish?: boolean;
   republish?: boolean;
 
   excludeKeys?: boolean;

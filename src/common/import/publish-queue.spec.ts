@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { OAuth2Client, ContentItem, AccessToken } from 'dc-management-sdk-js';
 import { PublishingJob, PublishQueue } from './publish-queue';
+import * as publishQueueModule from './publish-queue';
 
 jest.mock('node-fetch');
 jest.mock('dc-management-sdk-js/build/main/lib/oauth2/services/OAuth2Client');
@@ -34,6 +35,8 @@ describe('publish-queue', () => {
       totalRequests = 0;
       totalPolls = 0;
       authRequests = 0;
+
+      jest.spyOn(publishQueueModule, 'delay').mockResolvedValue();
     });
 
     afterEach((): void => {
@@ -150,9 +153,10 @@ describe('publish-queue', () => {
       return items;
     }
 
-    function makeQueue(): PublishQueue {
+    function makeQueue(maxWaiting: number): PublishQueue {
       const queue = new PublishQueue({ clientId: 'id', clientSecret: 'secret', hubId: 'hub' });
       queue.attemptDelay = 0;
+      queue.maxWaiting = maxWaiting;
 
       return queue;
     }
@@ -164,7 +168,7 @@ describe('publish-queue', () => {
         progressStepsTemplate('//publishJob-id1', 3)
       ]);
 
-      const queue = makeQueue();
+      const queue = makeQueue(10);
 
       await queue.publish(item1);
 
@@ -175,16 +179,16 @@ describe('publish-queue', () => {
       expect(totalPolls).toEqual(3);
     });
 
-    it('should wait for publish completion when starting a publish and attempting to publish more', async () => {
+    it('should wait for publish completion when hitting the concurrent limit and attempting to publish more', async () => {
       const items = multiMock(10, 1); // 10 items, return success on the first poll (instant publish)
 
-      const queue = makeQueue();
+      const queue = makeQueue(5); // After 5 concurrent requests, start waiting.
 
       for (let i = 0; i < items.length; i++) {
         await queue.publish(items[i]);
 
-        // Starts polling when i == 1, and each time we continue one job has completed.
-        expect(totalPolls).toEqual(Math.max(0, i));
+        // Starts polling when i == 5, and each time we continue one job has completed.
+        expect(totalPolls).toEqual(Math.max(0, i - 4));
       }
 
       await queue.waitForAll();
@@ -192,10 +196,10 @@ describe('publish-queue', () => {
       expect(totalPolls).toEqual(10);
     });
 
-    it('should never wait for publish completion when starting a publish, only when waiting or publishing more', async () => {
-      const items = multiMock(1, 1); // 10 items, return success on the first poll (instant publish)
+    it('should never wait for publish completion between publishes when less than the concurrent limit', async () => {
+      const items = multiMock(10, 1); // 10 items, return success on the first poll (instant publish)
 
-      const queue = makeQueue(); // After 1 concurrent request, start waiting.
+      const queue = makeQueue(15); // After 15 concurrent requests, start waiting.
 
       for (let i = 0; i < items.length; i++) {
         await queue.publish(items[i]);
@@ -205,11 +209,11 @@ describe('publish-queue', () => {
 
       await queue.waitForAll();
 
-      expect(totalPolls).toEqual(1);
+      expect(totalPolls).toEqual(10);
     });
 
     it('should complete immediately when calling waitForAll with no publishes in progress', async () => {
-      const queue = makeQueue();
+      const queue = makeQueue(15); // After 15 concurrent requests, start waiting.
 
       await queue.waitForAll();
 
@@ -225,7 +229,7 @@ describe('publish-queue', () => {
         progressStepsTemplate('//publishJob-id1', 3)
       ]);
 
-      const queue = makeQueue();
+      const queue = makeQueue(15);
 
       let threw = false;
       try {
@@ -257,7 +261,7 @@ describe('publish-queue', () => {
         progressStepsTemplate('//publishJob-id1', 3)
       ]);
 
-      const queue = makeQueue();
+      const queue = makeQueue(15);
 
       let threw = false;
       try {
@@ -288,7 +292,7 @@ describe('publish-queue', () => {
         progressStepsTemplate('//publishJob-id1', 3)
       ]);
 
-      const queue = makeQueue();
+      const queue = makeQueue(15);
 
       let threw = false;
       try {
@@ -312,7 +316,7 @@ describe('publish-queue', () => {
         progressStepsTemplate('//publishJob-id1', 3, 1)
       ]);
 
-      const queue = makeQueue();
+      const queue = makeQueue(15);
 
       await queue.publish(item1);
 
@@ -337,7 +341,7 @@ describe('publish-queue', () => {
         progressStepsTemplate('//publishJob-id3', 1, true)
       ]);
 
-      const queue = makeQueue();
+      const queue = makeQueue(15);
 
       await queue.publish(item1);
       await queue.publish(item2);
@@ -355,7 +359,7 @@ describe('publish-queue', () => {
     it('should still correctly waitForAll if a previous publish is waiting to start', async () => {
       const items = multiMock(10, 1); // 10 items, return success on the first poll (instant publish)
 
-      const queue = makeQueue();
+      const queue = makeQueue(5); // After 5 concurrent requests, start waiting.
 
       for (let i = 0; i < items.length; i++) {
         // Deliberately avoid waiting after starting the first publish that would have to wait.
@@ -371,31 +375,34 @@ describe('publish-queue', () => {
       await queue.waitForAll();
 
       expect(totalPolls).toEqual(10);
+
+      // Since we process requests instantly, the rate limit delay will be hit for each publish.
+      expect(publishQueueModule.delay).toHaveBeenCalledTimes(5);
     });
 
     it('should error publishes when waiting for a publish job exceeds the maxAttempts number', async () => {
-      const items = multiMock(3, 5); // 3 items, return success on the 5th poll (after our limit)
+      const items = multiMock(10, 5); // 10 items, return success on the 5th poll (after our limit)
 
-      const queue = makeQueue(); // After 1 concurrent request, start waiting.
-      queue.maxAttempts = 2; // Fail after 2 incomplete polls.
+      const queue = makeQueue(5); // After 5 concurrent requests, start waiting.
+      queue.maxAttempts = 2;
 
       for (let i = 0; i < items.length; i++) {
         await queue.publish(items[i]);
 
         if (queue.failedJobs.length > 0) {
           // The first job should have failed.
-          expect(i).toEqual(1); // We only waited for the first job after the second was put in the queue.
+          expect(i).toEqual(5); // We only waited for the first job after 0-4 were in the queue.
           expect(queue.failedJobs[0].item).toBe(items[0]);
           break;
         }
 
-        expect(i).toBeLessThan(1);
+        expect(i).toBeLessThan(5);
       }
 
       await queue.waitForAll();
 
-      expect(totalPolls).toEqual(4); // 2 total publish requests. 2 waits before each before giving up.
-      expect(queue.failedJobs.length).toEqual(2);
+      expect(totalPolls).toEqual(12); // 6 total publish requests. 2 waits before each before giving up.
+      expect(queue.failedJobs.length).toEqual(6);
     });
   });
 });

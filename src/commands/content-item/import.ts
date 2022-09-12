@@ -105,6 +105,12 @@ export const builder = (yargs: Argv): void => {
         'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
+    .option('batchPublish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Batch publish requests up to the rate limit. (35/min)'
+    })
+
     .option('republish', {
       type: 'boolean',
       boolean: true,
@@ -853,6 +859,10 @@ const importTree = async (
   if (argv.publish) {
     const pubQueue = new PublishQueue(argv);
     log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
+
+    if (!argv.batchPublish) {
+      pubQueue.maxWaiting = 1;
+    }
 
     for (let i = 0; i < publishable.length; i++) {
       const item = publishable[i].item;
