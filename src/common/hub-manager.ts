@@ -1,4 +1,3 @@
-import YAML from 'yaml';
 import { join, dirname } from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
@@ -10,7 +9,7 @@ import { Arguments } from 'yargs';
 const { AutoComplete, Input, Password } = require('enquirer');
 
 export const getConfigPath = (platform: string = process.platform): string =>
-  join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'config.yaml');
+  join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'hubs.json');
 export const CONFIG_PATH = getConfigPath();
 
 export type HubConfiguration = {
@@ -33,18 +32,18 @@ const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> =
   };
 };
 
-const read = (): HubConfiguration[] => {
+const readHubs = (): HubConfiguration[] => {
   fs.mkdirpSync(dirname(CONFIG_PATH));
   if (!fs.existsSync(CONFIG_PATH)) {
-    fs.writeFileSync(CONFIG_PATH, YAML.stringify([]), { encoding: 'utf-8' });
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify([]), { encoding: 'utf-8' });
   }
-  return YAML.parse(fs.readFileSync(CONFIG_PATH, { encoding: 'utf-8' }));
+  return JSON.parse(fs.readFileSync(CONFIG_PATH, { encoding: 'utf-8' }));
 };
 
-const hubs = read();
+const hubs = readHubs();
 
 const saveConfig = (): void => {
-  fs.writeFileSync(CONFIG_PATH, YAML.stringify(hubs, undefined, 4), { encoding: 'utf-8' });
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(hubs, undefined, 4), { encoding: 'utf-8' });
 };
 
 const activateHub = (creds: HubConfiguration): HubConfiguration => {
@@ -58,10 +57,6 @@ const activateHub = (creds: HubConfiguration): HubConfiguration => {
 
   console.log(`${chalk.green.bold('using')} hub [ ${chalk.green(creds.name || '')} ]`);
   return creds;
-};
-
-const getHub = (name: string): HubConfiguration | undefined => {
-  return hubs.find(hub => name === hub.name);
 };
 
 const getHubs = (): HubConfiguration[] => {
@@ -116,28 +111,32 @@ export const addHub = async (): Promise<void> => {
   }
 };
 
+const chooseHub = async (filter: string): Promise<HubConfiguration> => {
+  const filtered = getHubs().filter(
+    hub => (hub.name && hub.name.indexOf(filter) > -1) || hub.hubId.indexOf(filter) > -1
+  );
+
+  if (filtered.length === 1) {
+    return filtered[0];
+  }
+
+  if (filtered.length === 0) {
+    throw new Error(`hub configuration not found for filter [ ${chalk.red(filter)} ]`);
+  }
+
+  const hubWithId = await new AutoComplete({
+    name: 'hub',
+    message: `choose a hub`,
+    limit: filtered.length,
+    multiple: false,
+    choices: filtered.map(hub => `${hub.hubId} ${hub.name}`),
+    initial: filtered.findIndex(hub => hub.isActive)
+  }).run();
+  return await chooseHub(hubWithId.split(' ')[0]);
+};
+
 const useHub = async (argv: Arguments<{ hub: string }>): Promise<void> => {
-  const hubs = getHubs();
-  let hub = argv.hub;
-
-  // if hub is passed in on the cli
-  if (!argv.hub) {
-    const hubWithId = await new AutoComplete({
-      name: 'hub',
-      message: `choose a hub`,
-      limit: hubs.length,
-      multiple: false,
-      choices: hubs.map(hub => `${hub.hubId} ${hub.name}`),
-      initial: hubs.findIndex(hub => hub.isActive)
-    }).run();
-    hub = hubWithId.split(' ').pop();
-  }
-
-  const hubConfig = getHub(hub);
-  if (!hubConfig) {
-    throw new Error(`hub not found: ${hub}`);
-  }
-
+  const hubConfig = await chooseHub(argv.hub);
   await activateHub(hubConfig);
 };
 
@@ -149,7 +148,6 @@ const listHubs = (): void => {
 };
 
 const ConfigManager = {
-  getHub,
   getHubs,
   addHub,
   listHubs,

@@ -142,6 +142,8 @@ This category includes interactions with Dynamic Content's hubs in their entiret
 
 These commands can be used to copy a hub's settings and content in their entirety to another hub, or to archive all parts of a hub which can be archived. 
 
+Additionally, these commands may be used to store and retrieve hub configurations.
+
 [View commands for **hub**](docs/HUB.md)
 
 ## Building the CLI

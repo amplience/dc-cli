@@ -127,10 +127,9 @@
     "sanitize-filename": "^1.6.3",
     "table": "^5.4.6",
     "url-template": "^2.0.8",
-    "yaml": "^2.1.1",
     "yargs": "^14.0.0"
   },
   "engines": {
-    "node": ">12"
+    "node": ">=12"
   }
 }

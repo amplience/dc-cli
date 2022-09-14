@@ -1,6 +1,6 @@
 import { Argv } from 'yargs';
 import YargsCommandBuilderOptions from '../common/yargs/yargs-command-builder-options';
-import ConfigManager from '../common/config-manager';
+import ConfigManager from '../common/hub-manager';
 
 export const command = 'hub';
 export const desc = 'Hub';

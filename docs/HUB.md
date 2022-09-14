@@ -19,6 +19,10 @@ Return to [README.md](../README.md) for information on other command categories.
 - [Commands](#commands)
     - [clone](#clone)
     - [clean](#clean)
+    - [add](#add)
+    - [list](#list)
+    - [ls](#list)
+    - [use](#use)
 
 <!-- /MarkdownTOC -->
 
@@ -152,3 +156,57 @@ dc-cli hub clean
 ##### Resume the clean hub process from the content item step
 
 `dc-cli hub clean --step content`
+
+### add
+
+Saves a hub configuration for later use.  A hub configuration consists of:
+
+* client id
+* client secret
+* hub id
+
+These can subsequently be used with `dc-cli hub use`.
+
+```
+dc-cli hub add
+```
+
+### list
+
+Lists the hubs that have been configured.
+
+```
+dc-cli hub list
+```
+
+### ls
+
+Alias for `dc-cli hub list`.
+
+### use
+
+Retrieves a hub configuration to be used by `dc-cli`.  Under the covers, this uses `dc-cli configure`.  The `filter` parameter is optional; if provided, it will filter the list of configured hubs to those that match `filter` with either their `name` or `hubId`.  If more than one hub matches `filter` (or if `filter` is not provided) the user will be prompted to disambiguate between configurations.
+
+```
+dc-cli hub use [filter]
+```
+
+#### Options
+
+| Option Name | Type      | Description                                        |
+| ----------- | --------- | -------------------------------------------------- |
+| filter      | [string]  | Either part of the hub name or part of the hub id. |
+
+#### Examples
+
+##### Select a hub from the full list of configured hubs
+
+`dc-cli hub use`
+
+##### Use a hub named 'index01'
+
+`dc-cli hub use index01`
+
+##### Use the hub with ID ending in e510
+
+`dc-cli hub use e510`
