@@ -142,7 +142,8 @@ const useHub = async (argv: Arguments<{ hub: string }>): Promise<void> => {
 
 const listHubs = (): void => {
   getHubs().forEach(hub => {
-    const hubName = hub.isActive ? chalk.green.bold(hub.name || '') : hub.name;
+    // novadev-695 provide a non-color indicator for active hub
+    const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}` || '') : `  ${hub.name}`;
     console.log(`${hub.hubId}\t${hubName}`);
   });
 };
