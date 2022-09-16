@@ -1,4 +1,5 @@
 import { Arguments, Argv } from 'yargs';
+import { readConfig } from '../cli';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import fs from 'fs';
 import { join, dirname } from 'path';
@@ -11,8 +12,18 @@ export const desc = 'Saves the configuration options to a file';
 export const CONFIG_FILENAME = (platform: string = process.platform): string =>
   join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'dc-cli-config.json');
 
+export const configureCommandOptions: CommandOptions = {
+  clientId: { type: 'string', demandOption: true },
+  clientSecret: { type: 'string', demandOption: true },
+  hubId: { type: 'string', demandOption: true },
+
+  config: { type: 'string', default: CONFIG_FILENAME() }
+};
+
 export const builder = (yargs: Argv): void => {
   yargs
+    .options(configureCommandOptions)
+    .config('config', readConfig)
     .option('dstHubId', {
       type: 'string',
       describe: 'Destination hub ID. If not specified, it will be the same as the source.'
@@ -41,14 +52,6 @@ export type ConfigurationParameters = {
 
 type ConfigArgument = {
   config: string;
-};
-
-export const configureCommandOptions: CommandOptions = {
-  clientId: { type: 'string', demandOption: true },
-  clientSecret: { type: 'string', demandOption: true },
-  hubId: { type: 'string', demandOption: true },
-
-  config: { type: 'string', default: CONFIG_FILENAME() }
 };
 
 const writeConfigFile = (configFile: string, parameters: ConfigurationParameters): void => {
