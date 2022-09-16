@@ -74,6 +74,18 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 `dc-cli configure --clientId foo --clientSecret bar --hubId baz --dstClientId qux --dstSecret quux --dstHubId quuz`
 
+#### Alternative Configuration using `hub` command
+
+Using the [**hub**](docs/HUB.md) subcommand, you can save hub configurations for retrieval later.
+
+This command adds a hub with the supplied credentials:
+
+`dc-cli hub add --clientId <clientId> --clientSecret <clientSecret> --hubId <hubId>`
+
+Then, to use the hub, you can refer to it by name or part of the hub ID:
+
+`dc-cli hub use <hubIdOrName>`
+
 ## Command categories
 
 ### content-type-schema

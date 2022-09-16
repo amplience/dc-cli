@@ -80,14 +80,17 @@ const dcTag = chalk.bold.cyanBright('dynamic content');
 const credentialsHelpText = helpTag('credentials assigned by Amplience support');
 const hubIdHelpText = helpTag('found in hub settings -> properties');
 
-export const addHub = async (): Promise<void> => {
+export const addHub = async (
+  args: Arguments<{ clientId: string; clientSecret: string; hubId: string }>
+): Promise<void> => {
   try {
     // dc config
     sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
 
-    const clientId = await ask(`client ${chalk.magenta('id')}:`);
-    const clientSecret = await secureAsk(`client ${chalk.magenta('secret')}:`);
-    const hubId = await ask(`hub id ${hubIdHelpText}:`);
+    // novadev-693 allow id, secret, and hub id to be passed via command line
+    const clientId = args.clientId || (await ask(`client ${chalk.magenta('id')}:`));
+    const clientSecret = args.clientSecret || (await secureAsk(`client ${chalk.magenta('secret')}:`));
+    const hubId = args.hubId || (await ask(`hub id ${hubIdHelpText}:`));
 
     // unique key for a hub is clientId/hubId
     if (hubs.find(hub => clientId === hub.clientId && hubId === hub.hubId)) {
@@ -144,7 +147,7 @@ const listHubs = (): void => {
   getHubs().forEach(hub => {
     // novadev-695 provide a non-color indicator for active hub
     const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}` || '') : `  ${hub.name}`;
-    console.log(`${hub.hubId}\t${hubName}`);
+    console.log(`${hub.hubId} ${hub.clientId.substring(0, 8)} ${hubName}`);
   });
 };
 

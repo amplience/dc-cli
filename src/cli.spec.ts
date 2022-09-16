@@ -20,15 +20,11 @@ describe('cli', (): void => {
 
   it('should configure yarg instance', async (): Promise<void> => {
     const argv = Yargs(process.argv.slice(2));
-    const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
-    const spyConfig = jest.spyOn(argv, 'config').mockReturnThis();
     const spyCommandDir = jest.spyOn(argv, 'commandDir').mockReturnThis();
     const spyDemandCommand = jest.spyOn(argv, 'demandCommand').mockReturnValue(argv);
 
     await cli.default(argv);
 
-    expect(spyOptions).toHaveBeenCalledWith(configureCommandOptions);
-    expect(spyConfig).toHaveBeenCalledWith('config', expect.any(Function));
     expect(spyCommandDir).toHaveBeenCalledWith('./commands', YargsCommandBuilderOptions);
     expect(spyDemandCommand).toHaveBeenCalledWith(1, 'Please specify at least one command');
   });

@@ -16,11 +16,7 @@ Commands:
   dc-cli settings             Settings
 
 Options:
-  --help          Show help                                            [boolean]
-  --version       Show version number                                  [boolean]
-  --clientId                                                 [string] [required]
-  --clientSecret                                             [string] [required]
-  --hubId                                                    [string] [required]
-  --config        Path to JSON config file     [string] [default: \\"config.json\\"]
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
 Error: Please specify at least one command"
 `;
