@@ -8,9 +8,18 @@ import { Arguments } from 'yargs';
 // eslint-disable-next-line
 const { AutoComplete, Input, Password } = require('enquirer');
 
-export const getConfigPath = (platform: string = process.platform): string =>
-  join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'hubs.json');
-export const CONFIG_PATH = getConfigPath();
+export const DummyHub = {
+  clientId: 'client-id',
+  clientSecret: 'client-id',
+  hubId: 'hub-id',
+  name: 'dummy-hub'
+};
+
+export const CONFIG_PATH = join(
+  process.env[process.platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
+  '.amplience',
+  'hubs.json'
+);
 
 export type HubConfiguration = {
   clientId: string;
@@ -21,28 +30,37 @@ export type HubConfiguration = {
 };
 
 const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> => {
-  const client = new DynamicContent({
-    client_id: creds.clientId,
-    client_secret: creds.clientSecret
-  });
-  const hub = await client.hubs.get(creds.hubId);
-  return {
-    ...creds,
-    name: hub.name
-  };
+  if (creds.clientId !== DummyHub.clientId) {
+    const client = new DynamicContent({
+      client_id: creds.clientId,
+      client_secret: creds.clientSecret
+    });
+    const hub = await client.hubs.get(creds.hubId);
+    creds.name = hub.name;
+  }
+  return creds;
 };
 
-const readHubs = (): HubConfiguration[] => {
+const getHubs = (): HubConfiguration[] => {
+  const activeHub = fs.readJSONSync(CONFIG_FILENAME());
+
   fs.mkdirpSync(dirname(CONFIG_PATH));
   if (!fs.existsSync(CONFIG_PATH)) {
     fs.writeFileSync(CONFIG_PATH, JSON.stringify([]), { encoding: 'utf-8' });
   }
-  return JSON.parse(fs.readFileSync(CONFIG_PATH, { encoding: 'utf-8' }));
+
+  const hubs = fs.readJSONSync(CONFIG_PATH, { encoding: 'utf-8' });
+  return hubs.map((hub: HubConfiguration) => ({
+    ...hub,
+    isActive:
+      activeHub.clientId === hub.clientId &&
+      activeHub.clientSecret === hub.clientSecret &&
+      activeHub.hubId === hub.hubId
+  }));
 };
 
-const hubs = readHubs();
-
-const saveConfig = (): void => {
+const saveHub = (hub: HubConfiguration): void => {
+  const hubs = [hub, ...getHubs().filter(h => h.hubId !== hub.hubId && h.clientId !== hub.clientId)];
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(hubs, undefined, 4), { encoding: 'utf-8' });
 };
 
@@ -59,17 +77,6 @@ const activateHub = (creds: HubConfiguration): HubConfiguration => {
   return creds;
 };
 
-const getHubs = (): HubConfiguration[] => {
-  const activeHub = fs.readJSONSync(CONFIG_FILENAME());
-  return hubs.map(hub => ({
-    ...hub,
-    isActive:
-      activeHub.clientId === hub.clientId &&
-      activeHub.clientSecret === hub.clientSecret &&
-      activeHub.hubId === hub.hubId
-  }));
-};
-
 // formatting helpers
 const ask = async (message: string): Promise<string> => await new Input({ message }).run();
 const secureAsk = async (message: string): Promise<string> => await new Password({ message }).run();
@@ -83,34 +90,26 @@ const hubIdHelpText = helpTag('found in hub settings -> properties');
 export const addHub = async (
   args: Arguments<{ clientId: string; clientSecret: string; hubId: string }>
 ): Promise<void> => {
-  try {
-    // dc config
-    sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
+  console.log(`debug: addHub`);
 
-    // novadev-693 allow id, secret, and hub id to be passed via command line
-    const clientId = args.clientId || (await ask(`client ${chalk.magenta('id')}:`));
-    const clientSecret = args.clientSecret || (await secureAsk(`client ${chalk.magenta('secret')}:`));
-    const hubId = args.hubId || (await ask(`hub id ${hubIdHelpText}:`));
+  // dc config
+  sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
 
-    // unique key for a hub is clientId/hubId
-    if (hubs.find(hub => clientId === hub.clientId && hubId === hub.hubId)) {
-      throw new Error(`config already exists for client id [ ${clientId} ] and hub id [ ${hubId} ]`);
-    }
+  // novadev-693 allow id, secret, and hub id to be passed via command line
+  args.clientId = args.clientId || (await ask(`client ${chalk.magenta('id')}:`));
+  args.clientSecret = args.clientSecret || (await secureAsk(`client ${chalk.magenta('secret')}:`));
+  args.hubId = args.hubId || (await ask(`hub id ${hubIdHelpText}:`));
 
-    const validated = await validateHub({
-      clientId,
-      clientSecret,
-      hubId
-    });
+  // unique key for a hub is clientId/hubId
+  if (getHubs().find(hub => args.clientId === hub.clientId && args.hubId === hub.hubId)) {
+    throw new Error(`config already exists for client id [ ${args.clientId} ] and hub id [ ${args.hubId} ]`);
+  }
 
-    if (validated && validated.name) {
-      hubs.push(validated);
-      saveConfig();
-      console.log(`${chalk.blueBright('added')} hub [ ${chalk.green(validated.name)} ]`);
-      await activateHub(validated);
-    }
-  } catch (error) {
-    console.log(chalk.red(error));
+  const validated = await validateHub(args);
+  if (validated && validated.name) {
+    saveHub(validated);
+    console.log(`${chalk.blueBright('added')} hub [ ${chalk.green(validated.name)} ]`);
+    await activateHub(validated);
   }
 };
 
@@ -138,9 +137,9 @@ const chooseHub = async (filter: string): Promise<HubConfiguration> => {
   return await chooseHub(hubWithId.split(' ')[0]);
 };
 
-const useHub = async (argv: Arguments<{ hub: string }>): Promise<void> => {
+const useHub = async (argv: Arguments<{ hub: string }>): Promise<HubConfiguration> => {
   const hubConfig = await chooseHub(argv.hub);
-  await activateHub(hubConfig);
+  return await activateHub(hubConfig);
 };
 
 const listHubs = (): void => {
@@ -151,11 +150,10 @@ const listHubs = (): void => {
   });
 };
 
-const ConfigManager = {
+export default {
   getHubs,
   addHub,
   listHubs,
-  useHub
+  useHub,
+  validateHub
 };
-
-export default ConfigManager;

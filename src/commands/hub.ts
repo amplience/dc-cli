@@ -1,6 +1,6 @@
 import { Argv } from 'yargs';
 import YargsCommandBuilderOptions from '../common/yargs/yargs-command-builder-options';
-import ConfigManager from '../common/hub-manager';
+import HubManager from '../common/hub-manager';
 import { CommandOptions } from '../interfaces/command-options.interface';
 
 export const command = 'hub';
@@ -26,8 +26,8 @@ export const builder = (yargs: Argv): Argv =>
   yargs
     .commandDir('hub', YargsCommandBuilderOptions)
     .demandCommand()
-    .command('add', 'Add hub', commandOptions, ConfigManager.addHub)
-    .command('list', 'List hubs', ConfigManager.listHubs)
-    .command('ls', 'List hubs', ConfigManager.listHubs)
-    .command('use [hub]', 'Use hub', hubBuilder, ConfigManager.useHub)
+    .command('add', 'Add hub', commandOptions, HubManager.addHub)
+    .command('list', 'List hubs', HubManager.listHubs)
+    .command('ls', 'List hubs', HubManager.listHubs)
+    .command('use [hub]', 'Use hub', hubBuilder, HubManager.useHub)
     .help();
