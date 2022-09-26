@@ -1,5 +1,6 @@
 import HubManager from '../common/hub-manager';
 import * as sdk from 'dc-management-sdk-js';
+import * as configure from '../commands/configure';
 import fs from 'fs-extra';
 
 // eslint-disable-next-line
@@ -25,6 +26,7 @@ jest.mock('enquirer', () => ({
 describe('hub manager', function() {
   const hubGetMock = jest.fn();
   const autocompleteRun = jest.fn();
+  let configureSpy: jest.SpyInstance;
 
   afterEach((): void => {
     jest.restoreAllMocks();
@@ -37,6 +39,8 @@ describe('hub manager', function() {
   beforeEach((): void => {
     jest.spyOn(fs, 'writeFileSync').mockImplementation(undefined);
     jest.spyOn(fs, 'mkdirpSync').mockReturnValueOnce(undefined);
+
+    configureSpy = jest.spyOn(configure, 'handler').mockReturnValue();
 
     hubGetMock.mockReturnValue({
       name: 'dummy-hub'
@@ -111,12 +115,18 @@ describe('hub manager', function() {
 
   it('should choose the dummy hub', async () => {
     mockDefaultConfig();
+
     await expect(HubManager.useHub({ ...yargArgs, hub: DummyHub.name })).resolves.toBeDefined();
+
+    expect(configureSpy).toHaveBeenCalled();
+    expect(configureSpy.mock.calls[0][0].hubId).toEqual(DummyHub.hubId);
   });
 
   it('should fail to choose hub [foo]', async () => {
     mockDefaultConfig();
     await expect(HubManager.useHub({ ...yargArgs, hub: 'foo' })).rejects.toThrow(`hub configuration not found`);
+
+    expect(configureSpy).not.toHaveBeenCalled();
   });
 
   it('should ask to choose a hub when none is provided and multiple are present', async () => {
@@ -130,6 +140,8 @@ describe('hub manager', function() {
     await expect(HubManager.useHub({ ...yargArgs, hub: '' })).resolves.toBeDefined();
 
     expect(autocompleteRun).toHaveBeenCalledTimes(1);
+    expect(configureSpy).toHaveBeenCalled();
+    expect(configureSpy.mock.calls[0][0].hubId).toEqual(DummyHub.hubId);
   });
 
   it('should list hubs', async () => {
