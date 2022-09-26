@@ -81,7 +81,7 @@ const credentialsHelpText = helpTag('credentials assigned by Amplience support')
 const hubIdHelpText = helpTag('found in hub settings -> properties');
 
 export const addHub = async (
-  args: Arguments<{ clientId: string; clientSecret: string; hubId: string }>
+  args: Arguments<{ clientId?: string; clientSecret?: string; hubId?: string }>
 ): Promise<void> => {
   console.log(`debug: addHub`);
 
@@ -98,7 +98,7 @@ export const addHub = async (
     throw new Error(`config already exists for client id [ ${args.clientId} ] and hub id [ ${args.hubId} ]`);
   }
 
-  const validated = await validateHub(args);
+  const validated = await validateHub(args as HubConfiguration);
   if (validated && validated.name) {
     saveHub(validated);
     console.log(`${chalk.blueBright('added')} hub [ ${chalk.green(validated.name)} ]`);

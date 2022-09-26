@@ -20,7 +20,9 @@ jest.mock('dc-management-sdk-js', () => ({
 
 jest.mock('enquirer', () => ({
   ...jest.requireActual('enquirer'),
-  AutoComplete: jest.fn()
+  AutoComplete: jest.fn(),
+  Input: jest.fn(),
+  Password: jest.fn()
 }));
 
 describe('hub manager', function() {
@@ -104,6 +106,32 @@ describe('hub manager', function() {
     jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
     await HubManager.addHub({ ...yargArgs, ...DummyHub });
     expect(mockedWriteFileSync).toHaveBeenCalled();
+  });
+
+  it('should save hub from user input', async () => {
+    const inputRun = jest
+      .fn()
+      .mockResolvedValueOnce('client-id')
+      .mockResolvedValueOnce('hub-id');
+    const passwordRun = jest.fn().mockResolvedValueOnce('client-secret');
+
+    (enquirer.Input as jest.Mock).mockReturnValue({
+      run: inputRun
+    });
+
+    (enquirer.Password as jest.Mock).mockReturnValue({
+      run: passwordRun
+    });
+
+    mockEmptyConfig(2);
+
+    const mockedWriteFileSync = jest.spyOn(fs, 'writeFileSync');
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+    await HubManager.addHub({ ...yargArgs });
+    expect(mockedWriteFileSync).toHaveBeenCalled();
+
+    expect(inputRun).toHaveBeenCalledTimes(2);
+    expect(passwordRun).toHaveBeenCalledTimes(1);
   });
 
   it('should fail to save a duplicate hub', async () => {
