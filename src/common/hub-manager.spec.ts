@@ -60,11 +60,12 @@ describe('hub manager', function() {
     _: ['test']
   };
 
-  const mockEmptyConfig = (): void => {
-    jest
-      .spyOn(fs, 'readJSONSync')
-      .mockReturnValueOnce({})
-      .mockReturnValueOnce([]);
+  const mockEmptyConfig = (repeats = 1): void => {
+    const mock = jest.spyOn(fs, 'readJSONSync');
+
+    for (let i = 0; i < repeats; i++) {
+      mock.mockReturnValueOnce({}).mockReturnValueOnce([]);
+    }
   };
 
   const mockDefaultConfig = (): void => {
@@ -93,7 +94,7 @@ describe('hub manager', function() {
   });
 
   it('should save hub', async () => {
-    mockEmptyConfig();
+    mockEmptyConfig(2);
 
     const mockedWriteFileSync = jest.spyOn(fs, 'writeFileSync');
     jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
