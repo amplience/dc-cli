@@ -8,13 +8,6 @@ import { Arguments } from 'yargs';
 // eslint-disable-next-line
 const { AutoComplete, Input, Password } = require('enquirer');
 
-export const DummyHub = {
-  clientId: 'client-id',
-  clientSecret: 'client-id',
-  hubId: 'hub-id',
-  name: 'dummy-hub'
-};
-
 export const CONFIG_PATH = join(
   process.env[process.platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname,
   '.amplience',
@@ -29,16 +22,16 @@ export type HubConfiguration = {
   isActive?: boolean;
 };
 
-const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> => {
-  if (creds.clientId !== DummyHub.clientId) {
-    const client = new DynamicContent({
-      client_id: creds.clientId,
-      client_secret: creds.clientSecret
-    });
-    const hub = await client.hubs.get(creds.hubId);
-    creds.name = hub.name;
-  }
-  return creds;
+export const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> => {
+  const client = new DynamicContent({
+    client_id: creds.clientId,
+    client_secret: creds.clientSecret
+  });
+  const hub = await client.hubs.get(creds.hubId);
+  return {
+    ...creds,
+    name: hub.name
+  };
 };
 
 const getHubs = (): HubConfiguration[] => {
@@ -113,9 +106,10 @@ export const addHub = async (
   }
 };
 
-const chooseHub = async (filter: string): Promise<HubConfiguration> => {
+const chooseHub = async (filter: string, exact = false): Promise<HubConfiguration> => {
   const filtered = getHubs().filter(
-    hub => (hub.name && hub.name.indexOf(filter) > -1) || hub.hubId.indexOf(filter) > -1
+    hub =>
+      (hub.name && hub.name.indexOf(filter) > -1) || (exact ? hub.hubId === filter : hub.hubId.indexOf(filter) > -1)
   );
 
   if (filtered.length === 1) {
@@ -134,7 +128,7 @@ const chooseHub = async (filter: string): Promise<HubConfiguration> => {
     choices: filtered.map(hub => `${hub.hubId} ${hub.name}`),
     initial: filtered.findIndex(hub => hub.isActive)
   }).run();
-  return await chooseHub(hubWithId.split(' ')[0]);
+  return await chooseHub(hubWithId.split(' ')[0], true);
 };
 
 const useHub = async (argv: Arguments<{ hub: string }>): Promise<HubConfiguration> => {
@@ -145,7 +139,7 @@ const useHub = async (argv: Arguments<{ hub: string }>): Promise<HubConfiguratio
 const listHubs = (): void => {
   getHubs().forEach(hub => {
     // novadev-695 provide a non-color indicator for active hub
-    const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}` || '') : `  ${hub.name}`;
+    const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}`) : `  ${hub.name}`;
     console.log(`${hub.hubId} ${hub.clientId.substring(0, 8)} ${hubName}`);
   });
 };

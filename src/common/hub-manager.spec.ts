@@ -1,10 +1,31 @@
-import HubManager, { DummyHub } from '../common/hub-manager';
+import HubManager from '../common/hub-manager';
+import * as sdk from 'dc-management-sdk-js';
 import fs from 'fs-extra';
 
-// jest.mock('../common/hub-manager');
-// const { addHub } = jest.requireActual('../common/hub-manager');
+// eslint-disable-next-line
+const enquirer = require('enquirer');
+
+const DummyHub = {
+  clientId: 'client-id',
+  clientSecret: 'client-id',
+  hubId: 'hub-id',
+  name: 'dummy-hub'
+};
+
+jest.mock('dc-management-sdk-js', () => ({
+  ...jest.requireActual('dc-management-sdk-js'),
+  DynamicContent: jest.fn()
+}));
+
+jest.mock('enquirer', () => ({
+  ...jest.requireActual('enquirer'),
+  AutoComplete: jest.fn()
+}));
 
 describe('hub manager', function() {
+  const hubGetMock = jest.fn();
+  const autocompleteRun = jest.fn();
+
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -16,6 +37,22 @@ describe('hub manager', function() {
   beforeEach((): void => {
     jest.spyOn(fs, 'writeFileSync').mockImplementation(undefined);
     jest.spyOn(fs, 'mkdirpSync').mockReturnValueOnce(undefined);
+
+    hubGetMock.mockReturnValue({
+      name: 'dummy-hub'
+    });
+
+    autocompleteRun.mockResolvedValue(`${DummyHub.hubId} ${DummyHub.name}`);
+
+    (sdk.DynamicContent as jest.Mock).mockReturnValue({
+      hubs: {
+        get: hubGetMock
+      }
+    });
+
+    (enquirer.AutoComplete as jest.Mock).mockReturnValue({
+      run: autocompleteRun
+    });
   });
 
   const yargArgs = {
@@ -81,8 +118,25 @@ describe('hub manager', function() {
     await expect(HubManager.useHub({ ...yargArgs, hub: 'foo' })).rejects.toThrow(`hub configuration not found`);
   });
 
+  it('should ask to choose a hub when none is provided and multiple are present', async () => {
+    jest
+      .spyOn(fs, 'readJSONSync')
+      .mockReturnValueOnce(DummyHub)
+      .mockReturnValueOnce([DummyHub, { ...DummyHub, hubId: 'hub-id2' }])
+      .mockReturnValueOnce(DummyHub)
+      .mockReturnValueOnce([DummyHub, { ...DummyHub, hubId: 'hub-id2' }]);
+
+    await expect(HubManager.useHub({ ...yargArgs, hub: '' })).resolves.toBeDefined();
+
+    expect(autocompleteRun).toHaveBeenCalledTimes(1);
+  });
+
   it('should list hubs', async () => {
-    mockDefaultConfig();
+    jest
+      .spyOn(fs, 'readJSONSync')
+      .mockReturnValueOnce(DummyHub)
+      .mockReturnValueOnce([{ ...DummyHub, isActive: true }, { ...DummyHub, hubId: 'hub-id2' }]);
+
     HubManager.listHubs();
   });
 });
