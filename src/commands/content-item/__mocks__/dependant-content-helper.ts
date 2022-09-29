@@ -1,9 +1,12 @@
-import { ContentDependancy } from '../../../common/content-item/content-dependancy-tree';
+import { ContentDependancy, DependancyContentTypeSchema } from '../../../common/content-item/content-dependancy-tree';
 
-function dependancy(id: string): ContentDependancy {
+function dependancy(
+  id: string,
+  type = 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
+): ContentDependancy {
   return {
     _meta: {
-      schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link',
+      schema: type as DependancyContentTypeSchema,
       name: 'content-link'
     },
     contentType: 'https://dev-solutions.s3.amazonaws.com/DynamicContentTypes/Accelerators/blog.json',
@@ -21,12 +24,33 @@ function dependProps(itemProps: [string, string][]): object {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function dependsOn(itemIds: string[], itemProps?: [string, string][]): any {
+export function dependsOn(itemIds: string[], type?: string, itemProps?: [string, string][]): any {
   itemProps = itemProps || [];
   return {
-    links: itemIds.map(id => dependancy(id)),
+    links: itemIds.map(id => dependancy(id, type)),
     ...dependProps(itemProps)
   };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function hierarchyParent(parentId: string, itemProps?: [string, string][]): any {
+  itemProps = itemProps || [];
+  const item = {
+    ...dependProps(itemProps)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+
+  if (!item._meta) {
+    item._meta = {};
+  }
+
+  if (!item._meta.hierarchy) {
+    item._meta.hierarchy = {};
+  }
+
+  item._meta.hierarchy.parentId = parentId;
+
+  return item;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

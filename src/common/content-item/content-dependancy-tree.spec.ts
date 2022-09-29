@@ -2,7 +2,7 @@ import { ContentDependancyTree, RepositoryContentItem, ItemContentDependancies }
 import { ContentMapping } from '../content-mapping';
 import { ContentItem, Status, ContentRepository } from 'dc-management-sdk-js';
 import { ItemTemplate } from '../dc-management-sdk-js/mock-content';
-import { dependsOn } from '../../commands/content-item/__mocks__/dependant-content-helper';
+import { dependsOn, hierarchyParent } from '../../commands/content-item/__mocks__/dependant-content-helper';
 
 describe('content-dependancy-tree', () => {
   describe('content dependancy tree tests', () => {
@@ -22,6 +22,7 @@ describe('content-dependancy-tree', () => {
         body: {
           ...template.body,
           _meta: {
+            ...(template.body && template.body._meta),
             schema: template.typeSchemaUri
           }
         },
@@ -54,7 +55,7 @@ describe('content-dependancy-tree', () => {
         { label: 'id4', body: dependsOn(['id1']), repoId: 'repo1', typeSchemaUri: 'http://type2.com' },
         {
           label: 'id5',
-          body: dependsOn(['id1', 'id2'], [['exampleProp', 'id2']]),
+          body: dependsOn(['id1', 'id2'], undefined, [['exampleProp', 'id2']]),
           repoId: 'repo1',
           typeSchemaUri: 'http://type2.com'
         }
@@ -70,6 +71,20 @@ describe('content-dependancy-tree', () => {
         { label: 'id4', body: dependsOn(['id5']), repoId: 'repo1', typeSchemaUri: 'http://type.com' },
         { label: 'id5', body: dependsOn(['id4']), repoId: 'repo1', typeSchemaUri: 'http://type2.com' },
         { label: 'id6', body: dependsOn(['id4']), repoId: 'repo1', typeSchemaUri: 'http://type2.com' }
+      ]);
+    };
+
+    const defaultAllRefTypes = (): RepositoryContentItem[] => {
+      return createItems([
+        { label: 'id1', body: dependsOn([]), repoId: 'repo1', typeSchemaUri: 'http://type.com' },
+        { label: 'id2', body: dependsOn(['id1']), repoId: 'repo1', typeSchemaUri: 'http://type.com' },
+        {
+          label: 'id3',
+          body: dependsOn(['id1'], 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-reference'),
+          repoId: 'repo1',
+          typeSchemaUri: 'http://type2.com'
+        },
+        { label: 'id4', body: hierarchyParent('id1'), repoId: 'repo1', typeSchemaUri: 'http://type2.com' }
       ]);
     };
 
@@ -194,6 +209,35 @@ describe('content-dependancy-tree', () => {
       });
 
       expect(dependants2.length).toEqual(5);
+      expectItemMatch(dependants2, items);
+    });
+
+    it('should traverse only link dependants of an item with traverseDependants when onlyLink is true', () => {
+      const items = defaultAllRefTypes();
+
+      const tree = new ContentDependancyTree(items, new ContentMapping());
+      const dependants: ItemContentDependancies[] = [];
+
+      // traverse dependants for id1, which is depended on by all content items, but only id2 is a link.
+      tree.traverseDependants(
+        tree.all[0],
+        item => {
+          dependants.push(item);
+        },
+        true
+      );
+
+      expect(dependants.length).toEqual(2);
+      expectItemMatch(dependants, [items[0], items[1]]);
+
+      const dependants2: ItemContentDependancies[] = [];
+
+      // same, but allow links
+      tree.traverseDependants(tree.all[0], item => {
+        dependants2.push(item);
+      });
+
+      expect(dependants2.length).toEqual(4);
       expectItemMatch(dependants2, items);
     });
 
