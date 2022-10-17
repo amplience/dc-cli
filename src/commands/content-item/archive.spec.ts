@@ -336,7 +336,8 @@ describe('content-item archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -394,7 +395,8 @@ describe('content-item archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ACTIVE,
-        repoId: 'repo1'
+        repoId: 'repo1',
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -415,7 +417,8 @@ describe('content-item archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ACTIVE,
-        repoId: ['repo1', 'repo2']
+        repoId: ['repo1', 'repo2'],
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -438,7 +441,8 @@ describe('content-item archive command', () => {
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ACTIVE,
         folderId: 'folder1',
-        repoId: 'repo123'
+        repoId: 'repo123',
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -459,7 +463,8 @@ describe('content-item archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ACTIVE,
-        folderId: ['folder1', 'folder1']
+        folderId: ['folder1', 'folder1'],
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -481,7 +486,8 @@ describe('content-item archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'name:item1', {
         folderId: 'folder1',
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -526,7 +532,8 @@ describe('content-item archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'name:item3', {
         folderId: 'folder1',
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).not.toBeCalled();
     });
@@ -548,7 +555,8 @@ describe('content-item archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'name:item1', {
         folderId: 'folder1',
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).not.toBeCalled();
     });
@@ -568,7 +576,8 @@ describe('content-item archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'schema:http://test.com', {
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -588,7 +597,8 @@ describe('content-item archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -608,7 +618,8 @@ describe('content-item archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(1);
     });
@@ -628,7 +639,8 @@ describe('content-item archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).toBeCalledTimes(2);
     });
@@ -686,7 +698,8 @@ describe('content-item archive command', () => {
 
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         folderId: 'folder1',
-        status: Status.ACTIVE
+        status: Status.ACTIVE,
+        enrichItems: true
       });
       expect(mockArchive).not.toBeCalled();
     });

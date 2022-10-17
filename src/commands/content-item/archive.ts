@@ -127,7 +127,7 @@ export const getContentItems = async ({
 
     const hub = await client.hubs.get(hubId);
 
-    contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE });
+    contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
 
     return { contentItems, missingContent: false };
   } catch (err) {
