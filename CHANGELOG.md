@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.17.0](https://www.github.com/amplience/dc-cli/compare/v0.16.0...v0.17.0) (2022-10-19)
+
+
+### Features
+
+* **hub:** add environment management commands ([#149](https://www.github.com/amplience/dc-cli/issues/149)) ([2857dac](https://www.github.com/amplience/dc-cli/commit/2857dacca0a1f0a4cebf0b9361944098986f0ee5))
+
+
+### Bug Fixes
+
+* **content-item:** enrich items when faceting for archive ([#152](https://www.github.com/amplience/dc-cli/issues/152)) ([2902877](https://www.github.com/amplience/dc-cli/commit/29028770a8fb70b2bb005885b1d2a94f8f01466a))
+* **content-item:** only assume links will be published, not references ([#150](https://www.github.com/amplience/dc-cli/issues/150)) ([56bc1b4](https://www.github.com/amplience/dc-cli/commit/56bc1b47bb0a7d63e19ef5cdc1bc83d99e0daf13))
+
 ## [0.16.0](https://www.github.com/amplience/dc-cli/compare/v0.15.1...v0.16.0) (2022-09-12)
 
 
