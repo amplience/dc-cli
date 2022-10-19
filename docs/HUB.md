@@ -159,7 +159,7 @@ dc-cli hub clean
 
 ### add
 
-Saves a hub configuration for later use.  A hub configuration consists of:
+Saves a hub configuration for later use. A hub configuration consists of:
 
 * client id
 * client secret
@@ -185,7 +185,7 @@ Alias for `dc-cli hub list`.
 
 ### use
 
-Retrieves a hub configuration to be used by `dc-cli`.  Under the covers, this uses `dc-cli configure`.  The `filter` parameter is optional; if provided, it will filter the list of configured hubs to those that match `filter` with either their `name` or `hubId`.  If more than one hub matches `filter` (or if `filter` is not provided) the user will be prompted to disambiguate between configurations.
+Retrieves a hub configuration to be used by `dc-cli`. Under the covers, this uses `dc-cli configure`. The `filter` parameter is optional; if provided, it will filter the list of configured hubs to those that match `filter` with either their `name` or `hubId`. If more than one hub matches `filter` (or if `filter` is not provided) the user will be prompted to disambiguate between configurations.
 
 ```
 dc-cli hub use [filter]
@@ -193,9 +193,12 @@ dc-cli hub use [filter]
 
 #### Options
 
-| Option Name | Type      | Description                                        |
-| ----------- | --------- | -------------------------------------------------- |
-| filter      | [string]  | Either part of the hub name or part of the hub id. |
+| Option Name    | Type      | Description                                                          |
+| -------------- | --------- | -------------------------------------------------------------------- |
+| filter         | [string]  | Either part of the hub name or part of the hub id.                   |
+| --clientId     | [string]  | Client ID for the source hub, instead of entering when prompted.     |
+| --clientSecret | [string]  | Client secret for the source hub, instead of entering when prompted. |
+| --hubId        | [string]  | Hub ID for the source hub, instead of entering when prompted.        |
 
 #### Examples
 

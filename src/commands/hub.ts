@@ -18,7 +18,6 @@ export const hubBuilder = (yargs: Argv): Argv =>
     type: 'string',
     demandOption: false,
 
-    // novadev-694 provide a default value so we don't choke and can present the selection list
     default: ''
   });
 

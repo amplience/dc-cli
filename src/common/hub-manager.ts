@@ -84,8 +84,6 @@ const hubIdHelpText = helpTag('found in hub settings -> properties');
 export const addHub = async (
   args: Arguments<{ clientId?: string; clientSecret?: string; hubId?: string }>
 ): Promise<void> => {
-  console.log(`debug: addHub`);
-
   // dc config
   sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
 
@@ -139,7 +137,6 @@ const useHub = async (argv: Arguments<{ hub: string }>): Promise<HubConfiguratio
 
 const listHubs = (): void => {
   getHubs().forEach(hub => {
-    // novadev-695 provide a non-color indicator for active hub
     const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}`) : `  ${hub.name}`;
     console.log(`${hub.hubId} ${hub.clientId.substring(0, 8)} ${hubName}`);
   });
