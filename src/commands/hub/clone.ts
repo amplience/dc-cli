@@ -1,7 +1,8 @@
 import { createLog, getDefaultLogPath, openRevertLog } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
 import { join } from 'path';
-import { ConfigurationParameters } from '../configure';
+import { ConfigurationParameters, configureCommandOptions } from '../configure';
+import { readConfig } from '../../cli';
 
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { CloneHubBuilderOptions } from '../../interfaces/clone-hub-builder-options';
@@ -55,6 +56,8 @@ export const steps: CloneHubStep[] = [
 
 export const builder = (yargs: Argv): void => {
   yargs
+    .options(configureCommandOptions)
+    .config('config', readConfig)
     .positional('dir', {
       describe:
         'Directory to export content to, then import from. This must be set to the previous directory for a revert.',
