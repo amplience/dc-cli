@@ -336,20 +336,23 @@ export class ContentDependancyTree {
   public traverseDependants(
     item: ItemContentDependancies,
     action: (item: ItemContentDependancies) => void,
-    ignoreHier = false,
+    onlyLinks = false,
     traversed?: Set<ItemContentDependancies>
   ): void {
     const traversedSet = traversed || new Set<ItemContentDependancies>();
     traversedSet.add(item);
     action(item);
     item.dependants.forEach(dependant => {
-      if (ignoreHier && dependant.dependancy._meta.schema == '_hierarchy') {
+      if (
+        onlyLinks &&
+        dependant.dependancy._meta.schema !== 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link'
+      ) {
         return;
       }
 
       const resolved = dependant.resolved as ItemContentDependancies;
       if (!traversedSet.has(resolved)) {
-        this.traverseDependants(resolved, action, ignoreHier, traversedSet);
+        this.traverseDependants(resolved, action, onlyLinks, traversedSet);
       }
     });
   }
