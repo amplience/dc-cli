@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import { join, dirname } from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
