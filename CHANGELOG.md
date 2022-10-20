@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.17.1](https://www.github.com/amplience/dc-cli/compare/v0.17.0...v0.17.1) (2022-10-20)
+
+
+### Bug Fixes
+
+* **hub:** fix hub commands not being passed credentials ([#157](https://www.github.com/amplience/dc-cli/issues/157)) ([0521428](https://www.github.com/amplience/dc-cli/commit/05214286a573693d2cadbd55ccc2ffdac42aa0b9))
+
 ## [0.17.0](https://www.github.com/amplience/dc-cli/compare/v0.16.0...v0.17.0) (2022-10-19)
 
 
