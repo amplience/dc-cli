@@ -1,11 +1,12 @@
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Argv, Arguments } from 'yargs';
-import { ConfigurationParameters } from '../configure';
+import { ConfigurationParameters, configureCommandOptions } from '../configure';
 
 import { CleanHubBuilderOptions } from '../../interfaces/clean-hub-builder-options';
 import { SchemaCleanStep } from './steps/schema-clean-step';
 import { TypeCleanStep } from './steps/type-clean-step';
 import { ContentCleanStep } from './steps/content-clean-step';
+import { readConfig } from '../../cli';
 
 export const command = 'clean';
 
@@ -19,6 +20,8 @@ export const steps = [new ContentCleanStep(), new TypeCleanStep(), new SchemaCle
 
 export const builder = (yargs: Argv): void => {
   yargs
+    .options(configureCommandOptions)
+    .config('config', readConfig)
     .alias('f', 'force')
     .option('f', {
       type: 'boolean',
