@@ -48,6 +48,11 @@ export const builder = (yargs: Argv): void => {
       describe: 'Source file path containing Settings definition',
       type: 'string'
     })
+    .option('allowDelete', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Allows removal of settings that are not in the imported json when possible, such as previews.'
+    })
     .option('mapFile', {
       type: 'string',
       requiresArg: false,
@@ -102,7 +107,12 @@ export const handler = async (
     }
 
     if (hub.settings && hub.settings.applications) {
-      uniqueApplications = uniqBy([...settings.applications, ...hub.settings.applications], 'name');
+      if (argv.allowDelete) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        uniqueApplications = [...settings.applications] as any[];
+      } else {
+        uniqueApplications = uniqBy([...settings.applications, ...hub.settings.applications], 'name');
+      }
     }
 
     await hub.related.settings.update(

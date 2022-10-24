@@ -319,6 +319,12 @@ describe('settings import command', (): void => {
         type: 'string'
       });
 
+      expect(spyOptions).toHaveBeenCalledWith('allowDelete', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Allows removal of settings that are not in the imported json when possible, such as previews.'
+      });
+
       expect(spyOptions).toHaveBeenCalledWith('mapFile', {
         type: 'string',
         requiresArg: false,
