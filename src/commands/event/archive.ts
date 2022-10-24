@@ -216,7 +216,17 @@ export const processItems = async ({
 
     for (let i = 0; i < events.length; i++) {
       try {
-        await Promise.all(events[i].unscheduleEditions.map(edition => edition.related.unschedule()));
+        await Promise.all(
+          events[i].unscheduleEditions.map(async edition => {
+            await edition.related.unschedule();
+
+            if (events[i].command === 'ARCHIVE') {
+              // Unscheduled editions need to be deleted before the event can be archived.
+              const unscheduled = await client.editions.get(edition.id as string);
+              await unscheduled.related.delete();
+            }
+          })
+        );
 
         if (events[i].command === 'ARCHIVE') {
           await Promise.all(events[i].deleteEditions.map(edition => edition.related.delete()));
