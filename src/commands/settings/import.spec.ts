@@ -452,7 +452,11 @@ describe('settings import command', (): void => {
       await rimraf('./mapSettings.json');
       await rimraf('./settings-5db1727bcff47e0001ce5fd2.json');
       await promisify(writeFile)('./mapSettings.json', JSON.stringify(settingsMappingFile));
-      await promisify(writeFile)('./settings-5db1727bcff47e0001ce5fd2.json', JSON.stringify(settingsExported));
+
+      const newSettingsExported = JSON.parse(JSON.stringify(settingsExported));
+      newSettingsExported.settings.applications[0].name = 'replacementAdditional';
+
+      await promisify(writeFile)('./settings-5db1727bcff47e0001ce5fd2.json', JSON.stringify(newSettingsExported));
 
       await handler({
         ...argv,
@@ -465,6 +469,7 @@ describe('settings import command', (): void => {
 
       expect(mockGetHub).toHaveBeenCalled();
       expect(mockUpdateSettings).toHaveBeenCalledTimes(1);
+      expect(mockUpdateSettings.mock.calls[0][2].applications.length).toEqual(2);
       expect(mockCreateState).toHaveBeenCalledTimes(1);
       expect(fileExists).toBeTruthy();
 
@@ -491,6 +496,38 @@ describe('settings import command', (): void => {
 
       await promisify(unlink)('./settings-5db1727bcff47e0001ce5fd2.json');
       await promisify(unlink)('./mapSettings2.json');
+    });
+
+    it('should process settings from a local directory, allowDelete removes existing previews', async () => {
+      await rimraf('./mapSettings.json');
+      await rimraf('./settings-5db1727bcff47e0001ce5fd2.json');
+      await promisify(writeFile)('./mapSettings.json', JSON.stringify(settingsMappingFile));
+
+      const newSettingsExported = JSON.parse(JSON.stringify(settingsExported));
+      newSettingsExported.settings.applications[0].name = 'replacementPreview';
+
+      await promisify(writeFile)('./settings-5db1727bcff47e0001ce5fd2.json', JSON.stringify(newSettingsExported));
+
+      await handler({
+        ...argv,
+        mapFile: './mapSettings.json',
+        logFile: createLog('./log.json'),
+        allowDelete: true,
+        force: true
+      });
+
+      const fileExists = await promisify(exists)('./log.json');
+
+      expect(mockGetHub).toHaveBeenCalled();
+      expect(mockUpdateSettings).toHaveBeenCalledTimes(1);
+      expect(mockUpdateSettings.mock.calls[0][2].applications[0].name).toEqual('replacementPreview');
+      expect(mockUpdateSettings.mock.calls[0][2].applications.length).toEqual(1);
+      expect(mockCreateState).toHaveBeenCalledTimes(1);
+      expect(fileExists).toBeTruthy();
+
+      await promisify(unlink)('./settings-5db1727bcff47e0001ce5fd2.json');
+      await promisify(unlink)('./mapSettings.json');
+      await promisify(unlink)('./log.json');
     });
 
     it('no map file', async () => {

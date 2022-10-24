@@ -96,6 +96,7 @@ dc-cli settings import <dir>
 
 | Option Name     | Type      | Description                                                  |
 | --------------- | --------- | ------------------------------------------------------------ |
+| --allowDelete   | [boolean] | Allows removal of settings that are not in the imported json when possible, such as previews. |
 | --mapFile       | [string]  | Mapping file to use when updating workflow states that already exists.<br />Updated with any new mappings that are generated.<br />If not present, will be created.<br />For more information, see [mapping files](#MAPPING-FILES). |
 | -f<br />--force | [boolean] | Overwrite workflow states on import without asking.          |
 
