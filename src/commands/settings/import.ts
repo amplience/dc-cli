@@ -102,7 +102,7 @@ export const handler = async (
     }
 
     if (hub.settings && hub.settings.applications) {
-      uniqueApplications = uniqBy([...hub.settings.applications, ...settings.applications], 'name');
+      uniqueApplications = uniqBy([...settings.applications, ...hub.settings.applications], 'name');
     }
 
     await hub.related.settings.update(
