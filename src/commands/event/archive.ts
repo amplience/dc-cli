@@ -57,7 +57,7 @@ const getResourceUntilSuccess = async ({
 }: {
   id: string;
   resource: string;
-  getter: (id: string) => Promise<HalResource>
+  getter: (id: string) => Promise<HalResource>;
 }): Promise<HalResource | undefined> => {
   let resourceEvent;
 
@@ -83,7 +83,7 @@ const getEventUntilSuccess = async ({
   resource: string;
   client: DynamicContent;
 }): Promise<Event | undefined> => {
-  return await getResourceUntilSuccess({id, resource, getter: client.events.get}) as (Event | undefined);
+  return (await getResourceUntilSuccess({ id, resource, getter: client.events.get })) as (Event | undefined);
 };
 
 const getEditionUntilSuccess = async ({
@@ -95,7 +95,7 @@ const getEditionUntilSuccess = async ({
   resource: string;
   client: DynamicContent;
 }): Promise<Edition | undefined> => {
-  return await getResourceUntilSuccess({id, resource, getter: client.editions.get}) as (Edition | undefined);
+  return (await getResourceUntilSuccess({ id, resource, getter: client.editions.get })) as (Edition | undefined);
 };
 
 export const getEvents = async ({
@@ -258,7 +258,9 @@ export const processItems = async ({
                 await unscheduled.related.delete();
               } else {
                 log.addComment(`UNSCHEDULE+DELETE FAILED: ${edition.id}`);
-                log.addComment(`The edition may have taken too long to unschedule. Try again later or contact support.`);
+                log.addComment(
+                  `The edition may have taken too long to unschedule. Try again later or contact support.`
+                );
               }
             }
           })
