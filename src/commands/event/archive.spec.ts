@@ -91,6 +91,7 @@ describe('event archive command', () => {
     getEventError = false
   }): {
     mockGet: () => void;
+    mockEditionGet: () => void;
     mockEditionsList: () => void;
     deleteMock: () => void;
     archiveMock: () => void;
@@ -98,6 +99,7 @@ describe('event archive command', () => {
     mockEventsList: () => void;
   } => {
     const mockGet = jest.fn();
+    const mockEditionGet = jest.fn();
     const mockEditionsList = jest.fn();
     const deleteMock = jest.fn();
     const archiveMock = jest.fn();
@@ -118,6 +120,9 @@ describe('event archive command', () => {
           delete: deleteMock,
           archive: archiveMock
         }
+      },
+      editions: {
+        get: mockEditionGet
       }
     });
 
@@ -291,6 +296,8 @@ describe('event archive command', () => {
     }
     mockEditionsList.mockResolvedValue(new MockPage(Edition, editions));
 
+    mockEditionGet.mockResolvedValue({ ...editions[0], publishingStatus: 'DRAFT' });
+
     if (archiveError) {
       archiveMock.mockRejectedValue(new Error('Error'));
       deleteMock.mockRejectedValue(new Error('Error'));
@@ -306,6 +313,7 @@ describe('event archive command', () => {
 
     return {
       mockGet,
+      mockEditionGet,
       mockEditionsList,
       archiveMock,
       deleteMock,
@@ -385,6 +393,29 @@ describe('event archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
       expect(deleteMock).toBeCalledTimes(2);
+    });
+
+    it('should archive event with published+scheduled edition, after deleting the scheduled one', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockGet, mockEditionsList, deleteMock, archiveMock, mockEditionGet } = mockValues({
+        status: 'SCHEDULED',
+        mixedEditions: true
+      });
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        id: '1'
+      };
+      await handler(argv);
+
+      expect(mockGet).toHaveBeenCalled();
+      expect(mockEditionGet).toHaveBeenCalled();
+      expect(mockEditionsList).toHaveBeenCalled();
+      expect(deleteMock).toBeCalledTimes(2);
+      expect(archiveMock).toBeCalledTimes(2);
     });
 
     it("shouldn't archive event, no id", async () => {

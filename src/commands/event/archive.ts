@@ -4,7 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveEventOptions from '../../common/archive/archive-event-options';
-import { Edition, Event, DynamicContent } from 'dc-management-sdk-js';
+import { Edition, Event, DynamicContent, HalResource } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
@@ -50,6 +50,30 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
+const getResourceUntilSuccess = async ({
+  id = '',
+  resource = 'archive',
+  getter
+}: {
+  id: string;
+  resource: string;
+  getter: (id: string) => Promise<HalResource>;
+}): Promise<HalResource | undefined> => {
+  let resourceEvent;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const obj: HalResource = await getter(id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const link = obj._links && (obj._links as any)[resource];
+    if (link) {
+      resourceEvent = obj;
+      break;
+    }
+  }
+
+  return resourceEvent;
+};
+
 const getEventUntilSuccess = async ({
   id = '',
   resource = 'archive',
@@ -59,19 +83,19 @@ const getEventUntilSuccess = async ({
   resource: string;
   client: DynamicContent;
 }): Promise<Event | undefined> => {
-  let resourceEvent;
+  return (await getResourceUntilSuccess({ id, resource, getter: client.events.get })) as (Event | undefined);
+};
 
-  for (let i = 0; i < maxAttempts; i++) {
-    const event: Event = await client.events.get(id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const link = event._links && (event._links as any)[resource];
-    if (link) {
-      resourceEvent = event;
-      break;
-    }
-  }
-
-  return resourceEvent;
+const getEditionUntilSuccess = async ({
+  id = '',
+  resource = 'archive',
+  client
+}: {
+  id: string;
+  resource: string;
+  client: DynamicContent;
+}): Promise<Edition | undefined> => {
+  return (await getResourceUntilSuccess({ id, resource, getter: client.editions.get })) as (Edition | undefined);
 };
 
 export const getEvents = async ({
@@ -216,7 +240,31 @@ export const processItems = async ({
 
     for (let i = 0; i < events.length; i++) {
       try {
-        await Promise.all(events[i].unscheduleEditions.map(edition => edition.related.unschedule()));
+        const index = i;
+
+        await Promise.all(
+          events[i].unscheduleEditions.map(async edition => {
+            await edition.related.unschedule();
+
+            if (events[index].command === 'ARCHIVE') {
+              // Unscheduled editions need to be deleted before the event can be archived.
+              const unscheduled = await getEditionUntilSuccess({
+                id: edition.id as string,
+                resource: 'delete',
+                client
+              });
+
+              if (unscheduled) {
+                await unscheduled.related.delete();
+              } else {
+                log.addComment(`UNSCHEDULE+DELETE FAILED: ${edition.id}`);
+                log.addComment(
+                  `The edition may have taken too long to unschedule. Try again later or contact support.`
+                );
+              }
+            }
+          })
+        );
 
         if (events[i].command === 'ARCHIVE') {
           await Promise.all(events[i].deleteEditions.map(edition => edition.related.delete()));
