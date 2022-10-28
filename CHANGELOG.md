@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.18.0](https://www.github.com/amplience/dc-cli/compare/v0.17.1...v0.18.0) (2022-10-28)
+
+
+### Features
+
+* **settings:** overwrite existing preview settings rather than ignoring updates ([#160](https://www.github.com/amplience/dc-cli/issues/160)) ([a5d8dc5](https://www.github.com/amplience/dc-cli/commit/a5d8dc564df0330c231fda1c919bd47e53553c58))
+
+
+### Bug Fixes
+
+* **event:** correctly archive events with unscheduled editions ([#159](https://www.github.com/amplience/dc-cli/issues/159)) ([8cfefda](https://www.github.com/amplience/dc-cli/commit/8cfefdab8dde4a3586663adfb071c45ad50a6208))
+
 ### [0.17.1](https://www.github.com/amplience/dc-cli/compare/v0.17.0...v0.17.1) (2022-10-20)
 
 
