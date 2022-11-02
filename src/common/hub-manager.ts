@@ -2,9 +2,9 @@
 import { join, dirname } from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
-import { DynamicContent } from 'dc-management-sdk-js';
 import { handler as configure, CONFIG_FILENAME } from '../commands/configure';
 import { Arguments } from 'yargs';
+import dynamicContentClientFactory from '../services/dynamic-content-client-factory';
 
 // eslint-disable-next-line
 const { AutoComplete, Input, Password } = require('enquirer');
@@ -24,9 +24,10 @@ export type HubConfiguration = {
 };
 
 export const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> => {
-  const client = new DynamicContent({
-    client_id: creds.clientId,
-    client_secret: creds.clientSecret
+  const client = dynamicContentClientFactory({
+    clientId: creds.clientId,
+    clientSecret: creds.clientSecret,
+    hubId: creds.hubId
   });
   const hub = await client.hubs.get(creds.hubId);
   return {
