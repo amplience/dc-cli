@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.18.1](https://www.github.com/amplience/dc-cli/compare/v0.18.0...v0.18.1) (2023-01-10)
+
+
+### Bug Fixes
+
+* **hub:** validateHub respects environment variables ([#163](https://www.github.com/amplience/dc-cli/issues/163)) ([5f35aaf](https://www.github.com/amplience/dc-cli/commit/5f35aafbbf5f18189175affc7680608e1e8d9ed1))
+
 ## [0.18.0](https://www.github.com/amplience/dc-cli/compare/v0.17.1...v0.18.0) (2022-10-28)
 
 
