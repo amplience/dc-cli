@@ -533,6 +533,7 @@ describe('search-index import command', (): void => {
 
       expect(enrichedIndex.settings.replicas).toEqual([]);
       expect(index.related.settings.get).toHaveBeenCalled();
+      expect(enrichedIndex.settings).toBeInstanceOf(SearchIndexSettings);
       expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false, {
         waitUntilApplied: false
       });
