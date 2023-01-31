@@ -153,20 +153,22 @@ export class EnrichedSearchIndex extends SearchIndex {
   constructor(data?: unknown) {
     super(data);
 
-    if (this.settings) {
+    if (this.settings && !(this.settings instanceof SearchIndexSettings)) {
       this.settings = new SearchIndexSettings(this.settings);
     }
 
-    if (this.keys) {
+    if (this.keys && !(this.keys instanceof SearchIndexKey)) {
       this.keys = new SearchIndexKey(this.keys);
     }
 
     if (this.assignedContentTypes) {
-      this.assignedContentTypes = this.assignedContentTypes.map(x => new EnrichedAssignedContentType(x));
+      this.assignedContentTypes = this.assignedContentTypes.map(x =>
+        x instanceof EnrichedAssignedContentType ? x : new EnrichedAssignedContentType(x)
+      );
     }
 
     if (this.replicas) {
-      this.replicas = this.replicas.map(x => new EnrichedReplica(x));
+      this.replicas = this.replicas.map(x => (x instanceof EnrichedReplica ? x : new EnrichedReplica(x)));
     }
   }
 
