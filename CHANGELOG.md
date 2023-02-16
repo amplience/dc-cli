@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.19.0](https://www.github.com/amplience/dc-cli/compare/v0.18.0...v0.19.0) (2023-02-16)
+
+
+### Features
+
+* latest (1.18.0) dc-management-sdk-js ([3f8039e](https://www.github.com/amplience/dc-cli/commit/3f8039e47a130d6225dbb09f2d3729fbd5050828))
+* **search indexes:** support for async search index settings ([0e7d5e0](https://www.github.com/amplience/dc-cli/commit/0e7d5e06f498b9f197a92a9d75400bab41434b72))
+
+
+### Bug Fixes
+
+* **enrichedsearchindex:** convert the properties to their correct type ([7159361](https://www.github.com/amplience/dc-cli/commit/715936122fe1efd2642767f67ea2b92fc4f3f3d1))
+* **hub:** validateHub respects environment variables ([#163](https://www.github.com/amplience/dc-cli/issues/163)) ([5f35aaf](https://www.github.com/amplience/dc-cli/commit/5f35aafbbf5f18189175affc7680608e1e8d9ed1))
+* **search indexes:** ensuring only pojos are converted to their type ([b237f21](https://www.github.com/amplience/dc-cli/commit/b237f2140047bc9a1e8f8a920625e1370a45a39d))
+
 ## [0.18.0](https://www.github.com/amplience/dc-cli/compare/v0.17.1...v0.18.0) (2022-10-28)
 
 
