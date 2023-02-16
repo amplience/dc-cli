@@ -117,7 +117,7 @@
     "ajv": "^6.12.3",
     "axios": "^0.21.1",
     "chalk": "^2.4.2",
-    "dc-management-sdk-js": "^1.17.1",
+    "dc-management-sdk-js": "^1.18.0",
     "enquirer": "^2.3.6",
     "fs-extra": "^10.1.0",
     "lodash": "^4.17.21",

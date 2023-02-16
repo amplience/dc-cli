@@ -275,7 +275,9 @@ describe('search-index import command', (): void => {
 
       expect(enrichedIndex.settings.replicas).toEqual([]);
       expect(index.related.settings.get).toHaveBeenCalled();
-      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false, {
+        waitUntilApplied: false
+      });
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
       expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
 
@@ -331,7 +333,9 @@ describe('search-index import command', (): void => {
       expect(enrichedIndex.settings.replicas).toEqual(expect.arrayContaining(['replica-1', 'replica-2', 'replica-3']));
       expect(enrichedIndex.settings.replicas.length).toEqual(3);
       expect(index.related.settings.get).toHaveBeenCalled();
-      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false, {
+        waitUntilApplied: ['replicas']
+      });
       expect(index.related.replicas.list).toHaveBeenCalled();
 
       for (let i = 0; i < 2; i++) {
@@ -340,6 +344,71 @@ describe('search-index import command', (): void => {
       }
 
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
+      expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
+
+      expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
+    });
+
+    it("should report a failure if its not possible to successfully update a replica's settings", async () => {
+      const mockHub = new Hub();
+
+      const index = new SearchIndex({
+        id: 'id-1',
+        name: 'index-1',
+        label: 'index-1'
+      });
+
+      const enrichedIndex = new EnrichedSearchIndex({
+        settings: {
+          replicas: ['replica-1', 'replica-2']
+        },
+        assignedContentTypes: [],
+        replicas: [
+          new EnrichedReplica({
+            name: 'replica-1',
+            settings: new SearchIndexSettings({ setting: '1' })
+          }),
+          new EnrichedReplica({
+            name: 'replica-2',
+            settings: new SearchIndexSettings({ setting: '2' })
+          })
+        ]
+      });
+
+      const indexNames = ['replica-1', 'replica-2', 'replica-3'];
+      const replicas = indexNames.map(name => {
+        const index = new SearchIndex({ name });
+        index.related.update = jest.fn().mockResolvedValue(index);
+        index.related.settings.update = jest.fn().mockImplementation(() => Promise.reject(new Error('mocked error')));
+        return index;
+      });
+
+      index.related.settings.get = jest.fn().mockResolvedValue(new SearchIndexSettings({ replicas: ['replica-3'] }));
+      index.related.settings.update = jest.fn().mockResolvedValue(new SearchIndexSettings());
+      index.related.replicas.list = jest.fn().mockResolvedValue(new MockPage(SearchIndex, replicas));
+      index.related.assignedContentTypes.list = jest.fn().mockResolvedValue(new MockPage(AssignedContentType, []));
+      index.related.assignedContentTypes.create = jest.fn();
+
+      mockHub.related.searchIndexes.get = jest.fn().mockResolvedValue(index);
+
+      await expect(enrichIndex(mockHub, index, enrichedIndex, undefined)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `"mocked error"`
+      );
+
+      expect(enrichedIndex.settings.replicas).toEqual(expect.arrayContaining(['replica-1', 'replica-2', 'replica-3']));
+      expect(enrichedIndex.settings.replicas.length).toEqual(3);
+      expect(index.related.settings.get).toHaveBeenCalled();
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false, {
+        waitUntilApplied: ['replicas']
+      });
+      expect(index.related.replicas.list).toHaveBeenCalled();
+
+      for (let i = 0; i < 2; i++) {
+        expect((replicas[i].related.update as jest.Mock).mock.calls[0][0].name).toEqual(replicas[i].name);
+        expect(replicas[i].related.settings.update).toHaveBeenCalledWith(enrichedIndex.replicas[i].settings, false);
+      }
+
+      expect(index.related.assignedContentTypes.list).not.toHaveBeenCalled();
       expect(index.related.assignedContentTypes.create).not.toHaveBeenCalled();
 
       expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
@@ -394,7 +463,9 @@ describe('search-index import command', (): void => {
 
       expect(enrichedIndex.settings.replicas).toEqual([]);
       expect(index.related.settings.get).toHaveBeenCalled();
-      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false, {
+        waitUntilApplied: false
+      });
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
 
       expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');
@@ -462,7 +533,10 @@ describe('search-index import command', (): void => {
 
       expect(enrichedIndex.settings.replicas).toEqual([]);
       expect(index.related.settings.get).toHaveBeenCalled();
-      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false);
+      expect(enrichedIndex.settings).toBeInstanceOf(SearchIndexSettings);
+      expect(index.related.settings.update).toHaveBeenCalledWith(enrichedIndex.settings, false, {
+        waitUntilApplied: false
+      });
       expect(index.related.assignedContentTypes.list).toHaveBeenCalled();
 
       expect(mockHub.related.searchIndexes.get).toHaveBeenCalledWith('id-1');

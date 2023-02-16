@@ -150,11 +150,44 @@ export class EnrichedSearchIndex extends SearchIndex {
   assignedContentTypes: EnrichedAssignedContentType[];
   replicas: EnrichedReplica[];
 
+  constructor(data?: unknown) {
+    super(data);
+
+    if (this.settings && !(this.settings instanceof SearchIndexSettings)) {
+      this.settings = new SearchIndexSettings(this.settings);
+    }
+
+    if (this.keys && !(this.keys instanceof SearchIndexKey)) {
+      this.keys = new SearchIndexKey(this.keys);
+    }
+
+    if (this.assignedContentTypes) {
+      this.assignedContentTypes = this.assignedContentTypes.map(x =>
+        x instanceof EnrichedAssignedContentType ? x : new EnrichedAssignedContentType(x)
+      );
+    }
+
+    if (this.replicas) {
+      this.replicas = this.replicas.map(x => (x instanceof EnrichedReplica ? x : new EnrichedReplica(x)));
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public toJSON(): any {
     const result = super.toJSON();
 
-    result.assignedContentTypes = result.assignedContentTypes.map((type: AssignedContentType) => type.toJSON());
+    if (result.settings) {
+      result.settings = result.settings.toJSON();
+    }
+    if (result.keys) {
+      result.keys = result.keys.toJSON();
+    }
+    if (result.assignedContentTypes) {
+      result.assignedContentTypes = result.assignedContentTypes.map((type: AssignedContentType) => type.toJSON());
+    }
+    if (result.replicas) {
+      result.replicas = result.replicas.map((replica: EnrichedReplica) => replica.toJSON());
+    }
     return result;
   }
 }

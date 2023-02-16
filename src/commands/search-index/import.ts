@@ -177,27 +177,32 @@ export const enrichIndex = async (
     });
   }
   enrichedIndex.settings.replicas = Array.from(replicas);
+  const hasReplicas = replicas.size;
 
   // Update the search index settings.
-  await index.related.settings.update(enrichedIndex.settings, false);
+  await index.related.settings.update(enrichedIndex.settings, false, {
+    waitUntilApplied: hasReplicas ? ['replicas'] : false
+  });
 
   // Updating the settings might have changed the available hal links, so refetch it.
   index = await hub.related.searchIndexes.get(index.id as string);
 
-  if (replicas.size) {
+  if (hasReplicas) {
     // Replica settings must also be updated. The replicas may have changed, so fetch them again.
 
-    const replicas = await paginator(replicaList(index));
+    const listOfReplicas = await paginator(replicaList(index));
 
-    for (const importReplica of enrichedIndex.replicas) {
-      let replica = replicas.find(replica => replica.name === importReplica.name);
+    await Promise.all(
+      enrichedIndex.replicas.map(async importReplica => {
+        let replica = listOfReplicas.find(replica => replica.name === importReplica.name);
 
-      if (replica) {
-        replica = await replica.related.update(new SearchIndex(getIndexProperties(importReplica)));
+        if (replica) {
+          replica = await replica.related.update(new SearchIndex(getIndexProperties(importReplica)));
 
-        replica.related.settings.update(importReplica.settings, false);
-      }
-    }
+          return replica.related.settings.update(importReplica.settings, false);
+        }
+      })
+    );
   }
 
   const types = await paginator(index.related.assignedContentTypes.list);
