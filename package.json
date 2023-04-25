@@ -82,7 +82,7 @@
     ]
   },
   "devDependencies": {
-    "@commitlint/cli": "^13.1.0",
+    "@commitlint/cli": "^17.6.1",
     "@commitlint/config-conventional": "^8.2.0",
     "@types/chalk": "^2.2.0",
     "@types/fs-extra": "^9.0.13",
