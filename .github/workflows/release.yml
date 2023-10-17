@@ -39,3 +39,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
 
+      - run: |
+          npm run build:package
+          ./scripts/compress.sh
+          gh release upload ${{ steps.release.outputs.tag_name }} ./artifact/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ steps.release.outputs.release_created }}
