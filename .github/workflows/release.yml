@@ -3,27 +3,31 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+  pull-requests: write
+
 name: release-please
 jobs:
   release-please:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         id: release
         with:
-          token: ${{ secrets.GH_REPO_ACCESS }}
           release-type: node
           package-name: dc-cli
           bump-minor-pre-major: true
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ steps.release.outputs.release_created }}
 
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         if: ${{ steps.release.outputs.release_created }}
         with:
-          node-version: 14
+          cache: 'npm'
+          node-version-file: '.nvmrc'
           registry-url: 'https://registry.npmjs.org'
 
       - run: |
@@ -36,3 +40,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
 
+      - run: |
+          npm run build:package
+          ./scripts/compress.sh
+          gh release upload ${{ steps.release.outputs.tag_name }} ./artifact/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ steps.release.outputs.release_created }}
