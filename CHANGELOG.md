@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.19.1](https://github.com/amplience/dc-cli/compare/v0.19.0...v0.19.1) (2023-11-14)
+
+
+### Bug Fixes
+
+* **auth:** 403 errors due to expiring token (dc-management-sdk-js 1.19.1) ([7185795](https://github.com/amplience/dc-cli/commit/718579566f5fd6bfdf7b9e40a5e411e87379efe2))
+* **dc-management-sdk-js:** 1.20.0 bump - retry 429 errors ([02d92d8](https://github.com/amplience/dc-cli/commit/02d92d8838cd077bc3ab2dce6842ef374b122480))
+* **release:** set registry-url for setup-node ([2c077a3](https://github.com/amplience/dc-cli/commit/2c077a376aa13c7bb3bfa50dd7bf52be4781033b))
+
 ## [0.19.0](https://www.github.com/amplience/dc-cli/compare/v0.18.0...v0.19.0) (2023-02-16)
 
 
