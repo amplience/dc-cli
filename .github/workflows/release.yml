@@ -40,7 +40,7 @@ jobs:
       - run: |
           npm run build:package
           ./scripts/compress.sh
-          gh release upload ${{ steps.release.outputs.tag_name }} ./artifact/*.zip
+          gh release upload ${{ steps.release.outputs.tag_name }} ./packages/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
