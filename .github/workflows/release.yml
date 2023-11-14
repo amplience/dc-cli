@@ -3,10 +3,6 @@ on:
     branches:
       - master
 
-permissions:
-  contents: write
-  pull-requests: write
-
 name: release-please
 jobs:
   release-please:
@@ -16,6 +12,7 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v3
         id: release
         with:
+          token: ${{ secrets.GH_REPO_ACCESS }}
           release-type: node
           package-name: dc-cli
           bump-minor-pre-major: true
