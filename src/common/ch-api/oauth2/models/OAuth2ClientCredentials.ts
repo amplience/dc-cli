@@ -5,10 +5,10 @@ export interface OAuth2ClientCredentials {
   /**
    * Client id
    */
-  client_id: string;
+  client_id?: string;
 
   /**
    * Client secret
    */
-  client_secret: string;
+  client_secret?: string;
 }

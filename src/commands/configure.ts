@@ -13,9 +13,10 @@ export const CONFIG_FILENAME = (platform: string = process.platform): string =>
   join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'dc-cli-config.json');
 
 export const configureCommandOptions: CommandOptions = {
-  clientId: { type: 'string', demandOption: true },
-  clientSecret: { type: 'string', demandOption: true },
+  clientId: { type: 'string', demandOption: false },
+  clientSecret: { type: 'string', demandOption: false },
   hubId: { type: 'string', demandOption: true },
+  patToken: { type: 'string', demandOption: false },
 
   config: { type: 'string', default: CONFIG_FILENAME() }
 };
@@ -41,8 +42,9 @@ export const builder = (yargs: Argv): void => {
 };
 
 export type ConfigurationParameters = {
-  clientId: string;
-  clientSecret: string;
+  clientId?: string;
+  clientSecret?: string;
+  patToken?: string;
   hubId: string;
 
   dstClientId?: string;
@@ -92,10 +94,10 @@ export const readConfigFile = (configFile: string, ignoreError?: boolean): objec
 };
 
 export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument>): void => {
-  const { clientId, clientSecret, hubId } = argv;
+  const { clientId, clientSecret, hubId, patToken } = argv;
   const storedConfig = readConfigFile(argv.config);
 
-  const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId };
+  const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId, patToken };
 
   if (argv.dstClientId) newConfig.dstClientId = argv.dstClientId;
   if (argv.dstSecret) newConfig.dstSecret = argv.dstSecret;

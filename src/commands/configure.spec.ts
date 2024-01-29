@@ -19,7 +19,8 @@ describe('configure command', function() {
   const configFixture = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    patToken: 'amp-pat'
   };
 
   const NODE_MAJOR_VERSION = (process.versions.node.split('.')[0] as unknown) as number;
