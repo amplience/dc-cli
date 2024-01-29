@@ -43,42 +43,46 @@ export class OAuth2Client implements AccessTokenProvider {
       return this.token;
     }
 
-    const payload =
-      'grant_type=client_credentials' +
-      '&client_id=' +
-      encodeURIComponent(this.clientCredentials.client_id) +
-      '&client_secret=' +
-      encodeURIComponent(this.clientCredentials.client_secret);
+    if (this.clientCredentials.client_id && this.clientCredentials.client_secret) {
+      const payload =
+        'grant_type=client_credentials' +
+        '&client_id=' +
+        encodeURIComponent(this.clientCredentials.client_id) +
+        '&client_secret=' +
+        encodeURIComponent(this.clientCredentials.client_secret);
 
-    const request = this.httpClient.request({
-      data: payload,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      method: HttpMethod.POST,
-      url: combineURLs(this.authUrl, '/oauth/token')
-    });
+      const request = this.httpClient.request({
+        data: payload,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        method: HttpMethod.POST,
+        url: combineURLs(this.authUrl, '/oauth/token')
+      });
 
-    this.inFlight = request.then(
-      (response): AccessToken => {
-        if (typeof response.data !== 'object') {
-          throw new Error('Unexpected response format from /oauth/token endpoint');
+      this.inFlight = request.then(
+        (response): AccessToken => {
+          if (typeof response.data !== 'object') {
+            throw new Error('Unexpected response format from /oauth/token endpoint');
+          }
+
+          if (response.status !== 200) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const responseText = (response.data as any).error_description || JSON.stringify(response.data);
+
+            throw new Error(`Authorization failed (${response.status}): ${responseText}`);
+          }
+
+          this.token = (response.data as unknown) as AccessToken;
+          this.tokenExpires = Date.now() + this.token.expires_in * 1000;
+          this.inFlight = undefined;
+          return this.token;
         }
+      ) as Promise<AccessToken>;
 
-        if (response.status !== 200) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const responseText = (response.data as any).error_description || JSON.stringify(response.data);
-
-          throw new Error(`Authorization failed (${response.status}): ${responseText}`);
-        }
-
-        this.token = (response.data as unknown) as AccessToken;
-        this.tokenExpires = Date.now() + this.token.expires_in * 1000;
-        this.inFlight = undefined;
-        return this.token;
-      }
-    ) as Promise<AccessToken>;
-
-    return this.inFlight;
+      return this.inFlight;
+    } else {
+      throw new Error('Client credentials not set');
+    }
   }
 }

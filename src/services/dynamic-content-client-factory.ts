@@ -6,7 +6,8 @@ const dynamicContentClientFactory = (config: ConfigurationParameters): DynamicCo
   new DynamicContent(
     {
       client_id: config.clientId,
-      client_secret: config.clientSecret
+      client_secret: config.clientSecret,
+      patToken: config.patToken
     },
     {
       apiUrl: process.env.API_URL,

@@ -24,11 +24,7 @@ export type HubConfiguration = {
 };
 
 export const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> => {
-  const client = dynamicContentClientFactory({
-    clientId: creds.clientId,
-    clientSecret: creds.clientSecret,
-    hubId: creds.hubId
-  });
+  const client = dynamicContentClientFactory(creds);
   const hub = await client.hubs.get(creds.hubId);
   return {
     ...creds,
