@@ -1,4 +1,4 @@
-import { Arguments, Argv } from 'yargs';
+import yargs, { Arguments, Argv } from 'yargs';
 import { readConfig } from '../cli';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import fs from 'fs';
@@ -41,12 +41,30 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
+const getCommandLineArgs = (): Arguments => {
+  const rawArgs = process.argv.slice(2);
+  return yargs(rawArgs)
+    .option('clientId', { type: 'string' })
+    .option('clientSecret', { type: 'string' })
+    .option('patToken', { type: 'string' }).argv;
+};
+
 export type ConfigurationParameters = {
   clientId?: string;
   clientSecret?: string;
   patToken?: string;
   hubId: string;
 
+  dstClientId?: string;
+  dstSecret?: string;
+  dstHubId?: string;
+};
+
+export type StoredConfigurationParameters = {
+  clientId?: string;
+  clientSecret?: string;
+  patToken?: string;
+  hubId?: string;
   dstClientId?: string;
   dstSecret?: string;
   dstHubId?: string;
@@ -95,10 +113,21 @@ export const readConfigFile = (configFile: string, ignoreError?: boolean): objec
 
 export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument>): void => {
   const { clientId, clientSecret, hubId, patToken } = argv;
-  const storedConfig = readConfigFile(argv.config);
-
+  const storedConfig: StoredConfigurationParameters = readConfigFile(argv.config);
   const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId, patToken };
+  const commandLineArgs = getCommandLineArgs();
 
+  if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && commandLineArgs.patToken) {
+    console.error('You cannot specify both clientId and clientSecret together with patToken.');
+    return;
+  }
+  if (commandLineArgs.patToken && (storedConfig.clientId || storedConfig.clientSecret)) {
+    delete newConfig.clientId;
+    delete newConfig.clientSecret;
+  }
+  if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && storedConfig.patToken) {
+    delete newConfig.patToken;
+  }
   if (argv.dstClientId) newConfig.dstClientId = argv.dstClientId;
   if (argv.dstSecret) newConfig.dstSecret = argv.dstSecret;
   if (argv.dstHubId) newConfig.dstHubId = argv.dstHubId;
