@@ -60,16 +60,6 @@ export type ConfigurationParameters = {
   dstHubId?: string;
 };
 
-export type StoredConfigurationParameters = {
-  clientId?: string;
-  clientSecret?: string;
-  patToken?: string;
-  hubId?: string;
-  dstClientId?: string;
-  dstSecret?: string;
-  dstHubId?: string;
-};
-
 type ConfigArgument = {
   config: string;
 };
@@ -113,19 +103,19 @@ export const readConfigFile = (configFile: string, ignoreError?: boolean): objec
 
 export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument>): void => {
   const { clientId, clientSecret, hubId, patToken } = argv;
-  const storedConfig: StoredConfigurationParameters = readConfigFile(argv.config);
+  const storedConfig = readConfigFile(argv.config);
   const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId, patToken };
   const commandLineArgs = getCommandLineArgs();
 
   if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && commandLineArgs.patToken) {
-    console.error('You cannot specify both clientId and clientSecret together with patToken.');
+    console.error('Error: Specify clientId & clientSecret or patToken, not both');
     return;
   }
-  if (commandLineArgs.patToken && (storedConfig.clientId || storedConfig.clientSecret)) {
+  if (commandLineArgs.patToken && (clientId || clientSecret)) {
     delete newConfig.clientId;
     delete newConfig.clientSecret;
   }
-  if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && storedConfig.patToken) {
+  if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && patToken) {
     delete newConfig.patToken;
   }
   if (argv.dstClientId) newConfig.dstClientId = argv.dstClientId;
