@@ -57,6 +57,7 @@ export type ConfigurationParameters = {
 
   dstClientId?: string;
   dstSecret?: string;
+  dstPatToken?: string;
   dstHubId?: string;
 };
 
