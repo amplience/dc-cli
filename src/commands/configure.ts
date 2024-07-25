@@ -1,4 +1,4 @@
-import { Arguments, Argv } from 'yargs';
+import yargs, { Arguments, Argv } from 'yargs';
 import { readConfig } from '../cli';
 import { CommandOptions } from '../interfaces/command-options.interface';
 import fs from 'fs';
@@ -13,9 +13,10 @@ export const CONFIG_FILENAME = (platform: string = process.platform): string =>
   join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', 'dc-cli-config.json');
 
 export const configureCommandOptions: CommandOptions = {
-  clientId: { type: 'string', demandOption: true },
-  clientSecret: { type: 'string', demandOption: true },
+  clientId: { type: 'string', demandOption: false },
+  clientSecret: { type: 'string', demandOption: false },
   hubId: { type: 'string', demandOption: true },
+  patToken: { type: 'string', demandOption: false },
 
   config: { type: 'string', default: CONFIG_FILENAME() }
 };
@@ -40,13 +41,23 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
+const getCommandLineArgs = (): Arguments => {
+  const rawArgs = process.argv.slice(2);
+  return yargs(rawArgs)
+    .option('clientId', { type: 'string' })
+    .option('clientSecret', { type: 'string' })
+    .option('patToken', { type: 'string' }).argv;
+};
+
 export type ConfigurationParameters = {
-  clientId: string;
-  clientSecret: string;
+  clientId?: string;
+  clientSecret?: string;
+  patToken?: string;
   hubId: string;
 
   dstClientId?: string;
   dstSecret?: string;
+  dstPatToken?: string;
   dstHubId?: string;
 };
 
@@ -92,11 +103,22 @@ export const readConfigFile = (configFile: string, ignoreError?: boolean): objec
 };
 
 export const handler = (argv: Arguments<ConfigurationParameters & ConfigArgument>): void => {
-  const { clientId, clientSecret, hubId } = argv;
+  const { clientId, clientSecret, hubId, patToken } = argv;
   const storedConfig = readConfigFile(argv.config);
+  const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId, patToken };
+  const commandLineArgs = getCommandLineArgs();
 
-  const newConfig: ConfigurationParameters = { clientId, clientSecret, hubId };
-
+  if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && commandLineArgs.patToken) {
+    console.error('Error: Specify clientId & clientSecret or patToken, not both');
+    return;
+  }
+  if (commandLineArgs.patToken && (clientId || clientSecret)) {
+    delete newConfig.clientId;
+    delete newConfig.clientSecret;
+  }
+  if ((commandLineArgs.clientId || commandLineArgs.clientSecret) && patToken) {
+    delete newConfig.patToken;
+  }
   if (argv.dstClientId) newConfig.dstClientId = argv.dstClientId;
   if (argv.dstSecret) newConfig.dstSecret = argv.dstSecret;
   if (argv.dstHubId) newConfig.dstHubId = argv.dstHubId;

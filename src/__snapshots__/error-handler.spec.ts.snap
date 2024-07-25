@@ -11,7 +11,7 @@ Error: Request failed with status code 400
 
 exports[`error handler tests HttpErrors should display sdk http 401 error 1`] = `
 "
-Error: Unauthorized - Please ensure your client ID & secret are correct."
+Error: Unauthorized - Please ensure your client ID & secret or PAT token is correct."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 403 error (with request) 1`] = `

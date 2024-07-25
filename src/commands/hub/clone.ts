@@ -180,11 +180,12 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     argv.mapFile = getDefaultMappingPath(`hub-${argv.dstHubId}`);
   }
 
-  const { hubId, clientId, clientSecret, acceptSnapshotLimits } = argv;
+  const { hubId, clientId, clientSecret, acceptSnapshotLimits, patToken } = argv;
 
   const dstHubId = argv.dstHubId || hubId;
   const dstClientId = argv.dstClientId || clientId;
   const dstSecret = argv.dstSecret || clientSecret;
+  const dstPatToken = argv.dstPatToken || patToken;
 
   const argvCore = {
     $0: argv.$0,
@@ -196,12 +197,14 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
     from: {
       clientId: clientId,
       clientSecret: clientSecret,
+      patToken: patToken,
       hubId: hubId,
       ...argvCore
     },
     to: {
       clientId: dstClientId,
       clientSecret: dstSecret,
+      patToken: dstPatToken,
       hubId: dstHubId,
       ...argvCore
     },
