@@ -22,8 +22,6 @@ describe('configure command', function() {
     hubId: 'hub-id'
   };
 
-  const NODE_MAJOR_VERSION = (process.versions.node.split('.')[0] as unknown) as number;
-
   it('should write a config file and create the .amplience dir', () => {
     jest
       .spyOn(fs, 'existsSync')
@@ -186,17 +184,9 @@ describe('configure command', function() {
     expect(fs.existsSync).toHaveBeenCalledWith(configFile);
     expect(fs.readFileSync).toHaveBeenCalledWith(configFile, 'utf-8');
     expect(mockExit).toHaveBeenCalledWith(2);
-    if (NODE_MAJOR_VERSION >= 20) {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-"FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json
-Expected property name or '}' in JSON at position 1"
-`);
-    } else {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-      "FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json
-      Unexpected token i in JSON at position 1"
-      `);
-    }
+    expect(mockError.mock.calls[0][0]).toContain(
+      'FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json'
+    );
   });
 
   it('should not exit the process if the config file is invalid, but ignoreError is true', () => {
@@ -212,17 +202,9 @@ Expected property name or '}' in JSON at position 1"
     expect(fs.existsSync).toHaveBeenCalledWith(configFile);
     expect(fs.readFileSync).toHaveBeenCalledWith(configFile, 'utf-8');
     expect(mockExit).not.toHaveBeenCalled();
-    if (NODE_MAJOR_VERSION >= 20) {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-"The configuration file at config.json is invalid, its contents will be ignored.
-Expected property name or '}' in JSON at position 1"
-`);
-    } else {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-"The configuration file at config.json is invalid, its contents will be ignored.
-Unexpected token i in JSON at position 1"
-`);
-    }
+    expect(mockError.mock.calls[0][0]).toContain(
+      'The configuration file at config.json is invalid, its contents will be ignored.'
+    );
   });
 
   it('should use USERPROFILE env var for win32', () => {
