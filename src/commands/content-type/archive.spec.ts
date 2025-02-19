@@ -123,7 +123,6 @@ describe('content-type archive command', () => {
           contentTypeUri: template.schemaId,
           id: template.id
         });
-        archiveResponse.settings;
         archiveResponse.related.archive = mockArchive;
 
         mockArchive.mockImplementation(() => {

@@ -48,7 +48,6 @@ describe('publish-queue', () => {
     function sharedMock(templates: PublishTemplate[]): void {
       (OAuth2Client.prototype.getToken as jest.Mock).mockImplementation(() => {
         authRequests++;
-        // eslint-disable-next-line @typescript-eslint/camelcase
         const result: AccessToken = { access_token: 'token-example', expires_in: 99999, refresh_token: 'refresh' };
         return Promise.resolve(result);
       });

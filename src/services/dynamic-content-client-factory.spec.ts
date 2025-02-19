@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import dynamicContentClientFactory from './dynamic-content-client-factory';
 import { DynamicContent } from 'dc-management-sdk-js';
 

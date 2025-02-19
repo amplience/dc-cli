@@ -110,7 +110,7 @@ describe('facet', () => {
 
     beforeAll(() => {
       const realDate = Date;
-      jest.spyOn(global, 'Date').mockImplementation(() => (new realDate(fakeDate) as unknown) as string);
+      jest.spyOn(global, 'Date').mockImplementation(() => new realDate(fakeDate));
     });
 
     afterAll(() => {
@@ -222,9 +222,7 @@ describe('facet', () => {
 
     beforeAll(() => {
       const realDate = Date;
-      jest
-        .spyOn(global, 'Date')
-        .mockImplementation((date?: string) => (new realDate(date || fakeDate) as unknown) as string);
+      jest.spyOn(global, 'Date').mockImplementation(date => new realDate(date || fakeDate));
     });
 
     afterAll(() => {

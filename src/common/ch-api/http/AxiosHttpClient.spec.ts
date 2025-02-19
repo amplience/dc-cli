@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { AxiosHttpClient } from './AxiosHttpClient';
 import { HttpMethod } from './HttpRequest';
 
