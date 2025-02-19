@@ -786,7 +786,7 @@ describe('content-type import command', (): void => {
     });
   });
 
-  describe('validateNoDuplicateContentTypeUris', function() {
+  describe('validateNoDuplicateContentTypeUris', function () {
     it('should not throw an error when there are no duplicates', () => {
       const contentTypesToProcess = {
         'file-1': new ContentTypeWithRepositoryAssignments({

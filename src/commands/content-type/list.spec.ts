@@ -74,8 +74,8 @@ describe('content-type list command', (): void => {
     expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ json: argv.json, itemMapFn });
   });
 
-  describe('itemMapFn tests', function() {
-    it('should render settings.label', function() {
+  describe('itemMapFn tests', function () {
+    it('should render settings.label', function () {
       const result = itemMapFn(
         new ContentType({
           id: 'id',
@@ -96,7 +96,7 @@ describe('content-type list command', (): void => {
       });
     });
 
-    it('should default settings.label to empty string', function() {
+    it('should default settings.label to empty string', function () {
       const result = itemMapFn(
         new ContentType({
           id: 'id',

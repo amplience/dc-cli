@@ -1,6 +1,6 @@
 import { rewriteDeliveryContentItem } from './webhook-rewriter';
 
-describe('webhook-rewriter tests', function() {
+describe('webhook-rewriter tests', function () {
   beforeEach(() => {
     jest.resetAllMocks();
   });

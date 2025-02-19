@@ -12,8 +12,8 @@ describe('content-type register update', () => {
     expect(command).toEqual('update <id>');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();

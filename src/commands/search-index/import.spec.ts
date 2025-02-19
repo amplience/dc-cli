@@ -919,7 +919,7 @@ describe('search-index import command', (): void => {
     });
   });
 
-  describe('validateNoDuplicateIndexNames', function() {
+  describe('validateNoDuplicateIndexNames', function () {
     it('should not throw an error when there are no duplicates', () => {
       const indexesToProcess = {
         'file-1': new EnrichedSearchIndex({
@@ -953,7 +953,7 @@ describe('search-index import command', (): void => {
     });
   });
 
-  describe('rewriteIndexNames', function() {
+  describe('rewriteIndexNames', function () {
     it("should rewrite index names to contain the given hub's name", () => {
       const indexesToProcess = {
         'file-1': new EnrichedSearchIndex({
@@ -983,7 +983,7 @@ describe('search-index import command', (): void => {
     });
   });
 
-  describe('filterIndexesById', function() {
+  describe('filterIndexesById', function () {
     it('should delete indexes without a matching id', () => {
       const indexesToProcess = {
         'file-1': new EnrichedSearchIndex({
@@ -1064,7 +1064,7 @@ describe('search-index import command', (): void => {
       });
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('search-index', 'import', process.platform);

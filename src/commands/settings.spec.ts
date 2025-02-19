@@ -3,7 +3,7 @@ import YargsCommandBuilderOptions from '../common/yargs/yargs-command-builder-op
 import Yargs from 'yargs/yargs';
 import { configureCommandOptions } from './configure';
 
-describe('settings command', function() {
+describe('settings command', function () {
   it('should include the commands in the settings dir', () => {
     const argv = Yargs(process.argv.slice(2));
     const spyCommandDir = jest.spyOn(argv, 'commandDir').mockReturnValue(argv);

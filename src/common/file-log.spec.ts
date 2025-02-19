@@ -35,9 +35,11 @@ describe('file-log', () => {
 
       expect(await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`)).toBeTruthy();
       expect(
-        (await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`, {
-          encoding: 'utf-8'
-        })).split('temp')[0]
+        (
+          await promisify(readFile)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`, {
+            encoding: 'utf-8'
+          })
+        ).split('temp')[0]
       ).toMatchInlineSnapshot('"// dc-cli test-ver - "');
 
       await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/FileWithDate-1234.log`);

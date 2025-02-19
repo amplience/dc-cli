@@ -15,7 +15,7 @@ describe('content-type-schema list command', (): void => {
     jest.restoreAllMocks();
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],

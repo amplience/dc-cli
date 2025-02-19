@@ -18,7 +18,10 @@ export class MediaRewriter {
   private endpoint: string;
   private defaultHost: string;
 
-  constructor(private config: ConfigurationParameters, private items: RepositoryContentItem[]) {
+  constructor(
+    private config: ConfigurationParameters,
+    private items: RepositoryContentItem[]
+  ) {
     this.injector = new MediaLinkInjector(items);
   }
 

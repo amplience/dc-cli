@@ -1,7 +1,7 @@
 import { HttpError, HttpMethod } from 'dc-management-sdk-js';
 import errorHandler from './error-handler';
 
-describe('error handler tests', function() {
+describe('error handler tests', function () {
   const spyConsoleError = jest.spyOn(console, 'error');
   beforeEach(() => {
     jest.resetAllMocks();
@@ -24,7 +24,7 @@ describe('error handler tests', function() {
     expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
   });
 
-  describe('HttpErrors', function() {
+  describe('HttpErrors', function () {
     it('should display sdk http error', async () => {
       errorHandler(new HttpError('Message'));
       expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();

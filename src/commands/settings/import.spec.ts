@@ -52,12 +52,10 @@ describe('settings import command', (): void => {
         },
         _links: {
           self: {
-            href:
-              'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
+            href: 'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
           },
           update: {
-            href:
-              'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
+            href: 'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
           }
         }
       })
@@ -88,12 +86,10 @@ describe('settings import command', (): void => {
         },
         _links: {
           self: {
-            href:
-              'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
+            href: 'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
           },
           update: {
-            href:
-              'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
+            href: 'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
           }
         }
       })
@@ -124,12 +120,10 @@ describe('settings import command', (): void => {
         },
         _links: {
           self: {
-            href:
-              'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
+            href: 'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
           },
           update: {
-            href:
-              'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
+            href: 'https://api.amplience.net/v2/content/hubs/5b32377e4cedfd01c45036d8/workflow-states/5f57a008c9e77c00018c0c29'
           }
         }
       })

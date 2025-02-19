@@ -216,7 +216,10 @@ export const handler = async (argv: Arguments<CloneHubBuilderOptions & Configura
 
   const revertLog = await argv.revertLog;
 
-  const stepIndex = Math.max(0, steps.findIndex(step => step.getId() === argv.step));
+  const stepIndex = Math.max(
+    0,
+    steps.findIndex(step => step.getId() === argv.step)
+  );
 
   if (revertLog) {
     if (revertLog.errorLevel === LogErrorLevel.INVALID) {

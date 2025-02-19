@@ -138,8 +138,7 @@ describe('content-item archive command', () => {
         },
         _links: {
           'content-items': {
-            href:
-              'https://api.amplience.net/v2/content/content-repositories/repo1/content-items{?folderId,page,projection,size,sort,status}',
+            href: 'https://api.amplience.net/v2/content/content-repositories/repo1/content-items{?folderId,page,projection,size,sort,status}',
             templated: true
           }
         },
@@ -169,8 +168,7 @@ describe('content-item archive command', () => {
           },
           _links: {
             'content-items': {
-              href:
-                'https://api.amplience.net/v2/content/content-repositories/repo1/content-items{?folderId,page,projection,size,sort,status}',
+              href: 'https://api.amplience.net/v2/content/content-repositories/repo1/content-items{?folderId,page,projection,size,sort,status}',
               templated: true
             }
           },
@@ -191,8 +189,7 @@ describe('content-item archive command', () => {
         },
         _links: {
           'content-items': {
-            href:
-              'https://api.amplience.net/v2/content/content-repositories/repo1/content-items{?folderId,page,projection,size,sort,status}',
+            href: 'https://api.amplience.net/v2/content/content-repositories/repo1/content-items{?folderId,page,projection,size,sort,status}',
             templated: true
           }
         },
@@ -234,12 +231,12 @@ describe('content-item archive command', () => {
     };
   };
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('archive [id]');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -304,18 +301,18 @@ describe('content-item archive command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     afterEach(() => {
       jest.clearAllMocks();
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('content-item', 'archive', process.platform);
     });
 
-    it('should generate a log with coerceLog with the appropriate title', function() {
+    it('should generate a log with coerceLog with the appropriate title', function () {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));

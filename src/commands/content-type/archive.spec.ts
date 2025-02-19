@@ -26,12 +26,12 @@ describe('content-type archive command', () => {
     jest.restoreAllMocks();
   });
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('archive [id]');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -83,13 +83,13 @@ describe('content-type archive command', () => {
       });
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('type', 'archive', process.platform);
     });
 
-    it('should generate a log with coerceLog with the appropriate title', function() {
+    it('should generate a log with coerceLog with the appropriate title', function () {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
@@ -97,7 +97,7 @@ describe('content-type archive command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],

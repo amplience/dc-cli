@@ -4,7 +4,10 @@ import { RepositoryContentItem } from '../../content-item/content-dependancy-tre
 export class MediaRewriter {
   static rewrites = 0;
 
-  constructor(private config: ConfigurationParameters, private items: RepositoryContentItem[]) {}
+  constructor(
+    private config: ConfigurationParameters,
+    private items: RepositoryContentItem[]
+  ) {}
 
   async rewrite(): Promise<Set<string>> {
     MediaRewriter.rewrites++;

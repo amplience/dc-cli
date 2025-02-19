@@ -2,7 +2,7 @@ import { CONFIG_FILENAME, handler, readConfigFile } from './configure';
 import fs from 'fs';
 import { join } from 'path';
 
-describe('configure command', function() {
+describe('configure command', function () {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -23,10 +23,7 @@ describe('configure command', function() {
   };
 
   it('should write a config file and create the .amplience dir', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -41,10 +38,7 @@ describe('configure command', function() {
   });
 
   it('should optionally write dst parameters when present', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -64,10 +58,7 @@ describe('configure command', function() {
   });
 
   it('should write the config file and re-used the .amplience dir', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -82,10 +73,7 @@ describe('configure command', function() {
   });
 
   it('should write a config file and use the specified file', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -100,10 +88,7 @@ describe('configure command', function() {
   });
 
   it('should report an error if its not possible to create the .amplience dir', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockImplementation(() => {
       throw new Error('Mock error');
     });
@@ -119,10 +104,7 @@ describe('configure command', function() {
   });
 
   it('should report an error if its not possible to create/write the config file', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => {
       throw new Error('Mock Error');

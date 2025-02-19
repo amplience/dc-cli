@@ -299,7 +299,7 @@ export const processEvents = async (
 
   await ensureDirectoryExists(outputDir);
 
-  const tableStream = (createStream(streamTableOptions) as unknown) as TableStream;
+  const tableStream = createStream(streamTableOptions) as unknown as TableStream;
   tableStream.write([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
   for (const { filename, status, event } of allExports) {
     if (status !== 'UP-TO-DATE') {

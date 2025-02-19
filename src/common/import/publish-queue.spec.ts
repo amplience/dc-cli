@@ -53,7 +53,7 @@ describe('publish-queue', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((fetch as any) as jest.Mock).mockImplementation((href, options) => {
+      (fetch as any as jest.Mock).mockImplementation((href, options) => {
         const template: PublishTemplate = templates.find(template => template.href == href) || defaultTemplate;
 
         if (options.headers['Authorization'] != 'bearer token-example') {
