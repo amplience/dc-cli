@@ -105,11 +105,14 @@ export class DefaultApiClient implements ApiClient {
         response.data = this.transformDamResponse(response.data);
         return response;
       } else {
-        throw new HttpError(
-          `Request failed with status code ${response.status}: ${JSON.stringify(response.data)}`,
-          fullRequest,
-          response
-        );
+        if (response.status) {
+          throw new HttpError(
+            `Request failed with status code ${response.status}: ${JSON.stringify(response.data)}`,
+            fullRequest,
+            response
+          );
+        }
+        throw new HttpError(`Request failed: ${JSON.stringify(response)}`, fullRequest, response);
       }
     });
   }

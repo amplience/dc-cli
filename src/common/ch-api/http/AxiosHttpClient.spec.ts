@@ -103,4 +103,60 @@ describe('AxiosHttpClient tests', () => {
 
     expect(response.status).toEqual(200);
   });
+
+  test('client should return structured error from http error response', async () => {
+    const client = new AxiosHttpClient({});
+
+    const mock = new MockAdapter(client.client);
+    mock.onGet('/assets').reply(500, {
+      error: 'Internal Error',
+      status: 'failed'
+    });
+
+    const response = await client.request({
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toEqual(500);
+    expect(response.data).toEqual({
+      error: 'Internal Error',
+      status: 'failed'
+    });
+  });
+
+  test('client should passthrough network error', async () => {
+    const client = new AxiosHttpClient({});
+
+    const mock = new MockAdapter(client.client);
+    mock.onGet('/assets').networkError();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await client.request({
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response instanceof Error).toBeTruthy();
+    expect(response.name).toEqual('Error');
+    expect(response.message).toEqual('Network Error');
+  });
+
+  test('client should passthrough timeout error', async () => {
+    const client = new AxiosHttpClient({});
+
+    const mock = new MockAdapter(client.client);
+    mock.onGet('/assets').timeout();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response: any = await client.request({
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response instanceof Error).toBeTruthy();
+    expect(response.code).toEqual('ECONNABORTED');
+    expect(response.name).toEqual('Error');
+    expect(response.message).toEqual('timeout of 0ms exceeded');
+  });
 });
