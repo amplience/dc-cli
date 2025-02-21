@@ -97,23 +97,38 @@ export class DefaultApiClient implements ApiClient {
       url: combineURLs(this.baseUrl, request.url)
     };
 
-    return this.httpClient.request(fullRequest).then(response => {
-      if (response.status >= 200 && response.status < 300) {
-        if (typeof response.data === 'string') {
-          response.data = JSON.parse(response.data);
-        }
-        response.data = this.transformDamResponse(response.data);
-        return response;
-      } else {
-        if (response.status) {
+    return this.httpClient
+      .request(fullRequest)
+      .then(response => {
+        if (response.status >= 200 && response.status < 300) {
+          if (typeof response.data === 'string') {
+            response.data = JSON.parse(response.data);
+          }
+          response.data = this.transformDamResponse(response.data);
+          return response;
+        } else {
           throw new HttpError(
             `Request failed with status code ${response.status}: ${JSON.stringify(response.data)}`,
             fullRequest,
             response
           );
         }
-        throw new HttpError(`Request failed: ${JSON.stringify(response)}`, fullRequest, response);
-      }
-    });
+      })
+      .catch(error => {
+        if (error.response) {
+          throw new HttpError(
+            `Request failed with status code ${error.response?.status}: ${JSON.stringify(error.response?.data)}`,
+            fullRequest,
+            error.response
+          );
+        }
+        if (error.request || error.config) {
+          throw new HttpError(
+            `Request failed with no response from server:${error.code ? ` ${error.code}` : ''} ${error.message}`,
+            fullRequest
+          );
+        }
+        throw new HttpError(`Error: ${error.message}`, fullRequest);
+      });
   }
 }

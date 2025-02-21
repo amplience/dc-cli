@@ -24,18 +24,21 @@ describe('AxiosHttpClient tests', () => {
     expect(response.data).toEqual('pong');
   });
 
-  test('client should return status code', async () => {
+  test('client should throw error on non-2xx status code', async () => {
     const client = new AxiosHttpClient({});
 
     const mock = new MockAdapter(client.client);
     mock.onGet('/ping').reply(404);
 
-    const response = await client.request({
-      method: HttpMethod.GET,
-      url: '/ping'
-    });
-
-    expect(response.status).toEqual(404);
+    try {
+      await client.request({
+        method: HttpMethod.GET,
+        url: '/ping'
+      });
+    } catch (e) {
+      expect(e.isAxiosError).toBe(true);
+      expect(e.message).toEqual('Request failed with status code 404');
+    }
   });
 
   test('client should use provided method', async () => {
@@ -104,7 +107,7 @@ describe('AxiosHttpClient tests', () => {
     expect(response.status).toEqual(200);
   });
 
-  test('client should return structured error from http error response', async () => {
+  test('client should throw error with response', async () => {
     const client = new AxiosHttpClient({});
 
     const mock = new MockAdapter(client.client);
@@ -113,50 +116,60 @@ describe('AxiosHttpClient tests', () => {
       status: 'failed'
     });
 
-    const response = await client.request({
-      method: HttpMethod.GET,
-      url: '/assets'
-    });
-
-    expect(response.status).toEqual(500);
-    expect(response.data).toEqual({
-      error: 'Internal Error',
-      status: 'failed'
-    });
+    try {
+      await client.request({
+        method: HttpMethod.GET,
+        url: '/assets'
+      });
+    } catch (e) {
+      expect(e.isAxiosError).toBe(true);
+      expect(e.message).toEqual('Request failed with status code 500');
+      expect(e.config).toBeDefined();
+      expect(e.response.status).toEqual(500);
+      expect(e.response.data).toEqual({
+        error: 'Internal Error',
+        status: 'failed'
+      });
+    }
   });
 
-  test('client should passthrough network error', async () => {
+  test('client should throw network error', async () => {
     const client = new AxiosHttpClient({});
 
     const mock = new MockAdapter(client.client);
     mock.onGet('/assets').networkError();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await client.request({
-      method: HttpMethod.GET,
-      url: '/assets'
-    });
-
-    expect(response instanceof Error).toBeTruthy();
-    expect(response.name).toEqual('Error');
-    expect(response.message).toEqual('Network Error');
+    try {
+      await client.request({
+        method: HttpMethod.GET,
+        url: '/assets'
+      });
+    } catch (e) {
+      expect(e.isAxiosError).toBe(true);
+      expect(e.message).toEqual('Network Error');
+      expect(e.config).toBeDefined();
+      expect(e.response).toBeUndefined();
+      expect(e.code).toBeUndefined();
+    }
   });
 
-  test('client should passthrough timeout error', async () => {
+  test('client should throw timeout error', async () => {
     const client = new AxiosHttpClient({});
 
     const mock = new MockAdapter(client.client);
     mock.onGet('/assets').timeout();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await client.request({
-      method: HttpMethod.GET,
-      url: '/assets'
-    });
-
-    expect(response instanceof Error).toBeTruthy();
-    expect(response.code).toEqual('ECONNABORTED');
-    expect(response.name).toEqual('Error');
-    expect(response.message).toEqual('timeout of 0ms exceeded');
+    try {
+      await client.request({
+        method: HttpMethod.GET,
+        url: '/assets'
+      });
+    } catch (e) {
+      expect(e.isAxiosError).toBe(true);
+      expect(e.message).toEqual('timeout of 0ms exceeded');
+      expect(e.config).toBeDefined();
+      expect(e.response).toBeUndefined();
+      expect(e.code).toEqual('ECONNABORTED');
+    }
   });
 });

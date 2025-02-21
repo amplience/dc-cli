@@ -27,15 +27,6 @@ export class AxiosHttpClient implements HttpClient {
           data: response.data,
           status: response.status
         };
-      })
-      .catch(error => {
-        if (error && error.response) {
-          return {
-            data: error.response.data,
-            status: error.response.status
-          };
-        }
-        return error;
       });
   }
 }
