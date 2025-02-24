@@ -21,7 +21,7 @@ function rimraf(dir: string): Promise<Error> {
   });
 }
 
-describe('revert tests', function() {
+describe('revert tests', function () {
   const yargArgs = {
     $0: 'test',
     _: ['test'],

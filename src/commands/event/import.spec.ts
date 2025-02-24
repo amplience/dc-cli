@@ -89,22 +89,22 @@ describe('event import command', () => {
     };
   };
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('import <dir>');
   });
 
-  it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+  it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
     LOG_FILENAME();
 
     expect(getDefaultLogPath).toHaveBeenCalledWith('event', 'import', process.platform);
   });
 
-  it('should generate a default mapping path containing the given name', function() {
+  it('should generate a default mapping path containing the given name', function () {
     expect(getDefaultMappingPath('hub-1').indexOf('hub-1')).not.toEqual(-1);
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -163,7 +163,7 @@ describe('event import command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     beforeAll(async () => {
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/importEvent/`);
     });
@@ -172,7 +172,7 @@ describe('event import command', () => {
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/importEvent/`);
     });
 
-    it('should return immediately if acceptSnapshotLimits is false', async function() {
+    it('should return immediately if acceptSnapshotLimits is false', async function () {
       const { getHubMock } = mockValues({});
 
       const logFile = new FileLog();
@@ -206,7 +206,7 @@ describe('event import command', () => {
       expect(logFile.closed).toBeFalsy();
     });
 
-    it('should call importEvents with the loaded events, then save the mapping', async function() {
+    it('should call importEvents with the loaded events, then save the mapping', async function () {
       const { getHubMock } = mockValues({});
 
       const logFile = new FileLog();
@@ -248,7 +248,7 @@ describe('event import command', () => {
       expect(logFile.closed).toBeTruthy();
     });
 
-    it('should load an existing mapping file', async function() {
+    it('should load an existing mapping file', async function () {
       const { getHubMock } = mockValues({});
 
       const logFile = new FileLog();
@@ -296,7 +296,7 @@ describe('event import command', () => {
       expect(logFile.closed).toBeTruthy();
     });
 
-    it('should save the mapping even if importEvents throws', async function() {
+    it('should save the mapping even if importEvents throws', async function () {
       const { getHubMock } = mockValues({});
 
       const logFile = new FileLog();
@@ -339,8 +339,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('shouldUpdateSlot tests', function() {
-    it('should return false if content matches, true otherwise', async function() {
+  describe('shouldUpdateSlot tests', function () {
+    it('should return false if content matches, true otherwise', async function () {
       const slot1 = new EditionSlot({ content: { example: 'test', example2: { deep: 'is here' } } });
       const slot1dupe = new EditionSlot({ content: { example: 'test', example2: { deep: 'is here' } } });
       const slot2 = new EditionSlot({ content: { example: 'test', example2: { deep: 'mismatch' } } });
@@ -353,8 +353,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('shouldUpdateEvent tests', function() {
-    it('should call boundTimeRange, return false if fields match, true otherwise', async function() {
+  describe('shouldUpdateEvent tests', function () {
+    it('should call boundTimeRange, return false if fields match, true otherwise', async function () {
       const event1 = new Event({ name: 'name', brief: '//brief', comment: 'comment', start: '1', end: '2' });
       const event1dupe = new Event({ name: 'name', brief: '//brief', comment: 'comment', start: '1', end: '2' });
       const event2 = new Event({ name: 'name2', brief: '//brief', comment: 'comment', start: '1', end: '2' });
@@ -380,8 +380,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('shouldUpdateEdition tests', function() {
-    it('should call boundTimeRange, return false if fields match, true otherwise', async function() {
+  describe('shouldUpdateEdition tests', function () {
+    it('should call boundTimeRange, return false if fields match, true otherwise', async function () {
       const edition1 = new Edition({ name: 'name', activeEndDate: false, comment: 'comment', start: '1', end: '2' });
       const edition1dupe = new EditionWithSlots({
         name: 'name',
@@ -448,7 +448,7 @@ describe('event import command', () => {
       jest.resetAllMocks();
     });
 
-    it('should call boundTimeRange, return false if slots match, true otherwise', async function() {
+    it('should call boundTimeRange, return false if slots match, true otherwise', async function () {
       const edition1 = new Edition({ name: 'name', activeEndDate: false, comment: 'comment', start: '1', end: '2' });
       const edition1dupe = new EditionWithSlots({
         name: 'name',
@@ -508,8 +508,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('moveDateToFuture tests', function() {
-    it('should return the input date if it is in the future', async function() {
+  describe('moveDateToFuture tests', function () {
+    it('should return the input date if it is in the future', async function () {
       const future = new Date();
       const event = new Event();
       event.related.update = jest.fn();
@@ -520,7 +520,7 @@ describe('event import command', () => {
       expect(event.related.update).not.toHaveBeenCalled();
     });
 
-    it('should choose a date the given offset from the current date if it is in the past', async function() {
+    it('should choose a date the given offset from the current date if it is in the past', async function () {
       const past = new Date();
       const futureEvent = new Date();
       const event = new Event();
@@ -538,7 +538,7 @@ describe('event import command', () => {
       expect(event.related.update).not.toHaveBeenCalled();
     });
 
-    it("should update the given event's end date if the new date ends up being after it ends", async function() {
+    it("should update the given event's end date if the new date ends up being after it ends", async function () {
       const past = new Date();
       const futureEvent = new Date();
       const event = new Event();
@@ -559,8 +559,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('prepareEditionForSchedule tests', function() {
-    it('should move the start and end dates to the future if the edition is scheduled', async function() {
+  describe('prepareEditionForSchedule tests', function () {
+    it('should move the start and end dates to the future if the edition is scheduled', async function () {
       const edition = new Edition({ start: '1', end: '2', publishingStatus: PublishingStatus.DRAFT });
       const event = new Event();
 
@@ -591,7 +591,7 @@ describe('event import command', () => {
       jest.resetAllMocks();
     });
 
-    it('should move the start and end dates to the future if the force parameter is true', async function() {
+    it('should move the start and end dates to the future if the force parameter is true', async function () {
       const edition = new Edition({ start: '1', end: '2', publishingStatus: PublishingStatus.DRAFT });
       const event = new Event();
 
@@ -622,8 +622,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('skipScheduleIfNeeded tests', function() {
-    it('should remove scheduled status if the event end is in the past and catchup is false', async function() {
+  describe('skipScheduleIfNeeded tests', function () {
+    it('should remove scheduled status if the event end is in the past and catchup is false', async function () {
       const date = new Date();
       date.setSeconds(date.getSeconds() - 10);
 
@@ -634,7 +634,7 @@ describe('event import command', () => {
       expect(edition.publishingStatus).toEqual(PublishingStatus.DRAFT);
     });
 
-    it('should not remove scheduled status if the event end is in the future', async function() {
+    it('should not remove scheduled status if the event end is in the future', async function () {
       const date = new Date();
       date.setSeconds(date.getSeconds() + 10);
 
@@ -645,7 +645,7 @@ describe('event import command', () => {
       expect(edition.publishingStatus).toEqual(PublishingStatus.SCHEDULED);
     });
 
-    it('should leave the edition unscheduled if it was before', async function() {
+    it('should leave the edition unscheduled if it was before', async function () {
       const date = new Date();
       date.setSeconds(date.getSeconds() - 10);
 
@@ -656,7 +656,7 @@ describe('event import command', () => {
       expect(edition.publishingStatus).toEqual(PublishingStatus.DRAFT);
     });
 
-    it('should not remove scheduled status if catchup is true, even if the event end is in the past', async function() {
+    it('should not remove scheduled status if catchup is true, even if the event end is in the past', async function () {
       const date = new Date();
       date.setSeconds(date.getSeconds() - 10);
 
@@ -668,8 +668,8 @@ describe('event import command', () => {
     });
   });
 
-  describe('scheduleEdition tests', function() {
-    it('should schedule without logging anything if no warnings are returned', async function() {
+  describe('scheduleEdition tests', function () {
+    it('should schedule without logging anything if no warnings are returned', async function () {
       const edition = new Edition({ lastModifiedDate: 'date' });
       const log = new FileLog();
 
@@ -681,7 +681,7 @@ describe('event import command', () => {
       expect(edition.related.schedule).toHaveBeenCalledWith(false, 'date');
       expect(log.accessGroup).toEqual([]);
     });
-    it('should log warnings/errors if they are returned, and try again with ignoreWarnings true', async function() {
+    it('should log warnings/errors if they are returned, and try again with ignoreWarnings true', async function () {
       const edition = new Edition({ lastModifiedDate: 'date' });
       const log = new FileLog();
 
@@ -758,8 +758,8 @@ Array [
     });
   });
 
-  describe('rewriteSnapshots tests', function() {
-    it('should create new snapshots if no mapping is present, and use existing when it is', async function() {
+  describe('rewriteSnapshots tests', function () {
+    it('should create new snapshots if no mapping is present, and use existing when it is', async function () {
       const { mockSnapshotCreate } = mockValues({});
 
       const { hub, log, mapping } = await commonMock();
@@ -821,7 +821,7 @@ Array [
       expect(content.body.chooser[1]._meta.rootContentItemId).toEqual('realItem2');
     });
 
-    it('should not create snapshots when content has no references', async function() {
+    it('should not create snapshots when content has no references', async function () {
       const { mockSnapshotCreate } = mockValues({});
 
       const { hub, log, mapping } = await commonMock();
@@ -842,8 +842,8 @@ Array [
     });
   });
 
-  describe('importSlots tests', function() {
-    it('should look up existing slot from mapping if present, and update it', async function() {
+  describe('importSlots tests', function () {
+    it('should look up existing slot from mapping if present, and update it', async function () {
       mockValues({});
 
       const realSlot = new EditionSlot({ id: 'id-2', content: 'updated' });
@@ -874,7 +874,7 @@ Array [
       expect(rewriteSnapshots).toHaveBeenCalledWith('{ "content": "test" }', mapping, hub, log);
     });
 
-    it('should look up original id if no mapping present and originalIds set', async function() {
+    it('should look up original id if no mapping present and originalIds set', async function () {
       mockValues({});
 
       const realSlot = new EditionSlot({ id: 'id-1', content: 'updated' });
@@ -901,7 +901,7 @@ Array [
       expect(rewriteSnapshots).toHaveBeenCalledWith('{ "content": "test" }', mapping, hub, log);
     });
 
-    it('should create a new slot if no existing one is found', async function() {
+    it('should create a new slot if no existing one is found', async function () {
       mockValues({});
 
       const realSlot = new EditionSlot({ id: 'id-new', content: 'updated' });
@@ -932,7 +932,7 @@ Array [
       expect(rewriteSnapshots).toHaveBeenCalledWith('{ "content": "test" }', mapping, hub, log);
     });
 
-    it('should return true if any rewriteSnapshots call returns true', async function() {
+    it('should return true if any rewriteSnapshots call returns true', async function () {
       mockValues({});
 
       const realSlot = new EditionSlot({ id: 'id-new', content: 'updated' });
@@ -971,8 +971,8 @@ Array [
     });
   });
 
-  describe('importEditions tests', function() {
-    it('should look up existing edition from mapping if present, and update it', async function() {
+  describe('importEditions tests', function () {
+    it('should look up existing edition from mapping if present, and update it', async function () {
       const { mockEditionGet, mockEditionUpdate } = mockValues({});
 
       const realEdition = new Edition({ id: 'id-2', name: 'updated' });
@@ -1005,7 +1005,7 @@ Array [
       expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
     });
 
-    it('should look up original id if no mapping present and originalIds set', async function() {
+    it('should look up original id if no mapping present and originalIds set', async function () {
       const { mockEditionGet, mockEditionUpdate } = mockValues({});
 
       const realEdition = new Edition({ id: 'id-1', name: 'updated' });
@@ -1036,7 +1036,7 @@ Array [
       expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
     });
 
-    it('should create a new edition if no existing one is found', async function() {
+    it('should create a new edition if no existing one is found', async function () {
       const { mockEditionGet, mockEditionUpdate } = mockValues({});
 
       const realEdition = new Edition({ id: 'id-1', name: 'updated' });
@@ -1067,7 +1067,7 @@ Array [
       expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
     });
 
-    it('should try schedule an edition if its scheduled status indicates that it was in the source', async function() {
+    it('should try schedule an edition if its scheduled status indicates that it was in the source', async function () {
       const { mockEditionGet, mockEditionUpdate } = mockValues({});
 
       const realEdition = new Edition({ id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT });
@@ -1113,7 +1113,7 @@ Array [
       expect(scheduleEdition).toHaveBeenCalledWith(expect.any(Edition), log);
     });
 
-    it('should try unschedule the existing edition if already scheduled, update if succeeded, reschedule', async function() {
+    it('should try unschedule the existing edition if already scheduled, update if succeeded, reschedule', async function () {
       const { mockEditionGet, mockEditionUpdate, mockEditionUnschedule, mockSlotsList, mockEdition } = mockValues({
         status: PublishingStatus.SCHEDULED
       });
@@ -1173,7 +1173,7 @@ Array [
       expect(scheduleEdition).toHaveBeenCalledWith(expect.any(Edition), log);
     });
 
-    it('should try unschedule the existing edition if already scheduled, do not update if failed', async function() {
+    it('should try unschedule the existing edition if already scheduled, do not update if failed', async function () {
       const { mockEditionGet, mockEditionUpdate, mockEditionUnschedule, mockSlotsList, mockEdition } = mockValues({
         status: PublishingStatus.SCHEDULED
       });
@@ -1230,7 +1230,7 @@ Array [
       expect(scheduleEdition).not.toHaveBeenCalled();
     });
 
-    it('should not unschedule or update an edition published in the past', async function() {
+    it('should not unschedule or update an edition published in the past', async function () {
       const { mockEditionGet, mockEditionUpdate, mockEditionUnschedule, mockSlotsList, mockEdition } = mockValues({
         status: PublishingStatus.PUBLISHED
       });
@@ -1286,7 +1286,7 @@ Array [
       expect(scheduleEdition).not.toHaveBeenCalled();
     });
 
-    it('should not update edition if it is identical', async function() {
+    it('should not update edition if it is identical', async function () {
       const { mockEditionGet, mockEditionUpdate } = mockValues({});
 
       const realEdition = new Edition({ id: 'id-2', name: 'updated' });
@@ -1321,7 +1321,7 @@ Array [
       expect(importSlots).not.toHaveBeenCalled();
     });
 
-    it('should refetch and update editions so that their start dates are not in the past after snapshot creation when publishing', async function() {
+    it('should refetch and update editions so that their start dates are not in the past after snapshot creation when publishing', async function () {
       const { mockEditionGet, mockEditionUpdate } = mockValues({});
 
       const realEdition = new Edition({ id: 'id-2', name: 'updated', publishingStatus: PublishingStatus.DRAFT });
@@ -1373,8 +1373,8 @@ Array [
     });
   });
 
-  describe('importEvents tests', function() {
-    it('should look up existing event from mapping if present, and update it', async function() {
+  describe('importEvents tests', function () {
+    it('should look up existing event from mapping if present, and update it', async function () {
       const { mockGet, mockEventUpdate } = mockValues({});
 
       const realEvent = new Event({ id: 'id-2', name: 'updated' });
@@ -1406,7 +1406,7 @@ Array [
       expect(importEditions).toHaveBeenCalledWith(editions, mapping, client, hub, realEvent, argv, log);
     });
 
-    it('should look up original id if no mapping present and originalIds set', async function() {
+    it('should look up original id if no mapping present and originalIds set', async function () {
       const { mockGet, mockEventUpdate } = mockValues({});
 
       const realEvent = new Event({ id: 'id-1', name: 'updated' });
@@ -1436,7 +1436,7 @@ Array [
       expect(importEditions).toHaveBeenCalledWith(editions, mapping, client, hub, realEvent, argv, log);
     });
 
-    it('should create a new event if no existing one is found', async function() {
+    it('should create a new event if no existing one is found', async function () {
       const { mockGet, mockEventCreate, mockEventUpdate } = mockValues({});
 
       const realEvent = new Event({ id: 'new-id', name: 'updated' });
@@ -1470,8 +1470,8 @@ Array [
     });
   });
 
-  describe('trySaveMapping tests', function() {
-    it('should save a given mapping file', async function() {
+  describe('trySaveMapping tests', function () {
+    it('should save a given mapping file', async function () {
       const log = new FileLog();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1485,7 +1485,7 @@ Array [
       expect(log.accessGroup.length).toEqual(0);
     });
 
-    it('should log an error if mapping save fails', async function() {
+    it('should log an error if mapping save fails', async function () {
       const log = new FileLog();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1505,7 +1505,7 @@ Array [
       `);
     });
 
-    it('should do nothing for an undefined mapFile', async function() {
+    it('should do nothing for an undefined mapFile', async function () {
       const log = new FileLog();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

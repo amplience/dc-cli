@@ -703,9 +703,7 @@ describe('content-type-schema export command', (): void => {
       expectProcessArguments(argv.dir, contentTypeSchemasToExport);
     });
 
-    it('should export all content type schemas for the current hub if schemaId is not supplied', async (): Promise<
-      void
-    > => {
+    it('should export all content type schemas for the current hub if schemaId is not supplied', async (): Promise<void> => {
       filterContentTypeSchemasBySchemaIdSpy.mockReturnValue(contentTypeSchemasToExport);
 
       const argv = { ...yargArgs, ...config, dir: 'my-dir' };

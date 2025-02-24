@@ -20,7 +20,7 @@ describe('DataPresenter', (): void => {
     jest.restoreAllMocks();
   });
 
-  describe('single item', function() {
+  describe('single item', function () {
     const singleItem: TestItem = {
       foo: 'bar',
       key: 'value '.repeat(20)
@@ -50,8 +50,8 @@ describe('DataPresenter', (): void => {
     });
   });
 
-  describe('collection of items tests', function() {
-    describe('collection of items', function() {
+  describe('collection of items tests', function () {
+    describe('collection of items', function () {
       const collectionOfItems: TestItem[] = [
         {
           foo: 'bar1',
@@ -92,7 +92,7 @@ describe('DataPresenter', (): void => {
       });
     });
 
-    describe('collection of 0 items', function() {
+    describe('collection of 0 items', function () {
       it('should render a collection of items in a horizontal table', (): void => {
         new DataPresenter([]).render();
         expect(stdoutWriteSpy.mock.calls[0][0]).toMatchSnapshot();

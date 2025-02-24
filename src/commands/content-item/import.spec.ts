@@ -38,22 +38,22 @@ describe('content-item import command', () => {
     jest.restoreAllMocks();
   });
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('import <dir>');
   });
 
-  it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+  it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
     LOG_FILENAME();
 
     expect(getDefaultLogPath).toHaveBeenCalledWith('item', 'import', process.platform);
   });
 
-  it('should generate a default mapping path containing the given name', function() {
+  it('should generate a default mapping path containing the given name', function () {
     expect(getDefaultMappingPath('hub-1').indexOf('hub-1')).not.toEqual(-1);
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -146,7 +146,7 @@ describe('content-item import command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],
@@ -668,7 +668,12 @@ describe('content-item import command', () => {
       await createContent(`temp_${process.env.JEST_WORKER_ID}/import/ref/`, templates, false);
 
       // Add an existing mapping for the two items in "oldTemplates".
-      const existingMapping = { contentItems: [['ref1', 'new1'], ['ref2', 'new2']] };
+      const existingMapping = {
+        contentItems: [
+          ['ref1', 'new1'],
+          ['ref2', 'new2']
+        ]
+      };
       await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/ref/`);
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/ref.json`);
       await promisify(writeFile)(`temp_${process.env.JEST_WORKER_ID}/import/ref.json`, JSON.stringify(existingMapping));
@@ -817,7 +822,12 @@ describe('content-item import command', () => {
       await createContent(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`, oldTemplates.concat(templates), false);
 
       // Add an existing mapping for the two items in "oldTemplates".
-      const existingMapping = { contentItems: [['old1', 'new1'], ['old2', 'new2']] };
+      const existingMapping = {
+        contentItems: [
+          ['old1', 'new1'],
+          ['old2', 'new2']
+        ]
+      };
       await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`);
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/mapping.json`);
       await promisify(writeFile)(
@@ -928,7 +938,12 @@ describe('content-item import command', () => {
       );
 
       // Add an existing mapping for the two items in "oldTemplates".
-      const existingMapping = { contentItems: [['old1', 'new1'], ['old2', 'new2']] };
+      const existingMapping = {
+        contentItems: [
+          ['old1', 'new1'],
+          ['old2', 'new2']
+        ]
+      };
       await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/force/`);
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/force.json`);
       await promisify(writeFile)(

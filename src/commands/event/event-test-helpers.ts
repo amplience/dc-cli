@@ -238,8 +238,7 @@ export const mockValues = ({
           href: 'https://api.amplience.net/v2/content/editions/ed1/slots/slot1/content'
         },
         'safe-update-content': {
-          href:
-            'https://api.amplience.net/v2/content/editions/ed1/slots/slot1/content{?lastModifiedDate,page,size,sort}',
+          href: 'https://api.amplience.net/v2/content/editions/ed1/slots/slot1/content{?lastModifiedDate,page,size,sort}',
           templated: true
         }
       }

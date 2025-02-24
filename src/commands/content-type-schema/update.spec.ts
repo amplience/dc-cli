@@ -14,21 +14,21 @@ jest.mock('../../common/json-resolver/json-resolver');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
-describe('content type schema update command', function() {
-  describe('command tests', function() {
-    it('should have a command', function() {
+describe('content type schema update command', function () {
+  describe('command tests', function () {
+    it('should have a command', function () {
       expect(command).toEqual('update <id>');
     });
   });
 
-  describe('description tests', function() {
-    it('should have a description', function() {
+  describe('description tests', function () {
+    it('should have a description', function () {
       expect(desc).toEqual('Update Content Type Schema');
     });
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
@@ -58,7 +58,7 @@ describe('content type schema update command', function() {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],
@@ -91,7 +91,7 @@ describe('content type schema update command', function() {
       }
     });
 
-    it('should update a schema', async function() {
+    it('should update a schema', async function () {
       const argv = {
         ...yargArgs,
         ...config,

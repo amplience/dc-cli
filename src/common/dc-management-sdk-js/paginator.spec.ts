@@ -2,12 +2,12 @@ import paginator, { DEFAULT_SIZE } from './paginator';
 import MockPage from './mock-page';
 import { Hub } from 'dc-management-sdk-js';
 
-describe('paginator', function() {
+describe('paginator', function () {
   afterEach(() => {
     jest.resetAllMocks();
   });
   const mockPagableFn = jest.fn();
-  describe('1 page', function() {
+  describe('1 page', function () {
     const mockPage = new MockPage(Hub, [new Hub({ id: 'id' })], {
       page: {
         number: 0,
@@ -17,7 +17,7 @@ describe('paginator', function() {
       }
     });
 
-    it('should return invoke pageableFn once if there is only 1 page', async function() {
+    it('should return invoke pageableFn once if there is only 1 page', async function () {
       mockPagableFn.mockResolvedValueOnce(mockPage);
       const result = await paginator(mockPagableFn);
 
@@ -25,7 +25,7 @@ describe('paginator', function() {
       expect(mockPagableFn).toHaveBeenCalledWith({ size: DEFAULT_SIZE });
     });
 
-    it('should return invoke pageableFn once if there is only 1 page passing the user options to each call', async function() {
+    it('should return invoke pageableFn once if there is only 1 page passing the user options to each call', async function () {
       mockPagableFn.mockResolvedValueOnce(mockPage);
       const options = {
         sort: 'createdDate,asc'
@@ -37,7 +37,7 @@ describe('paginator', function() {
     });
   });
 
-  describe('multiple pages', function() {
+  describe('multiple pages', function () {
     const mockPagableFn = jest.fn();
     const mockPage1 = new MockPage(Hub, [new Hub({ id: 'id' })], {
       page: {
@@ -56,7 +56,7 @@ describe('paginator', function() {
       }
     });
 
-    it('should return invoke pageableFn twice if there are 2 pages', async function() {
+    it('should return invoke pageableFn twice if there are 2 pages', async function () {
       mockPagableFn.mockResolvedValueOnce(mockPage1);
       mockPagableFn.mockResolvedValueOnce(mockPage2);
 
@@ -67,7 +67,7 @@ describe('paginator', function() {
       expect(mockPagableFn).toHaveBeenCalledWith({ size: DEFAULT_SIZE });
     });
 
-    it('should return invoke pageableFn twice if there are 2 pages passing the user options to each call', async function() {
+    it('should return invoke pageableFn twice if there are 2 pages passing the user options to each call', async function () {
       mockPagableFn.mockResolvedValueOnce(mockPage1);
       mockPagableFn.mockResolvedValueOnce(mockPage2);
 

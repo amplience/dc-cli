@@ -12,7 +12,7 @@ describe('content-type register command', () => {
     expect(command).toEqual('register');
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'src/index.ts',
       _: ['content-type', 'register'],
