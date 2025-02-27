@@ -3,6 +3,10 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+  pull-requests: write
+
 name: release-please
 jobs:
   release-please:
@@ -14,8 +18,6 @@ jobs:
         with:
           token: ${{ secrets.GH_REPO_ACCESS }}
           release-type: node
-          package-name: dc-cli
-          bump-minor-pre-major: true
 
       - uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
