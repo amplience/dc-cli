@@ -146,7 +146,7 @@ describe('media-link-injector', () => {
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, []);
 
       await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"Could not obtain settings from DAM. Make sure you have the required permissions. Error: Simulated settings error."`
+        `"Could not obtain settings from DAM. Make sure you have the required permissions: Simulated settings error."`
       );
     });
 
@@ -164,7 +164,7 @@ describe('media-link-injector', () => {
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, exampleLinks);
 
       await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"Request for assets failed after 3 attempts."`
+        `"Request for assets failed after 3 attempts: Simulated asset list error."`
       );
 
       expect(MockContentHub.requests).toMatchInlineSnapshot(`

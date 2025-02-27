@@ -42,7 +42,7 @@ export class MediaRewriter {
         return endpoint.id === settings.di.defaultEndpoint;
       });
     } catch (e) {
-      throw new Error(`Could not obtain settings from DAM. Make sure you have the required permissions. ${e}`);
+      throw new Error(`Could not obtain settings from DAM. Make sure you have the required permissions: ${e.message}`);
     }
 
     if (endpoint == null) {
@@ -82,7 +82,7 @@ export class MediaRewriter {
       );
     } catch (e) {
       // Too many retries, fail the request.
-      throw new Error(`Request for assets failed after ${attemptCount} attempts.`);
+      throw new Error(`Request for assets failed after ${attemptCount} attempts: ${e.message}`);
     }
   }
 
