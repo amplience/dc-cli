@@ -29,8 +29,12 @@ const buildMessage = (err: SupportedErrors): string => {
   return `Error: ${err.message}`;
 };
 
+const generateTimestamp = (): string => {
+  return new Date().toISOString();
+};
+
 const errorHandler = (err: SupportedErrors): void => {
-  console.error(`\n${buildMessage(err)}`);
+  console.error(`\n${generateTimestamp()} ${buildMessage(err)}`);
 };
 
 export default errorHandler;

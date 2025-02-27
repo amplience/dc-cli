@@ -1,6 +1,8 @@
 import { HttpError, HttpMethod } from 'dc-management-sdk-js';
 import errorHandler from './error-handler';
 
+jest.useFakeTimers().setSystemTime(new Date('2025-02-24T01:01:01.001Z'));
+
 describe('error handler tests', function () {
   const spyConsoleError = jest.spyOn(console, 'error');
   beforeEach(() => {

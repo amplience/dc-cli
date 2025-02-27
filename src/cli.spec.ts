@@ -5,6 +5,8 @@ import YargsCommandBuilderOptions from './common/yargs/yargs-command-builder-opt
 
 jest.mock('./commands/configure');
 
+jest.useFakeTimers().setSystemTime(new Date('2025-02-24T01:01:01.001Z'));
+
 describe('cli', (): void => {
   afterEach(() => {
     jest.restoreAllMocks();
