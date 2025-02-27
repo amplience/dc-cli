@@ -326,7 +326,7 @@ describe('extension import command', (): void => {
     });
   });
 
-  describe('validateNoDuplicateExtensionNames', function() {
+  describe('validateNoDuplicateExtensionNames', function () {
     it('should not throw an error when there are no duplicates', () => {
       const extensionsToProcess = {
         'file-1': new Extension({
@@ -360,7 +360,7 @@ describe('extension import command', (): void => {
     });
   });
 
-  describe('filterExtensionsById', function() {
+  describe('filterExtensionsById', function () {
     it('should delete extensions without a matching id', () => {
       const extensionsToProcess = {
         'file-1': new Extension({
@@ -427,7 +427,7 @@ describe('extension import command', (): void => {
       });
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('extension', 'import', process.platform);

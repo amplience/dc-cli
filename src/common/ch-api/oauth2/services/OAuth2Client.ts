@@ -59,25 +59,23 @@ export class OAuth2Client implements AccessTokenProvider {
       url: combineURLs(this.authUrl, '/oauth/token')
     });
 
-    this.inFlight = request.then(
-      (response): AccessToken => {
-        if (typeof response.data !== 'object') {
-          throw new Error('Unexpected response format from /oauth/token endpoint');
-        }
-
-        if (response.status !== 200) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const responseText = (response.data as any).error_description || JSON.stringify(response.data);
-
-          throw new Error(`Authorization failed (${response.status}): ${responseText}`);
-        }
-
-        this.token = (response.data as unknown) as AccessToken;
-        this.tokenExpires = Date.now() + this.token.expires_in * 1000;
-        this.inFlight = undefined;
-        return this.token;
+    this.inFlight = request.then((response): AccessToken => {
+      if (typeof response.data !== 'object') {
+        throw new Error('Unexpected response format from /oauth/token endpoint');
       }
-    ) as Promise<AccessToken>;
+
+      if (response.status !== 200) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const responseText = (response.data as any).error_description || JSON.stringify(response.data);
+
+        throw new Error(`Authorization failed (${response.status}): ${responseText}`);
+      }
+
+      this.token = response.data as unknown as AccessToken;
+      this.tokenExpires = Date.now() + this.token.expires_in * 1000;
+      this.inFlight = undefined;
+      return this.token;
+    }) as Promise<AccessToken>;
 
     return this.inFlight;
   }

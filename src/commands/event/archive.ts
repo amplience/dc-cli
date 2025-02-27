@@ -83,7 +83,7 @@ const getEventUntilSuccess = async ({
   resource: string;
   client: DynamicContent;
 }): Promise<Event | undefined> => {
-  return (await getResourceUntilSuccess({ id, resource, getter: client.events.get })) as (Event | undefined);
+  return (await getResourceUntilSuccess({ id, resource, getter: client.events.get })) as Event | undefined;
 };
 
 const getEditionUntilSuccess = async ({
@@ -95,7 +95,7 @@ const getEditionUntilSuccess = async ({
   resource: string;
   client: DynamicContent;
 }): Promise<Edition | undefined> => {
-  return (await getResourceUntilSuccess({ id, resource, getter: client.editions.get })) as (Edition | undefined);
+  return (await getResourceUntilSuccess({ id, resource, getter: client.editions.get })) as Edition | undefined;
 };
 
 export const getEvents = async ({

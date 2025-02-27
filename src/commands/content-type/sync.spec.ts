@@ -25,12 +25,12 @@ describe('ContentType.sync', () => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('sync <id>');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
@@ -45,7 +45,7 @@ describe('ContentType.sync', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     it('should sync a content type with the schema', async () => {
       const mockGet = jest.fn();
       const mockUpdate = jest.fn();

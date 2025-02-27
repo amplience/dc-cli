@@ -16,12 +16,12 @@ describe('content-type-schema list command', (): void => {
     jest.restoreAllMocks();
   });
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('list');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       expect(builder).toEqual({
         ...SortingOptions,
         ...RenderingOptions
@@ -29,7 +29,7 @@ describe('content-type-schema list command', (): void => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],

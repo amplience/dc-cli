@@ -15,12 +15,12 @@ describe('content-repository assign-content-type command', () => {
     jest.restoreAllMocks();
   });
 
-  it('should have a command defined', function() {
+  it('should have a command defined', function () {
     expect(command).toEqual('assign-content-type <id>');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOptions = jest.spyOn(argv, 'options').mockReturnThis();
@@ -45,7 +45,7 @@ describe('content-repository assign-content-type command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],

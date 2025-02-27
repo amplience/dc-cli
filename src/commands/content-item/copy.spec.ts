@@ -37,12 +37,12 @@ describe('content-item copy command', () => {
     jest.restoreAllMocks();
   });
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('copy');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
 
@@ -183,7 +183,7 @@ describe('content-item copy command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],
@@ -219,7 +219,7 @@ describe('content-item copy command', () => {
       clearArray(revertCalls);
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('item', 'copy', process.platform);

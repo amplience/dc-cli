@@ -2,7 +2,7 @@ import Yargs from 'yargs/yargs';
 import YargsCommandBuilderOptions from '../common/yargs/yargs-command-builder-options';
 import { builder, hubBuilder } from './hub';
 
-describe('hub manager', function() {
+describe('hub manager', function () {
   it('should build yargs', async () => {
     const argv = Yargs(process.argv.slice(2));
     const spyCommandDir = jest.spyOn(argv, 'commandDir').mockReturnValue(argv);

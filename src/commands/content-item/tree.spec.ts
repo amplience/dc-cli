@@ -34,12 +34,12 @@ describe('content-item tree command', () => {
     jest.resetAllMocks();
   });
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('tree <dir>');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
 
@@ -52,7 +52,7 @@ describe('content-item tree command', () => {
     });
   });
 
-  describe('firstSecondThird tests', function() {
+  describe('firstSecondThird tests', function () {
     it('should return 0 for the first item in a list, above size 1', () => {
       expect(firstSecondThird(0, 2)).toEqual(0);
       expect(firstSecondThird(0, 3)).toEqual(0);
@@ -73,7 +73,7 @@ describe('content-item tree command', () => {
     });
   });
 
-  describe('fillWhitespace tests', function() {
+  describe('fillWhitespace tests', function () {
     it('should fill space characters only after the original string with the given character up to the length', () => {
       expect(fillWhitespace('    ', '    ', '-', 4)).toEqual('    ');
       expect(fillWhitespace('    ', '    ', '-', 8)).toEqual('    ----');
@@ -88,7 +88,7 @@ describe('content-item tree command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],
@@ -138,7 +138,7 @@ describe('content-item tree command', () => {
       );
     };
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('item', 'tree', process.platform);

@@ -650,7 +650,7 @@ describe('extension export command', (): void => {
       jest.spyOn(exportModule, 'processExtensions').mockResolvedValue();
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('extension', 'export', process.platform);

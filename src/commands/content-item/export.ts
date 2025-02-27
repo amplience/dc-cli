@@ -170,7 +170,10 @@ const getContentItems = async (
       continue;
     }
 
-    Array.prototype.push.apply(items, newItems.map(item => ({ item, path: baseDir })));
+    Array.prototype.push.apply(
+      items,
+      newItems.map(item => ({ item, path: baseDir }))
+    );
   }
 
   const parallelism = 10;
@@ -184,51 +187,52 @@ const getContentItems = async (
   let baseFolder = true;
 
   while (processFolders.length > 0) {
-    const promises = processFolders.map(
-      async (folder: Folder): Promise<void> => {
-        if (baseFolder) {
-          if (!folderToPathMap.has(folder.id as string)) {
-            folderToPathMap.set(folder.id as string, specifyBasePaths ? `${sanitize(folder.name as string)}/` : '');
-          }
-        }
-        const path = await getOrAddFolderPath(folderToPathMap, client, folder, log);
-        log.appendLine(`Processing ${path}...`);
-
-        // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
-        // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
-        const folderItemsObtained = repoFolders.has(folder.id as string);
-        let newItems: ContentItem[] | undefined;
-        if (!folderItemsObtained) {
-          log.appendLine(`Fetching additional folder: ${folder.name}`);
-          try {
-            newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
-          } catch (e) {
-            log.warn(`Could not get items from folder ${folder.name} (${folder.id})`, e);
-            return;
-          }
-        } else {
-          newItems = itemsByFolderId.get(folder.id as string);
-        }
-
-        if (newItems) {
-          Array.prototype.push.apply(items, newItems.map(item => ({ item, path: path })));
-        }
-
-        try {
-          const subfolders = await paginator(folder.related.folders.list);
-
-          if (folderItemsObtained) {
-            for (const subfolder of subfolders) {
-              repoFolders.add(subfolder.id as string);
-            }
-          }
-
-          Array.prototype.push.apply(nextFolders, subfolders);
-        } catch (e) {
-          log.warn(`Could not get subfolders from folder ${folder.name} (${folder.id})`, e);
+    const promises = processFolders.map(async (folder: Folder): Promise<void> => {
+      if (baseFolder) {
+        if (!folderToPathMap.has(folder.id as string)) {
+          folderToPathMap.set(folder.id as string, specifyBasePaths ? `${sanitize(folder.name as string)}/` : '');
         }
       }
-    );
+      const path = await getOrAddFolderPath(folderToPathMap, client, folder, log);
+      log.appendLine(`Processing ${path}...`);
+
+      // If we already have seen items in this folder, use those. Otherwise try get them explicitly.
+      // This may happen for folders in selected repositories if they are empty, but it will be a no-op (and is unavoidable).
+      const folderItemsObtained = repoFolders.has(folder.id as string);
+      let newItems: ContentItem[] | undefined;
+      if (!folderItemsObtained) {
+        log.appendLine(`Fetching additional folder: ${folder.name}`);
+        try {
+          newItems = (await paginator(folder.related.contentItems.list)).filter(item => item.status === 'ACTIVE');
+        } catch (e) {
+          log.warn(`Could not get items from folder ${folder.name} (${folder.id})`, e);
+          return;
+        }
+      } else {
+        newItems = itemsByFolderId.get(folder.id as string);
+      }
+
+      if (newItems) {
+        Array.prototype.push.apply(
+          items,
+          newItems.map(item => ({ item, path: path }))
+        );
+      }
+
+      try {
+        const subfolders = await paginator(folder.related.folders.list);
+
+        if (folderItemsObtained) {
+          for (const subfolder of subfolders) {
+            repoFolders.add(subfolder.id as string);
+          }
+        }
+
+        Array.prototype.push.apply(nextFolders, subfolders);
+      } catch (e) {
+        log.warn(`Could not get subfolders from folder ${folder.name} (${folder.id})`, e);
+      }
+    });
 
     await Promise.all(promises);
 
@@ -268,7 +272,10 @@ export const handler = async (argv: Arguments<ExportItemBuilderOptions & Configu
 
   // Filter using the facet, if present.
   if (facet) {
-    const newItems = applyFacet(items.map(item => item.item), facet);
+    const newItems = applyFacet(
+      items.map(item => item.item),
+      facet
+    );
 
     if (newItems.length !== items.length) {
       items = newItems.map(newItem => items.find(item => item.item === newItem) as { item: ContentItem; path: string });

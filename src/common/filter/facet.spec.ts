@@ -90,13 +90,13 @@ describe('facet', () => {
     });
 
     it('should throw when given a date range string that cannot be parsed', () => {
-      expect(() => parseDateRange(('Last 234 days' as unknown) as DatePreset)).toThrowErrorMatchingInlineSnapshot(
+      expect(() => parseDateRange('Last 234 days' as unknown as DatePreset)).toThrowErrorMatchingInlineSnapshot(
         `"Unexpected date range string: Last 234 days"`
       );
-      expect(() => parseDateRange(('Not a date range' as unknown) as DatePreset)).toThrowErrorMatchingInlineSnapshot(
+      expect(() => parseDateRange('Not a date range' as unknown as DatePreset)).toThrowErrorMatchingInlineSnapshot(
         `"Unexpected date range string: Not a date range"`
       );
-      expect(() => parseDateRange(('2' as unknown) as DatePreset)).toThrowErrorMatchingInlineSnapshot(
+      expect(() => parseDateRange('2' as unknown as DatePreset)).toThrowErrorMatchingInlineSnapshot(
         `"Unexpected date range string: 2"`
       );
     });
@@ -110,7 +110,7 @@ describe('facet', () => {
 
     beforeAll(() => {
       const realDate = Date;
-      jest.spyOn(global, 'Date').mockImplementation(() => (new realDate(fakeDate) as unknown) as string);
+      jest.spyOn(global, 'Date').mockImplementation(() => new realDate(fakeDate));
     });
 
     afterAll(() => {
@@ -222,9 +222,7 @@ describe('facet', () => {
 
     beforeAll(() => {
       const realDate = Date;
-      jest
-        .spyOn(global, 'Date')
-        .mockImplementation((date?: string) => (new realDate(date || fakeDate) as unknown) as string);
+      jest.spyOn(global, 'Date').mockImplementation(date => new realDate(date || fakeDate));
     });
 
     afterAll(() => {

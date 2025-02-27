@@ -2,7 +2,7 @@ import { CONFIG_FILENAME, handler, readConfigFile } from './configure';
 import fs from 'fs';
 import { join } from 'path';
 
-describe('configure command', function() {
+describe('configure command', function () {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
@@ -22,13 +22,8 @@ describe('configure command', function() {
     hubId: 'hub-id'
   };
 
-  const NODE_MAJOR_VERSION = (process.versions.node.split('.')[0] as unknown) as number;
-
   it('should write a config file and create the .amplience dir', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -43,10 +38,7 @@ describe('configure command', function() {
   });
 
   it('should optionally write dst parameters when present', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -66,10 +58,7 @@ describe('configure command', function() {
   });
 
   it('should write the config file and re-used the .amplience dir', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -84,10 +73,7 @@ describe('configure command', function() {
   });
 
   it('should write a config file and use the specified file', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
 
@@ -102,10 +88,7 @@ describe('configure command', function() {
   });
 
   it('should report an error if its not possible to create the .amplience dir', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockImplementation(() => {
       throw new Error('Mock error');
     });
@@ -121,10 +104,7 @@ describe('configure command', function() {
   });
 
   it('should report an error if its not possible to create/write the config file', () => {
-    jest
-      .spyOn(fs, 'existsSync')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false).mockReturnValueOnce(true);
     jest.spyOn(fs, 'mkdirSync');
     jest.spyOn(fs, 'writeFileSync').mockImplementationOnce(() => {
       throw new Error('Mock Error');
@@ -186,17 +166,9 @@ describe('configure command', function() {
     expect(fs.existsSync).toHaveBeenCalledWith(configFile);
     expect(fs.readFileSync).toHaveBeenCalledWith(configFile, 'utf-8');
     expect(mockExit).toHaveBeenCalledWith(2);
-    if (NODE_MAJOR_VERSION >= 20) {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-"FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json
-Expected property name or '}' in JSON at position 1"
-`);
-    } else {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-      "FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json
-      Unexpected token i in JSON at position 1"
-      `);
-    }
+    expect(mockError.mock.calls[0][0]).toContain(
+      'FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json'
+    );
   });
 
   it('should not exit the process if the config file is invalid, but ignoreError is true', () => {
@@ -212,17 +184,9 @@ Expected property name or '}' in JSON at position 1"
     expect(fs.existsSync).toHaveBeenCalledWith(configFile);
     expect(fs.readFileSync).toHaveBeenCalledWith(configFile, 'utf-8');
     expect(mockExit).not.toHaveBeenCalled();
-    if (NODE_MAJOR_VERSION >= 20) {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-"The configuration file at config.json is invalid, its contents will be ignored.
-Expected property name or '}' in JSON at position 1"
-`);
-    } else {
-      expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
-"The configuration file at config.json is invalid, its contents will be ignored.
-Unexpected token i in JSON at position 1"
-`);
-    }
+    expect(mockError.mock.calls[0][0]).toContain(
+      'The configuration file at config.json is invalid, its contents will be ignored.'
+    );
   });
 
   it('should use USERPROFILE env var for win32', () => {

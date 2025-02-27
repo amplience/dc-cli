@@ -825,9 +825,7 @@ describe('content-type export command', (): void => {
       );
     });
 
-    it('should export even archived content types for the current hub if --archived is provided', async (): Promise<
-      void
-    > => {
+    it('should export even archived content types for the current hub if --archived is provided', async (): Promise<void> => {
       const schemaIdsToExport: string[] | undefined = undefined;
       const argv = {
         ...yargArgs,
