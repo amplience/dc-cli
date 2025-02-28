@@ -1,6 +1,6 @@
 import { builder, coerceLog, command, handler, LOG_FILENAME } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, Hub } from 'dc-management-sdk-js';
+import { ContentType, HttpError, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
@@ -623,21 +623,16 @@ describe('content-type archive command', () => {
       await handler(argv);
     });
 
-    it('should exit cleanly when revert log is missing', async () => {
-      const argv = {
-        ...yargArgs,
-        ...config,
-        force: true,
-        silent: true,
-        revertLog: 'doesntExist.txt'
-      };
-      await handler(argv);
-    });
-
-    it('should exit cleanly when hub is not configured, or on invalid input.', async () => {
-      // Content list/get is not init, so it will throw.
-
+    it('should throw an error when revert log is missing', async () => {
       const mockHubGet = jest.fn();
+      const mockHubList = jest.fn();
+
+      const mockHub = new Hub();
+      mockHubList.mockResolvedValue(
+        generateMockTypeList([{ name: 'name', schemaId: 'http://schemas.com/schema1' }], () => {}, false)
+      );
+      mockHub.related.contentTypes.list = mockHubList;
+      mockHubGet.mockResolvedValue(mockHub);
 
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         hubs: {
@@ -645,38 +640,82 @@ describe('content-type archive command', () => {
         }
       });
 
-      const mockHub = new Hub();
-      mockHubGet.mockResolvedValue(mockHub);
-
-      // All
       const argv = {
         ...yargArgs,
         ...config,
-        force: true,
+        schemaId: 'http://schemas.com/schema1',
+        silent: true,
+        revertLog: 'doesntExist.txt'
+      };
+
+      await expect(handler(argv)).rejects.toMatchInlineSnapshot(
+        `[Error: ENOENT: no such file or directory, open 'doesntExist.txt']`
+      );
+    });
+
+    it('should throw an error when fails to get content type by id', async () => {
+      const mockGet = jest.fn();
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        contentTypes: {
+          get: mockGet
+        }
+      });
+
+      mockGet.mockRejectedValue(new HttpError('Failed to get content type by id'));
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        silent: true,
+        id: 'test-content-type-id'
+      };
+
+      await expect(handler(argv)).rejects.toThrowErrorMatchingInlineSnapshot(`"Failed to get content type by id"`);
+    });
+
+    it('should throw an error when fails to get hub by id', async () => {
+      const mockHubGet = jest.fn();
+
+      mockHubGet.mockRejectedValue(new HttpError('Failed to get hub by id'));
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockHubGet
+        }
+      });
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        schemaId: 'http://schemas.com/schema1',
         silent: true
       };
-      await handler(argv);
+      await expect(handler(argv)).rejects.toThrowErrorMatchingInlineSnapshot(`"Failed to get hub by id"`);
+    });
 
-      // Id
-      const argv2 = {
+    it('should throw an error when fails to list hub content types', async () => {
+      const mockHubGet = jest.fn();
+      const mockHubList = jest.fn();
+
+      const mockHub = new Hub();
+      mockHubList.mockRejectedValue(new HttpError('Failed to list content types'));
+      mockHub.related.contentTypes.list = mockHubList;
+      mockHubGet.mockResolvedValue(mockHub);
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockHubGet
+        }
+      });
+
+      const argv = {
         ...yargArgs,
         ...config,
-        force: true,
-        silent: true,
-        id: 'test'
+        schemaId: 'http://schemas.com/schema1',
+        silent: true
       };
-      await handler(argv2);
-
-      // Id and Schema id
-      const argv3 = {
-        ...yargArgs,
-        ...config,
-        force: true,
-        silent: true,
-        id: 'test',
-        schemaId: 'conflict'
-      };
-      await handler(argv3);
+      await expect(handler(argv)).rejects.toThrowErrorMatchingInlineSnapshot(`"Failed to list content types"`);
     });
   });
 });
