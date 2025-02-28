@@ -81,18 +81,16 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       const schemasIds = Array.isArray(id) ? id : [id];
       schemas = await Promise.all(schemasIds.map(id => client.contentTypeSchemas.get(id)));
     } catch (e) {
-      console.log(`Fatal error: could not find schema with ID ${id}. Error: \n${e.toString()}`);
-      return;
+      console.log(`Fatal error: could not find schema with ID ${id}`);
+      throw e;
     }
   } else {
     try {
       const hub = await client.hubs.get(hubId);
       schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ACTIVE });
     } catch (e) {
-      console.log(
-        `Fatal error: could not retrieve content type schemas to archive. Is your hub correct? Error: \n${e.toString()}`
-      );
-      return;
+      console.log(`Fatal error: could not retrieve content type schemas to archive`);
+      throw e;
     }
 
     if (revertLog != null) {
@@ -104,8 +102,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
           missingContent = true;
         }
       } catch (e) {
-        console.log(`Fatal error - could not read unarchive log. Error: \n${e.toString()}`);
-        return;
+        console.log(`Fatal error - could not read unarchive log`);
+        throw e;
       }
     } else if (schemaId != null) {
       const schemaIdArray: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
