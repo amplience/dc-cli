@@ -609,6 +609,7 @@ describe('content-item-schema archive command', () => {
     });
 
     it('should throw an error when revert log is missing', async () => {
+      const logSpy = jest.spyOn(console, 'log');
       const mockHubGet = jest.fn();
       const mockHubList = jest.fn();
 
@@ -631,12 +632,12 @@ describe('content-item-schema archive command', () => {
         revertLog: 'doesntExist.txt'
       };
 
-      await expect(handler(argv)).rejects.toMatchInlineSnapshot(
-        `[Error: ENOENT: no such file or directory, open 'doesntExist.txt']`
-      );
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error - could not read unarchive log']);
     });
 
     it('should throw an error when fails to get content type schema by id', async () => {
+      const logSpy = jest.spyOn(console, 'log');
       const mockGet = jest.fn();
 
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
@@ -654,10 +655,12 @@ describe('content-item-schema archive command', () => {
         id: 'test-schema-id'
       };
 
-      await expect(handler(argv)).rejects.toThrowErrorMatchingInlineSnapshot(`"Failed to get content type schema"`);
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error: could not find schema with ID test-schema-id']);
     });
 
     it('should throw an error when fails to get hub by id', async () => {
+      const logSpy = jest.spyOn(console, 'log');
       const mockHubGet = jest.fn();
 
       mockHubGet.mockRejectedValue(new HttpError('Failed to get hub by id'));
@@ -674,10 +677,13 @@ describe('content-item-schema archive command', () => {
         schemaId: 'http://schemas.com/schema1',
         silent: true
       };
-      await expect(handler(argv)).rejects.toThrowErrorMatchingInlineSnapshot(`"Failed to get hub by id"`);
+
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error: could not retrieve content type schemas to archive']);
     });
 
     it('should throw an error when fails to list hub content type schemas', async () => {
+      const logSpy = jest.spyOn(console, 'log');
       const mockHubGet = jest.fn();
       const mockHubList = jest.fn();
 
@@ -698,7 +704,9 @@ describe('content-item-schema archive command', () => {
         schemaId: 'http://schemas.com/schema1',
         silent: true
       };
-      await expect(handler(argv)).rejects.toThrowErrorMatchingInlineSnapshot(`"Failed to list content type schemas"`);
+
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error: could not retrieve content type schemas to archive']);
     });
   });
 });

@@ -78,15 +78,15 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
       schemas = [contentTypeSchema];
     } catch (e) {
       console.log(`Fatal error: could not find content type schema with ID ${id}`);
-      throw e;
+      return;
     }
   } else {
     try {
       const hub = await client.hubs.get(argv.hubId);
       schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ARCHIVED });
     } catch (e) {
-      console.log(`Fatal error: could not retrieve content type schemas to unarchive}`);
-      throw e;
+      console.log(`Fatal error: could not retrieve content type schemas to unarchive`);
+      return;
     }
 
     if (revertLog != null) {
@@ -99,7 +99,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
         }
       } catch (e) {
         console.log(`Fatal error - could not read archive log`);
-        throw e;
+        return;
       }
     } else if (schemaId != null) {
       const schemaIds: string[] = Array.isArray(schemaId) ? schemaId : [schemaId];
