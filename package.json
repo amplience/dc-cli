@@ -103,7 +103,7 @@
     "ajv": "^6.12.3",
     "axios": "^0.21.1",
     "chalk": "^2.4.2",
-    "dc-management-sdk-js": "^1.20.0",
+    "dc-management-sdk-js": "github:amplience/dc-management-sdk-js#d6127e9",
     "enquirer": "^2.3.6",
     "fs-extra": "^10.1.0",
     "lodash": "^4.17.21",
