@@ -1,4 +1,4 @@
-import { ContentItem, OAuth2Client, AxiosHttpClient } from 'dc-management-sdk-js';
+import { ContentItem, AxiosHttpClient, Oauth2AuthHeaderProvider } from 'dc-management-sdk-js';
 import fetch, { Response } from 'node-fetch';
 import { HalLink } from 'dc-management-sdk-js/build/main/lib/hal/models/HalLink';
 import { ConfigurationParameters } from '../../commands/configure';
@@ -33,7 +33,7 @@ export class PublishQueue {
 
   private inProgressJobs: JobRequest[] = [];
   private waitingList: { promise: Promise<void>; resolver: () => void }[] = [];
-  private auth: OAuth2Client;
+  private auth: Oauth2AuthHeaderProvider;
   private awaitingAll: boolean;
   private delayUntil: number[] = [];
   private delayId = 0;
@@ -41,7 +41,7 @@ export class PublishQueue {
 
   constructor(credentials: ConfigurationParameters) {
     const http = new AxiosHttpClient({});
-    this.auth = new OAuth2Client(
+    this.auth = new Oauth2AuthHeaderProvider(
       { client_id: credentials.clientId, client_secret: credentials.clientSecret },
       { authUrl: process.env.AUTH_URL },
       http
