@@ -1,5 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`error handler tests HttpErrors should display contenthub http network error 1`] = `
+"
+Error: No response from server - check your network connection."
+`;
+
 exports[`error handler tests HttpErrors should display sdk http 400 error 1`] = `
 "
 Error: Request failed with status code 400
@@ -42,6 +47,11 @@ Error: Message"
 exports[`error handler tests HttpErrors should display sdk http error 1`] = `
 "
 Error: Message"
+`;
+
+exports[`error handler tests HttpErrors should display sdk http network error 1`] = `
+"
+Error: No response from server - check your network connection."
 `;
 
 exports[`error handler tests should display sdk error ({message: string}) 1`] = `

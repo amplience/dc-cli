@@ -41,7 +41,7 @@ export class MediaRewriter {
         return endpoint.id === settings.di.defaultEndpoint;
       });
     } catch (e) {
-      throw new Error(`Could not obtain settings from DAM. Make sure you have the required permissions. ${e}`);
+      throw new Error(`Could not obtain settings from DAM. Make sure you have the required permissions: ${e.message}`);
     }
 
     if (endpoint == null) {
