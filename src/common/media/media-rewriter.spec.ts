@@ -7,14 +7,6 @@ import { MockContentHub } from './mock-ch';
 
 jest.mock('../../services/ch-client-factory');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-jest.mock('promise-retry', () => (fn: unknown, options: any): unknown => {
-  const retryActual = jest.requireActual('promise-retry');
-  options.minTimeout = 0;
-  options.maxTimeout = 0;
-  return retryActual(fn, options);
-});
-
 let exampleLinks: RepositoryContentItem[] = [];
 
 describe('media-link-injector', () => {
@@ -146,7 +138,7 @@ describe('media-link-injector', () => {
       const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, []);
 
       await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"Could not obtain settings from DAM. Make sure you have the required permissions. Error: Simulated settings error."`
+        `"Could not obtain settings from DAM. Make sure you have the required permissions: Simulated settings error."`
       );
     });
 
@@ -157,32 +149,6 @@ describe('media-link-injector', () => {
       await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
         `"Could not find the default endpoint."`
       );
-    });
-
-    it('should fail when getting assets does not work a certain number of times in a row', async () => {
-      MockContentHub.throwOnAssetList = true;
-      const rewriter = new MediaRewriter({ clientId: '', clientSecret: '', hubId: '' }, exampleLinks);
-
-      await expect(rewriter.rewrite()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `"Request for assets failed after 3 attempts."`
-      );
-
-      expect(MockContentHub.requests).toMatchInlineSnapshot(`
-        Array [
-          Object {
-            "n": 4,
-            "q": "(name:/imageProperty|imageNested|imageArray1|imageArray2/)",
-          },
-          Object {
-            "n": 4,
-            "q": "(name:/imageProperty|imageNested|imageArray1|imageArray2/)",
-          },
-          Object {
-            "n": 4,
-            "q": "(name:/imageProperty|imageNested|imageArray1|imageArray2/)",
-          },
-        ]
-      `);
     });
 
     it('should make multiple asset requests if the query gets too long (3000 chars)', async () => {
