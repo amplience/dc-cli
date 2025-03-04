@@ -553,7 +553,7 @@ const prepareContentForImport = async (
     } catch (e) {
       log.error(
         `Failed to rewrite media links. Make sure your client is properly configured, or remove the --media flag.`,
-        e
+        e.message
       );
       return null;
     }
