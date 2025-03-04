@@ -2,7 +2,7 @@
 
 exports[`error handler tests HttpErrors should display contenthub http network error 1`] = `
 "
-Error: No response from server - check your network connection."
+2025-02-24T01:01:01.001Z Error: No response from server - check your network connection."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 400 error 1`] = `
@@ -51,7 +51,7 @@ exports[`error handler tests HttpErrors should display sdk http error 1`] = `
 
 exports[`error handler tests HttpErrors should display sdk http network error 1`] = `
 "
-Error: No response from server - check your network connection."
+2025-02-24T01:01:01.001Z Error: No response from server - check your network connection."
 `;
 
 exports[`error handler tests should display sdk error ({message: string}) 1`] = `
