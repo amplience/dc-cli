@@ -103,4 +103,82 @@ describe('AxiosHttpClient tests', () => {
 
     expect(response.status).toEqual(200);
   });
+
+  test('client should retry then succeed when first error has 5xx status', async () => {
+    const client = new AxiosHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').replyOnce(500).onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(2);
+  });
+
+  test('client should retry then succeed when first error has 429 status', async () => {
+    const client = new AxiosHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').replyOnce(429).onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(2);
+  });
+
+  test('client should retry then succeed when first error is a network error', async () => {
+    const client = new AxiosHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').networkErrorOnce().onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(2);
+  });
+
+  test('client should retry then fail after 3 retries', async () => {
+    const client = new AxiosHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').reply(500);
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(500);
+    expect(mock.history.get.length).toBe(4);
+  });
 });
