@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.21.0](https://github.com/amplience/dc-cli/compare/v0.20.0...v0.21.0) (2025-03-04)
+
+
+### Features
+
+* generate iso timestamp for errors ([#194](https://github.com/amplience/dc-cli/issues/194)) ([ccc7567](https://github.com/amplience/dc-cli/commit/ccc7567a8717db17fcc3f158a1bc6a2033849235))
+
+
+### Bug Fixes
+
+* log network error if response status is missing ([#192](https://github.com/amplience/dc-cli/issues/192)) ([bed6edc](https://github.com/amplience/dc-cli/commit/bed6edc7b3d144ac4dd6a7ade90f7f9d88449d40))
+* retry content hub http requests at the client layer ([#193](https://github.com/amplience/dc-cli/issues/193)) ([6b1966a](https://github.com/amplience/dc-cli/commit/6b1966a3af23e8c07c213545a45045e8b15f77fc))
+
 ## [0.20.0](https://github.com/amplience/dc-cli/compare/v0.19.1...v0.20.0) (2025-02-27)
 
 
