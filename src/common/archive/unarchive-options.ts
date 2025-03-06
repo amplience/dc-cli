@@ -4,11 +4,10 @@ export default interface UnarchiveOptions {
   repoId?: string | string[];
   folderId?: string | string[];
   revertLog?: string;
-
   facet?: string;
-
   logFile?: string;
   force?: boolean;
   silent?: boolean;
   ignoreError?: boolean;
+  ignoreSchemaValidation?: boolean;
 }

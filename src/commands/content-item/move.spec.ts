@@ -187,6 +187,12 @@ describe('content-item move command', () => {
         type: 'string',
         hidden: true
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during move'
+      });
     });
   });
 
@@ -370,6 +376,59 @@ describe('content-item move command', () => {
         hubId: 'hub2-id',
         revertLog: expect.any(Promise),
         logFile: expect.any(FileLog)
+      });
+
+      rimraf(`temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`);
+    });
+
+    it('should attempt to unarchive based on MOVE actions when passing a revert log and ignore content item schema validation flag', async () => {
+      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const revertCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (reverter as any).calls;
+
+      copyCalls.splice(0, copyCalls.length);
+      revertCalls.splice(0, revertCalls.length);
+
+      await createLog(`temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`, 'MOVED id1\n');
+
+      // Create content to revert
+
+      const templates: ItemTemplate[] = [
+        { id: 'id1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', status: 'ARCHIVED' }
+      ];
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('repo');
+      mockContent.registerContentType('http://type', 'type', 'repo');
+      mockContent.importItemTemplates(templates);
+
+      const argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters> = {
+        ...yargArgs,
+        ...config,
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+        revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`),
+        ignoreSchemaValidation: true
+      };
+
+      await handler(argv);
+
+      expect(mockContent.metrics.itemsUnarchived).toEqual(1);
+      expect(copyCalls.length).toEqual(0);
+
+      expect(revertCalls.length).toEqual(1);
+      expect(revertCalls[0]).toEqual({
+        $0: '',
+        _: [],
+        json: true,
+        clientId: 'acc2-id',
+        clientSecret: 'acc2-secret',
+        dir: '',
+        hubId: 'hub2-id',
+        revertLog: expect.any(Promise),
+        logFile: expect.any(FileLog),
+        ignoreSchemaValidation: true
       });
 
       rimraf(`temp_${process.env.JEST_WORKER_ID}/move/moveRevert.txt`);

@@ -294,6 +294,12 @@ describe('content-item unarchive command', () => {
         type: 'string',
         hidden: true
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during unarchive'
+      });
     });
   });
 
@@ -619,7 +625,7 @@ describe('content-item unarchive command', () => {
       (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
       (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[1]);
       (mockItemGetById as jest.Mock).mockRejectedValue(new Error("Couldn't locate item"));
-
+      //
       const argv = {
         ...yargArgs,
         ...config,
