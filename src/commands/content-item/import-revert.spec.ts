@@ -130,6 +130,79 @@ describe('revert tests', function () {
     await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`);
   });
 
+  test('Reverting an import on top of existing content should revert to an older version with no content item update parameters', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (readline as any).setResponses([]);
+
+    await createLog(
+      `temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`,
+      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS'
+    );
+
+    // Create content to import
+
+    const templates: ItemTemplate[] = [
+      { id: 'id1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', version: 2 }
+    ];
+
+    const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+    mockContent.createMockRepository('repo');
+    mockContent.registerContentType('http://type', 'type', 'repo');
+    mockContent.importItemTemplates(templates);
+
+    const argv = {
+      ...yargArgs,
+      ...config,
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`),
+      dir: '.'
+    };
+    await revert(argv);
+
+    expect(mockContent.metrics.itemsUpdated).toEqual(1);
+    expect(mockContent.metrics.itemsArchived).toEqual(0);
+    expect(mockContent.items[0].related.update).toHaveBeenCalledTimes(1);
+    expect((mockContent.items[0].related.update as jest.Mock).mock.calls[0][1]).toEqual({});
+
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`);
+  });
+
+  test('Reverting an import on top of existing content should revert to an older version with ignore schema validation content item update parameter', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (readline as any).setResponses([]);
+
+    await createLog(
+      `temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`,
+      'UPDATE id1 1 2\nUPDATE id2 3 4\nCREATE id3\nSUCCESS'
+    );
+
+    // Create content to import
+
+    const templates: ItemTemplate[] = [
+      { id: 'id1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', version: 2 }
+    ];
+
+    const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+    mockContent.createMockRepository('repo');
+    mockContent.registerContentType('http://type', 'type', 'repo');
+    mockContent.importItemTemplates(templates);
+
+    const argv = {
+      ...yargArgs,
+      ...config,
+      revertLog: openRevertLog(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`),
+      dir: '.',
+      ignoreSchemaValidation: true
+    };
+    await revert(argv);
+
+    expect(mockContent.metrics.itemsUpdated).toEqual(1);
+    expect(mockContent.metrics.itemsArchived).toEqual(0);
+    expect(mockContent.items[0].related.update).toHaveBeenCalledTimes(1);
+    expect((mockContent.items[0].related.update as jest.Mock).mock.calls[0][1].ignoreSchemaValidation).toBe(true);
+
+    await rimraf(`temp_${process.env.JEST_WORKER_ID}/revert/createImport.txt`);
+  });
+
   test('Attempting to revert an import of content that has since changed should warn the user and continue on prompt.', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (readline as any).setResponses(['y']);

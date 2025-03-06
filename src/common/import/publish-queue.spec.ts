@@ -1,10 +1,10 @@
 import fetch from 'node-fetch';
-import { OAuth2Client, ContentItem, AccessToken } from 'dc-management-sdk-js';
+import { Oauth2AuthHeaderProvider, ContentItem, AccessToken } from 'dc-management-sdk-js';
 import { PublishingJob, PublishQueue } from './publish-queue';
 import * as publishQueueModule from './publish-queue';
 
 jest.mock('node-fetch');
-jest.mock('dc-management-sdk-js/build/main/lib/oauth2/services/OAuth2Client');
+jest.mock('dc-management-sdk-js/build/main/lib/oauth2/services/Oauth2AuthHeaderProvider');
 
 interface PublishTemplate {
   href: string;
@@ -46,7 +46,7 @@ describe('publish-queue', () => {
     // should wait for all publishes to complete when calling waitForAll
 
     function sharedMock(templates: PublishTemplate[]): void {
-      (OAuth2Client.prototype.getToken as jest.Mock).mockImplementation(() => {
+      (Oauth2AuthHeaderProvider.prototype.getToken as jest.Mock).mockImplementation(() => {
         authRequests++;
         const result: AccessToken = { access_token: 'token-example', expires_in: 99999, refresh_token: 'refresh' };
         return Promise.resolve(result);

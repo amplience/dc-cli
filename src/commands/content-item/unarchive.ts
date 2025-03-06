@@ -73,6 +73,11 @@ export const builder = (yargs: Argv): void => {
     .option('schemaId', {
       type: 'string',
       hidden: true
+    })
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Ignore content item schema validation during unarchive'
     });
 };
 
@@ -154,7 +159,8 @@ export const processItems = async ({
   logFile,
   allContent,
   missingContent,
-  ignoreError
+  ignoreError,
+  ignoreSchemaValidation
 }: {
   contentItems: ContentItem[];
   force?: boolean;
@@ -163,6 +169,7 @@ export const processItems = async ({
   allContent: boolean;
   missingContent: boolean;
   ignoreError?: boolean;
+  ignoreSchemaValidation?: boolean;
 }): Promise<void> => {
   if (contentItems.length == 0) {
     console.log('Nothing found to unarchive, aborting.');
@@ -195,7 +202,8 @@ export const processItems = async ({
       if (contentItems[i].body._meta.deliveryKey != deliveryKey) {
         // Restore the delivery key if present. (only on ARCHIVE revert)
         contentItems[i].body._meta.deliveryKey = deliveryKey;
-        await contentItems[i].related.update(contentItems[i]);
+        const updateParams = { ...(ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {}) };
+        await contentItems[i].related.update(contentItems[i], updateParams);
       }
 
       log.addAction('UNARCHIVE', `${contentItems[i].id}\n`);
@@ -221,7 +229,7 @@ export const processItems = async ({
 };
 
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId } = argv;
+  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, ignoreSchemaValidation } = argv;
   const facet = withOldFilters(argv.facet, argv);
   const client = dynamicContentClientFactory(argv);
 
@@ -261,7 +269,8 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
     logFile,
     allContent,
     missingContent,
-    ignoreError
+    ignoreError,
+    ignoreSchemaValidation
   });
 };
 

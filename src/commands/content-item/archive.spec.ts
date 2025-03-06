@@ -298,6 +298,12 @@ describe('content-item archive command', () => {
         describe: 'Path to a log file to write to.',
         coerce: coerceLog
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during archive'
+      });
     });
   });
 
@@ -782,6 +788,42 @@ describe('content-item archive command', () => {
 
       await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`);
     });
+
+    it('should update content item with no additional params when delivery key is set', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockItemUpdate, contentItems } = mockValues();
+
+      contentItems[0].body._meta.deliveryKey = 'delivery-key';
+      const argv = {
+        ...yargArgs,
+        ...config
+      };
+      await handler(argv);
+
+      expect(mockItemUpdate).toHaveBeenCalledTimes(1);
+      // check we're not sending any update params
+      expect((mockItemUpdate as jest.Mock).mock.calls[0][1]).toEqual({});
+    });
+
+    it('should update content item with ignoreSchemaValidation param when delivery key is set', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockItemUpdate, contentItems } = mockValues();
+
+      contentItems[0].body._meta.deliveryKey = 'delivery-key';
+      const argv = {
+        ...yargArgs,
+        ...config,
+        ignoreSchemaValidation: true
+      };
+      await handler(argv);
+
+      expect(mockItemUpdate).toHaveBeenCalledTimes(1);
+      expect((mockItemUpdate as jest.Mock).mock.calls[0][1].ignoreSchemaValidation).toBe(true);
+    });
   });
 
   describe('getContentItems tests', () => {
@@ -846,66 +888,6 @@ describe('content-item archive command', () => {
       }
     });
   });
-
-  /*
-  describe('filterContentItems tests', () => {
-    it('should filter content items', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems
-      });
-
-      expect(result).toMatchObject({
-        contentItems,
-        missingContent: false
-      });
-    });
-
-    it('should filter content items by content type', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems,
-        facet: 'schema:/test\\.com/'
-      });
-
-      expect(result).toMatchObject({
-        contentItems: [contentItems[0]],
-        missingContent: false
-      });
-    });
-
-    it('should filter content items by content types', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems,
-        facet: 'schema:/test.?\\.com/'
-      });
-
-      expect(result).toMatchObject({
-        contentItems,
-        missingContent: false
-      });
-    });
-
-    it('should filter content items by name', async () => {
-      const { contentItems } = mockValues();
-
-      const result = await filterContentItems({
-        contentItems,
-        facet: 'name:/item1/'
-      });
-
-      if (result) {
-        expect(result.contentItems.length).toBeGreaterThanOrEqual(1);
-
-        expect(result.contentItems[0].id).toMatch('1');
-      }
-    });
-  });
-  */
 
   describe('processItems tests', () => {
     it('should archive content items', async () => {
