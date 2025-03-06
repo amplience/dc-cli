@@ -625,7 +625,7 @@ describe('content-item unarchive command', () => {
       (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
       (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[1]);
       (mockItemGetById as jest.Mock).mockRejectedValue(new Error("Couldn't locate item"));
-      //
+
       const argv = {
         ...yargArgs,
         ...config,
@@ -742,9 +742,73 @@ describe('content-item unarchive command', () => {
 
       await promisify(unlink)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`);
     });
+
+    it('should unarchive content items and ignore schema validation on content item update', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
+      const log = '// Type log test file\n' + 'ARCHIVE 1 delivery-key\n';
+
+      const dir = dirname(logFileName);
+      if (!(await promisify(exists)(dir))) {
+        await promisify(mkdir)(dir);
+      }
+      await promisify(writeFile)(logFileName, log);
+
+      const { mockUnarchive, mockItemUpdate, mockItemGetById, contentItems } = mockValues();
+
+      (mockItemGetById as jest.Mock).mockReset();
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
+      const unarchivedContentItem = new ContentItem({
+        id: '1',
+        label: 'item1',
+        repoId: 'repo1',
+        folderId: 'folder1',
+        status: 'ARCHIVED',
+        body: {
+          _meta: {
+            schema: 'http://test.com'
+          }
+        },
+        client: {
+          updateLinkedResource: mockItemUpdate
+        },
+        _links: {
+          archive: {
+            href: 'https://api.amplience.net/v2/content/content-items/1/unarchive'
+          },
+          update: {
+            href: 'https://api.amplience.net/v2/content/content-items/1'
+          }
+        }
+      });
+      (mockUnarchive as jest.Mock).mockResolvedValueOnce(unarchivedContentItem);
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        silent: true,
+        force: true,
+        revertLog: logFileName,
+        ignoreSchemaValidation: true
+      };
+      await handler(argv);
+
+      expect(mockItemGetById).toHaveBeenNthCalledWith(1, '1');
+      expect(mockItemUpdate).toHaveBeenCalledTimes(1);
+      expect((mockItemUpdate as jest.Mock).mock.calls[0][1].ignoreSchemaValidation).toBe(true);
+    });
   });
 
   describe('getContentItems tests', () => {
+    beforeEach(() => {
+      const { mockItemGetById, contentItems } = mockValues();
+
+      (mockItemGetById as jest.Mock).mockReset();
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
+    });
     it('should get content items by id', async () => {
       const result = await getContentItems({
         client: dynamicContentClientFactory({
