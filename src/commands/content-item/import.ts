@@ -639,7 +639,7 @@ const prepareContentForImport = async (
   if (invalidContentItems.length > 0) {
     if (skipIncomplete) {
       tree.removeContent(invalidContentItems);
-    } else {
+    } else if (!argv.ignoreSchemaValidation) {
       const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
 
       const mustSkip: ItemContentDependancies[] = [];
