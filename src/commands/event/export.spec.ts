@@ -57,12 +57,12 @@ describe('event export command', () => {
     hubId: 'hub-id'
   };
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('export <dir>');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -105,7 +105,7 @@ describe('event export command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     beforeAll(async () => {
       await rimraf('temp/exportEvent/');
     });
@@ -282,14 +282,8 @@ describe('event export command', () => {
     });
 
     it('should export snapshots when --snapshots is provided', async () => {
-      const {
-        mockEventsList,
-        mockEditionsList,
-        mockSlotsList,
-        mockGet,
-        mockSnapshotGet,
-        mockSnapshotItem
-      } = mockValues({});
+      const { mockEventsList, mockEditionsList, mockSlotsList, mockGet, mockSnapshotGet, mockSnapshotItem } =
+        mockValues({});
 
       const argv = {
         ...yargArgs,
@@ -330,7 +324,7 @@ describe('event export command', () => {
     it('should request and populate editions for each of the provided events', async () => {
       const { mockEventsList, mockEditionsList } = mockValues({});
 
-      const events = await paginator((mockEventsList as unknown) as () => Promise<Page<Event>>);
+      const events = await paginator(mockEventsList as unknown as () => Promise<Page<Event>>);
 
       await expect(enrichEvents(events)).resolves.toMatchSnapshot();
 
@@ -340,7 +334,7 @@ describe('event export command', () => {
     it('should omit events when fetching their editions failed', async () => {
       const { mockEventsList, mockEditionsList } = mockValues({ listEditionError: true });
 
-      const events = await paginator((mockEventsList as unknown) as () => Promise<Page<Event>>);
+      const events = await paginator(mockEventsList as unknown as () => Promise<Page<Event>>);
 
       const log = new FileLog();
 
@@ -359,7 +353,7 @@ describe('event export command', () => {
     it('should request and populate slots for each of the provided editions', async () => {
       const { mockEditionsList, mockSlotsList } = mockValues({});
 
-      const editions = await paginator((mockEditionsList as unknown) as () => Promise<Page<Edition>>);
+      const editions = await paginator(mockEditionsList as unknown as () => Promise<Page<Edition>>);
 
       await expect(enrichEditions(editions)).resolves.toMatchSnapshot();
 

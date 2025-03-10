@@ -1,13 +1,59 @@
 repo:
-  - ./*
+  - changed-files:
+      - any-glob-to-any-file: './*'
+
 test:
-  - src/**/*.spec.ts
-  - src/**/*.ts.snap
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/**/*.spec.ts
+          - src/**/*.ts.snap
+
 documentation:
-  - ./**/*.md
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./**/*.md
+
+content-item:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/content-item/*.ts
+
 content-repository:
-  - ./src/commands/content-repository/*.ts
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/content-repository/*.ts
+
 content-type:
-  - ./src/commands/content-type/*.ts
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/content-type/*.ts
+
 content-type-schema:
-  - ./src/commands/content-type-schema/*.ts
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/content-type-schema/*.ts
+
+events:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/events/*.ts
+
+extension:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/extension/*.ts
+
+hub:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/hub/*.ts
+
+search-index:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/search-index/*.ts
+
+settings:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ./src/commands/settings/*.ts

@@ -25,7 +25,7 @@ jest.mock('enquirer', () => ({
   Password: jest.fn()
 }));
 
-describe('hub manager', function() {
+describe('hub manager', function () {
   const hubGetMock = jest.fn();
   const autocompleteRun = jest.fn();
   let configureSpy: jest.SpyInstance;
@@ -75,10 +75,7 @@ describe('hub manager', function() {
   };
 
   const mockDefaultConfig = (): void => {
-    jest
-      .spyOn(fs, 'readJSONSync')
-      .mockReturnValueOnce(DummyHub)
-      .mockReturnValueOnce([DummyHub]);
+    jest.spyOn(fs, 'readJSONSync').mockReturnValueOnce(DummyHub).mockReturnValueOnce([DummyHub]);
   };
 
   it('should create an empty json file if getHubs is called before any are entered', async () => {
@@ -109,10 +106,7 @@ describe('hub manager', function() {
   });
 
   it('should save hub from user input', async () => {
-    const inputRun = jest
-      .fn()
-      .mockResolvedValueOnce('client-id')
-      .mockResolvedValueOnce('hub-id');
+    const inputRun = jest.fn().mockResolvedValueOnce('client-id').mockResolvedValueOnce('hub-id');
     const passwordRun = jest.fn().mockResolvedValueOnce('client-secret');
 
     (enquirer.Input as jest.Mock).mockReturnValue({
@@ -176,7 +170,10 @@ describe('hub manager', function() {
     jest
       .spyOn(fs, 'readJSONSync')
       .mockReturnValueOnce(DummyHub)
-      .mockReturnValueOnce([{ ...DummyHub, isActive: true }, { ...DummyHub, hubId: 'hub-id2' }]);
+      .mockReturnValueOnce([
+        { ...DummyHub, isActive: true },
+        { ...DummyHub, hubId: 'hub-id2' }
+      ]);
 
     HubManager.listHubs();
   });

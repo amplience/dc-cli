@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { DynamicContent } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../commands/configure';
 

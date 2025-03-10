@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { AxiosHttpClient } from '../../http/AxiosHttpClient';
 import { OAuth2Client } from './OAuth2Client';
 

@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.21.0](https://github.com/amplience/dc-cli/compare/v0.20.0...v0.21.0) (2025-03-04)
+
+
+### Features
+
+* generate iso timestamp for errors ([#194](https://github.com/amplience/dc-cli/issues/194)) ([ccc7567](https://github.com/amplience/dc-cli/commit/ccc7567a8717db17fcc3f158a1bc6a2033849235))
+
+
+### Bug Fixes
+
+* log network error if response status is missing ([#192](https://github.com/amplience/dc-cli/issues/192)) ([bed6edc](https://github.com/amplience/dc-cli/commit/bed6edc7b3d144ac4dd6a7ade90f7f9d88449d40))
+* retry content hub http requests at the client layer ([#193](https://github.com/amplience/dc-cli/issues/193)) ([6b1966a](https://github.com/amplience/dc-cli/commit/6b1966a3af23e8c07c213545a45045e8b15f77fc))
+
+## [0.20.0](https://github.com/amplience/dc-cli/compare/v0.19.1...v0.20.0) (2025-02-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* maintenance and dependency updates
+* Merge pull request #189 from amplience/feature/maintenance-and-dependency-updates
+
+### Features
+
+* maintenance and dependency updates ([d170685](https://github.com/amplience/dc-cli/commit/d1706850abb78bc8a0b8260a394838f3c25ced38))
+* Merge pull request [#189](https://github.com/amplience/dc-cli/issues/189) from amplience/feature/maintenance-and-dependency-updates ([d170685](https://github.com/amplience/dc-cli/commit/d1706850abb78bc8a0b8260a394838f3c25ced38))
+
+
+### Bug Fixes
+
+* change from artifact to packages ([f1e5171](https://github.com/amplience/dc-cli/commit/f1e5171b268e4aab755705629b2fb46d5c3ecc93))
+
+
+### Miscellaneous Chores
+
+* release 0.20.0 ([aeaccf1](https://github.com/amplience/dc-cli/commit/aeaccf1616a419458304ebf7680f79104dd46478))
+
 ## [0.19.1](https://github.com/amplience/dc-cli/compare/v0.19.0...v0.19.1) (2023-11-14)
 
 

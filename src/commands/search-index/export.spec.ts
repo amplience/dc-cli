@@ -138,7 +138,13 @@ describe('search-index export command', (): void => {
       expect(
         webhookEquals(
           new Webhook(exampleWebhook),
-          new Webhook({ ...exampleWebhook, headers: [{ key: 'key', value: 'value' }, { key: 'key', value: 'value2' }] })
+          new Webhook({
+            ...exampleWebhook,
+            headers: [
+              { key: 'key', value: 'value' },
+              { key: 'key', value: 'value2' }
+            ]
+          })
         )
       ).toBeFalsy();
     });
@@ -1236,7 +1242,7 @@ describe('search-index export command', (): void => {
       jest.spyOn(exportModule, 'processIndexes').mockResolvedValue();
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('search-index', 'export', process.platform);

@@ -13,7 +13,7 @@ jest.mock('./create.service');
 
 const mockDataPresenter = DataPresenter as jest.Mock<DataPresenter>;
 
-describe('content type schema create command', function() {
+describe('content type schema create command', function () {
   const yargArgs = {
     $0: 'test',
     _: ['test'],
@@ -34,15 +34,15 @@ describe('content type schema create command', function() {
   const aHub = new Hub();
   mockGetHub.mockResolvedValue(aHub);
 
-  it('should have a command', function() {
+  it('should have a command', function () {
     expect(command).toEqual('create');
   });
 
-  it('should have a description', function() {
+  it('should have a description', function () {
     expect(desc).toEqual('Create Content Type Schema');
   });
 
-  it('should have a builder that has a schema option', function() {
+  it('should have a builder that has a schema option', function () {
     expect(builder.schema).toEqual({
       type: 'string',
       demandOption: true,
@@ -51,7 +51,7 @@ describe('content type schema create command', function() {
     });
   });
 
-  it('should have a builder that has a validation level option', function() {
+  it('should have a builder that has a validation level option', function () {
     expect(builder.validationLevel).toEqual({
       type: 'string',
       choices: ['SLOT', 'CONTENT_TYPE', 'PARTIAL'],
@@ -61,7 +61,7 @@ describe('content type schema create command', function() {
     });
   });
 
-  it('should create a schema', async function() {
+  it('should create a schema', async function () {
     const input = {
       schema: __dirname + '/__fixtures/schema.json',
       validationLevel: ValidationLevel.CONTENT_TYPE

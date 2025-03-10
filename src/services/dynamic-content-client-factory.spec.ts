@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import dynamicContentClientFactory from './dynamic-content-client-factory';
 import { DynamicContent } from 'dc-management-sdk-js';
 
 jest.mock('dc-management-sdk-js');
 
-describe('dynamic-content-client-factory', function() {
+describe('dynamic-content-client-factory', function () {
   const resetEnv = (): void => {
     delete process.env.API_URL;
     delete process.env.AUTH_URL;

@@ -12,6 +12,7 @@ const httpErrorFactory: { [key: number]: (httpError: HttpError) => string } = {
   429: () => 'Error: Too many requests - Please try again later.',
   500: (httpError: HttpError) => `Error: Internal Server Error - ${httpError.message}`
 };
+
 export type SupportedErrors = string | { message: string } | HttpError;
 
 const buildMessage = (err: SupportedErrors): string => {
@@ -24,13 +25,20 @@ const buildMessage = (err: SupportedErrors): string => {
     if (builder) {
       return builder(err);
     }
+    if (!err.response.status) {
+      return `Error: No response from server - check your network connection.`;
+    }
   }
 
   return `Error: ${err.message}`;
 };
 
+const generateTimestamp = (): string => {
+  return new Date().toISOString();
+};
+
 const errorHandler = (err: SupportedErrors): void => {
-  console.error(`\n${buildMessage(err)}`);
+  console.error(`\n${generateTimestamp()} ${buildMessage(err)}`);
 };
 
 export default errorHandler;

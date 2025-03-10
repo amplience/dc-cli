@@ -40,7 +40,11 @@ export interface ApiParameters {
 export class DefaultApiClient implements ApiClient {
   endpoints: ApiEndpoints;
 
-  constructor(private baseUrl: string, private httpClient: HttpClient, private tokenProvider: AccessTokenProvider) {
+  constructor(
+    private baseUrl: string,
+    private httpClient: HttpClient,
+    private tokenProvider: AccessTokenProvider
+  ) {
     this.endpoints = new ApiEndpoints(this);
   }
 
@@ -52,7 +56,7 @@ export class DefaultApiClient implements ApiClient {
       method: HttpMethod.GET,
       url: path
     });
-    return (response.data as any) as T;
+    return response.data as any as T;
   }
 
   public async fetchResource<T extends ApiResource>(
@@ -101,11 +105,10 @@ export class DefaultApiClient implements ApiClient {
         response.data = this.transformDamResponse(response.data);
         return response;
       } else {
-        throw new HttpError(
-          `Request failed with status code ${response.status}: ${JSON.stringify(response.data)}`,
-          fullRequest,
-          response
-        );
+        const message = response.status
+          ? `Request failed with status code ${response.status}: ${JSON.stringify(response.data)}`
+          : `Error: No response from server - check your network connection.`;
+        throw new HttpError(message, fullRequest, response);
       }
     });
   }

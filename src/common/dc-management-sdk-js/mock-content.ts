@@ -139,7 +139,7 @@ export class MockContent {
       return Promise.resolve(result);
     });
 
-    contentService.mockReturnValue(({
+    contentService.mockReturnValue({
       hubs: {
         get: mockHubGet,
         list: mockHubList
@@ -160,7 +160,7 @@ export class MockContent {
       contentItems: {
         get: mockItemGet
       }
-    } as any) as DynamicContent);
+    } as any as DynamicContent);
   }
 
   private getFolderName(path: string | undefined): string {
@@ -180,7 +180,12 @@ export class MockContent {
       if (this.failRepoList) {
         throw new Error('Simulated Netowrk Failure.');
       }
-      return Promise.resolve(new MockPage(ContentRepository, this.repos.map(repo => repo.repo)));
+      return Promise.resolve(
+        new MockPage(
+          ContentRepository,
+          this.repos.map(repo => repo.repo)
+        )
+      );
     });
     const mockTypesList = jest
       .fn()
@@ -275,16 +280,14 @@ export class MockContent {
     });
     repo.related.contentItems.list = mockItemList;
 
-    const mockFolderList = jest
-      .fn()
-      .mockImplementation(() =>
-        Promise.resolve(
-          new MockPage(
-            Folder,
-            this.folders.filter(folder => (folder as any).repoId === repoId && folder.id == folder.name)
-          )
+    const mockFolderList = jest.fn().mockImplementation(() =>
+      Promise.resolve(
+        new MockPage(
+          Folder,
+          this.folders.filter(folder => (folder as any).repoId === repoId && folder.id == folder.name)
         )
-      );
+      )
+    );
     repo.related.folders.list = mockFolderList;
 
     const mockItemCreate = jest.fn().mockImplementation((item: ContentItem) => {
@@ -678,7 +681,12 @@ export class MockContent {
       if (this.failFolderActions === 'items') {
         throw new Error('Simulated network failure.');
       }
-      return Promise.resolve(new MockPage(ContentItem, this.items.filter(item => item.folderId === id)));
+      return Promise.resolve(
+        new MockPage(
+          ContentItem,
+          this.items.filter(item => item.folderId === id)
+        )
+      );
     });
 
     mockFolderSubfolder.mockImplementation(() => {

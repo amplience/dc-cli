@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AxiosRequestConfig } from 'axios';
 import { ContentHub, ContentHubConfig } from './ContentHub';
 import { ApiClient } from './api/services/ApiClient';

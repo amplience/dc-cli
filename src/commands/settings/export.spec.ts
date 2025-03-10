@@ -56,7 +56,7 @@ describe('settings export command', (): void => {
       });
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('settings', 'export', process.platform);

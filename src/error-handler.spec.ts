@@ -1,7 +1,10 @@
 import { HttpError, HttpMethod } from 'dc-management-sdk-js';
+import { HttpError as ChHttpError } from 'dc-management-sdk-js';
 import errorHandler from './error-handler';
 
-describe('error handler tests', function() {
+jest.useFakeTimers().setSystemTime(new Date('2025-02-24T01:01:01.001Z'));
+
+describe('error handler tests', function () {
   const spyConsoleError = jest.spyOn(console, 'error');
   beforeEach(() => {
     jest.resetAllMocks();
@@ -24,7 +27,7 @@ describe('error handler tests', function() {
     expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
   });
 
-  describe('HttpErrors', function() {
+  describe('HttpErrors', function () {
     it('should display sdk http error', async () => {
       errorHandler(new HttpError('Message'));
       expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
@@ -64,6 +67,18 @@ describe('error handler tests', function() {
 
     it('should display sdk http 501 error - unmapped status code', async () => {
       errorHandler(new HttpError('Message', undefined, { status: 501, data: {} }));
+      expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
+    });
+
+    it('should display sdk http network error', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      errorHandler(new HttpError('Network error', undefined, { status: undefined as any, data: {} }));
+      expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
+    });
+
+    it('should display contenthub http network error', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      errorHandler(new ChHttpError('Network error', undefined, { status: undefined as any, data: {} }));
       expect(spyConsoleError.mock.calls[0][0]).toMatchSnapshot();
     });
   });

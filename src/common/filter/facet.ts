@@ -184,7 +184,7 @@ export function applyFacet(items: ContentItem[], facetOrString: Facet | string):
     if (
       facet.schema &&
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      !equalsOrRegex(((item as any) as FacetedContentItem).schema || item.body._meta.schema, facet.schema)
+      !equalsOrRegex((item as any as FacetedContentItem).schema || item.body._meta.schema, facet.schema)
     )
       return false;
     if (facet.status && !equalsOrRegex(item.status, facet.status)) return false;

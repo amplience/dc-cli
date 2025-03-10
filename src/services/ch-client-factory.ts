@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { ContentHub } from '../common/ch-api/ContentHub';
 import { ConfigurationParameters } from '../commands/configure';
 

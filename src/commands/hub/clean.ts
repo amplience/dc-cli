@@ -52,7 +52,10 @@ export const handler = async (argv: Arguments<CleanHubBuilderOptions & Configura
   // Steps system: Each step performs another part of the clean command.
   // If a step fails, we can return to that step on a future attempt.
 
-  const stepIndex = Math.max(0, steps.findIndex(step => step.getId() === argv.step));
+  const stepIndex = Math.max(
+    0,
+    steps.findIndex(step => step.getId() === argv.step)
+  );
 
   for (let i = stepIndex; i < steps.length; i++) {
     const step = steps[i];

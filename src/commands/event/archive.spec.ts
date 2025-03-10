@@ -31,12 +31,12 @@ describe('event archive command', () => {
     logFile: new FileLog()
   };
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('archive [id]');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -74,7 +74,7 @@ describe('event archive command', () => {
       });
     });
 
-    it('should generate a log with coerceLog with the appropriate title', function() {
+    it('should generate a log with coerceLog with the appropriate title', function () {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
@@ -322,7 +322,7 @@ describe('event archive command', () => {
     };
   };
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     it('should delete event with draft edition', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);

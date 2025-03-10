@@ -1,6 +1,6 @@
 import { builder, coerceLog, command, handler, LOG_FILENAME } from './archive';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentTypeSchema, Hub } from 'dc-management-sdk-js';
+import { ContentTypeSchema, HttpError, Hub } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { exists, readFile, unlink, mkdir, writeFile } from 'fs';
@@ -26,12 +26,12 @@ describe('content-item-schema archive command', () => {
     jest.restoreAllMocks();
   });
 
-  it('should command should defined', function() {
+  it('should command should defined', function () {
     expect(command).toEqual('archive [id]');
   });
 
-  describe('builder tests', function() {
-    it('should configure yargs', function() {
+  describe('builder tests', function () {
+    it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
       const spyPositional = jest.spyOn(argv, 'positional').mockReturnThis();
       const spyOption = jest.spyOn(argv, 'option').mockReturnThis();
@@ -83,13 +83,13 @@ describe('content-item-schema archive command', () => {
       });
     });
 
-    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
+    it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
       LOG_FILENAME();
 
       expect(getDefaultLogPath).toHaveBeenCalledWith('schema', 'archive', process.platform);
     });
 
-    it('should generate a log with coerceLog with the appropriate title', function() {
+    it('should generate a log with coerceLog with the appropriate title', function () {
       const logFile = coerceLog('filename.log');
 
       expect(logFile).toEqual(expect.any(FileLog));
@@ -97,7 +97,7 @@ describe('content-item-schema archive command', () => {
     });
   });
 
-  describe('handler tests', function() {
+  describe('handler tests', function () {
     const yargArgs = {
       $0: 'test',
       _: ['test'],
@@ -608,22 +608,15 @@ describe('content-item-schema archive command', () => {
       await handler(argv);
     });
 
-    it('should exit cleanly when revert log is missing', async () => {
-      const argv = {
-        ...yargArgs,
-        ...config,
-
-        force: true,
-        silent: true,
-        revertLog: 'doesntExist.txt'
-      };
-      await handler(argv);
-    });
-
-    it('should exit cleanly when hub is not configured, or on invalid input.', async () => {
-      // Content list/get is not init, so it will throw.
-
+    it('should throw an error when revert log is missing', async () => {
+      const logSpy = jest.spyOn(console, 'log');
       const mockHubGet = jest.fn();
+      const mockHubList = jest.fn();
+
+      const mockHub = new Hub();
+      mockHubList.mockResolvedValue(generateMockSchemaList(['http://schemas.com/schema1'], () => {}, false));
+      mockHub.related.contentTypeSchema.list = mockHubList;
+      mockHubGet.mockResolvedValue(mockHub);
 
       (dynamicContentClientFactory as jest.Mock).mockReturnValue({
         hubs: {
@@ -631,41 +624,89 @@ describe('content-item-schema archive command', () => {
         }
       });
 
-      const mockHub = new Hub();
-      mockHubGet.mockResolvedValue(mockHub);
-
-      // All
       const argv = {
         ...yargArgs,
         ...config,
+        schemaId: 'http://schemas.com/schema1',
+        silent: true,
+        revertLog: 'doesntExist.txt'
+      };
 
-        force: true,
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error - could not read unarchive log']);
+    });
+
+    it('should throw an error when fails to get content type schema by id', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      const mockGet = jest.fn();
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        contentTypeSchemas: {
+          get: mockGet
+        }
+      });
+
+      mockGet.mockRejectedValue(new HttpError('Failed to get content type schema'));
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        silent: true,
+        id: 'test-schema-id'
+      };
+
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error: could not find schema with ID test-schema-id']);
+    });
+
+    it('should throw an error when fails to get hub by id', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      const mockHubGet = jest.fn();
+
+      mockHubGet.mockRejectedValue(new HttpError('Failed to get hub by id'));
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockHubGet
+        }
+      });
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        schemaId: 'http://schemas.com/schema1',
         silent: true
       };
-      await handler(argv);
 
-      // Id
-      const argv2 = {
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error: could not retrieve content type schemas to archive']);
+    });
+
+    it('should throw an error when fails to list hub content type schemas', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      const mockHubGet = jest.fn();
+      const mockHubList = jest.fn();
+
+      const mockHub = new Hub();
+      mockHubList.mockRejectedValue(new HttpError('Failed to list content type schemas'));
+      mockHub.related.contentTypeSchema.list = mockHubList;
+      mockHubGet.mockResolvedValue(mockHub);
+
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockHubGet
+        }
+      });
+
+      const argv = {
         ...yargArgs,
         ...config,
-
-        force: true,
-        silent: true,
-        id: 'test'
+        schemaId: 'http://schemas.com/schema1',
+        silent: true
       };
-      await handler(argv2);
 
-      // Id and Schema id
-      const argv3 = {
-        ...yargArgs,
-        ...config,
-
-        force: true,
-        silent: true,
-        id: 'test',
-        schemaId: 'conflict'
-      };
-      await handler(argv3);
+      await expect(handler(argv)).resolves.toBeUndefined();
+      expect(logSpy.mock.lastCall).toEqual(['Fatal error: could not retrieve content type schemas to archive']);
     });
   });
 });

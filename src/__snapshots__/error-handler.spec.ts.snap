@@ -1,8 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`error handler tests HttpErrors should display contenthub http network error 1`] = `
+"
+2025-02-24T01:01:01.001Z Error: No response from server - check your network connection."
+`;
+
 exports[`error handler tests HttpErrors should display sdk http 400 error 1`] = `
 "
-Error: Request failed with status code 400
+2025-02-24T01:01:01.001Z Error: Request failed with status code 400
 {
   \\"status\\": 400,
   \\"data\\": {}
@@ -11,50 +16,55 @@ Error: Request failed with status code 400
 
 exports[`error handler tests HttpErrors should display sdk http 401 error 1`] = `
 "
-Error: Unauthorized - Please ensure your client ID & secret or PAT token is correct."
+2025-02-24T01:01:01.001Z Error: Unauthorized - Please ensure your client ID & secret or PAT token are correct."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 403 error (with request) 1`] = `
 "
-Error: The requested action (PATCH: http://example.com) is not available (forbidden), ensure you have permission to perform this action."
+2025-02-24T01:01:01.001Z Error: The requested action (PATCH: http://example.com) is not available (forbidden), ensure you have permission to perform this action."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 403 error 1`] = `
 "
-Error: The requested action is not available (forbidden), ensure you have permission to perform this action."
+2025-02-24T01:01:01.001Z Error: The requested action is not available (forbidden), ensure you have permission to perform this action."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 429 error 1`] = `
 "
-Error: Too many requests - Please try again later."
+2025-02-24T01:01:01.001Z Error: Too many requests - Please try again later."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 500 error 1`] = `
 "
-Error: Internal Server Error - Message"
+2025-02-24T01:01:01.001Z Error: Internal Server Error - Message"
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 501 error - unmapped status code 1`] = `
 "
-Error: Message"
+2025-02-24T01:01:01.001Z Error: Message"
 `;
 
 exports[`error handler tests HttpErrors should display sdk http error 1`] = `
 "
-Error: Message"
+2025-02-24T01:01:01.001Z Error: Message"
+`;
+
+exports[`error handler tests HttpErrors should display sdk http network error 1`] = `
+"
+2025-02-24T01:01:01.001Z Error: No response from server - check your network connection."
 `;
 
 exports[`error handler tests should display sdk error ({message: string}) 1`] = `
 "
-Error: Error message"
+2025-02-24T01:01:01.001Z Error: Error message"
 `;
 
 exports[`error handler tests should display sdk error (new Error()) 1`] = `
 "
-Error: Error instance"
+2025-02-24T01:01:01.001Z Error: Error instance"
 `;
 
 exports[`error handler tests should display sdk error (string) 1`] = `
 "
-Error: The list-content-type-schemas action is not available, ensure you have permission to perform this action."
+2025-02-24T01:01:01.001Z Error: The list-content-type-schemas action is not available, ensure you have permission to perform this action."
 `;

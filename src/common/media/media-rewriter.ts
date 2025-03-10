@@ -5,7 +5,6 @@ import { ConfigurationParameters } from '../../commands/configure';
 import chClientFactory from '../../services/ch-client-factory';
 import { RepositoryContentItem } from '../content-item/content-dependancy-tree';
 import { MediaLinkInjector } from '../content-item/media-link-injector';
-import promiseRetry from 'promise-retry';
 
 /**
  * Exports media related to given content items from an existing repository.
@@ -18,7 +17,10 @@ export class MediaRewriter {
   private endpoint: string;
   private defaultHost: string;
 
-  constructor(private config: ConfigurationParameters, private items: RepositoryContentItem[]) {
+  constructor(
+    private config: ConfigurationParameters,
+    private items: RepositoryContentItem[]
+  ) {
     this.injector = new MediaLinkInjector(items);
   }
 
@@ -39,7 +41,7 @@ export class MediaRewriter {
         return endpoint.id === settings.di.defaultEndpoint;
       });
     } catch (e) {
-      throw new Error(`Could not obtain settings from DAM. Make sure you have the required permissions. ${e}`);
+      throw new Error(`Could not obtain settings from DAM. Make sure you have the required permissions: ${e.message}`);
     }
 
     if (endpoint == null) {
@@ -51,36 +53,18 @@ export class MediaRewriter {
   }
 
   private async queryAndAdd(query: string, count: number, assets: Map<string, Asset>): Promise<number> {
-    let attemptCount = 0;
+    const result = await this.dam.assets.list({
+      q: '(' + query + ')',
+      n: count
+    });
 
-    try {
-      return await promiseRetry(
-        async (retry, attempt) => {
-          try {
-            const result = await this.dam.assets.list({
-              q: '(' + query + ')',
-              n: count
-            });
+    const items = result.getItems();
 
-            const items = result.getItems();
+    items.forEach(asset => {
+      assets.set(asset.name as string, asset);
+    });
 
-            items.forEach(asset => {
-              assets.set(asset.name as string, asset);
-            });
-
-            return items.length;
-          } catch (e) {
-            attemptCount = attempt;
-            retry(e);
-            return 0;
-          }
-        },
-        { retries: 2 }
-      );
-    } catch (e) {
-      // Too many retries, fail the request.
-      throw new Error(`Request for assets failed after ${attemptCount} attempts.`);
-    }
+    return items.length;
   }
 
   private getLinkNames(): Set<string> {

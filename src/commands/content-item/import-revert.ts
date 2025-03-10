@@ -69,8 +69,9 @@ export const revert = async (argv: Arguments<ImportItemBuilderOptions & Configur
 
     changed.forEach(entry => {
       const hasBeenArchived = entry.item.status !== 'ACTIVE' ? ', has been archived)' : '';
-      const summary = `(modified ${(entry.item.version as number) -
-        entry.newVersion} times since import${hasBeenArchived})`;
+      const summary = `(modified ${
+        (entry.item.version as number) - entry.newVersion
+      } times since import${hasBeenArchived})`;
       console.log(`  ${entry.item.label} ${summary}`);
     });
 
