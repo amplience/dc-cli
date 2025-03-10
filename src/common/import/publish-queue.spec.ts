@@ -48,7 +48,6 @@ describe('publish-queue', () => {
     function sharedMock(templates: PublishTemplate[]): void {
       (Oauth2AuthHeaderProvider.prototype.getAuthHeader as jest.Mock).mockImplementation(() => {
         authRequests++;
-        // eslint-disable-next-line @typescript-eslint/camelcase
         const result = 'bearer token-example';
         return Promise.resolve(result);
       });

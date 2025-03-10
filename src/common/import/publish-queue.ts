@@ -48,7 +48,6 @@ export class PublishQueue {
     const http = new AxiosHttpClient({});
     if (credentials.clientId && credentials.clientSecret) {
       this.auth = new Oauth2AuthHeaderProvider(
-        // eslint-disable-next-line @typescript-eslint/camelcase
         { client_id: credentials.clientId, client_secret: credentials.clientSecret },
         { authUrl: process.env.AUTH_URL },
         http
