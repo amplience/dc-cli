@@ -5,4 +5,5 @@ export interface CleanHubBuilderOptions {
   logFile: FileLog;
   force?: boolean;
   step?: CleanHubStepId;
+  ignoreSchemaValidation?: boolean;
 }

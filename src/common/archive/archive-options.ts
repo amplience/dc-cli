@@ -7,9 +7,9 @@ export default interface ArchiveOptions {
   repoId?: string | string[];
   folderId?: string | string[];
   facet?: string;
-
   logFile: FileLog;
   force?: boolean;
   silent?: boolean;
   ignoreError?: boolean;
+  ignoreSchemaValidation?: boolean;
 }

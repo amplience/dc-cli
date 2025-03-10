@@ -41,6 +41,12 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       describe: 'Start at a specific step. Steps after the one you specify will also run.',
       choices: steps.map(step => step.getId())
+    })
+
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Ignore content item schema validation during clean'
     });
 };
 
