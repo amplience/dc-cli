@@ -3,7 +3,7 @@ import { HttpError } from 'dc-management-sdk-js';
 const httpErrorFactory: { [key: number]: (httpError: HttpError) => string } = {
   400: (httpError: HttpError) =>
     `Error: Request failed with status code 400\n${JSON.stringify(httpError.response, null, 2)}`,
-  401: () => 'Error: Unauthorized - Please ensure your client ID & secret are correct.',
+  401: () => 'Error: Unauthorized - Please ensure your client ID & secret or PAT token are correct.',
   403: (httpError: HttpError) => {
     return httpError.request
       ? `Error: The requested action (${httpError.request.method}: ${httpError.request.url}) is not available (forbidden), ensure you have permission to perform this action.`
