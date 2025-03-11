@@ -639,10 +639,10 @@ const prepareContentForImport = async (
   if (invalidContentItems.length > 0) {
     if (skipIncomplete) {
       tree.removeContent(invalidContentItems);
-    } else if (!argv.ignoreSchemaValidation) {
+    } else {
       const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
-
       const mustSkip: ItemContentDependancies[] = [];
+
       await Promise.all(
         invalidContentItems.map(async item => {
           tree.removeContentDependanciesFromBody(
@@ -650,13 +650,15 @@ const prepareContentForImport = async (
             item.dependancies.map(dependancy => dependancy.dependancy)
           );
 
-          try {
-            const errors = await validator.validate(item.owner.content.body);
-            if (errors.length > 0) {
-              mustSkip.push(item);
+          if (!argv.ignoreSchemaValidation) {
+            try {
+              const errors = await validator.validate(item.owner.content.body);
+              if (errors.length > 0) {
+                mustSkip.push(item);
+              }
+            } catch {
+              // Just ignore invalid schema for now.
             }
-          } catch {
-            // Just ignore invalid schema for now.
           }
         })
       );
