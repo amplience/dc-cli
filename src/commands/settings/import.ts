@@ -121,7 +121,8 @@ export const handler = async (
         applications: uniqueApplications,
         localization: {
           locales: uniqueLocales
-        }
+        },
+        contentItems: settings.contentItems
       })
     );
 

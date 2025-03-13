@@ -111,7 +111,8 @@ export const revert = async (argv: Arguments<ImportItemBuilderOptions & Configur
         console.log(`Reverting ${item.label} to version ${entry.oldVersion}.`);
 
         try {
-          await item.related.update(oldItem);
+          const updateParams = { ...(argv.ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {}) };
+          await item.related.update(oldItem, updateParams);
         } catch (e) {
           console.log(`Could not revert ${item.label}!\n${e.toString()}\nContinuing...`);
         }

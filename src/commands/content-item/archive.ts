@@ -77,6 +77,11 @@ export const builder = (yargs: Argv): void => {
     .option('schemaId', {
       type: 'string',
       hidden: true
+    })
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Ignore content item schema validation during archive'
     });
 };
 
@@ -147,7 +152,8 @@ export const processItems = async ({
   logFile,
   allContent,
   missingContent,
-  ignoreError
+  ignoreError,
+  ignoreSchemaValidation
 }: {
   contentItems: ContentItem[];
   force?: boolean;
@@ -156,6 +162,7 @@ export const processItems = async ({
   allContent: boolean;
   missingContent: boolean;
   ignoreError?: boolean;
+  ignoreSchemaValidation?: boolean;
 }): Promise<void> => {
   if (contentItems.length == 0) {
     console.log('Nothing found to archive, aborting.');
@@ -185,8 +192,8 @@ export const processItems = async ({
       let args = contentItems[i].id;
       if (deliveryKey) {
         contentItems[i].body._meta.deliveryKey = null;
-
-        contentItems[i] = await contentItems[i].related.update(contentItems[i]);
+        const updateParams = { ...(ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {}) };
+        contentItems[i] = await contentItems[i].related.update(contentItems[i], updateParams);
 
         args += ` ${deliveryKey}`;
       }
@@ -213,7 +220,7 @@ export const processItems = async ({
 };
 
 export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId } = argv;
+  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, ignoreSchemaValidation } = argv;
   const client = dynamicContentClientFactory(argv);
 
   const facet = withOldFilters(argv.facet, argv);
@@ -254,7 +261,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     logFile,
     allContent,
     missingContent,
-    ignoreError
+    ignoreError,
+    ignoreSchemaValidation
   });
 };
 

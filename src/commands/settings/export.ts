@@ -67,7 +67,8 @@ export const processSettings = async (
     settings: {
       devices: settings.devices,
       applications: settings.applications,
-      localization: settings.localization
+      localization: settings.localization,
+      contentItems: settings.contentItems
     },
     workflowStates: workflowStates
   });
