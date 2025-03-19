@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.22.0](https://github.com/amplience/dc-cli/compare/v0.21.0...v0.22.0) (2025-03-19)
+
+
+### Features
+
+* support ignore schema validation for content item create and update ([#197](https://github.com/amplience/dc-cli/issues/197)) ([fbe49d0](https://github.com/amplience/dc-cli/commit/fbe49d01328b9c83be5ab73a027397b09696b5b4))
+
 ## [0.21.0](https://github.com/amplience/dc-cli/compare/v0.20.0...v0.21.0) (2025-03-04)
 
 
