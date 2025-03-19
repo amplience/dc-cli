@@ -14,6 +14,7 @@ export const uniqueFilenamePath = (dir: string, file = '', extension: string, ex
   }
 
   file = sanitize(file, { replacement: '_' });
+  if (file.trim().length == 0) file = 'item';
 
   let counter = 0;
   let uniqueFilename = '';

@@ -180,6 +180,12 @@ describe('content-item copy command', () => {
         type: 'string',
         hidden: true
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during copy'
+      });
     });
   });
 
@@ -235,35 +241,26 @@ describe('content-item copy command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-
         srcRepo: 'repo1-id',
-
         dstRepo: 'repo2-id',
-
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
-
         facet: 'name:/./,schema:/./',
-
         mapFile: 'map.json',
         force: false,
         validate: false,
         skipIncomplete: false,
-
         lastPublish: true,
         publish: true,
         batchPublish: true,
         republish: true,
-
         excludeKeys: true,
         media: true
       };
       await handler(argv);
 
       expect(exportCalls.length).toEqual(1);
-      expect(importCalls.length).toEqual(1);
-
       expect(exportCalls[0].clientId).toEqual(config.clientId);
       expect(exportCalls[0].clientSecret).toEqual(config.clientSecret);
       expect(exportCalls[0].hubId).toEqual(config.hubId);
@@ -271,22 +268,81 @@ describe('content-item copy command', () => {
       expect(exportCalls[0].repoId).toEqual(argv.srcRepo);
       expect(exportCalls[0].publish).toEqual(argv.lastPublish);
 
+      expect(importCalls.length).toEqual(1);
       expect(importCalls[0].clientId).toEqual(argv.dstClientId);
       expect(importCalls[0].clientSecret).toEqual(argv.dstSecret);
       expect(importCalls[0].hubId).toEqual(argv.dstHubId);
       expect(importCalls[0].baseRepo).toEqual(argv.dstRepo);
-
       expect(importCalls[0].mapFile).toEqual(argv.mapFile);
       expect(importCalls[0].force).toEqual(argv.force);
       expect(importCalls[0].validate).toEqual(argv.validate);
       expect(importCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
-
       expect(importCalls[0].publish).toEqual(argv.publish);
       expect(importCalls[0].batchPublish).toEqual(argv.batchPublish);
       expect(importCalls[0].republish).toEqual(argv.republish);
-
       expect(importCalls[0].excludeKeys).toEqual(argv.excludeKeys);
       expect(importCalls[0].media).toEqual(argv.media);
+      expect(importCalls[0].ignoreSchemaValidation).toBeUndefined();
+    });
+
+    it('should call import with parameters to ignore content item schema validation', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
+
+      // TODO: mock handlers for export and import
+      const argv = {
+        ...yargArgs,
+        ...config,
+        srcRepo: 'repo1-id',
+        dstRepo: 'repo2-id',
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+        facet: 'name:/./,schema:/./',
+        mapFile: 'map.json',
+        force: false,
+        validate: false,
+        skipIncomplete: false,
+        lastPublish: true,
+        publish: true,
+        batchPublish: true,
+        republish: true,
+        excludeKeys: true,
+        media: true,
+        ignoreSchemaValidation: true
+      };
+      await handler(argv);
+
+      expect(exportCalls.length).toEqual(1);
+      expect(importCalls.length).toEqual(1);
+      expect(importCalls[0].ignoreSchemaValidation).toBe(true);
+    });
+
+    it('should forward to import-revert with parameters to ignore content item schema validation when revertLog is present.', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const revertCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (reverter as any).calls;
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dstHubId: 'hub2-id',
+        dstClientId: 'acc2-id',
+        dstSecret: 'acc2-secret',
+        revertLog: Promise.resolve(new FileLog()),
+        ignoreSchemaValidation: true
+      };
+      await handler(argv);
+
+      expect(exportCalls.length).toEqual(0);
+      expect(importCalls.length).toEqual(0);
+      expect(revertCalls.length).toEqual(1);
+      expect(revertCalls[0].ignoreSchemaValidation).toBe(true);
     });
 
     it('should forward to import-revert when revertLog is present.', async () => {

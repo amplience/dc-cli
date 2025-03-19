@@ -135,6 +135,12 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Ignore content item schema validation during import'
     });
 };
 
@@ -237,7 +243,8 @@ const createOrUpdateContent = async (
   client: DynamicContent,
   repo: ContentRepository,
   existing: string | ContentItem | null,
-  item: ContentItem
+  item: ContentItem,
+  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<ContentImportResult> => {
   let oldItem: ContentItem | null = null;
   if (typeof existing === 'string') {
@@ -255,8 +262,12 @@ const createOrUpdateContent = async (
   let locale = item.locale;
   item.locale = undefined;
 
+  const upsertParams = {
+    ...(argv.ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {})
+  };
+
   if (oldItem == null) {
-    result = { newItem: await repo.related.contentItems.create(item), oldVersion: 0 };
+    result = { newItem: await repo.related.contentItems.create(item, upsertParams), oldVersion: 0 };
   } else {
     const oldVersion = oldItem.version || 0;
     item.version = oldItem.version;
@@ -264,7 +275,7 @@ const createOrUpdateContent = async (
       // If an item is archived, it must be unarchived before updating it.
       oldItem = await oldItem.related.unarchive();
     }
-    result = { newItem: await oldItem.related.update(item), oldVersion };
+    result = { newItem: await oldItem.related.update(item, upsertParams), oldVersion };
   }
 
   if (locale != null && result.newItem.locale != locale) {
@@ -630,8 +641,8 @@ const prepareContentForImport = async (
       tree.removeContent(invalidContentItems);
     } else {
       const validator = new AmplienceSchemaValidator(defaultSchemaLookup(types, schemas));
-
       const mustSkip: ItemContentDependancies[] = [];
+
       await Promise.all(
         invalidContentItems.map(async item => {
           tree.removeContentDependanciesFromBody(
@@ -639,13 +650,15 @@ const prepareContentForImport = async (
             item.dependancies.map(dependancy => dependancy.dependancy)
           );
 
-          try {
-            const errors = await validator.validate(item.owner.content.body);
-            if (errors.length > 0) {
-              mustSkip.push(item);
+          if (!argv.ignoreSchemaValidation) {
+            try {
+              const errors = await validator.validate(item.owner.content.body);
+              if (errors.length > 0) {
+                mustSkip.push(item);
+              }
+            } catch {
+              // Just ignore invalid schema for now.
             }
-          } catch {
-            // Just ignore invalid schema for now.
           }
         })
       );
@@ -751,7 +764,8 @@ const importTree = async (
           client,
           item.owner.repo,
           mapping.getContentItem(originalId as string) || null,
-          content
+          content,
+          argv
         );
         newItem = result.newItem;
         oldVersion = result.oldVersion;
@@ -826,7 +840,8 @@ const importTree = async (
           client,
           item.owner.repo,
           newDependants[i] || mapping.getContentItem(originalId as string),
-          content
+          content,
+          argv
         );
         newItem = result.newItem;
         oldVersion = result.oldVersion;

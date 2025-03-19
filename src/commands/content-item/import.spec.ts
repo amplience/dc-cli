@@ -143,6 +143,12 @@ describe('content-item import command', () => {
         describe: 'Path to a log file to write to.',
         coerce: createLog
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during import'
+      });
     });
   });
 
@@ -1297,6 +1303,36 @@ describe('content-item import command', () => {
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/depNull/`);
     });
 
+    it('should import invalid content items when ignoreSchemaValidation is set ', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const templates: ItemTemplate[] = [
+        { label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type', body: dependsOn(['id2']) }
+      ];
+
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/invalid/`, templates, false);
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('targetRepo');
+      mockContent.registerContentType('http://type', 'type', 'targetRepo', dependantType(1));
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/invalid/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/invalid.json`,
+        baseRepo: 'targetRepo',
+        ignoreSchemaValidation: true
+      };
+      await handler(argv);
+
+      expect(mockContent.metrics.itemsCreated).toEqual(1);
+      expect(mockContent.metrics.itemsUpdated).toEqual(1);
+
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/invalid/`);
+    });
+
     it('should abort when failing to create content', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses([]);
@@ -1383,6 +1419,68 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsUpdated).toEqual(0);
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/media1/`);
+    });
+
+    it('should create and update content items ignoring schema validation', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+      const oldTemplates: ItemTemplate[] = [
+        { id: 'old1', label: 'item1', repoId: 'repo', typeSchemaUri: 'http://type' }
+      ];
+
+      const newTemplates = oldTemplates.map(old => ({ ...old, id: 'new' + (old.id as string)[3] }));
+
+      const templates: ItemTemplate[] = [
+        { id: 'old2', label: 'item2', repoId: 'repo', typeSchemaUri: 'http://type', folderPath: 'folderTest' }
+      ];
+
+      oldTemplates.forEach(template => (template.label += 'updated'));
+
+      await createContent(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`, oldTemplates.concat(templates), false);
+
+      const existingMapping = {
+        contentItems: [['old1', 'new1']]
+      };
+      await ensureDirectoryExists(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`);
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/mapping.json`);
+      await promisify(writeFile)(
+        `temp_${process.env.JEST_WORKER_ID}/import/mapping.json`,
+        JSON.stringify(existingMapping)
+      );
+
+      const mockContent = new MockContent(dynamicContentClientFactory as jest.Mock);
+      mockContent.createMockRepository('repo');
+      mockContent.registerContentType('http://type', 'type', 'repo');
+      mockContent.importItemTemplates(newTemplates);
+
+      mockContent.metrics.reset();
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        dir: `temp_${process.env.JEST_WORKER_ID}/import/mapping/`,
+        mapFile: `temp_${process.env.JEST_WORKER_ID}/import/mapping.json`,
+        baseRepo: 'repo',
+        ignoreSchemaValidation: true
+      };
+      await handler(argv);
+
+      newTemplates.forEach(template => (template.label += 'updated'));
+
+      const matches = await mockContent.filterMatch(templates.concat(newTemplates), '', false);
+
+      expect(matches.length).toEqual(2);
+      expect(mockContent.metrics.itemsCreated).toEqual(1);
+      expect(
+        (mockContent.repos[0].repo.related.contentItems.create as jest.Mock).mock.calls[0][1].ignoreSchemaValidation
+      ).toBe(true);
+      expect(mockContent.metrics.itemsUpdated).toEqual(1);
+      expect((mockContent.items[0].related.update as jest.Mock).mock.calls[0][1].ignoreSchemaValidation).toBe(true);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((readline as any).responsesLeft()).toEqual(0);
+
+      await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/mapping/`);
     });
   });
 });

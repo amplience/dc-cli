@@ -151,6 +151,12 @@ export const builder = (yargs: Argv): void => {
     .option('schemaId', {
       type: 'string',
       hidden: true
+    })
+
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Ignore content item schema validation during move'
     });
 };
 
@@ -210,15 +216,13 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
     await revert({
       ...yargArgs,
-
       hubId: dstHubId,
       clientId: dstClientId,
       clientSecret: dstSecret,
-
       dir: '', // unused
-
       logFile: argv.logFile,
-      revertLog: argv.revertLog
+      revertLog: argv.revertLog,
+      ignoreSchemaValidation: argv.ignoreSchemaValidation
     });
   } else {
     const log = argv.logFile.open();
