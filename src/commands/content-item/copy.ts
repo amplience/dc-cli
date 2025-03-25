@@ -158,6 +158,12 @@ export const builder = (yargs: Argv): void => {
     .option('schemaId', {
       type: 'string',
       hidden: true
+    })
+
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: false,
+      describe: 'Ignore content item schema validation during copy'
     });
 };
 
@@ -197,7 +203,6 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
     result = await revert({
       ...yargArgs,
-
       hubId: dstHubId,
       clientId: dstClientId,
       clientSecret: dstSecret,
@@ -205,8 +210,8 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       dir: tempFolder, // unused
       logFile: new FileLog(),
-
-      revertLog: argv.revertLog
+      revertLog: argv.revertLog,
+      ignoreSchemaValidation: argv.ignoreSchemaValidation
     });
   } else {
     await ensureDirectoryExists(tempFolder);
@@ -242,23 +247,20 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         patToken: patToken,
 
         dir: tempFolder,
-
         baseRepo: argv.dstRepo,
         baseFolder: argv.dstFolder,
         mapFile: argv.mapFile,
         force: argv.force,
         validate: argv.validate,
         skipIncomplete: argv.skipIncomplete,
-
         republish: argv.republish,
         publish: argv.publish,
         batchPublish: argv.batchPublish,
-
         excludeKeys: argv.excludeKeys,
-
         media: argv.media,
         logFile: log,
-        revertLog: Promise.resolve(undefined)
+        revertLog: Promise.resolve(undefined),
+        ignoreSchemaValidation: argv.ignoreSchemaValidation
       });
 
       if (importResult) {

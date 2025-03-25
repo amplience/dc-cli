@@ -118,6 +118,12 @@ describe('hub clean command', () => {
         describe: 'Start at a specific step. Steps after the one you specify will also run.',
         choices: steps.map(step => step.getId())
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during clean'
+      });
     });
   });
 
@@ -150,7 +156,8 @@ describe('hub clean command', () => {
         ...config,
 
         logFile: createLog(`temp_${process.env.JEST_WORKER_ID}/clean/steps/all.log`),
-        force: true
+        force: true,
+        ignoreSchemaValidation: true
       };
 
       await handler(argv);

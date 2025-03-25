@@ -63,112 +63,103 @@ export const builder = (yargs: Argv): void => {
         'Directory to export content to, then import from. This must be set to the previous directory for a revert.',
       type: 'string'
     })
-
-    .option('acceptSnapshotLimits', {
-      type: 'boolean',
-      boolean: true,
-      describe:
-        'Must be passed to use the event clone step. Only use this argument if you fully understand its limitations.'
-    })
-
-    .option('dstHubId', {
-      type: 'string',
-      describe: 'Destination hub ID. If not specified, it will be the same as the source.'
-    })
-
-    .option('dstClientId', {
-      type: 'string',
-      describe: "Destination account's client ID. If not specified, it will be the same as the source."
-    })
-
-    .option('dstSecret', {
-      type: 'string',
-      describe: "Destination account's secret. Must be used alongside dstClientId."
-    })
-
-    .option('mapFile', {
-      type: 'string',
-      describe:
-        'Mapping file to use when updating content that already exists. Updated with any new mappings that are generated. If not present, will be created.'
-    })
-
-    .alias('f', 'force')
-    .option('f', {
-      type: 'boolean',
-      boolean: true,
-      describe:
-        'Overwrite content, create and assign content types, and ignore content with missing types/references without asking.'
-    })
-
-    .alias('v', 'validate')
-    .option('v', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Only recreate folder structure - content is validated but not imported.'
-    })
-
-    .option('skipIncomplete', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Skip any content item that has one or more missing dependancy.'
-    })
-
-    .option('lastPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'When available, export the last published version of a content item rather than its newest version.'
-    })
-
-    .option('publish', {
-      type: 'boolean',
-      boolean: true,
-      describe:
-        'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
-    })
-
-    .option('batchPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Batch publish requests up to the rate limit. (35/min)'
-    })
-
-    .option('republish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
-    })
-
-    .option('excludeKeys', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Exclude delivery keys when importing content items.'
-    })
-
-    .option('media', {
-      type: 'boolean',
-      boolean: true,
-      describe:
-        "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
-    })
-
-    .option('revertLog', {
-      type: 'string',
-      describe:
-        'Revert a previous clone using a given revert log and given directory. Reverts steps in reverse order, starting at the specified one.',
-      coerce: openRevertLog
-    })
-
-    .option('step', {
-      type: 'string',
-      describe: 'Start at a specific step. Steps after the one you specify will also run.',
-      choices: steps.map(step => step.getId())
-    })
-
-    .option('logFile', {
-      type: 'string',
-      default: LOG_FILENAME,
-      describe: 'Path to a log file to write to.',
-      coerce: createLog
+    .options({
+      acceptSnapshotLimits: {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Must be passed to use the event clone step. Only use this argument if you fully understand its limitations.'
+      },
+      dstHubId: {
+        type: 'string',
+        describe: 'Destination hub ID. If not specified, it will be the same as the source.'
+      },
+      dstClientId: {
+        type: 'string',
+        describe: "Destination account's client ID. If not specified, it will be the same as the source."
+      },
+      dstSecret: {
+        type: 'string',
+        describe: "Destination account's secret. Must be used alongside dstClientId."
+      },
+      mapFile: {
+        type: 'string',
+        describe:
+          'Mapping file to use when updating content that already exists. Updated with any new mappings that are generated. If not present, will be created.'
+      },
+      force: {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Overwrite content, create and assign content types, and ignore content with missing types/references without asking.',
+        alias: 'f'
+      },
+      validate: {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Only recreate folder structure - content is validated but not imported.',
+        alias: 'v'
+      },
+      skipIncomplete: {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Skip any content item that has one or more missing dependancy.'
+      },
+      lastPublish: {
+        type: 'boolean',
+        boolean: true,
+        describe: 'When available, export the last published version of a content item rather than its newest version.'
+      },
+      publish: {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
+      },
+      batchPublish: {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Batch publish requests up to the rate limit. (35/min)'
+      },
+      republish: {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+      },
+      excludeKeys: {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Exclude delivery keys when importing content items.'
+      },
+      media: {
+        type: 'boolean',
+        boolean: true,
+        describe:
+          "Detect and rewrite media links to match assets in the target account's DAM. Your client must have DAM permissions configured."
+      },
+      revertLog: {
+        type: 'string',
+        describe:
+          'Revert a previous clone using a given revert log and given directory. Reverts steps in reverse order, starting at the specified one.',
+        coerce: openRevertLog
+      },
+      step: {
+        type: 'string',
+        describe: 'Start at a specific step. Steps after the one you specify will also run.',
+        choices: steps.map(step => step.getId())
+      },
+      logFile: {
+        type: 'string',
+        default: LOG_FILENAME,
+        describe: 'Path to a log file to write to.',
+        coerce: createLog
+      },
+      ignoreSchemaValidation: {
+        type: 'boolean',
+        boolean: false,
+        describe: 'Ignore content item schema validation during clone'
+      }
     });
 };
 

@@ -1,6 +1,6 @@
 {
   "name": "@amplience/dc-cli",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "Dynamic Content CLI Tool",
   "main": "./dist/index.js",
   "man": "./dist/dc-cli.1",
@@ -106,7 +106,7 @@
     "axios": "^0.21.1",
     "axios-retry": "^3.9.1",
     "chalk": "^2.4.2",
-    "dc-management-sdk-js": "^2.0.0",
+    "dc-management-sdk-js": "^2.1.0",
     "enquirer": "^2.3.6",
     "fs-extra": "^10.1.0",
     "lodash": "^4.17.21",

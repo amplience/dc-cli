@@ -165,7 +165,8 @@ export class ContentDependancyTree {
         typeof body.id === 'string'
       ) {
         result.push({ dependancy: body as ContentDependancy, owner: item, parent, index });
-        return;
+        // Return removed as customers have content links within content links so we must continue
+        // return;
       }
 
       allPropertyNames.forEach(propName => {
