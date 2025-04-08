@@ -40,8 +40,13 @@ Or you can download the executable for your operating system on the [releases pa
 
 ## Configuration
 
-**dc-cli** requires a valid set of Amplience client credentials (`--clientId` & `--clientSecret`) and hub ID (`--hubId`) to operate.
-These parameters must be set using the command `dc-cli configure --clientId <YOUR_CLIENT_ID> --clientSecret <YOUR_CLIENT_SECRET> --hubId <YOUR_HUB_ID>` before using the CLI.
+**dc-cli** requires a valid set of Amplience client credentials and hub ID (`--hubId`) to operate. You can authenticate using either a client ID and secret (`--clientId` & `--clientSecret`) or a personal access token (`--patToken`).
+
+These parameters must be set using one of the following commands before using the CLI:
+
+`dc-cli configure --clientId <YOUR_CLIENT_ID> --clientSecret <YOUR_CLIENT_SECRET> --hubId <YOUR_HUB_ID>`
+
+`dc-cli configure --patToken <YOUR_PERSONAL_ACCESS_TOKEN> --hubId <YOUR_HUB_ID>`
 
 Some commands (`content-item copy`, `content-item move`, & `hub-clone`) enable the export and import of content with a single command. These take additional options for the client credentials (`--dstClientId` & `--dstSecret`) and hub ID (`--dstHubId`) of a distinct Dynamic Content hub. If no destination options are provided, the destination for these commands will be the same as the source.
 
@@ -51,24 +56,28 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 
 ### Options
 
-| Option Name    | Type                                                       | Description                                                  |
-| -------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
-| --version      | [boolean]                                                  | Show version number                                          |
-| --clientId     | [string]<br />[required]                                   | Client ID for the source hub                                 |
-| --clientSecret | [string]<br />[required]                                   | Client secret for the source hub                             |
-| --hubId        | [string]<br />[required]                                   | Hub ID for the source hub                                    |
-| --config       | [string]<br />[default: "~/.amplience/dc-cli-config.json"] | Path to JSON config file                                     |
-| --help         | [boolean]                                                  | Show help                                                    |
-| --logFile      | [string]<br />[default: (generated-value)]                 | Path to a log file to write to.                              |
-| --dstHubId     | [string]                                                   | Destination hub ID. If not specified, it will be the same as the source. |
+| Option Name    | Type                                                       | Description                                                                           |
+| -------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| --version      | [boolean]                                                  | Show version number                                                                   |
+| --clientId     | [string]<br />[required]                                   | Client ID for the source hub                                                          |
+| --clientSecret | [string]<br />[required]                                   | Client secret for the source hub                                                      |
+| --hubId        | [string]<br />[required]                                   | Hub ID for the source hub                                                             |
+| --config       | [string]<br />[default: "~/.amplience/dc-cli-config.json"] | Path to JSON config file                                                              |
+| --help         | [boolean]                                                  | Show help                                                                             |
+| --logFile      | [string]<br />[default: (generated-value)]                 | Path to a log file to write to.                                                       |
+| --dstHubId     | [string]                                                   | Destination hub ID. If not specified, it will be the same as the source.              |
 | --dstClientId  | [string]                                                   | Destination account's client ID. If not specified, it will be the same as the source. |
-| --dstSecret    | [string]                                                   | Destination account's secret. Must be used alongside dstClientId. |
+| --dstSecret    | [string]                                                   | Destination account's secret. Must be used alongside dstClientId.                     |
 
 #### Examples
 
-##### Create/Update configuration file for single hub
+##### Create/Update configuration file for single hub using client ID and secret
 
 `dc-cli configure --clientId foo --clientSecret bar --hubId baz`
+
+##### Create/Update configuration file for single hub using personal access token
+
+`dc-cli configure --patToken foo --hubId baz`
 
 ##### Create/Update configuration file for two-hub usage (copy/move/clone)
 
@@ -132,7 +141,7 @@ This category includes interactions with Algolia search indexes for Dynamic Cont
 
 This category includes interactions with Dynamic Content's repositories.
 
-These commands can be used to get details for a specific repository, list multiple repositories, or assign or unassign content types from a repository. 
+These commands can be used to get details for a specific repository, list multiple repositories, or assign or unassign content types from a repository.
 
 [View commands for **content-repository**](docs/CONTENT-REPOSITORY.md)
 
@@ -152,7 +161,7 @@ This category includes interactions with the supporting properties of a Dynamic 
 
 This category includes interactions with Dynamic Content's hubs in their entirety.
 
-These commands can be used to copy a hub's settings and content in their entirety to another hub, or to archive all parts of a hub which can be archived. 
+These commands can be used to copy a hub's settings and content in their entirety to another hub, or to archive all parts of a hub which can be archived.
 
 Additionally, these commands may be used to store and retrieve hub configurations.
 
@@ -168,22 +177,22 @@ We have included some NPM scripts to help create various installations of the CL
 
 Outlined below are the detailed permissions required to run each command of the CLI. To request an API key to run the CLI, please contact Amplience support.
 
-| Command                                           | Required ACL(s)                                             | Required Functional Permission(s)                            |
-| ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------ |
-| `configure`                                       | Hub&nbsp;-&nbsp;READ                                        |                                                              |
-| `content-repositories get <id>`                   | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:REPOSITORY:READ                           |
-| `content-repositories list`                       | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:REPOSITORY:READ                           |
-| `content-repositories assign-content-type <id>`   | ContentRepository&nbsp;-&nbsp;EDIT<br/>Hub&nbsp;-&nbsp;READ | CONTENT:FUNCTIONAL:REPOSITORY:EDIT                           |
-| `content-repositories unassign-content-type <id>` | ContentRepository&nbsp;-&nbsp;EDIT<br/>Hub&nbsp;-&nbsp;READ | CONTENT:FUNCTIONAL:REPOSITORY:EDIT                           |
-| `content-type get <id>`                           | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                         |
-| `content-type list`                               | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                         |
-| `content-type register`                           | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                       |
-| `content-type sync <id>`                          | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                         |
-| `content-type update <id>`                        | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                         |
+| Command                                           | Required ACL(s)                                             | Required Functional Permission(s)                                                                                        |
+| ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `configure`                                       | Hub&nbsp;-&nbsp;READ                                        |                                                                                                                          |
+| `content-repositories get <id>`                   | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:REPOSITORY:READ                                                                                       |
+| `content-repositories list`                       | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:REPOSITORY:READ                                                                                       |
+| `content-repositories assign-content-type <id>`   | ContentRepository&nbsp;-&nbsp;EDIT<br/>Hub&nbsp;-&nbsp;READ | CONTENT:FUNCTIONAL:REPOSITORY:EDIT                                                                                       |
+| `content-repositories unassign-content-type <id>` | ContentRepository&nbsp;-&nbsp;EDIT<br/>Hub&nbsp;-&nbsp;READ | CONTENT:FUNCTIONAL:REPOSITORY:EDIT                                                                                       |
+| `content-type get <id>`                           | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
+| `content-type list`                               | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
+| `content-type register`                           | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                                   |
+| `content-type sync <id>`                          | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                     |
+| `content-type update <id>`                        | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                     |
 | `content-type import <dir>`                       | ContentRepository&nbsp;-&nbsp;EDIT<br/>Hub&nbsp;-&nbsp;READ | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |
-| `content-type export <dir>`                       | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                         |
-| `content-type-schema create`                      | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                       |
-| `content-type-schema get <id>`                    | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                         |
-| `content-type-schema list`                        | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                         |
-| `content-type-schema update <id>`                 | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                         |
+| `content-type export <dir>`                       | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
+| `content-type-schema create`                      | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                                   |
+| `content-type-schema get <id>`                    | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
+| `content-type-schema list`                        | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
+| `content-type-schema update <id>`                 | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                     |
 | `content-type-schema import <dir>`                | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |
