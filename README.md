@@ -61,6 +61,7 @@ By default the configuration is saved to a file in the directory `<HOME_DIR>/.am
 | --version      | [boolean]                                                  | Show version number                                                                   |
 | --clientId     | [string]<br />[required]                                   | Client ID for the source hub                                                          |
 | --clientSecret | [string]<br />[required]                                   | Client secret for the source hub                                                      |
+| --patToken     | [string]<br />[required]                                   | Personal access token for the source hub                                              |
 | --hubId        | [string]<br />[required]                                   | Hub ID for the source hub                                                             |
 | --config       | [string]<br />[default: "~/.amplience/dc-cli-config.json"] | Path to JSON config file                                                              |
 | --help         | [boolean]                                                  | Show help                                                                             |
