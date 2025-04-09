@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.23.0](https://github.com/amplience/dc-cli/compare/v0.22.0...v0.23.0) (2025-04-09)
+
+
+### Features
+
+* add support for PAT ([c003017](https://github.com/amplience/dc-cli/commit/c003017a5540abc349924e5532227976b0c35dbb))
+
+
+### Bug Fixes
+
+* bad merge on test file ([650a677](https://github.com/amplience/dc-cli/commit/650a6775ff531cbb4ba225b679231147859c92b2))
+
 ## [0.22.0](https://github.com/amplience/dc-cli/compare/v0.21.0...v0.22.0) (2025-03-19)
 
 
