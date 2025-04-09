@@ -19,7 +19,8 @@ describe('configure command', function () {
   const configFixture = {
     clientId: 'client-id',
     clientSecret: 'client-id',
-    hubId: 'hub-id'
+    hubId: 'hub-id',
+    patToken: 'amp-pat'
   };
 
   it('should write a config file and create the .amplience dir', () => {

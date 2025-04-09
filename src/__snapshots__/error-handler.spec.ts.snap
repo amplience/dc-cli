@@ -16,7 +16,7 @@ exports[`error handler tests HttpErrors should display sdk http 400 error 1`] = 
 
 exports[`error handler tests HttpErrors should display sdk http 401 error 1`] = `
 "
-2025-02-24T01:01:01.001Z Error: Unauthorized - Please ensure your client ID & secret are correct."
+2025-02-24T01:01:01.001Z Error: Unauthorized - Please ensure your client ID & secret or PAT token are correct."
 `;
 
 exports[`error handler tests HttpErrors should display sdk http 403 error (with request) 1`] = `

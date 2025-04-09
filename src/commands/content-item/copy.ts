@@ -185,11 +185,12 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   let result = false;
 
-  const { hubId, clientId, clientSecret } = argv;
+  const { hubId, clientId, clientSecret, patToken } = argv;
 
   const dstHubId = argv.dstHubId || hubId;
   const dstClientId = argv.dstClientId || clientId;
   const dstSecret = argv.dstSecret || clientSecret;
+  const dstPatToken = argv.dstPatToken || patToken;
 
   const revertLog = await argv.revertLog;
 
@@ -205,6 +206,8 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
       hubId: dstHubId,
       clientId: dstClientId,
       clientSecret: dstSecret,
+      patToken: dstPatToken,
+
       dir: tempFolder, // unused
       logFile: new FileLog(),
       revertLog: argv.revertLog,
@@ -221,6 +224,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         hubId: hubId,
         clientId: clientId,
         clientSecret: clientSecret,
+        patToken: patToken,
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,
@@ -240,6 +244,8 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
         hubId: dstHubId,
         clientId: dstClientId,
         clientSecret: dstSecret,
+        patToken: patToken,
+
         dir: tempFolder,
         baseRepo: argv.dstRepo,
         baseFolder: argv.dstFolder,

@@ -1,4 +1,9 @@
-import { ContentItem, AxiosHttpClient, Oauth2AuthHeaderProvider } from 'dc-management-sdk-js';
+import {
+  ContentItem,
+  Oauth2AuthHeaderProvider,
+  AxiosHttpClient,
+  PatTokenAuthHeaderProvider
+} from 'dc-management-sdk-js';
 import fetch, { Response } from 'node-fetch';
 import { HalLink } from 'dc-management-sdk-js/build/main/lib/hal/models/HalLink';
 import { ConfigurationParameters } from '../../commands/configure';
@@ -33,7 +38,7 @@ export class PublishQueue {
 
   private inProgressJobs: JobRequest[] = [];
   private waitingList: { promise: Promise<void>; resolver: () => void }[] = [];
-  private auth: Oauth2AuthHeaderProvider;
+  private auth: Oauth2AuthHeaderProvider | PatTokenAuthHeaderProvider;
   private awaitingAll: boolean;
   private delayUntil: number[] = [];
   private delayId = 0;
@@ -41,20 +46,19 @@ export class PublishQueue {
 
   constructor(credentials: ConfigurationParameters) {
     const http = new AxiosHttpClient({});
-    this.auth = new Oauth2AuthHeaderProvider(
-      { client_id: credentials.clientId, client_secret: credentials.clientSecret },
-      { authUrl: process.env.AUTH_URL },
-      http
-    );
-  }
-
-  private async getToken(): Promise<string> {
-    const token = await this.auth.getToken();
-    return token.access_token;
+    if (credentials.clientId && credentials.clientSecret) {
+      this.auth = new Oauth2AuthHeaderProvider(
+        { client_id: credentials.clientId, client_secret: credentials.clientSecret },
+        { authUrl: process.env.AUTH_URL },
+        http
+      );
+    } else if (credentials.patToken) {
+      this.auth = new PatTokenAuthHeaderProvider(credentials.patToken);
+    }
   }
 
   private async fetch(href: string, method: string): Promise<Response> {
-    return await fetch(href, { method: method, headers: { Authorization: 'bearer ' + (await this.getToken()) } });
+    return await fetch(href, { method: method, headers: { Authorization: await this.auth.getAuthHeader() } });
   }
 
   async publish(item: ContentItem): Promise<void> {

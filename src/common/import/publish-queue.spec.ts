@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { Oauth2AuthHeaderProvider, ContentItem, AccessToken } from 'dc-management-sdk-js';
+import { Oauth2AuthHeaderProvider, ContentItem } from 'dc-management-sdk-js';
 import { PublishingJob, PublishQueue } from './publish-queue';
 import * as publishQueueModule from './publish-queue';
 
@@ -46,16 +46,15 @@ describe('publish-queue', () => {
     // should wait for all publishes to complete when calling waitForAll
 
     function sharedMock(templates: PublishTemplate[]): void {
-      (Oauth2AuthHeaderProvider.prototype.getToken as jest.Mock).mockImplementation(() => {
+      (Oauth2AuthHeaderProvider.prototype.getAuthHeader as jest.Mock).mockImplementation(() => {
         authRequests++;
-        const result: AccessToken = { access_token: 'token-example', expires_in: 99999, refresh_token: 'refresh' };
+        const result = 'bearer token-example';
         return Promise.resolve(result);
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (fetch as any as jest.Mock).mockImplementation((href, options) => {
         const template: PublishTemplate = templates.find(template => template.href == href) || defaultTemplate;
-
         if (options.headers['Authorization'] != 'bearer token-example') {
           throw new Error('Not authorized!');
         }

@@ -12,5 +12,4 @@ const chClientFactory = (config: ConfigurationParameters): ContentHub =>
       authUrl: process.env.AUTH_URL
     }
   );
-
 export default chClientFactory;
