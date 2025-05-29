@@ -1,14 +1,15 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
-import axiosRetry, { isNetworkOrIdempotentRequestError } from 'axios-retry';
+import axiosRetry, { IAxiosRetryConfig, isNetworkOrIdempotentRequestError } from 'axios-retry';
 import { HttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js';
 
 const isRetriableDCResponseError = (error: AxiosError) => {
   return error?.response?.status === 401 || error?.response?.status === 403 || error?.response?.status === 429;
 };
 
-const DEFAULT_RETRY_CONFIG = {
+const DELAY_FACTOR = 1400;
+const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
+  retryDelay: (retryCount, error) => axiosRetry.exponentialDelay(retryCount, error, DELAY_FACTOR),
   retryCondition: (error: AxiosError) => isNetworkOrIdempotentRequestError(error) || isRetriableDCResponseError(error)
 };
 

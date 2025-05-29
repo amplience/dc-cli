@@ -2,6 +2,8 @@ import MockAdapter from 'axios-mock-adapter';
 import { DCHttpClient } from './dc-http-client';
 import { HttpMethod } from 'dc-management-sdk-js';
 
+jest.setTimeout(60000);
+
 describe('DCHttpClient tests', () => {
   test('client should request content', async () => {
     const client = new DCHttpClient({
@@ -116,6 +118,29 @@ describe('DCHttpClient tests', () => {
 
     expect(response.status).toBe(200);
     expect(mock.history.get.length).toBe(2);
+  });
+
+  test('client should retry 3 times and succeed on the last', async () => {
+    const client = new DCHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').replyOnce(401);
+    mock.onGet('/assets').replyOnce(401);
+    mock.onGet('/assets').replyOnce(401);
+    mock.onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(4);
   });
 
   test('client should retry then fail after 3 retries', async () => {
