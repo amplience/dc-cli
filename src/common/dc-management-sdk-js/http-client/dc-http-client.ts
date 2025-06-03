@@ -23,9 +23,6 @@ const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retryDelay: (retryCount, error) => axiosRetry.exponentialDelay(retryCount, error, DELAY_FACTOR),
   retryCondition: (error: AxiosError) => {
     return isSafeDCRequestError(error) || isNetworkOrIdempotentRequestError(error) || isRetriableDCResponseError(error);
-  },
-  onRetry: (retryCount: number, error: AxiosError) => {
-    console.warn('Retrying: ', retryCount, error?.response?.status);
   }
 };
 
