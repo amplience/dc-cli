@@ -13,7 +13,7 @@ const dynamicContentClientFactory = (config: ConfigurationParameters): DynamicCo
       apiUrl: process.env.API_URL,
       authUrl: process.env.AUTH_URL
     },
-    new DCHttpClient({})
+    new DCHttpClient({ timeout: 25000 })
   );
 
 export default dynamicContentClientFactory;
