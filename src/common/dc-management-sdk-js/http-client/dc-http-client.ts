@@ -22,7 +22,12 @@ const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retries: 3,
   retryDelay: (retryCount, error) => axiosRetry.exponentialDelay(retryCount, error, DELAY_FACTOR),
   retryCondition: (error: AxiosError) => {
-    return isSafeDCRequestError(error) || isNetworkOrIdempotentRequestError(error) || isRetriableDCResponseError(error);
+    return (
+      error?.code === 'ECONNABORTED' ||
+      isSafeDCRequestError(error) ||
+      isNetworkOrIdempotentRequestError(error) ||
+      isRetriableDCResponseError(error)
+    );
   }
 };
 
@@ -50,7 +55,6 @@ export class DCHttpClient implements HttpClient {
         status: response.status
       };
     } catch (error) {
-      console.warn('Error occured in Request', JSON.stringify(error.toJSON()));
       if (error && error.response) {
         return {
           data: error.response.data,

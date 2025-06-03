@@ -160,4 +160,25 @@ describe('DCHttpClient tests', () => {
     expect(response.status).toBe(429);
     expect(mock.history.get.length).toBe(4);
   });
+
+  test('client should retry after connection timeout', async () => {
+    const client = new DCHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').timeoutOnce();
+    mock.onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(2);
+  });
 });
