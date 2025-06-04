@@ -1,3 +1,4 @@
+import { DCHttpClient } from '../common/dc-management-sdk-js/http-client/dc-http-client';
 import dynamicContentClientFactory from './dynamic-content-client-factory';
 import { DynamicContent } from 'dc-management-sdk-js';
 
@@ -18,7 +19,11 @@ describe('dynamic-content-client-factory', function () {
       hubId: 'hub-id'
     });
     expect(dynamicContent).toBeInstanceOf(DynamicContent);
-    expect(DynamicContent).toHaveBeenCalledWith({ client_id: 'client-id', client_secret: 'client-secret' }, {});
+    expect(DynamicContent).toHaveBeenCalledWith(
+      { client_id: 'client-id', client_secret: 'client-secret' },
+      {},
+      expect.any(DCHttpClient)
+    );
   });
 
   it('should create a new DynamicContent client using the supplied env vars', () => {
@@ -36,7 +41,8 @@ describe('dynamic-content-client-factory', function () {
       {
         apiUrl: 'API_URL',
         authUrl: 'AUTH_URL'
-      }
+      },
+      expect.any(DCHttpClient)
     );
   });
 });
