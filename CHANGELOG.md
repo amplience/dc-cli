@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.24.0](https://github.com/amplience/dc-cli/compare/v0.23.0...v0.24.0) (2025-06-04)
+
+
+### Features
+
+* use a custom dc http client to expand retry codes ([#200](https://github.com/amplience/dc-cli/issues/200)) ([0264247](https://github.com/amplience/dc-cli/commit/0264247baef5fefaaff61709d92d126427e9c8c3))
+
 ## [0.23.0](https://github.com/amplience/dc-cli/compare/v0.22.0...v0.23.0) (2025-04-09)
 
 
