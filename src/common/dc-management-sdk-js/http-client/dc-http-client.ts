@@ -20,6 +20,7 @@ const SAFE_HTTP_METHODS = ['get', 'head', 'options', 'patch', 'post', 'put', 'de
 const DELAY_FACTOR = 1400;
 const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retries: 3,
+  shouldResetTimeout: true,
   retryDelay: (retryCount, error) => axiosRetry.exponentialDelay(retryCount, error, DELAY_FACTOR),
   retryCondition: (error: AxiosError) => {
     return (
