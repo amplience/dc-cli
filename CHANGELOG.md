@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.24.1](https://github.com/amplience/dc-cli/compare/v0.24.0...v0.24.1) (2025-06-11)
+
+
+### Bug Fixes
+
+* reset axios timeout on retry ([#202](https://github.com/amplience/dc-cli/issues/202)) ([2354dac](https://github.com/amplience/dc-cli/commit/2354dac08668defc6a1936a287ba7e60d86466af))
+
 ## [0.24.0](https://github.com/amplience/dc-cli/compare/v0.23.0...v0.24.0) (2025-06-04)
 
 
