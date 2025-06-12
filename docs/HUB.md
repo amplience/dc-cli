@@ -161,11 +161,18 @@ dc-cli hub clean
 
 ### add
 
-Saves a hub configuration for later use. A hub configuration consists of:
+Saves a hub configuration for later use. A hub configuration consists of either:
 
 - client id
 - client secret
 - hub id
+
+or:
+
+- PAT token
+- hub id
+
+Once you enter the `dc-cli hub add` command you will be prompted with a yes/no choice question as to whether you would like to use a PAT Token or not.
 
 These can subsequently be used with `dc-cli hub use`.
 
