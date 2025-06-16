@@ -17,7 +17,7 @@ const isSafeDCRequestError = (error: AxiosError) => {
 
 const SAFE_HTTP_METHODS = ['get', 'head', 'options', 'patch', 'post', 'put', 'del'];
 
-const DELAY_FACTOR = 1400;
+const DELAY_FACTOR = Number(process.env.DC_CLI_DELAY_FACTOR) || 1400;
 const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retries: 3,
   shouldResetTimeout: true,
@@ -56,10 +56,16 @@ export class DCHttpClient implements HttpClient {
         status: response.status
       };
     } catch (error) {
-      if (error && error.response) {
+      if (error?.response) {
         return {
           data: error.response.data,
           status: error.response.status
+        };
+      }
+      if (error?.code) {
+        return {
+          data: { message: error.message },
+          status: error.code
         };
       }
       return error;
