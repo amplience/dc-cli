@@ -11,6 +11,7 @@ import {
 import paginator from '../dc-management-sdk-js/paginator';
 import { applyFacet, Facet, parseDateRange, parseFacet, tryGetArray } from './facet';
 import { isRegexString } from './regex';
+import { paginateWithProgress } from '../dc-management-sdk-js/paginate-with-progress';
 
 // Threshold used to facet enriched content then request individually instead of fetching+filtering all content.
 // Currently, facet should return 20 times less content items than a request for all of them to be used.
@@ -224,17 +225,25 @@ export const fetchContent = async (
     if (folderId != null) {
       const folder = await client.folders.get(folderId);
 
-      return await paginator(folder.related.contentItems.list, options);
+      return await paginateWithProgress(folder.related.contentItems.list, options, {
+        title: `Fetching content items by folder: ${folderId}`
+      });
     } else if (repoId != null) {
       const repo = await client.contentRepositories.get(repoId);
 
-      return await paginator(repo.related.contentItems.list, options);
+      return await paginateWithProgress(repo.related.contentItems.list, options, {
+        title: `Fetching content items by repository id: ${repoId}`
+      });
     } else {
       const repos = await paginator(hub.related.contentRepositories.list);
 
       const result: ContentItem[] = [];
       for (const repo of repos) {
-        result.push(...(await paginator(repo.related.contentItems.list, options)));
+        result.push(
+          ...(await paginateWithProgress(repo.related.contentItems.list, options, {
+            title: `Fetching content items for repository: ${repo.id}`
+          }))
+        );
       }
 
       return result;

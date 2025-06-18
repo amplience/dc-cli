@@ -13,6 +13,7 @@ import { ImportResult, loadJsonFromDirectory, UpdateStatus } from '../../service
 import { resolveSchemaBody } from '../../services/resolve-schema-body';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'import <dir>';
 
@@ -108,6 +109,8 @@ export const processSchemas = async (
   hub: Hub,
   log: FileLog
 ): Promise<void> => {
+  const progress = progressBar(schemasToProcess.length, 0, { title: 'Importing content type schemas' });
+  progress.start(schemasToProcess.length, 0);
   const data: string[][] = [];
 
   data.push([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
@@ -122,9 +125,11 @@ export const processSchemas = async (
       contentTypeSchema = await doCreate(hub, schema, log);
       status = 'CREATED';
     }
+    progress.increment();
     data.push([contentTypeSchema.id || '', contentTypeSchema.schemaId || '', status]);
   }
 
+  progress.stop();
   log.appendLine(table(data, streamTableOptions));
 };
 
