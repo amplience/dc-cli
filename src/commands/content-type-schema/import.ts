@@ -111,9 +111,9 @@ export const processSchemas = async (
 ): Promise<void> => {
   const progress = progressBar(schemasToProcess.length, 0, { title: 'Importing content type schemas' });
   progress.start(schemasToProcess.length, 0);
-  const data: string[][] = [];
 
-  data.push([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  const data: string[][] = [[chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]];
+
   for (const schema of schemasToProcess) {
     let status: ImportResult;
     let contentTypeSchema: ContentTypeSchema;
