@@ -49,7 +49,7 @@ export class PublishQueue {
     if (credentials.clientId && credentials.clientSecret) {
       this.auth = new Oauth2AuthHeaderProvider(
         { client_id: credentials.clientId, client_secret: credentials.clientSecret },
-        { authUrl: process.env.AUTH_URL },
+        { authUrl: process.env.AUTH_URL || 'https://auth.amplience.net' },
         http
       );
     } else if (credentials.patToken) {

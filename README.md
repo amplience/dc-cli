@@ -17,6 +17,7 @@ Run `dc-cli --help` to get a list of available commands.
   - [content-type-schema](#content-type-schema)
   - [content-type](#content-type)
   - [content-item](#content-item)
+  - [publish](#publish)
   - [extension](#extension)
   - [search-index](#search-index)
   - [content-repository](#content-repository)
@@ -125,6 +126,14 @@ These commands can be used to export and import content from an individual hub, 
 Before importing, copying, or moving content you must ensure that a valid [content type](#content-type) exists in the destination hub for each content item.
 
 [View commands for **content-item**](docs/CONTENT-ITEM.md)
+
+### publish
+
+This category includes interactions with content items.
+
+These commands can be used to publish content from an individual hub.
+
+[View commands for **content-item publish**](docs/PUBLISH.md)
 
 ### extension
 
