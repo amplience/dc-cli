@@ -24,13 +24,6 @@ If no `id` is provided, all content items in all content repositories in the spe
 
 | Option           | Alias | Description                                                                                                                                        |
 | ---------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--version`      |       | Show version number.                                                                                                                               |
-| `--clientId`     |       | Your Amplience client ID. _(Optional)_                                                                                                             |
-| `--clientSecret` |       | Your Amplience client secret. _(Optional)_                                                                                                         |
-| `--hubId`        |       | The ID of the content hub. **(Required)**                                                                                                          |
-| `--patToken`     |       | Personal Access Token for authentication. _(Optional)_                                                                                             |
-| `--config`       |       | Path to a JSON config file. <br>Default: `~/.amplience/dc-cli-config.json`                                                                         |
-| `--help`         |       | Display help information.                                                                                                                          |
 | `--repoId`       |       | The ID of a content repository to restrict publishing scope. _(Optional)_                                                                          |
 | `--folderId`     |       | The ID of a folder to restrict publishing scope. _(Optional)_                                                                                      |
 | `--facet`        |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
@@ -46,23 +39,23 @@ If no `id` is provided, all content items in all content repositories in the spe
 ### Publish a specific content item by ID
 
 ```bash
-dc-cli content-item publish 1234abcd --hubId your-hub-id
+dc-cli content-item publish 1234abcd
 ```
 
 ### Publish all content in a specific repository
 
 ```bash
-dc-cli content-item publish --hubId your-hub-id --repoId your-repo-id
+dc-cli content-item publish --repoId your-repo-id
 ```
 
 ### Use facets to publish filtered content
 
 ```bash
-dc-cli content-item publish --hubId your-hub-id --facet "locale:en-GB,label:homepage"
+dc-cli content-item publish --facet "locale:en-GB,label:homepage"
 ```
 
 ### Batch publish all items silently
 
 ```bash
-dc-cli content-item publish --hubId your-hub-id --batchPublish --silent --force
+dc-cli content-item publish --batchPublish --silent --force
 ```
