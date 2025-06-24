@@ -893,7 +893,14 @@ const importTree = async (
     log.appendLine(`Waiting for all publishes to complete...`);
     await pubQueue.waitForAll();
 
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
+    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total `);
+
+    if (pubQueue.exceededMaxRetries) {
+      log.appendLine(
+        `Finished publishing, with ${pubQueue.exceededMaxRetries.length} publishes each exceeding ${pubQueue.maxAttempts} maximum retries.`
+      );
+    }
+
     pubQueue.failedJobs.forEach(job => {
       log.appendLine(` - ${job.item.label}`);
     });

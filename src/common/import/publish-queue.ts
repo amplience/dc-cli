@@ -35,6 +35,7 @@ export class PublishQueue {
   attemptDelay = 1000;
   attemptRateLimit = 60000 / 35; // 35 publishes a minute.
   failedJobs: JobRequest[] = [];
+  exceededMaxRetries: JobRequest[] = [];
 
   private inProgressJobs: JobRequest[] = [];
   private waitingList: { promise: Promise<void>; resolver: () => void }[] = [];
@@ -122,7 +123,7 @@ export class PublishQueue {
     }
 
     if (attempts == this.maxAttempts) {
-      this.failedJobs.push(oldestJob);
+      this.exceededMaxRetries.push(oldestJob);
     }
 
     // The wait completed. Notify the first in the queue.
