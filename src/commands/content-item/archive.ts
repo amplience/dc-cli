@@ -9,6 +9,7 @@ import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'archive [id]';
 
@@ -184,8 +185,9 @@ export const processItems = async ({
 
   const log = logFile.open();
 
-  let successCount = 0;
+  const progress = progressBar(contentItems.length, 0, { title: 'Archiving content items' });
 
+  let successCount = 0;
   for (let i = 0; i < contentItems.length; i++) {
     try {
       const deliveryKey = contentItems[i].body._meta.deliveryKey;
@@ -198,21 +200,25 @@ export const processItems = async ({
         args += ` ${deliveryKey}`;
       }
       await contentItems[i].related.archive();
-
+      progress.increment();
       log.addAction('ARCHIVE', `${args}`);
       successCount++;
     } catch (e) {
+      progress.increment();
       log.addComment(`ARCHIVE FAILED: ${contentItems[i].id}`);
       log.addComment(e.toString());
 
       if (ignoreError) {
         log.warn(`Failed to archive ${contentItems[i].label} (${contentItems[i].id}), continuing.`, e);
       } else {
+        progress.stop();
         log.error(`Failed to archive ${contentItems[i].label} (${contentItems[i].id}), aborting.`, e);
         break;
       }
     }
   }
+
+  progress.stop();
 
   await log.close(!silent);
 
