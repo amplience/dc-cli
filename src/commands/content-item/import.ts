@@ -741,7 +741,9 @@ const importTree = async (
     log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
   };
 
-  const progress = progressBar(tree.all.length - tree.circularLinks.length, 0, { title: 'Importing content items' });
+  const importProgress = progressBar(tree.all.length - tree.circularLinks.length, 0, {
+    title: 'Importing content items'
+  });
 
   let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
 
@@ -773,7 +775,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        progress.stop();
+        importProgress.stop();
         log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
@@ -792,10 +794,10 @@ const importTree = async (
 
       mapping.registerContentItem(originalId as string, newItem.id as string);
 
-      progress.increment();
+      importProgress.increment();
     }
-    progress.stop();
   }
+  importProgress.stop();
 
   // Filter publishables to remove items that will be published as part of another publish.
   // Cuts down on unnecessary requests.
@@ -829,7 +831,7 @@ const importTree = async (
   for (let pass = 0; pass < 2; pass++) {
     const mode = pass === 0 ? 'Creating' : 'Resolving';
     log.appendLine(`${mode} circular dependants.`);
-    const progress = progressBar(tree.circularLinks.length, 0, { title: 'Importing content items' });
+    const dependantsProgress = progressBar(tree.circularLinks.length, 0, { title: 'Importing content items' });
 
     for (let i = 0; i < tree.circularLinks.length; i++) {
       const item = tree.circularLinks[i];
@@ -855,7 +857,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
-        progress.stop();
+        dependantsProgress.stop();
         log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
@@ -878,9 +880,9 @@ const importTree = async (
           publishable.push({ item: newItem, node: item });
         }
       }
-      progress.increment();
+      dependantsProgress.increment();
     }
-    progress.stop();
+    dependantsProgress.stop();
   }
 
   if (argv.publish) {
