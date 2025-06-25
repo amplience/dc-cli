@@ -36,6 +36,7 @@ export class PublishQueue {
   attemptRateLimit = 60000 / 35; // 35 publishes a minute.
   failedJobs: JobRequest[] = [];
   exceededMaxRetries: JobRequest[] = [];
+  retryCount: number = 0;
 
   private inProgressJobs: JobRequest[] = [];
   private waitingList: { promise: Promise<void>; resolver: () => void }[] = [];
@@ -178,14 +179,28 @@ export class PublishQueue {
     await myPromise;
   }
 
-  async waitForAll(): Promise<void> {
+  async waitForAll(): Promise<JobRequest[]> {
     if (this.waitInProgress) {
       // Wait for the last item on the list to complete.
-      await this.waitingList[this.waitingList.length - 1].promise;
+      await this.waitingList[this.waitingList.length - 1]?.promise;
     }
 
     // Continue regardless of waiters.
     this.awaitingAll = true;
     await this.waitForOldestPublish();
+
+    return this.exceededMaxRetries;
+  }
+
+  retryJobs() {
+    if (this.exceededMaxRetries.length > 0) {
+      this.retryCount++;
+      for (const job of this.exceededMaxRetries) {
+        this.exceededMaxRetries.shift();
+        this.inProgressJobs.push(job);
+      }
+    }
+
+    return this.retryCount;
   }
 }
