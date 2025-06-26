@@ -741,6 +741,7 @@ const importTree = async (
   };
 
   let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
+  let keepTryMaxExceedents = false;
 
   for (let i = 0; i < tree.levels.length; i++) {
     const level = tree.levels[i];
@@ -891,9 +892,44 @@ const importTree = async (
     }
 
     log.appendLine(`Waiting for all publishes to complete...`);
-    await pubQueue.waitForAll();
+    let jobsExceededMaxRetries = await pubQueue.waitForAll();
 
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
+    if (jobsExceededMaxRetries?.length > 0) {
+      pubQueue.retryJobs();
+      jobsExceededMaxRetries = await pubQueue.waitForAll();
+    }
+
+    if (jobsExceededMaxRetries?.length > 0) {
+      do {
+        if (jobsExceededMaxRetries?.length <= 0) {
+          keepTryMaxExceedents = false;
+          break;
+        }
+
+        keepTryMaxExceedents = await asyncQuestion(
+          `${jobsExceededMaxRetries?.length} items are still publishing. Would you like the script to recheck? (y/n)\n`
+        );
+
+        if (keepTryMaxExceedents) {
+          pubQueue.retryJobs();
+          jobsExceededMaxRetries = await pubQueue.waitForAll();
+        } else {
+          log.appendLine(`Please verify in Dynamic Content the following publishing items:`);
+          for (const job of jobsExceededMaxRetries) {
+            log.appendLine(`${job.item.label} (${job.item.id})`);
+          }
+        }
+      } while (keepTryMaxExceedents);
+    }
+
+    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total `);
+
+    if (pubQueue.exceededMaxRetries) {
+      log.appendLine(
+        `Finished publishing, with ${pubQueue.exceededMaxRetries.length} publishes each exceeding ${pubQueue.maxAttempts} maximum retries.`
+      );
+    }
+
     pubQueue.failedJobs.forEach(job => {
       log.appendLine(` - ${job.item.label}`);
     });
