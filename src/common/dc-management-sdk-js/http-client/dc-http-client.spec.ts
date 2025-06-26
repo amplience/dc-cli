@@ -48,6 +48,26 @@ describe('DCHttpClient tests', () => {
     expect(mock.history.get.length).toBe(2);
   });
 
+  test('client should retry then succeed when first error has 400 status', async () => {
+    const client = new DCHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').replyOnce(400).onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(2);
+  });
+
   test('client should retry then succeed when first error has 401 status', async () => {
     const { DCHttpClient } = await import('./dc-http-client');
     const client = new DCHttpClient({});
@@ -75,6 +95,26 @@ describe('DCHttpClient tests', () => {
     const mock = new MockAdapter(client.client);
 
     mock.onGet('/assets').replyOnce(403).onGet('/assets').replyOnce(200, {
+      id: '1234'
+    });
+
+    const response = await client.request({
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: HttpMethod.GET,
+      url: '/assets'
+    });
+
+    expect(response.status).toBe(200);
+    expect(mock.history.get.length).toBe(2);
+  });
+
+  test('client should retry then succeed when first error has 404 status', async () => {
+    const client = new DCHttpClient({});
+    const mock = new MockAdapter(client.client);
+
+    mock.onGet('/assets').replyOnce(404).onGet('/assets').replyOnce(200, {
       id: '1234'
     });
 

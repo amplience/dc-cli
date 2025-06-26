@@ -2,8 +2,10 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 import axiosRetry, { IAxiosRetryConfig, isNetworkOrIdempotentRequestError, isRetryableError } from 'axios-retry';
 import { HttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js';
 
+const DcRetryErrorCodes = [400, 401, 403, 404, 429];
+
 const isRetriableDCResponseError = (error: AxiosError) => {
-  return error?.response?.status === 401 || error?.response?.status === 403 || error?.response?.status === 429;
+  return DcRetryErrorCodes.includes(Number(error?.response?.status));
 };
 
 const isSafeDCRequestError = (error: AxiosError) => {
@@ -24,7 +26,7 @@ const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retryDelay: (retryCount, error) => axiosRetry.exponentialDelay(retryCount, error, DELAY_FACTOR),
   retryCondition: (error: AxiosError) => {
     return (
-      error?.code === 'ECONNABORTED' ||
+      Boolean(error?.code) ||
       isSafeDCRequestError(error) ||
       isNetworkOrIdempotentRequestError(error) ||
       isRetriableDCResponseError(error)
