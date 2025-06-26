@@ -148,7 +148,7 @@ const useHub = async (argv: Arguments<{ hub: string }>): Promise<HubConfiguratio
 const listHubs = (): void => {
   getHubs().forEach(hub => {
     const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}`) : `  ${hub.name}`;
-    console.log(`${hub.hubId} ${hub.clientId.substring(0, 8)} ${hubName}`);
+    console.log(`${hub.hubId} ${hub.clientId?.substring(0, 8) || hub.patToken?.substring(0, 8)}  ${hubName}`);
   });
 };
 
