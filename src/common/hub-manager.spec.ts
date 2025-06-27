@@ -2,6 +2,7 @@ import HubManager from '../common/hub-manager';
 import * as sdk from 'dc-management-sdk-js';
 import * as configure from '../commands/configure';
 import fs from 'fs-extra';
+import * as questionHelpers from '../common/question-helpers'; // Adjust the path as needed
 
 // eslint-disable-next-line
 const enquirer = require('enquirer');
@@ -9,6 +10,12 @@ const enquirer = require('enquirer');
 const DummyHub = {
   clientId: 'client-id',
   clientSecret: 'client-id',
+  hubId: 'hub-id',
+  name: 'dummy-hub'
+};
+
+const DummyHubWithPAT = {
+  patToken: 'amp-pat',
   hubId: 'hub-id',
   name: 'dummy-hub'
 };
@@ -24,6 +31,8 @@ jest.mock('enquirer', () => ({
   Input: jest.fn(),
   Password: jest.fn()
 }));
+
+jest.mock('../common/question-helpers');
 
 describe('hub manager', function () {
   const hubGetMock = jest.fn();
@@ -101,7 +110,22 @@ describe('hub manager', function () {
 
     const mockedWriteFileSync = jest.spyOn(fs, 'writeFileSync');
     jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+
+    (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(false);
+
     await HubManager.addHub({ ...yargArgs, ...DummyHub });
+    expect(mockedWriteFileSync).toHaveBeenCalled();
+  });
+
+  it('should save hub with PAT token', async () => {
+    mockEmptyConfig(2);
+
+    const mockedWriteFileSync = jest.spyOn(fs, 'writeFileSync');
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+
+    (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(true);
+
+    await HubManager.addHub({ ...yargArgs, ...DummyHubWithPAT });
     expect(mockedWriteFileSync).toHaveBeenCalled();
   });
 
@@ -121,6 +145,7 @@ describe('hub manager', function () {
 
     const mockedWriteFileSync = jest.spyOn(fs, 'writeFileSync');
     jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+    (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(false);
     await HubManager.addHub({ ...yargArgs });
     expect(mockedWriteFileSync).toHaveBeenCalled();
 
@@ -128,10 +153,35 @@ describe('hub manager', function () {
     expect(passwordRun).toHaveBeenCalledTimes(1);
   });
 
+  it('should save hub from user input using PAT token', async () => {
+    const inputRun = jest.fn().mockResolvedValueOnce('hub-id');
+    const passwordRun = jest.fn().mockResolvedValueOnce('amp-pat');
+
+    (enquirer.Input as jest.Mock).mockReturnValue({
+      run: inputRun
+    });
+
+    (enquirer.Password as jest.Mock).mockReturnValue({
+      run: passwordRun
+    });
+
+    mockEmptyConfig(2);
+
+    const mockedWriteFileSync = jest.spyOn(fs, 'writeFileSync');
+    jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+    (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(true);
+    await HubManager.addHub({ ...yargArgs });
+    expect(mockedWriteFileSync).toHaveBeenCalled();
+
+    expect(inputRun).toHaveBeenCalledTimes(1);
+    expect(passwordRun).toHaveBeenCalledTimes(1);
+  });
+
   it('should fail to save a duplicate hub', async () => {
     mockDefaultConfig();
 
     jest.spyOn(fs, 'existsSync').mockReturnValueOnce(true);
+    (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(false);
     await expect(HubManager.addHub({ ...yargArgs, ...DummyHub })).rejects.toThrow(`config already exists`);
   });
 

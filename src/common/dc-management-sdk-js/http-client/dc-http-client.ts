@@ -2,8 +2,10 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 import axiosRetry, { IAxiosRetryConfig, isNetworkOrIdempotentRequestError, isRetryableError } from 'axios-retry';
 import { HttpClient, HttpRequest, HttpResponse } from 'dc-management-sdk-js';
 
+const DcRetryErrorCodes = [400, 401, 403, 404, 429];
+
 const isRetriableDCResponseError = (error: AxiosError) => {
-  return error?.response?.status === 401 || error?.response?.status === 403 || error?.response?.status === 429;
+  return DcRetryErrorCodes.includes(Number(error?.response?.status));
 };
 
 const isSafeDCRequestError = (error: AxiosError) => {
@@ -17,14 +19,14 @@ const isSafeDCRequestError = (error: AxiosError) => {
 
 const SAFE_HTTP_METHODS = ['get', 'head', 'options', 'patch', 'post', 'put', 'del'];
 
-const DELAY_FACTOR = 1400;
+const DELAY_FACTOR = Number(process.env.DC_CLI_DELAY_FACTOR) || 1400;
 const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   retries: 3,
   shouldResetTimeout: true,
   retryDelay: (retryCount, error) => axiosRetry.exponentialDelay(retryCount, error, DELAY_FACTOR),
   retryCondition: (error: AxiosError) => {
     return (
-      error?.code === 'ECONNABORTED' ||
+      Boolean(error?.code) ||
       isSafeDCRequestError(error) ||
       isNetworkOrIdempotentRequestError(error) ||
       isRetriableDCResponseError(error)
@@ -56,10 +58,16 @@ export class DCHttpClient implements HttpClient {
         status: response.status
       };
     } catch (error) {
-      if (error && error.response) {
+      if (error?.response) {
         return {
           data: error.response.data,
           status: error.response.status
+        };
+      }
+      if (error?.code) {
+        return {
+          data: { message: error.message },
+          status: error.code
         };
       }
       return error;

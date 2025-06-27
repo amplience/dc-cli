@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { handler as configure, CONFIG_FILENAME } from '../commands/configure';
 import { Arguments } from 'yargs';
 import dynamicContentClientFactory from '../services/dynamic-content-client-factory';
+import { asyncQuestion } from './question-helpers';
 
 // eslint-disable-next-line
 const { AutoComplete, Input, Password } = require('enquirer');
@@ -20,6 +21,7 @@ export type HubConfiguration = {
   hubId: string;
   name?: string;
   isActive?: boolean;
+  patToken?: string;
 };
 
 export const validateHub = async (creds: HubConfiguration): Promise<HubConfiguration> => {
@@ -40,17 +42,18 @@ const getHubs = (): HubConfiguration[] => {
   }
 
   const hubs = fs.readJSONSync(CONFIG_PATH, { encoding: 'utf-8' });
-  return hubs.map((hub: HubConfiguration) => ({
-    ...hub,
-    isActive:
-      activeHub.clientId === hub.clientId &&
-      activeHub.clientSecret === hub.clientSecret &&
-      activeHub.hubId === hub.hubId
-  }));
+  return hubs.map((hub: HubConfiguration) => {
+    const obj = {
+      ...hub,
+      isActive: activeHub.hubId === hub.hubId
+    };
+
+    return obj;
+  });
 };
 
 const saveHub = (hub: HubConfiguration): void => {
-  const hubs = [hub, ...getHubs().filter(h => h.hubId !== hub.hubId && h.clientId !== hub.clientId)];
+  const hubs = [hub, ...getHubs().filter(h => h.hubId !== hub.hubId)];
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(hubs, undefined, 4), { encoding: 'utf-8' });
 };
 
@@ -78,19 +81,30 @@ const credentialsHelpText = helpTag('credentials assigned by Amplience support')
 const hubIdHelpText = helpTag('found in hub settings -> properties');
 
 export const addHub = async (
-  args: Arguments<{ clientId?: string; clientSecret?: string; hubId?: string }>
+  args: Arguments<{ clientId?: string; clientSecret?: string; hubId?: string; patToken?: string }>
 ): Promise<void> => {
   // dc config
   sectionHeader(`${dcTag} configuration ${credentialsHelpText}`);
 
-  // novadev-693 allow id, secret, and hub id to be passed via command line
-  args.clientId = args.clientId || (await ask(`client ${chalk.magenta('id')}:`));
-  args.clientSecret = args.clientSecret || (await secureAsk(`client ${chalk.magenta('secret')}:`));
+  const usePAT = await asyncQuestion('Would you like to use a PAT Token? (y/n)\n');
+
+  if (usePAT) {
+    args.patToken = args.patToken || (await secureAsk(`PAT ${chalk.magenta('token')}:`));
+  } else {
+    // novadev-693 allow id, secret, and hub id to be passed via command line
+    args.clientId = args.clientId || (await ask(`client ${chalk.magenta('id')}:`));
+    args.clientSecret = args.clientSecret || (await secureAsk(`client ${chalk.magenta('secret')}:`));
+  }
+
   args.hubId = args.hubId || (await ask(`hub id ${hubIdHelpText}:`));
 
   // unique key for a hub is clientId/hubId
-  if (getHubs().find(hub => args.clientId === hub.clientId && args.hubId === hub.hubId)) {
+  if (args.clientId && getHubs().find(hub => args.clientId === hub.clientId && args.hubId === hub.hubId)) {
     throw new Error(`config already exists for client id [ ${args.clientId} ] and hub id [ ${args.hubId} ]`);
+  }
+
+  if (usePAT && getHubs().find(hub => args.patToken === hub.patToken && args.hubId === hub.hubId)) {
+    throw new Error(`config already exists for PAT Token and hub id [ ${args.hubId} ]`);
   }
 
   const validated = await validateHub(args as HubConfiguration);
@@ -134,7 +148,7 @@ const useHub = async (argv: Arguments<{ hub: string }>): Promise<HubConfiguratio
 const listHubs = (): void => {
   getHubs().forEach(hub => {
     const hubName = hub.isActive ? chalk.green.bold(`* ${hub.name}`) : `  ${hub.name}`;
-    console.log(`${hub.hubId} ${hub.clientId.substring(0, 8)} ${hubName}`);
+    console.log(`${hub.hubId} ${hub.clientId?.substring(0, 8) || hub.patToken?.substring(0, 8)}  ${hubName}`);
   });
 };
 
