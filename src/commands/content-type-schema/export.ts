@@ -1,7 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import paginator from '../../common/dc-management-sdk-js/paginator';
 import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import { table } from 'table';
 import { baseTableConfig } from '../../common/table/table.consts';
@@ -22,6 +21,8 @@ import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { equalsOrRegex } from '../../common/filter/filter';
+import { paginateWithProgress } from '../../common/dc-management-sdk-js/paginate-with-progress';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const streamTableOptions = {
   ...baseTableConfig,
@@ -242,8 +243,11 @@ export const processContentTypeSchemas = async (
 
   await ensureDirectoryExists(outputDir);
 
-  const data: string[][] = [];
-  data.push([chalk.bold('File'), chalk.bold('Schema file'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  const progress = progressBar(allExports.length, 0, { title: 'Exporting content types' });
+
+  const data: [string, string, string, string][] = [
+    [chalk.bold('File'), chalk.bold('Schema file'), chalk.bold('Schema ID'), chalk.bold('Result')]
+  ];
   for (const { filename, status, contentTypeSchema } of allExports) {
     let schemaFilename = '';
     if (status !== 'UP-TO-DATE') {
@@ -263,9 +267,10 @@ export const processContentTypeSchemas = async (
         })
       );
     }
+    progress.increment();
     data.push([filename, schemaFilename, contentTypeSchema.schemaId || '', status]);
   }
-
+  progress.stop();
   log.appendLine(table(data, streamTableOptions));
 };
 
@@ -278,9 +283,10 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const client = dynamicContentClientFactory(argv);
   const hub = await client.hubs.get(argv.hubId);
   const log = logFile.open();
-  const storedContentTypeSchemas = await paginator(
+  const storedContentTypeSchemas = await paginateWithProgress(
     hub.related.contentTypeSchema.list,
-    argv.archived ? undefined : { status: Status.ACTIVE }
+    argv.archived ? undefined : { status: Status.ACTIVE },
+    { title: 'Retrieving content type schemas' }
   );
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
   const filteredContentTypeSchemas = filterContentTypeSchemasBySchemaId(storedContentTypeSchemas, schemaIdArray);

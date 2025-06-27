@@ -80,5 +80,18 @@ describe('paginator', function () {
       expect(mockPagableFn).toHaveBeenCalledWith({ ...options, size: DEFAULT_SIZE });
       expect(mockPagableFn).toHaveBeenCalledWith({ ...options, size: DEFAULT_SIZE });
     });
+
+    it('should call provided `onPage` function for each page', async () => {
+      mockPagableFn.mockResolvedValueOnce(mockPage1);
+      mockPagableFn.mockResolvedValueOnce(mockPage2);
+
+      const onPageMock = jest.fn();
+
+      const result = await paginator(mockPagableFn, {}, { onPage: onPageMock });
+
+      expect(result.length).toEqual(2);
+
+      expect(onPageMock).toHaveBeenCalledTimes(2);
+    });
   });
 });

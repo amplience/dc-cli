@@ -33,6 +33,7 @@ import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -740,6 +741,10 @@ const importTree = async (
     log.appendLine(`Importing content item failed, aborting. Error: ${error.toString()}`);
   };
 
+  const importProgress = progressBar(tree.all.length - tree.circularLinks.length, 0, {
+    title: 'Importing content items'
+  });
+
   let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
   let keepTryMaxExceedents = false;
 
@@ -771,6 +776,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
+        importProgress.stop();
         log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
@@ -788,8 +794,11 @@ const importTree = async (
       }
 
       mapping.registerContentItem(originalId as string, newItem.id as string);
+
+      importProgress.increment();
     }
   }
+  importProgress.stop();
 
   // Filter publishables to remove items that will be published as part of another publish.
   // Cuts down on unnecessary requests.
@@ -817,11 +826,13 @@ const importTree = async (
 
   // Create circular dependancies with all the mappings we have, and update the mapping.
   // Do a second pass that updates the existing assets to point to the new ones.
+
   const newDependants: ContentItem[] = [];
 
   for (let pass = 0; pass < 2; pass++) {
     const mode = pass === 0 ? 'Creating' : 'Resolving';
     log.appendLine(`${mode} circular dependants.`);
+    const dependantsProgress = progressBar(tree.circularLinks.length, 0, { title: 'Importing content items' });
 
     for (let i = 0; i < tree.circularLinks.length; i++) {
       const item = tree.circularLinks[i];
@@ -847,6 +858,7 @@ const importTree = async (
         newItem = result.newItem;
         oldVersion = result.oldVersion;
       } catch (e) {
+        dependantsProgress.stop();
         log.error(`Failed creating ${content.label}:`, e);
         abort(e);
         return false;
@@ -869,7 +881,9 @@ const importTree = async (
           publishable.push({ item: newItem, node: item });
         }
       }
+      dependantsProgress.increment();
     }
+    dependantsProgress.stop();
   }
 
   if (argv.publish) {
