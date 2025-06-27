@@ -194,7 +194,7 @@ export const processItems = async ({
 
   await log.close(!silent);
 
-  console.log(`Published ${successCount} content items.`);
+  console.log(`Published ${successCount - pubQueue.failedJobs.length} content items.`);
 };
 
 export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
