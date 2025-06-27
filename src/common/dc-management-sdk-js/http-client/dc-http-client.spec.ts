@@ -49,6 +49,7 @@ describe('DCHttpClient tests', () => {
   });
 
   test('client should retry then succeed when first error has 400 status', async () => {
+    const { DCHttpClient } = await import('./dc-http-client');
     const client = new DCHttpClient({});
     const mock = new MockAdapter(client.client);
 
@@ -111,6 +112,7 @@ describe('DCHttpClient tests', () => {
   });
 
   test('client should retry then succeed when first error has 404 status', async () => {
+    const { DCHttpClient } = await import('./dc-http-client');
     const client = new DCHttpClient({});
     const mock = new MockAdapter(client.client);
 
