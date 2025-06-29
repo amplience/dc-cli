@@ -311,8 +311,6 @@ export const processContentTypes = async (
       '\nContent types were not automatically registered to the repositories because of --skipAssign argument.'
     );
   }
-
-  log.appendLine();
 };
 
 export const handler = async (
