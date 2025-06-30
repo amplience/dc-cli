@@ -3,13 +3,14 @@ import { ConfigurationParameters } from '../configure';
 import { ContentType, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
-import paginator from '../../common/dc-management-sdk-js/paginator';
 import { equalsOrRegex } from '../../common/filter/filter';
 
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
+import { paginateWithProgress } from '../../common/dc-management-sdk-js/paginate-with-progress';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'archive [id]';
 
@@ -88,7 +89,11 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(argv.hubId);
-      types = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
+      types = await paginateWithProgress(
+        hub.related.contentTypes.list,
+        { status: Status.ACTIVE },
+        { title: 'Retrieving active content types' }
+      );
     } catch (e) {
       console.log(`Fatal error: could not retrieve content types to archive`);
       return;
@@ -136,7 +141,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   }
 
   const log = logFile.open();
-
+  const progress = progressBar(types.length, 0, { title: 'Archiving content types' });
   let successCount = 0;
 
   for (let i = 0; i < types.length; i++) {
@@ -145,9 +150,11 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     try {
       await types[i].related.archive();
 
+      progress.increment();
       log.addAction('ARCHIVE', types[i].id || 'unknown');
       successCount++;
     } catch (e) {
+      progress.increment();
       log.addComment(`ARCHIVE FAILED: ${types[i].id}`);
       log.addComment(e.toString());
 
@@ -159,7 +166,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       }
     }
   }
-
+  progress.stop();
   await log.close(!silent);
 
   console.log(`Archived ${successCount} content types.`);
