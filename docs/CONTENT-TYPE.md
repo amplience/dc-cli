@@ -54,14 +54,14 @@ dc-cli content-type archive [id]
 
 #### Options
 
-| Option Name      | Type                                       | Description                                                  |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| Option Name      | Type                                       | Description                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | --schemaId       | [string]                                   | The Schema ID of a Content Type's Schema to be archived.<br/>A regex can be provided to select multiple types with similar or matching schema IDs (eg /.header.\.json/).<br/>A single --schemaId option may be given to match a single content type schema.<br/>Multiple --schemaId options may be given to match multiple content type schemas at the same time. |
-| --revertLog      | [string]                                   | Path to a log file containing content unarchived in a previous run of the unarchive command.<br/>When provided, archives all types listed as unarchived in the log file. |
-| -f<br />--force  | [boolean]                                  | If present, there will be no confirmation prompt before archiving the found content. |
-| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                    |
-| --ignoreError    | [boolean]                                  | If present, unarchive requests that fail will not abort the process. |
-| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
+| --revertLog      | [string]                                   | Path to a log file containing content unarchived in a previous run of the unarchive command.<br/>When provided, archives all types listed as unarchived in the log file.                                                                                                                                                                                          |
+| -f<br />--force  | [boolean]                                  | If present, there will be no confirmation prompt before archiving the found content.                                                                                                                                                                                                                                                                              |
+| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                                                                                                                                                                                                                                                                                                                         |
+| --ignoreError    | [boolean]                                  | If present, unarchive requests that fail will not abort the process.                                                                                                                                                                                                                                                                                              |
+| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                                                                                                                   |
 
 #### Examples
 
@@ -85,12 +85,12 @@ dc-cli content-type export <dir>
 
 #### Options
 
-| Option Name     | Type                                       | Description                                                  |
-| --------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| Option Name     | Type                                       | Description                                                                                                                                                                                                                                                                                                    |
+| --------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | --schemaId      | [string]                                   | The Schema ID of a Content Type to be exported.<br/>If no --schemaId option is given, all content types for the hub are exported.<br/>A single --schemaId option may be given to export a single content type.<br/>Multiple --schemaId options may be given to export multiple content types at the same time. |
-| -f<br />--force | [boolean]                                  | Overwrite content types without asking.                      |
-| --archived      | [boolean]                                  | If present, archived content types will also be considered.  |
-| --logFile       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
+| -f<br />--force | [boolean]                                  | Overwrite content types without asking.                                                                                                                                                                                                                                                                        |
+| --archived      | [boolean]                                  | If present, archived content types will also be considered.                                                                                                                                                                                                                                                    |
+| --logFile       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                                                                |
 
 #### Examples
 
@@ -213,7 +213,7 @@ dc-cli content-type register
 Synchronises a content type, so that it matches the present version of its registered schema.
 
 ```
-dc-cli content-type sync <id>
+dc-cli content-type sync [id]
 ```
 
 #### Options
@@ -223,6 +223,10 @@ dc-cli content-type sync <id>
 | --json                 | [boolean]<br />[default: false] | Render output as JSON  |
 
 #### Examples
+
+##### Synchronise all content types with their content type schemas
+
+`dc-cli content-type sync`
 
 ##### Synchronise content type with ID of 'foo' with its content type schema
 
@@ -238,14 +242,14 @@ dc-cli content-type unarchive [id]
 
 #### Options
 
-| Option Name      | Type                                       | Description                                                  |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| Option Name      | Type                                       | Description                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | --schemaId       | [string]                                   | The Schema ID of a Content Type's Schema to be unarchived.<br/>A regex can be provided to select multiple types with similar or matching schema IDs (eg /.header.\.json/).<br/>A single --schemaId option may be given to match a single content type schema.<br/>Multiple --schemaId options may be given to match multiple content type schemas at the same time. |
-| --revertLog      | [string]                                   | Path to a log file containing content archived in a previous run of the archive command.<br/>When provided, unarchives all types listed as archived in the log file. |
-| -f<br />--force  | [boolean]                                  | If present, there will be no confirmation prompt before unarchiving the found content. |
-| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                    |
-| --ignoreError    | [boolean]                                  | If present, unarchive requests that fail will not abort the process. |
-| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                              |
+| --revertLog      | [string]                                   | Path to a log file containing content archived in a previous run of the archive command.<br/>When provided, unarchives all types listed as archived in the log file.                                                                                                                                                                                                |
+| -f<br />--force  | [boolean]                                  | If present, there will be no confirmation prompt before unarchiving the found content.                                                                                                                                                                                                                                                                              |
+| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                                                                                                                                                                                                                                                                                                                           |
+| --ignoreError    | [boolean]                                  | If present, unarchive requests that fail will not abort the process.                                                                                                                                                                                                                                                                                                |
+| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                                                                                                                     |
 
 #### Examples
 

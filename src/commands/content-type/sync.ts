@@ -5,8 +5,11 @@ import { ContentType, ContentTypeCachedSchema } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import BuilderOptions from '../../interfaces/builder-options';
 import { singleItemTableOptions } from '../../common/table/table.consts';
+import paginator from '../../common/dc-management-sdk-js/paginator';
+import { extractSortable, PagingParameters } from '../../common/yargs/sorting-options';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
-export const command = 'sync <id>';
+export const command = 'sync [id]';
 
 export const desc = 'Sync Content Type with the schema';
 
@@ -20,9 +23,41 @@ export const builder = (yargs: Argv): void => {
 };
 
 export const handler = async (
-  argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>
+  argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments & PagingParameters>
 ): Promise<void> => {
   const client = dynamicContentClientFactory(argv);
+
+  if (!argv.id) {
+    const hub = await client.hubs.get(argv.hubId);
+    const contentTypeList = await paginator(hub.related.contentTypes.list, extractSortable(argv));
+
+    if (contentTypeList.length === 0) {
+      console.log('No content types found to sync, aborting.');
+      return;
+    }
+
+    const progress = progressBar(contentTypeList.length, 0, {
+      title: `Syncing ${contentTypeList.length}  content types`
+    });
+
+    let successCount = 0;
+
+    try {
+      for (const contentType of contentTypeList) {
+        if (contentType.id) {
+          await contentType.related.contentTypeSchema.update();
+          successCount++;
+          progress.increment();
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      progress.stop();
+      console.log(`Successfully synced ${successCount} content types.`);
+      return;
+    }
+  }
 
   const contentType: ContentType = await client.contentTypes.get(argv.id);
   const contentTypeCachedSchema: ContentTypeCachedSchema = await contentType.related.contentTypeSchema.update();
