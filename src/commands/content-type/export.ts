@@ -21,6 +21,8 @@ import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { equalsOrRegex } from '../../common/filter/filter';
+import { paginateWithProgress } from '../../common/dc-management-sdk-js/paginate-with-progress';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'export <dir>';
 
@@ -214,17 +216,18 @@ export const processContentTypes = async (
 
   await ensureDirectoryExists(outputDir);
 
-  const data: string[][] = [];
+  const progress = progressBar(allExports.length, 0, { title: 'Exporting content types' });
 
-  data.push([chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  const data: [string, string, string][] = [[chalk.bold('File'), chalk.bold('Schema ID'), chalk.bold('Result')]];
   for (const { filename, status, contentType } of allExports) {
     if (status !== 'UP-TO-DATE') {
       delete contentType.id; // do not export id
       writeJsonToFile(filename, contentType);
     }
     data.push([filename, contentType.contentTypeUri || '', status]);
+    progress.increment();
   }
-
+  progress.stop();
   log.appendLine(table(data, streamTableOptions));
 };
 
@@ -238,9 +241,17 @@ export const handler = async (argv: Arguments<ExportBuilderOptions & Configurati
   const previouslyExportedContentTypes = loadJsonFromDirectory<ContentType>(dir, ContentType);
   validateNoDuplicateContentTypeUris(previouslyExportedContentTypes);
 
-  const storedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ACTIVE });
+  const storedContentTypes = await paginateWithProgress(
+    hub.related.contentTypes.list,
+    { status: Status.ACTIVE },
+    { title: 'Retrieving active content types' }
+  );
   if (argv.archived) {
-    const archivedContentTypes = await paginator(hub.related.contentTypes.list, { status: Status.ARCHIVED });
+    const archivedContentTypes = await paginateWithProgress(
+      hub.related.contentTypes.list,
+      { status: Status.ARCHIVED },
+      { title: 'Retrieving archived content types' }
+    );
     Array.prototype.push.apply(storedContentTypes, archivedContentTypes);
   }
   const schemaIdArray: string[] = schemaId ? (Array.isArray(schemaId) ? schemaId : [schemaId]) : [];
