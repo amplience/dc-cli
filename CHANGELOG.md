@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.25.0](https://github.com/amplience/dc-cli/compare/v0.24.1...v0.25.0) (2025-07-02)
+
+
+### Features
+
+* allow users to use PAT when adding hubs ([#204](https://github.com/amplience/dc-cli/issues/204)) ([6dd1b71](https://github.com/amplience/dc-cli/commit/6dd1b7145d9c9048ce51bb85656183e16cfdba44))
+* hub clean progress ([#211](https://github.com/amplience/dc-cli/issues/211)) ([4a02f15](https://github.com/amplience/dc-cli/commit/4a02f1594c6f52762989e3de1a86db86cf4c9c68))
+* provide progress for long running command actions ([#207](https://github.com/amplience/dc-cli/issues/207)) ([95d7f56](https://github.com/amplience/dc-cli/commit/95d7f568b370b3eedd0a921a1d0dbbecf14892ce))
+* report publish failures correctly and prompt user for continuation ([#209](https://github.com/amplience/dc-cli/issues/209)) ([3f64838](https://github.com/amplience/dc-cli/commit/3f6483862047b4ffe0db2df614fe4687a2be3e06))
+
+
+### Bug Fixes
+
+* content Item not found error on import ([#206](https://github.com/amplience/dc-cli/issues/206)) ([8efba5a](https://github.com/amplience/dc-cli/commit/8efba5a40758260aa0b381d99d418457e71d5265))
+* set default auth url ([bd0c727](https://github.com/amplience/dc-cli/commit/bd0c727649c5fb6933d04be0e727d5573a552fdc))
+* set default auth url ([cd504d1](https://github.com/amplience/dc-cli/commit/cd504d1fc2b5600aa44fd4c78327a515bf8dda53))
+* update custom http client to handle client errors ([0c2eda0](https://github.com/amplience/dc-cli/commit/0c2eda035410508a21351176b3fbbe796a0a61da))
+* update custom http client to handle client errors ([a70c8c5](https://github.com/amplience/dc-cli/commit/a70c8c52bc3d8b1da610abf7badc3c7f2f0f7f58))
+
 ## [0.24.1](https://github.com/amplience/dc-cli/compare/v0.24.0...v0.24.1) (2025-06-11)
 
 
