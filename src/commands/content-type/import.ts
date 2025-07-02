@@ -11,6 +11,7 @@ import { streamTableOptions } from '../../common/table/table.consts';
 import { ImportBuilderOptions } from '../../interfaces/import-builder-options.interface';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'import <dir>';
 
@@ -256,13 +257,14 @@ export const processContentTypes = async (
   log: FileLog,
   skipAssign = false
 ): Promise<void> => {
-  const data: string[][] = [];
   const contentRepositoryList = await paginator<ContentRepository>(hub.related.contentRepositories.list, {});
   const namedRepositories: MappedContentRepositories = new Map<string, ContentRepository>(
     contentRepositoryList.map(value => [value.name || '', value])
   );
 
-  data.push([chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]);
+  const progress = progressBar(contentTypes.length, 0, { title: 'Importing content types' });
+
+  const data: [string, string, string][] = [[chalk.bold('ID'), chalk.bold('Schema ID'), chalk.bold('Result')]];
   for (const contentType of contentTypes) {
     let status: ImportResult;
     let contentTypeResult: ContentType;
@@ -297,8 +299,10 @@ export const processContentTypes = async (
       status = contentType.id ? 'UPDATED' : 'CREATED';
     }
 
+    progress.increment();
     data.push([contentTypeResult.id || 'UNKNOWN', contentType.contentTypeUri || '', status]);
   }
+  progress.stop();
 
   log.appendLine(table(data, streamTableOptions));
 
@@ -311,8 +315,6 @@ export const processContentTypes = async (
       '\nContent types were not automatically registered to the repositories because of --skipAssign argument.'
     );
   }
-
-  log.appendLine();
 };
 
 export const handler = async (

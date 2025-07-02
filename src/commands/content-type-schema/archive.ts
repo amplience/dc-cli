@@ -3,12 +3,13 @@ import { ConfigurationParameters } from '../configure';
 import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
-import paginator from '../../common/dc-management-sdk-js/paginator';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { confirmArchive } from '../../common/archive/archive-helpers';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
+import { paginateWithProgress } from '../../common/dc-management-sdk-js/paginate-with-progress';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'archive [id]';
 
@@ -87,7 +88,11 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   } else {
     try {
       const hub = await client.hubs.get(hubId);
-      schemas = await paginator(hub.related.contentTypeSchema.list, { status: Status.ACTIVE });
+      schemas = await paginateWithProgress(
+        hub.related.contentTypeSchema.list,
+        { status: Status.ACTIVE },
+        { title: 'Retrieving active content type schemas' }
+      );
     } catch (e) {
       console.log(`Fatal error: could not retrieve content type schemas to archive`);
       return;
@@ -134,16 +139,18 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   }
 
   const log = logFile.open();
-
+  const progress = progressBar(schemas.length, 0, { title: 'Archiving content type schemas' });
   let successCount = 0;
 
   for (let i = 0; i < schemas.length; i++) {
     try {
       await schemas[i].related.archive();
 
+      progress.increment();
       log.addAction('ARCHIVE', `${schemas[i].schemaId}`);
       successCount++;
     } catch (e) {
+      progress.increment();
       log.addComment(`ARCHIVE FAILED: ${schemas[i].schemaId}`);
       log.addComment(e.toString());
 
@@ -155,6 +162,8 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
       }
     }
   }
+
+  progress.stop();
 
   await log.close(!silent);
 
