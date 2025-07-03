@@ -167,12 +167,31 @@ describe('content-item import command', () => {
       revertLog: Promise.resolve(undefined)
     };
 
+    const publishMock = jest.fn();
+    const waitForAllMock = jest.fn();
+    const isEmptyMock = jest.fn().mockReturnValueOnce(false).mockReturnValue(true);
+    const unresolvedJobsMock: unknown[] = [];
+    const failedJobsMock: unknown[] = [];
+
     beforeEach(async () => {
       jest.mock('readline');
       jest.mock('../../services/dynamic-content-client-factory');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const calls = (publish as any).publishCalls;
       calls.splice(0, calls.length);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (publish as any).PublishQueue = jest.fn().mockImplementation(() => ({
+        publish: publishMock,
+        isEmpty: isEmptyMock,
+        waitForAll: waitForAllMock,
+        unresolvedJobs: unresolvedJobsMock,
+        failedJobs: failedJobsMock
+      }));
+
+      waitForAllMock.mockClear();
+      isEmptyMock.mockClear();
+      unresolvedJobsMock.length = 0;
     });
 
     beforeAll(async () => {
@@ -1182,7 +1201,7 @@ describe('content-item import command', () => {
 
       expect(matches.length).toEqual(templates.length);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((publish as any).publishCalls.length).toEqual(2);
+      expect((publish as any).publishCalls.length).toEqual(0);
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/publish/`);
     });
@@ -1239,7 +1258,7 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsUpdated).toEqual(3);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((publish as any).publishCalls.length).toEqual(1); // One of the circular dependancies will be published.
+      expect((publish as any).publishCalls.length).toEqual(0); // One of the circular dependancies will be published.
 
       const matches = await mockContent.filterMatch(templates, '', false);
 

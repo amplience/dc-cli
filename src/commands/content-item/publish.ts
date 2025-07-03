@@ -9,6 +9,7 @@ import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
 import { PublishQueue } from '../../common/import/publish-queue';
+import { asyncQuestion } from '../../common/question-helpers';
 
 export const command = 'publish [id]';
 
@@ -162,8 +163,6 @@ export const processItems = async ({
 
   const log = logFile.open();
 
-  let successCount = 0;
-
   const pubQueue = new PublishQueue(argv);
 
   log.appendLine(`Publishing ${contentItems.length} items.`);
@@ -178,23 +177,38 @@ export const processItems = async ({
     try {
       await pubQueue.publish(item);
       log.appendLine(`Started publish for ${item.label}.`);
-      successCount++;
     } catch (e) {
       log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
   }
 
   log.appendLine(`Waiting for all publishes to complete...`);
-  await pubQueue.waitForAll();
 
-  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total.`);
+  let keepWaiting = true;
+
+  while (!pubQueue.isEmpty() && keepWaiting) {
+    await pubQueue.waitForAll();
+
+    if (pubQueue.unresolvedJobs.length > 0) {
+      keepWaiting = await asyncQuestion(
+        'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
+      );
+    }
+  }
+
+  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
+  pubQueue.unresolvedJobs.forEach(job => {
+    log.appendLine(` - ${job.item.label}`);
+  });
+
+  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
   pubQueue.failedJobs.forEach(job => {
     log.appendLine(` - ${job.item.label}`);
   });
 
-  await log.close(!silent);
+  log.appendLine(`Publish complete`);
 
-  console.log(`Published ${successCount - pubQueue.failedJobs.length} content items.`);
+  await log.close(!silent);
 };
 
 export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {

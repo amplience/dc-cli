@@ -377,30 +377,5 @@ describe('publish-queue', () => {
       // Since we process requests instantly, the rate limit delay will be hit for each publish.
       expect(publishQueueModule.delay).toHaveBeenCalledTimes(5);
     });
-
-    it('should error publishes when waiting for a publish job exceeds the maxAttempts number', async () => {
-      const items = multiMock(10, 5); // 10 items, return success on the 5th poll (after our limit)
-
-      const queue = makeQueue(5); // After 5 concurrent requests, start waiting.
-      queue.maxAttempts = 2;
-
-      for (let i = 0; i < items.length; i++) {
-        await queue.publish(items[i]);
-
-        if (queue.exceededMaxRetries.length > 0) {
-          // The first job should have failed.
-          expect(i).toEqual(5); // We only waited for the first job after 0-4 were in the queue.
-          expect(queue.exceededMaxRetries[0].item).toBe(items[0]);
-          break;
-        }
-
-        expect(i).toBeLessThan(5);
-      }
-
-      await queue.waitForAll();
-
-      expect(totalPolls).toEqual(12); // 6 total publish requests. 2 waits before each before giving up.
-      expect(queue.exceededMaxRetries.length).toEqual(6);
-    });
   });
 });

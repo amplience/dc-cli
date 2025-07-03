@@ -211,6 +211,20 @@ describe('processItems tests', () => {
   it('should process all items and call publish', async () => {
     const contentItem = { id: '1', label: 'Publish Me' } as ContentItem;
 
+    const publishMock = jest.fn();
+    const waitForAllMock = jest.fn();
+    const isEmptyMock = jest.fn().mockReturnValueOnce(false).mockReturnValue(true);
+    const unresolvedJobsMock: unknown[] = [];
+    const failedJobsMock: unknown[] = [];
+
+    (PublishQueue as jest.Mock).mockImplementation(() => ({
+      publish: publishMock,
+      waitForAll: waitForAllMock,
+      isEmpty: isEmptyMock,
+      unresolvedJobs: unresolvedJobsMock,
+      failedJobs: failedJobsMock
+    }));
+
     await processItems({
       contentItems: [contentItem],
       force: true,
