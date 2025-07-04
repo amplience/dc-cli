@@ -1,6 +1,6 @@
 import { asyncQuestion } from '../question-helpers';
 
-export async function confirmArchive(
+export async function confirmAllContent(
   action: string,
   type: string,
   allContent: boolean,

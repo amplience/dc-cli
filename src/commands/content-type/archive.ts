@@ -5,7 +5,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 
-import { confirmArchive } from '../../common/archive/archive-helpers';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
@@ -134,7 +134,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   });
 
   if (!force) {
-    const yes = await confirmArchive('archive', 'content types', allContent, missingContent);
+    const yes = await confirmAllContent('archive', 'content types', allContent, missingContent);
     if (!yes) {
       return;
     }

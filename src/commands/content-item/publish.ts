@@ -1,8 +1,8 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { confirmArchive } from '../../common/archive/archive-helpers';
-import ArchiveOptions from '../../common/archive/archive-options';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
+import PublishOptions from '../../common/publish/publish-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
@@ -155,7 +155,7 @@ export const processItems = async ({
   console.log(`Total: ${contentItems.length}`);
 
   if (!force) {
-    const yes = await confirmArchive('publish', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('publish', 'content item', allContent, missingContent);
     if (!yes) {
       return;
     }
@@ -211,7 +211,7 @@ export const processItems = async ({
   await log.close(!silent);
 };
 
-export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
+export const handler = async (argv: Arguments<PublishOptions & ConfigurationParameters>): Promise<void> => {
   const { id, logFile, force, silent, hubId, repoId, folderId } = argv;
   const client = dynamicContentClientFactory(argv);
 

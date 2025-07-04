@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { confirmArchive } from '../../common/archive/archive-helpers';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import ArchiveEventOptions from '../../common/archive/archive-event-options';
 import { Edition, Event, DynamicContent, HalResource } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
@@ -228,7 +228,7 @@ export const processItems = async ({
     console.log(`Total: ${events.length}`);
 
     if (!force) {
-      const yes = await confirmArchive('perform', 'actions', false, missingContent);
+      const yes = await confirmAllContent('perform', 'actions', false, missingContent);
       if (!yes) {
         return;
       }

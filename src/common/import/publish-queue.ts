@@ -186,6 +186,8 @@ export class PublishQueue {
 
     this.inProgressJobs = [...this.inProgressJobs, ...this.unresolvedJobs];
 
+    this.unresolvedJobs = [];
+
     // Continue regardless of waiters.
     this.awaitingAll = true;
     await this.waitForOldestPublish();
