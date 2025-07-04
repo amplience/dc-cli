@@ -8,8 +8,8 @@ import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { PublishQueue } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
+import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 
 export const command = 'publish [id]';
 
@@ -47,6 +47,10 @@ export const builder = (yargs: Argv): void => {
       boolean: true,
       describe: 'Batch publish requests up to the rate limit. (35/min)'
     })
+    .options('publishRateLimit', {
+      type: 'number',
+      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
+    })
     .alias('f', 'force')
     .option('f', {
       type: 'boolean',
@@ -77,7 +81,6 @@ export const getContentItems = async ({
   hubId,
   repoId,
   folderId,
-
   facet
 }: {
   client: DynamicContent;
@@ -85,7 +88,6 @@ export const getContentItems = async ({
   hubId: string;
   repoId?: string | string[];
   folderId?: string | string[];
-
   facet?: string;
 }): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
   try {
