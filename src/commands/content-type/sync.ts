@@ -30,6 +30,7 @@ export const handler = async (
   if (!argv.id) {
     const hub = await client.hubs.get(argv.hubId);
     const contentTypeList = await paginator(hub.related.contentTypes.list, extractSortable(argv));
+    const updatedContentTypeSchemas: ContentTypeCachedSchema[] = [];
 
     if (contentTypeList.length === 0) {
       console.log('No content types found to sync, aborting.');
@@ -40,13 +41,11 @@ export const handler = async (
       title: `Syncing ${contentTypeList.length}  content types`
     });
 
-    let successCount = 0;
-
     try {
       for (const contentType of contentTypeList) {
         if (contentType.id) {
-          await contentType.related.contentTypeSchema.update();
-          successCount++;
+          const updatedContentTypeSchema = await contentType.related.contentTypeSchema.update();
+          updatedContentTypeSchemas.push(updatedContentTypeSchema);
           progress.increment();
         }
       }
@@ -54,8 +53,15 @@ export const handler = async (
       console.log(error);
     } finally {
       progress.stop();
-      console.log(`Successfully synced ${successCount} content types.`);
-      return;
+
+      updatedContentTypeSchemas.map(value => {
+        const val = value.toJSON();
+
+        new DataPresenter({ ...val, cachedSchema: JSON.stringify(val.cachedSchema) }).render({
+          json: argv.json,
+          tableUserConfig: singleItemTableOptions
+        });
+      });
     }
   }
 
