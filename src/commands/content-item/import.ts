@@ -31,7 +31,7 @@ import { Body } from '../../common/content-item/body';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
-import { PublishQueue } from '../../common/import/publish-queue';
+import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 
@@ -116,6 +116,11 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+    })
+
+    .options('publishRateLimit', {
+      type: 'number',
+      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
     })
 
     .option('excludeKeys', {

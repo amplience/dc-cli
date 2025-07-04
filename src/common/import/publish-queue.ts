@@ -8,6 +8,9 @@ import fetch, { Response } from 'node-fetch';
 import { HalLink } from 'dc-management-sdk-js/build/main/lib/hal/models/HalLink';
 import { ConfigurationParameters } from '../../commands/configure';
 
+export const MAX_PUBLISH_RATE_LIMIT = 80;
+export const DEFAULT_PUBLISH_RATE_LIMIT = 35;
+
 export interface PublishingJob {
   id: string;
   scheduledDate: string;
@@ -29,6 +32,10 @@ export interface JobRequest {
   href: string;
 }
 
+export interface PublishConfig {
+  publishRateLimit?: number;
+}
+
 export class PublishQueue {
   maxWaiting = 35;
   maxAttempts = 30;
@@ -45,17 +52,21 @@ export class PublishQueue {
   private delayId = 0;
   waitInProgress = false;
 
-  constructor(credentials: ConfigurationParameters) {
+  constructor(config: ConfigurationParameters & PublishConfig) {
     const http = new AxiosHttpClient({});
-    if (credentials.clientId && credentials.clientSecret) {
+    if (config.clientId && config.clientSecret) {
       this.auth = new Oauth2AuthHeaderProvider(
-        { client_id: credentials.clientId, client_secret: credentials.clientSecret },
+        { client_id: config.clientId, client_secret: config.clientSecret },
         { authUrl: process.env.AUTH_URL || 'https://auth.amplience.net' },
         http
       );
-    } else if (credentials.patToken) {
-      this.auth = new PatTokenAuthHeaderProvider(credentials.patToken);
+    } else if (config.patToken) {
+      this.auth = new PatTokenAuthHeaderProvider(config.patToken);
     }
+
+    const publishRateLimit = Math.min(config?.publishRateLimit || DEFAULT_PUBLISH_RATE_LIMIT, MAX_PUBLISH_RATE_LIMIT);
+
+    this.attemptRateLimit = 60000 / publishRateLimit;
   }
 
   private async fetch(href: string, method: string): Promise<Response> {
