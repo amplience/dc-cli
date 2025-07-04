@@ -5,7 +5,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { confirmArchive } from '../../common/archive/archive-helpers';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
 import { getDefaultLogPath } from '../../common/log-helpers';
 
@@ -123,7 +123,7 @@ export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationPa
   });
 
   if (!force) {
-    const yes = await confirmArchive('unarchive', 'content types', allContent, missingContent);
+    const yes = await confirmAllContent('unarchive', 'content types', allContent, missingContent);
     if (!yes) {
       return;
     }

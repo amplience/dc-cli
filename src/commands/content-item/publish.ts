@@ -1,69 +1,63 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ArchiveLog } from '../../common/archive/archive-log';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
-import ArchiveOptions from '../../common/archive/archive-options';
+import PublishOptions from '../../common/publish/publish-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { progressBar } from '../../common/progress-bar/progress-bar';
+import { PublishQueue } from '../../common/import/publish-queue';
+import { asyncQuestion } from '../../common/question-helpers';
 
-export const command = 'archive [id]';
+export const command = 'publish [id]';
 
-export const desc = 'Archive Content Items';
+export const desc = 'Publish Content Items';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
-  getDefaultLogPath('content-item', 'archive', platform);
+  getDefaultLogPath('content-item', 'publish', platform);
 
-export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Content Items Archive Log');
+export const coerceLog = (logFile: string): FileLog => createLog(logFile, 'Content Items Publish Log');
 
 export const builder = (yargs: Argv): void => {
   yargs
     .positional('id', {
       type: 'string',
       describe:
-        'The ID of a content item to be archived. If id is not provided, this command will archive ALL content items through all content repositories in the hub.'
+        'The ID of a content item to be published. If id is not provided, this command will publish ALL content items through all content repositories in the hub.'
     })
     .option('repoId', {
       type: 'string',
-      describe: 'The ID of a content repository to search items in to be archived.',
+      describe: 'The ID of a content repository to search items in to be published.',
       requiresArg: false
     })
     .option('folderId', {
       type: 'string',
-      describe: 'The ID of a folder to search items in to be archived.',
+      describe: 'The ID of a folder to search items in to be published.',
       requiresArg: false
     })
     .option('facet', {
       type: 'string',
       describe:
-        "Archive content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+        "Publish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
     })
-    .option('revertLog', {
-      type: 'string',
-      describe:
-        'Path to a log file containing content items unarchived in a previous run of the unarchive command.\nWhen provided, archives all content items listed as UNARCHIVE in the log file.',
-      requiresArg: false
+    .option('batchPublish', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Batch publish requests up to the rate limit. (35/min)'
     })
     .alias('f', 'force')
     .option('f', {
       type: 'boolean',
       boolean: true,
-      describe: 'If present, there will be no confirmation prompt before archiving the found content.'
+      describe: 'If present, there will be no confirmation prompt before publishing the found content.'
     })
     .alias('s', 'silent')
     .option('s', {
       type: 'boolean',
       boolean: true,
       describe: 'If present, no log file will be produced.'
-    })
-    .option('ignoreError', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'If present, archive requests that fail will not abort the process.'
     })
     .option('logFile', {
       type: 'string',
@@ -74,15 +68,6 @@ export const builder = (yargs: Argv): void => {
     .option('name', {
       type: 'string',
       hidden: true
-    })
-    .option('schemaId', {
-      type: 'string',
-      hidden: true
-    })
-    .option('ignoreSchemaValidation', {
-      type: 'boolean',
-      boolean: false,
-      describe: 'Ignore content item schema validation during archive'
     });
 };
 
@@ -92,7 +77,7 @@ export const getContentItems = async ({
   hubId,
   repoId,
   folderId,
-  revertLog,
+
   facet
 }: {
   client: DynamicContent;
@@ -100,16 +85,11 @@ export const getContentItems = async ({
   hubId: string;
   repoId?: string | string[];
   folderId?: string | string[];
-  revertLog?: string;
+
   facet?: string;
 }): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
   try {
     let contentItems: ContentItem[] = [];
-
-    if (revertLog != null) {
-      const log = await new ArchiveLog().loadFromFile(revertLog);
-      id = log.getData('UNARCHIVE');
-    }
 
     if (id != null) {
       const itemIds = Array.isArray(id) ? id : [id];
@@ -153,8 +133,7 @@ export const processItems = async ({
   logFile,
   allContent,
   missingContent,
-  ignoreError,
-  ignoreSchemaValidation
+  argv
 }: {
   contentItems: ContentItem[];
   force?: boolean;
@@ -162,22 +141,21 @@ export const processItems = async ({
   logFile: FileLog;
   allContent: boolean;
   missingContent: boolean;
-  ignoreError?: boolean;
-  ignoreSchemaValidation?: boolean;
+  argv: Arguments<ConfigurationParameters>;
 }): Promise<void> => {
   if (contentItems.length == 0) {
-    console.log('Nothing found to archive, aborting.');
+    console.log('Nothing found to publish, aborting.');
     return;
   }
 
-  console.log('The following content items will be archived:');
+  console.log('The following content items will be published:');
   contentItems.forEach((contentItem: ContentItem) => {
     console.log(` ${contentItem.label} (${contentItem.id})`);
   });
   console.log(`Total: ${contentItems.length}`);
 
   if (!force) {
-    const yes = await confirmAllContent('archive', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('publish', 'content item', allContent, missingContent);
     if (!yes) {
       return;
     }
@@ -185,53 +163,61 @@ export const processItems = async ({
 
   const log = logFile.open();
 
-  const progress = progressBar(contentItems.length, 0, { title: 'Archiving content items' });
+  const pubQueue = new PublishQueue(argv);
 
-  let successCount = 0;
+  log.appendLine(`Publishing ${contentItems.length} items.`);
+
+  if (!argv.batchPublish) {
+    pubQueue.maxWaiting = 1;
+  }
+
   for (let i = 0; i < contentItems.length; i++) {
+    const item = contentItems[i];
+
     try {
-      const deliveryKey = contentItems[i].body._meta.deliveryKey;
-      let args = contentItems[i].id;
-      if (deliveryKey) {
-        contentItems[i].body._meta.deliveryKey = null;
-        const updateParams = { ...(ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {}) };
-        contentItems[i] = await contentItems[i].related.update(contentItems[i], updateParams);
-
-        args += ` ${deliveryKey}`;
-      }
-      await contentItems[i].related.archive();
-      progress.increment();
-      log.addAction('ARCHIVE', `${args}`);
-      successCount++;
+      await pubQueue.publish(item);
+      log.appendLine(`Started publish for ${item.label}.`);
     } catch (e) {
-      progress.increment();
-      log.addComment(`ARCHIVE FAILED: ${contentItems[i].id}`);
-      log.addComment(e.toString());
-
-      if (ignoreError) {
-        log.warn(`Failed to archive ${contentItems[i].label} (${contentItems[i].id}), continuing.`, e);
-      } else {
-        progress.stop();
-        log.error(`Failed to archive ${contentItems[i].label} (${contentItems[i].id}), aborting.`, e);
-        break;
-      }
+      log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
   }
 
-  progress.stop();
+  log.appendLine(`Waiting for all publishes to complete...`);
+
+  let keepWaiting = true;
+
+  while (!pubQueue.isEmpty() && keepWaiting) {
+    await pubQueue.waitForAll();
+
+    if (pubQueue.unresolvedJobs.length > 0) {
+      keepWaiting = await asyncQuestion(
+        'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
+      );
+    }
+  }
+
+  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
+  pubQueue.unresolvedJobs.forEach(job => {
+    log.appendLine(` - ${job.item.label}`);
+  });
+
+  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
+  pubQueue.failedJobs.forEach(job => {
+    log.appendLine(` - ${job.item.label}`);
+  });
+
+  log.appendLine(`Publish complete`);
 
   await log.close(!silent);
-
-  console.log(`Archived ${successCount} content items.`);
 };
 
-export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, ignoreSchemaValidation } = argv;
+export const handler = async (argv: Arguments<PublishOptions & ConfigurationParameters>): Promise<void> => {
+  const { id, logFile, force, silent, hubId, repoId, folderId } = argv;
   const client = dynamicContentClientFactory(argv);
 
   const facet = withOldFilters(argv.facet, argv);
 
-  const allContent = !id && !facet && !revertLog && !folderId && !repoId;
+  const allContent = !id && !facet && !folderId && !repoId;
 
   if (repoId && id) {
     console.log('ID of content item is specified, ignoring repository ID');
@@ -247,7 +233,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   }
 
   if (allContent) {
-    console.log('No filter was given, archiving all content');
+    console.log('No filter was given, publishing all content');
   }
 
   const { contentItems, missingContent } = await getContentItems({
@@ -256,7 +242,6 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     hubId,
     repoId,
     folderId,
-    revertLog,
     facet
   });
 
@@ -267,10 +252,6 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
     logFile,
     allContent,
     missingContent,
-    ignoreError,
-    ignoreSchemaValidation
+    argv
   });
 };
-
-// log format:
-// ARCHIVE <content item id>

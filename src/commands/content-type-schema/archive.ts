@@ -4,7 +4,7 @@ import { ContentTypeSchema, Status } from 'dc-management-sdk-js';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { equalsOrRegex } from '../../common/filter/filter';
-import { confirmArchive } from '../../common/archive/archive-helpers';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
@@ -132,7 +132,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   });
 
   if (!force) {
-    const yes = await confirmArchive('archive', 'content type schema', allContent, missingContent);
+    const yes = await confirmAllContent('archive', 'content type schema', allContent, missingContent);
     if (!yes) {
       return;
     }

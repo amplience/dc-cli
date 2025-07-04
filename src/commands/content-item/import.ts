@@ -746,7 +746,6 @@ const importTree = async (
   });
 
   let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
-  let keepTryMaxExceedents = false;
 
   for (let i = 0; i < tree.levels.length; i++) {
     const level = tree.levels[i];
@@ -906,44 +905,25 @@ const importTree = async (
     }
 
     log.appendLine(`Waiting for all publishes to complete...`);
-    let jobsExceededMaxRetries = await pubQueue.waitForAll();
 
-    if (jobsExceededMaxRetries?.length > 0) {
-      pubQueue.retryJobs();
-      jobsExceededMaxRetries = await pubQueue.waitForAll();
-    }
+    let keepWaiting = true;
 
-    if (jobsExceededMaxRetries?.length > 0) {
-      do {
-        if (jobsExceededMaxRetries?.length <= 0) {
-          keepTryMaxExceedents = false;
-          break;
-        }
+    while (!pubQueue.isEmpty() && keepWaiting) {
+      await pubQueue.waitForAll();
 
-        keepTryMaxExceedents = await asyncQuestion(
-          `${jobsExceededMaxRetries?.length} items are still publishing. Would you like the script to recheck? (y/n)\n`
+      if (pubQueue.unresolvedJobs.length > 0) {
+        keepWaiting = await asyncQuestion(
+          'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
         );
-
-        if (keepTryMaxExceedents) {
-          pubQueue.retryJobs();
-          jobsExceededMaxRetries = await pubQueue.waitForAll();
-        } else {
-          log.appendLine(`Please verify in Dynamic Content the following publishing items:`);
-          for (const job of jobsExceededMaxRetries) {
-            log.appendLine(`${job.item.label} (${job.item.id})`);
-          }
-        }
-      } while (keepTryMaxExceedents);
+      }
     }
 
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total `);
+    log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
+    pubQueue.unresolvedJobs.forEach(job => {
+      log.appendLine(` - ${job.item.label}`);
+    });
 
-    if (pubQueue.exceededMaxRetries) {
-      log.appendLine(
-        `Finished publishing, with ${pubQueue.exceededMaxRetries.length} publishes each exceeding ${pubQueue.maxAttempts} maximum retries.`
-      );
-    }
-
+    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
     pubQueue.failedJobs.forEach(job => {
       log.appendLine(` - ${job.item.label}`);
     });
