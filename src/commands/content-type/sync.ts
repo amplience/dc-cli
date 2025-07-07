@@ -49,8 +49,8 @@ export const handler = async (
           progress.increment();
         }
       }
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      throw new Error(`A content type failed to sync". Reason: ${err}`);
     } finally {
       progress.stop();
 
