@@ -43,20 +43,25 @@ export const handler = async (
 
     try {
       for (const contentType of contentTypeList) {
-        if (contentType.id) {
-          const updatedContentTypeSchema = await contentType.related.contentTypeSchema.update();
-          updatedContentTypeSchemas.push(updatedContentTypeSchema);
-          progress.increment();
-        }
+        const updatedContentTypeSchema = await contentType.related.contentTypeSchema.update();
+        updatedContentTypeSchemas.push(updatedContentTypeSchema);
+        progress.increment();
       }
     } catch (e) {
       progress.stop();
       throw e;
+    } finally {
+      progress.stop();
     }
 
-    new DataPresenter(updatedContentTypeSchemas.map(value => value.toJSON())).render({
-      json: argv.json,
-      itemMapFn: itemMapFn
+    updatedContentTypeSchemas.forEach(value => {
+      const schema = value.toJSON();
+      schema.cachedSchema = JSON.stringify(value.cachedSchema);
+
+      new DataPresenter(schema).render({
+        json: argv.json,
+        tableUserConfig: singleItemTableOptions
+      });
     });
   }
 
@@ -66,14 +71,4 @@ export const handler = async (
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });
-};
-
-export const itemMapFn = (contentTypeSchema: ContentTypeSchema): object => {
-  const { id, $schema, title, description } = contentTypeSchema.cachedSchema;
-  return {
-    ID: id,
-    'Schema ID': $schema,
-    Title: title,
-    Description: description
-  };
 };
