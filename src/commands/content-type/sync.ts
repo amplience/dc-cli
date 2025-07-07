@@ -1,7 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, ContentTypeCachedSchema, ContentTypeSchema } from 'dc-management-sdk-js';
+import { ContentType, ContentTypeCachedSchema } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import BuilderOptions from '../../interfaces/builder-options';
 import { singleItemTableOptions } from '../../common/table/table.consts';
@@ -38,7 +38,7 @@ export const handler = async (
     }
 
     const progress = progressBar(contentTypeList.length, 0, {
-      title: `Syncing ${contentTypeList.length}  content types`
+      title: `Syncing ${contentTypeList.length} content types`
     });
 
     try {
@@ -48,21 +48,17 @@ export const handler = async (
         progress.increment();
       }
     } catch (e) {
-      progress.stop();
       throw e;
     } finally {
       progress.stop();
     }
 
-    updatedContentTypeSchemas.forEach(value => {
-      const schema = value.toJSON();
-      schema.cachedSchema = JSON.stringify(value.cachedSchema);
-
-      new DataPresenter(schema).render({
-        json: argv.json,
-        tableUserConfig: singleItemTableOptions
-      });
+    new DataPresenter(updatedContentTypeSchemas.map(v => v.toJSON())).render({
+      json: argv.json,
+      itemMapFn
     });
+
+    return;
   }
 
   const contentType: ContentType = await client.contentTypes.get(argv.id);
@@ -72,3 +68,8 @@ export const handler = async (
     tableUserConfig: singleItemTableOptions
   });
 };
+
+export const itemMapFn = ({ hubId, contentTypeUri }: ContentTypeCachedSchema): object => ({
+  hubId,
+  contentTypeUri
+});
