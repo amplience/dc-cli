@@ -1,7 +1,7 @@
 import { Arguments, Argv } from 'yargs';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { ContentType, ContentTypeCachedSchema } from 'dc-management-sdk-js';
+import { ContentType, ContentTypeCachedSchema, ContentTypeSchema } from 'dc-management-sdk-js';
 import { ConfigurationParameters } from '../configure';
 import BuilderOptions from '../../interfaces/builder-options';
 import { singleItemTableOptions } from '../../common/table/table.consts';
@@ -49,20 +49,15 @@ export const handler = async (
           progress.increment();
         }
       }
-    } catch (err) {
-      throw new Error(`A content type failed to sync". Reason: ${err}`);
-    } finally {
+    } catch (e) {
       progress.stop();
-
-      updatedContentTypeSchemas.map(value => {
-        const val = value.toJSON();
-
-        new DataPresenter({ ...val, cachedSchema: JSON.stringify(val.cachedSchema) }).render({
-          json: argv.json,
-          tableUserConfig: singleItemTableOptions
-        });
-      });
+      throw e;
     }
+
+    new DataPresenter(updatedContentTypeSchemas.map(value => value.toJSON())).render({
+      json: argv.json,
+      itemMapFn: itemMapFn
+    });
   }
 
   const contentType: ContentType = await client.contentTypes.get(argv.id);
@@ -71,4 +66,14 @@ export const handler = async (
     json: argv.json,
     tableUserConfig: singleItemTableOptions
   });
+};
+
+export const itemMapFn = (contentTypeSchema: ContentTypeSchema): object => {
+  const { id, $schema, title, description } = contentTypeSchema.cachedSchema;
+  return {
+    ID: id,
+    'Schema ID': $schema,
+    Title: title,
+    Description: description
+  };
 };
