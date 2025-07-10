@@ -10,22 +10,28 @@ Run `dc-cli --help` to get a list of available commands.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-  - [Options](#options)
-- [Command categories](#command-categories)
-  - [content-type-schema](#content-type-schema)
-  - [content-type](#content-type)
-  - [content-item](#content-item)
-  - [publish](#publish)
-  - [extension](#extension)
-  - [search-index](#search-index)
-  - [content-repository](#content-repository)
-  - [event](#event)
-  - [settings](#settings)
-  - [hub](#hub)
-- [Building the CLI](#building-the-cli)
-- [Required permissions](#required-permissions)
+- [dc-cli](#dc-cli)
+  - [Description](#description)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+    - [Options](#options)
+      - [Examples](#examples)
+        - [Create/Update configuration file for single hub using client ID and secret](#createupdate-configuration-file-for-single-hub-using-client-id-and-secret)
+        - [Create/Update configuration file for single hub using personal access token](#createupdate-configuration-file-for-single-hub-using-personal-access-token)
+        - [Create/Update configuration file for two-hub usage (copy/move/clone)](#createupdate-configuration-file-for-two-hub-usage-copymoveclone)
+      - [Alternative Configuration using `hub` command](#alternative-configuration-using-hub-command)
+  - [Command categories](#command-categories)
+    - [content-type-schema](#content-type-schema)
+    - [content-type](#content-type)
+    - [content-item](#content-item)
+    - [extension](#extension)
+    - [search-index](#search-index)
+    - [content-repository](#content-repository)
+    - [event](#event)
+    - [settings](#settings)
+    - [hub](#hub)
+  - [Building the CLI](#building-the-cli)
+  - [Required permissions](#required-permissions)
 
 <!-- /MarkdownTOC -->
 
@@ -126,14 +132,6 @@ These commands can be used to export and import content from an individual hub, 
 Before importing, copying, or moving content you must ensure that a valid [content type](#content-type) exists in the destination hub for each content item.
 
 [View commands for **content-item**](docs/CONTENT-ITEM.md)
-
-### publish
-
-This category includes interactions with content items.
-
-These commands can be used to publish content from an individual hub.
-
-[View commands for **content-item publish**](docs/PUBLISH.md)
 
 ### extension
 

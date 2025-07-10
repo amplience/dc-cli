@@ -8,8 +8,8 @@ import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { asyncQuestion } from '../../common/question-helpers';
 import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
+import { asyncQuestion } from '../../common/question-helpers';
 
 export const command = 'publish [id]';
 
