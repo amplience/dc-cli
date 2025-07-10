@@ -402,15 +402,16 @@ If no `id` is provided, all content items in all content repositories in the spe
 
 #### Options
 
-| Option           | Alias | Description                                                                                                                                        |
-| ---------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--repoId`       |       | The ID of a content repository to restrict publishing scope. _(Optional)_                                                                          |
-| `--folderId`     |       | The ID of a folder to restrict publishing scope. _(Optional)_                                                                                      |
-| `--facet`        |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
-| `--batchPublish` |       | Enable batch publishing up to 35 items per minute. _(Optional)_                                                                                    |
-| `-f`, `--force`  |       | Skip confirmation prompts before publishing.                                                                                                       |
-| `-s`, `--silent` |       | Disable log file creation.                                                                                                                         |
-| `--logFile`      |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
+| Option               | Alias | Description                                                                                                                                        |
+| -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--repoId`           |       | The ID of a content repository to restrict publishing scope. _(Optional)_                                                                          |
+| `--folderId`         |       | The ID of a folder to restrict publishing scope. _(Optional)_                                                                                      |
+| `--facet`            |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
+| `--batchPublish`     |       | Enable batch publishing up to 35 items per minute. _(Optional)_                                                                                    |
+| `-f`, `--force`      |       | Skip confirmation prompts before publishing.                                                                                                       |
+| `-s`, `--silent`     |       | Disable log file creation.                                                                                                                         |
+| `--logFile`          |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
+| `--publishRateLimit` |       | Set the number of publishes per minute (max = 80). <br>Default: `35`                                                                               |
 
 ---
 
