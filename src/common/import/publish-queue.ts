@@ -8,6 +8,9 @@ import fetch, { Response } from 'node-fetch';
 import { HalLink } from 'dc-management-sdk-js/build/main/lib/hal/models/HalLink';
 import { ConfigurationParameters } from '../../commands/configure';
 
+export const MAX_PUBLISH_RATE_LIMIT = 80;
+export const DEFAULT_PUBLISH_RATE_LIMIT = 35;
+
 export interface PublishingJob {
   id: string;
   scheduledDate: string;
@@ -29,14 +32,17 @@ export interface JobRequest {
   href: string;
 }
 
+export interface PublishConfig {
+  publishRateLimit?: number;
+}
+
 export class PublishQueue {
   maxWaiting = 35;
   maxAttempts = 30;
   attemptDelay = 1000;
   attemptRateLimit = 60000 / 35; // 35 publishes a minute.
   failedJobs: JobRequest[] = [];
-  exceededMaxRetries: JobRequest[] = [];
-  retryCount: number = 0;
+  unresolvedJobs: JobRequest[] = [];
 
   private inProgressJobs: JobRequest[] = [];
   private waitingList: { promise: Promise<void>; resolver: () => void }[] = [];
@@ -46,17 +52,21 @@ export class PublishQueue {
   private delayId = 0;
   waitInProgress = false;
 
-  constructor(credentials: ConfigurationParameters) {
+  constructor(config: ConfigurationParameters & PublishConfig) {
     const http = new AxiosHttpClient({});
-    if (credentials.clientId && credentials.clientSecret) {
+    if (config.clientId && config.clientSecret) {
       this.auth = new Oauth2AuthHeaderProvider(
-        { client_id: credentials.clientId, client_secret: credentials.clientSecret },
+        { client_id: config.clientId, client_secret: config.clientSecret },
         { authUrl: process.env.AUTH_URL || 'https://auth.amplience.net' },
         http
       );
-    } else if (credentials.patToken) {
-      this.auth = new PatTokenAuthHeaderProvider(credentials.patToken);
+    } else if (config.patToken) {
+      this.auth = new PatTokenAuthHeaderProvider(config.patToken);
     }
+
+    const publishRateLimit = Math.min(config?.publishRateLimit || DEFAULT_PUBLISH_RATE_LIMIT, MAX_PUBLISH_RATE_LIMIT);
+
+    this.attemptRateLimit = 60000 / publishRateLimit;
   }
 
   private async fetch(href: string, method: string): Promise<Response> {
@@ -124,7 +134,7 @@ export class PublishQueue {
     }
 
     if (attempts == this.maxAttempts) {
-      this.exceededMaxRetries.push(oldestJob);
+      this.unresolvedJobs.push(oldestJob);
     }
 
     // The wait completed. Notify the first in the queue.
@@ -179,28 +189,22 @@ export class PublishQueue {
     await myPromise;
   }
 
-  async waitForAll(): Promise<JobRequest[]> {
+  async waitForAll(): Promise<void> {
     if (this.waitInProgress) {
       // Wait for the last item on the list to complete.
       await this.waitingList[this.waitingList.length - 1]?.promise;
     }
 
+    this.inProgressJobs = [...this.inProgressJobs, ...this.unresolvedJobs];
+
+    this.unresolvedJobs = [];
+
     // Continue regardless of waiters.
     this.awaitingAll = true;
     await this.waitForOldestPublish();
-
-    return this.exceededMaxRetries;
   }
 
-  retryJobs() {
-    if (this.exceededMaxRetries.length > 0) {
-      this.retryCount++;
-      for (const job of this.exceededMaxRetries) {
-        this.exceededMaxRetries.shift();
-        this.inProgressJobs.push(job);
-      }
-    }
-
-    return this.retryCount;
+  isEmpty() {
+    return this.inProgressJobs.length === 0 && this.unresolvedJobs.length === 0;
   }
 }

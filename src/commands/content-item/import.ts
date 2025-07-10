@@ -31,7 +31,7 @@ import { Body } from '../../common/content-item/body';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
-import { PublishQueue } from '../../common/import/publish-queue';
+import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 
@@ -116,6 +116,11 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
+    })
+
+    .options('publishRateLimit', {
+      type: 'number',
+      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
     })
 
     .option('excludeKeys', {
@@ -746,7 +751,6 @@ const importTree = async (
   });
 
   let publishable: { item: ContentItem; node: ItemContentDependancies }[] = [];
-  let keepTryMaxExceedents = false;
 
   for (let i = 0; i < tree.levels.length; i++) {
     const level = tree.levels[i];
@@ -906,44 +910,25 @@ const importTree = async (
     }
 
     log.appendLine(`Waiting for all publishes to complete...`);
-    let jobsExceededMaxRetries = await pubQueue.waitForAll();
 
-    if (jobsExceededMaxRetries?.length > 0) {
-      pubQueue.retryJobs();
-      jobsExceededMaxRetries = await pubQueue.waitForAll();
-    }
+    let keepWaiting = true;
 
-    if (jobsExceededMaxRetries?.length > 0) {
-      do {
-        if (jobsExceededMaxRetries?.length <= 0) {
-          keepTryMaxExceedents = false;
-          break;
-        }
+    while (!pubQueue.isEmpty() && keepWaiting) {
+      await pubQueue.waitForAll();
 
-        keepTryMaxExceedents = await asyncQuestion(
-          `${jobsExceededMaxRetries?.length} items are still publishing. Would you like the script to recheck? (y/n)\n`
+      if (pubQueue.unresolvedJobs.length > 0) {
+        keepWaiting = await asyncQuestion(
+          'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
         );
-
-        if (keepTryMaxExceedents) {
-          pubQueue.retryJobs();
-          jobsExceededMaxRetries = await pubQueue.waitForAll();
-        } else {
-          log.appendLine(`Please verify in Dynamic Content the following publishing items:`);
-          for (const job of jobsExceededMaxRetries) {
-            log.appendLine(`${job.item.label} (${job.item.id})`);
-          }
-        }
-      } while (keepTryMaxExceedents);
+      }
     }
 
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total `);
+    log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
+    pubQueue.unresolvedJobs.forEach(job => {
+      log.appendLine(` - ${job.item.label}`);
+    });
 
-    if (pubQueue.exceededMaxRetries) {
-      log.appendLine(
-        `Finished publishing, with ${pubQueue.exceededMaxRetries.length} publishes each exceeding ${pubQueue.maxAttempts} maximum retries.`
-      );
-    }
-
+    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
     pubQueue.failedJobs.forEach(job => {
       log.appendLine(` - ${job.item.label}`);
     });

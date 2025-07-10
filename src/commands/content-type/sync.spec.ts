@@ -25,8 +25,8 @@ describe('ContentType.sync', () => {
   afterEach((): void => {
     jest.restoreAllMocks();
   });
-  it('should command should defined', function () {
-    expect(command).toEqual('sync <id>');
+  it('should have an optional id', function () {
+    expect(command).toEqual('sync [id]');
   });
 
   describe('builder tests', function () {
