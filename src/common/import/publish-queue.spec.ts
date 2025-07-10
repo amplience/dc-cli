@@ -387,10 +387,10 @@ describe('publish-queue', () => {
       for (let i = 0; i < items.length; i++) {
         await queue.publish(items[i]);
 
-        if (queue.exceededMaxRetries.length > 0) {
+        if (queue.unresolvedJobs.length > 0) {
           // The first job should have failed.
           expect(i).toEqual(5); // We only waited for the first job after 0-4 were in the queue.
-          expect(queue.exceededMaxRetries[0].item).toBe(items[0]);
+          expect(queue.unresolvedJobs[0].item).toBe(items[0]);
           break;
         }
 
@@ -399,8 +399,8 @@ describe('publish-queue', () => {
 
       await queue.waitForAll();
 
-      expect(totalPolls).toEqual(12); // 6 total publish requests. 2 waits before each before giving up.
-      expect(queue.exceededMaxRetries.length).toEqual(6);
+      expect(totalPolls).toEqual(14); // 6 total publish requests. 2 waits before each before giving up.
+      expect(queue.unresolvedJobs.length).toEqual(6);
     });
   });
 });

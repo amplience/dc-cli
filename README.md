@@ -126,6 +126,7 @@ Before importing, copying, or moving content you must ensure that a valid [conte
 
 [View commands for **content-item**](docs/CONTENT-ITEM.md)
 
+
 ### extension
 
 This category includes interactions with Dynamic Content's UI Extensions, and can be used to export and import extensions from an individual hub.
