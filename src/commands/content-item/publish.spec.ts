@@ -39,6 +39,10 @@ const argv: Arguments<ConfigurationParameters> = {
 } as Arguments<ConfigurationParameters>;
 
 describe('publish tests', () => {
+  afterEach((): void => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (publish as any).publishCalls = [];
+  });
   describe('builder tests', () => {
     it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
@@ -189,6 +193,38 @@ describe('publish tests', () => {
 
       await processItems({
         contentItems: [contentItem],
+        force: true,
+        silent: true,
+        logFile: mockLog,
+        allContent: false,
+        missingContent: false,
+        argv
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((publish as any).publishCalls.length).toEqual(1);
+    });
+
+    it('should process all items while filtering out any dependencies and call publish', async () => {
+      const contentItemWithDependency = new ContentItem({
+        id: 'da2ee918-34c3-4fc1-ae05-111111111111',
+        label: 'Publish me',
+        body: {
+          dependency: {
+            _meta: { schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link' },
+            contentType: 'http://bigcontent.io/cms/schema/v1/text',
+            id: 'da2ee918-34c3-4fc1-ae05-222222222222'
+          }
+        }
+      });
+      const contentItemDependency = new ContentItem({
+        id: 'da2ee918-34c3-4fc1-ae05-222222222222',
+        label: 'No need to publish me',
+        body: {}
+      });
+
+      await processItems({
+        contentItems: [contentItemWithDependency, contentItemDependency],
         force: true,
         silent: true,
         logFile: mockLog,

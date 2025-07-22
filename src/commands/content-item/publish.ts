@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
@@ -10,6 +11,7 @@ import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
+import { findContentDependancyIds } from '../../common/content-item/find-content-dependencies';
 
 export const command = 'publish [id]';
 
@@ -148,11 +150,16 @@ export const processItems = async ({
     return;
   }
 
-  console.log('The following content items will be published:');
-  contentItems.forEach((contentItem: ContentItem) => {
-    console.log(` ${contentItem.label} (${contentItem.id})`);
-  });
-  console.log(`Total: ${contentItems.length}`);
+  const referencedDependancyIds = contentItems.reduce((acc, item) => {
+    return [...acc, ...findContentDependancyIds(item.body)];
+  }, []);
+  const uniqueDependancyIds = [...new Set(referencedDependancyIds)];
+  const rootContentItems = contentItems.filter(item => !uniqueDependancyIds.includes(item.id));
+
+  const log = logFile.open();
+  log.appendLine(
+    `Found ${rootContentItems.length} content items to publish, which includes ${uniqueDependancyIds.length} dependancies`
+  );
 
   if (!force) {
     const yes = await confirmAllContent('publish', 'content item', allContent, missingContent);
@@ -161,22 +168,18 @@ export const processItems = async ({
     }
   }
 
-  const log = logFile.open();
-
   const pubQueue = new PublishQueue(argv);
 
-  log.appendLine(`Publishing ${contentItems.length} items.`);
+  log.appendLine(`Publishing ${rootContentItems.length} items.`);
 
   if (!argv.batchPublish) {
     pubQueue.maxWaiting = 1;
   }
 
-  for (let i = 0; i < contentItems.length; i++) {
-    const item = contentItems[i];
-
+  for (const item of rootContentItems) {
     try {
       await pubQueue.publish(item);
-      log.appendLine(`Started publish for ${item.label}.`);
+      log.appendLine(`Started publish for "${item.label}"`);
     } catch (e) {
       log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
@@ -201,7 +204,7 @@ export const processItems = async ({
     log.appendLine(` - ${job.item.label}`);
   });
 
-  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
+  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes`);
   pubQueue.failedJobs.forEach(job => {
     log.appendLine(` - ${job.item.label}`);
   });
