@@ -197,13 +197,13 @@ export const processItems = async ({
   for (const item of rootContentItems) {
     try {
       await pubQueue.publish(item);
-      log.appendLine(`Started publish for "${item.label}"`);
+      log.appendLine(`Initiating publish for "${item.label}"`);
     } catch (e) {
       log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
   }
 
-  log.appendLine(`Waiting for all publishes to complete...`);
+  log.appendLine(`Waiting for all publish jobs to complete...`);
 
   let keepWaiting = true;
 
@@ -217,12 +217,12 @@ export const processItems = async ({
     }
   }
 
-  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
+  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publish jobs`);
   pubQueue.unresolvedJobs.forEach(job => {
     log.appendLine(` - ${job.item.label}`);
   });
 
-  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes`);
+  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publish jobs`);
   pubQueue.failedJobs.forEach(job => {
     log.appendLine(` - ${job.item.label}`);
   });
