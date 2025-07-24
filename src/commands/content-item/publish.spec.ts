@@ -176,7 +176,7 @@ describe('publish tests', () => {
       console.log = jest.fn();
 
       await processItems({
-        contentItems: [{ id: '1', label: 'Test' } as ContentItem],
+        contentItems: [new ContentItem({ id: '1', label: 'Test', body: { _meta: {} } })],
         force: false,
         silent: true,
         logFile: mockLog,
@@ -189,7 +189,7 @@ describe('publish tests', () => {
     });
 
     it('should process all items and call publish', async () => {
-      const contentItem = { id: '1', label: 'Publish Me' } as ContentItem;
+      const contentItem = new ContentItem({ id: '1', label: 'Publish Me', body: { _meta: {} } });
 
       await processItems({
         contentItems: [contentItem],
@@ -210,6 +210,7 @@ describe('publish tests', () => {
         id: 'da2ee918-34c3-4fc1-ae05-111111111111',
         label: 'Publish me',
         body: {
+          _meta: {},
           dependency: {
             _meta: { schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link' },
             contentType: 'http://bigcontent.io/cms/schema/v1/text',
@@ -220,7 +221,7 @@ describe('publish tests', () => {
       const contentItemDependency = new ContentItem({
         id: 'da2ee918-34c3-4fc1-ae05-222222222222',
         label: 'No need to publish me',
-        body: {}
+        body: { _meta: {} }
       });
 
       await processItems({

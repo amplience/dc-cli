@@ -4,14 +4,15 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, ContentRepository, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
 import { PublishQueue } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
-import { findContentDependancyIds } from '../../common/content-item/find-content-dependencies';
+import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
+import { ContentMapping } from '../../common/content-mapping';
 
 export const command = 'publish [id]';
 
@@ -150,16 +151,33 @@ export const processItems = async ({
     return;
   }
 
-  const referencedDependancyIds = contentItems.reduce((acc, item) => {
-    return [...acc, ...findContentDependancyIds(item.body)];
-  }, []);
-  const uniqueDependancyIds = [...new Set(referencedDependancyIds)];
-  const rootContentItems = contentItems.filter(item => !uniqueDependancyIds.includes(item.id));
+  const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
+  const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
+  let publishChildren = 0;
+  const rootContentItems = contentTree.all
+    .filter(node => {
+      let isTopLevel = true;
+
+      contentTree.traverseDependants(
+        node,
+        dependant => {
+          if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
+            isTopLevel = false;
+          }
+        },
+        true
+      );
+
+      if (!isTopLevel) {
+        publishChildren++;
+      }
+
+      return isTopLevel;
+    })
+    .map(node => node.owner.content);
 
   const log = logFile.open();
-  log.appendLine(
-    `Found ${rootContentItems.length} content items to publish, which includes ${uniqueDependancyIds.length} dependancies`
-  );
+  log.appendLine(`Fouund ${rootContentItems.length} items to publish. (${publishChildren} children included)`);
 
   if (!force) {
     const yes = await confirmAllContent('publish', 'content item', allContent, missingContent);
