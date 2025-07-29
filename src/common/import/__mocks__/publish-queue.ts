@@ -7,7 +7,7 @@ export class PublishQueue {
   maxWaiting = 3;
   attemptDelay = 1000;
   failedJobs: JobRequest[] = [];
-
+  unresolvedJobs: JobRequest[] = [];
   waitInProgress = false;
 
   constructor() {
@@ -26,5 +26,9 @@ export class PublishQueue {
     // TODO: testing ability to throw (in wait for publish)
 
     return;
+  }
+
+  isEmpty() {
+    return true;
   }
 }

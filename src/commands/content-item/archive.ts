@@ -2,7 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
-import { confirmArchive } from '../../common/archive/archive-helpers';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import ArchiveOptions from '../../common/archive/archive-options';
 import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
@@ -177,7 +177,7 @@ export const processItems = async ({
   console.log(`Total: ${contentItems.length}`);
 
   if (!force) {
-    const yes = await confirmArchive('archive', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('archive', 'content item', allContent, missingContent);
     if (!yes) {
       return;
     }

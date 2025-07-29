@@ -10,21 +10,28 @@ Run `dc-cli --help` to get a list of available commands.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-  - [Options](#options)
-- [Command categories](#command-categories)
-  - [content-type-schema](#content-type-schema)
-  - [content-type](#content-type)
-  - [content-item](#content-item)
-  - [extension](#extension)
-  - [search-index](#search-index)
-  - [content-repository](#content-repository)
-  - [event](#event)
-  - [settings](#settings)
-  - [hub](#hub)
-- [Building the CLI](#building-the-cli)
-- [Required permissions](#required-permissions)
+- [dc-cli](#dc-cli)
+  - [Description](#description)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+    - [Options](#options)
+      - [Examples](#examples)
+        - [Create/Update configuration file for single hub using client ID and secret](#createupdate-configuration-file-for-single-hub-using-client-id-and-secret)
+        - [Create/Update configuration file for single hub using personal access token](#createupdate-configuration-file-for-single-hub-using-personal-access-token)
+        - [Create/Update configuration file for two-hub usage (copy/move/clone)](#createupdate-configuration-file-for-two-hub-usage-copymoveclone)
+      - [Alternative Configuration using `hub` command](#alternative-configuration-using-hub-command)
+  - [Command categories](#command-categories)
+    - [content-type-schema](#content-type-schema)
+    - [content-type](#content-type)
+    - [content-item](#content-item)
+    - [extension](#extension)
+    - [search-index](#search-index)
+    - [content-repository](#content-repository)
+    - [event](#event)
+    - [settings](#settings)
+    - [hub](#hub)
+  - [Building the CLI](#building-the-cli)
+  - [Required permissions](#required-permissions)
 
 <!-- /MarkdownTOC -->
 
@@ -188,7 +195,7 @@ Outlined below are the detailed permissions required to run each command of the 
 | `content-type get <id>`                           | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
 | `content-type list`                               | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
 | `content-type register`                           | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE                                                                                   |
-| `content-type sync <id>`                          | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                     |
+| `content-type sync [id]`                          | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                     |
 | `content-type update <id>`                        | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT                                                                                     |
 | `content-type import <dir>`                       | ContentRepository&nbsp;-&nbsp;EDIT<br/>Hub&nbsp;-&nbsp;READ | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:CREATE<br/>CONTENT:FUNCTIONAL:CONTENT_TYPE:EDIT |
 | `content-type export <dir>`                       | Hub&nbsp;-&nbsp;READ                                        | CONTENT:FUNCTIONAL:CONTENT_TYPE:READ                                                                                     |
