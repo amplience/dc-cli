@@ -177,10 +177,10 @@ export const processItems = async ({
     .map(node => node.owner.content);
 
   const log = logFile.open();
-  log.appendLine(`Fouund ${rootContentItems.length} items to publish. (${publishChildren} children included)`);
+  log.appendLine(`Found ${rootContentItems.length} items to publish. (${publishChildren} children included)`);
 
   if (!force) {
-    const yes = await confirmAllContent('publish', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('publish', 'content items', allContent, missingContent);
     if (!yes) {
       return;
     }
