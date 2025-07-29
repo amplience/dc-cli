@@ -116,6 +116,7 @@
     "dc-management-sdk-js": "^3.0.3",
     "enquirer": "^2.3.6",
     "fs-extra": "^10.1.0",
+    "graceful-fs": "^4.2.11",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.1",
     "rimraf": "^3.0.0",
