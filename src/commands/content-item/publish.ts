@@ -1,15 +1,18 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, ContentRepository, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
 import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
+import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
+import { ContentMapping } from '../../common/content-mapping';
 
 export const command = 'publish [id]';
 
@@ -150,41 +153,59 @@ export const processItems = async ({
     return;
   }
 
-  console.log('The following content items will be published:');
-  contentItems.forEach((contentItem: ContentItem) => {
-    console.log(` ${contentItem.label} (${contentItem.id})`);
-  });
-  console.log(`Total: ${contentItems.length}`);
+  const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
+  const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
+  let publishChildren = 0;
+  const rootContentItems = contentTree.all
+    .filter(node => {
+      let isTopLevel = true;
+
+      contentTree.traverseDependants(
+        node,
+        dependant => {
+          if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
+            isTopLevel = false;
+          }
+        },
+        true
+      );
+
+      if (!isTopLevel) {
+        publishChildren++;
+      }
+
+      return isTopLevel;
+    })
+    .map(node => node.owner.content);
+
+  const log = logFile.open();
+  log.appendLine(`Found ${rootContentItems.length} items to publish. (${publishChildren} children included)`);
 
   if (!force) {
-    const yes = await confirmAllContent('publish', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('publish', 'content items', allContent, missingContent);
     if (!yes) {
       return;
     }
   }
 
-  const log = logFile.open();
-
   const pubQueue = new PublishQueue(argv);
 
-  log.appendLine(`Publishing ${contentItems.length} items.`);
+  log.appendLine(`Publishing ${rootContentItems.length} items.`);
 
   if (!argv.batchPublish) {
     pubQueue.maxWaiting = 1;
   }
 
-  for (let i = 0; i < contentItems.length; i++) {
-    const item = contentItems[i];
-
+  for (const item of rootContentItems) {
     try {
       await pubQueue.publish(item);
-      log.appendLine(`Started publish for ${item.label}.`);
+      log.appendLine(`Initiating publish for "${item.label}"`);
     } catch (e) {
       log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
   }
 
-  log.appendLine(`Waiting for all publishes to complete...`);
+  log.appendLine(`Waiting for all publish jobs to complete...`);
 
   let keepWaiting = true;
 
@@ -198,12 +219,12 @@ export const processItems = async ({
     }
   }
 
-  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
+  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publish jobs`);
   pubQueue.unresolvedJobs.forEach(job => {
     log.appendLine(` - ${job.item.label}`);
   });
 
-  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
+  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publish jobs`);
   pubQueue.failedJobs.forEach(job => {
     log.appendLine(` - ${job.item.label}`);
   });
