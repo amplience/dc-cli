@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.26.0](https://github.com/amplience/dc-cli/compare/v0.25.0...v0.26.0) (2025-07-29)
+
+
+### Features
+
+* configurable publish limit ([#216](https://github.com/amplience/dc-cli/issues/216)) ([5d46d39](https://github.com/amplience/dc-cli/commit/5d46d391c7553fd537a467b645c9036b9fe74ef0))
+* optimise publish content items ([#218](https://github.com/amplience/dc-cli/issues/218)) ([6b4c2ca](https://github.com/amplience/dc-cli/commit/6b4c2cae1262ee2c5c0a983fc916afcfc31ec9c5))
+* publish by query ([#208](https://github.com/amplience/dc-cli/issues/208)) ([91673b7](https://github.com/amplience/dc-cli/commit/91673b739075ffedb10626cd0a21997f5d5f8b9a))
+* sync all content types ([#214](https://github.com/amplience/dc-cli/issues/214)) ([45cb604](https://github.com/amplience/dc-cli/commit/45cb604f93a646402c0c70716c442507f878fdde))
+* update to latest management sdk and default to node 22 ([#213](https://github.com/amplience/dc-cli/issues/213)) ([02c850a](https://github.com/amplience/dc-cli/commit/02c850a54333c70fdbdb995bf2c3474b1bedf504))
+
 ## [0.25.0](https://github.com/amplience/dc-cli/compare/v0.24.1...v0.25.0) (2025-07-02)
 
 
