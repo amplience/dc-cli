@@ -5,7 +5,7 @@ import { revert } from './import-revert';
 import { FileLog } from '../../common/file-log';
 import { dirname, basename, join, relative, resolve, extname } from 'path';
 
-import { lstat, readdir, readFile } from 'fs';
+import { lstat, readdir, readFile } from 'graceful-fs';
 import { promisify } from 'util';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 import paginator from '../../common/dc-management-sdk-js/paginator';
@@ -230,7 +230,6 @@ getOrCreateFolderCached = async (context: ImportContext, path: string): Promise<
 
 const traverseRecursive = async (path: string, action: (path: string) => Promise<void>): Promise<void> => {
   const dir = await promisify(readdir)(path);
-
   await Promise.all(
     dir.map(async (contained: string) => {
       contained = join(path, contained);
