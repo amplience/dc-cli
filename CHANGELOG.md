@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.26.1](https://github.com/amplience/dc-cli/compare/v0.26.0...v0.26.1) (2025-08-05)
+
+
+### Bug Fixes
+
+* using graceful fs to avoid emfile errors ([#220](https://github.com/amplience/dc-cli/issues/220)) ([030a266](https://github.com/amplience/dc-cli/commit/030a266764d2120dc6db0e3fb2e7b0ba40add483))
+
 ## [0.26.0](https://github.com/amplience/dc-cli/compare/v0.25.0...v0.26.0) (2025-07-29)
 
 
