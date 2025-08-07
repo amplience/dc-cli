@@ -30,6 +30,7 @@ Run `dc-cli --help` to get a list of available commands.
     - [event](#event)
     - [settings](#settings)
     - [hub](#hub)
+    - [linked-content-repository](#linked-content-repository)
   - [Building the CLI](#building-the-cli)
   - [Required permissions](#required-permissions)
 
@@ -174,6 +175,14 @@ These commands can be used to copy a hub's settings and content in their entiret
 Additionally, these commands may be used to store and retrieve hub configurations.
 
 [View commands for **hub**](docs/HUB.md)
+
+### linked-content-repository
+
+This category includes interactions with Dynamic Content's linked content repositories.
+
+These commands can be used to list multiple linked content repository.
+
+[View commands for **linked-content-repository**](docs/LINKED-CONTENT-REPOSITORY.md)
 
 ## Building the CLI
 
