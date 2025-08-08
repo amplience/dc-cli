@@ -4,16 +4,17 @@ exports[`cli should create a yarg instance if one is not supplied 1`] = `
 "dc-cli <command>
 
 Commands:
-  dc-cli configure            Saves the configuration options to a file
-  dc-cli content-item         Content Item
-  dc-cli content-repository   Content Repository
-  dc-cli content-type-schema  Content Type Schema
-  dc-cli content-type         Content Type
-  dc-cli event                Event
-  dc-cli extension            Extension
-  dc-cli hub                  Hub
-  dc-cli search-index         Search Index
-  dc-cli settings             Settings
+  dc-cli configure                  Saves the configuration options to a file
+  dc-cli content-item               Content Item
+  dc-cli content-repository         Content Repository
+  dc-cli content-type-schema        Content Type Schema
+  dc-cli content-type               Content Type
+  dc-cli event                      Event
+  dc-cli extension                  Extension
+  dc-cli hub                        Hub
+  dc-cli linked-content-repository  Linked Content Repository
+  dc-cli search-index               Search Index
+  dc-cli settings                   Settings
 
 Options:
   --help     Show help                                                 [boolean]
