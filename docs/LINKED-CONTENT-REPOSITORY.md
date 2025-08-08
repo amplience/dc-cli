@@ -18,6 +18,10 @@ Return to [README.md](../README.md) for information on other command categories.
       - [Options](#options)
       - [Examples](#examples)
         - [List all linked content repositories](#list-all-linked-content-repositories)
+    - [update](#update)
+      - [Options](#options-1)
+      - [Examples](#examples-1)
+        - [List all linked content repositories](#list-all-linked-content-repositories-1)
 
 <!-- /MarkdownTOC -->
 
@@ -55,3 +59,24 @@ dc-cli linked-content-repository list
 ##### List all linked content repositories
 
 `dc-cli linked-content-repository list`
+
+### update
+
+Update a linked content repository.
+
+```
+dc-cli linked-content-repository update
+```
+
+#### Options
+
+| Option Name | Type                            | Description                                           |
+| ----------- | ------------------------------- | ----------------------------------------------------- |
+| --file      | [string] <br />[required]       | Path to file containing link content respository JSON |
+| --json      | [boolean]<br />[default: false] | Render output as JSON                                 |
+
+#### Examples
+
+##### List all linked content repositories
+
+`dc-cli linked-content-repository update --file '/User/Ampy/my-linked-content-repository-to-update.json'`
