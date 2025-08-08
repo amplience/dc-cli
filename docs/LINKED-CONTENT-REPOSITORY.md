@@ -18,6 +18,10 @@ Return to [README.md](../README.md) for information on other command categories.
       - [Options](#options)
       - [Examples](#examples)
         - [List all linked content repositories](#list-all-linked-content-repositories)
+    - [create](#create)
+      - [Options](#options-1)
+      - [Examples](#examples-1)
+        - [Create a linked content repository](#create-a-linked-content-repository)
     - [update](#update)
       - [Options](#options-1)
       - [Examples](#examples-1)
@@ -64,6 +68,29 @@ dc-cli linked-content-repository list
 
 ```
 dc-cli linked-content-repository list
+```
+
+### create
+
+Creates a linked content repository.
+
+```
+dc-cli linked-content-repository create
+```
+
+#### Options
+
+| Option Name | Type                            | Description                                           |
+| ----------- | ------------------------------- | ----------------------------------------------------- |
+| --file      | [string] <br />[required]       | Path to file containing link content respository JSON |
+| --json      | [boolean]<br />[default: false] | Render output as JSON                                 |
+
+#### Examples
+
+##### Create a linked content repository
+
+```
+dc-cli linked-content-repository create --file '/User/Ampy/my-linked-content-repository-to-create.json'
 ```
 
 ### update
