@@ -21,7 +21,11 @@ Return to [README.md](../README.md) for information on other command categories.
     - [update](#update)
       - [Options](#options-1)
       - [Examples](#examples-1)
-        - [List all linked content repositories](#list-all-linked-content-repositories-1)
+        - [Update a linked content repository](#update-a-linked-content-repository)
+    - [delete](#delete)
+      - [Options](#options-2)
+      - [Examples](#examples-2)
+        - [Delete a linked content repository](#delete-a-linked-content-repository)
 
 <!-- /MarkdownTOC -->
 
@@ -58,11 +62,13 @@ dc-cli linked-content-repository list
 
 ##### List all linked content repositories
 
-`dc-cli linked-content-repository list`
+```
+dc-cli linked-content-repository list
+```
 
 ### update
 
-Update a linked content repository.
+Updates a linked content repository.
 
 ```
 dc-cli linked-content-repository update
@@ -77,6 +83,31 @@ dc-cli linked-content-repository update
 
 #### Examples
 
-##### List all linked content repositories
+##### Update a linked content repository
 
-`dc-cli linked-content-repository update --file '/User/Ampy/my-linked-content-repository-to-update.json'`
+```
+dc-cli linked-content-repository update --file '/User/Ampy/my-linked-content-repository-to-update.json'
+```
+
+### delete
+
+Deletes a linked content repository.
+
+```
+dc-cli linked-content-repository delete
+```
+
+#### Options
+
+| Option Name | Type                            | Description                                           |
+| ----------- | ------------------------------- | ----------------------------------------------------- |
+| --file      | [string] <br />[required]       | Path to file containing link content respository JSON |
+| --json      | [boolean]<br />[default: false] | Render output as JSON                                 |
+
+#### Examples
+
+##### Delete a linked content repository
+
+```
+dc-cli linked-content-repository delete --file '/User/Ampy/my-linked-content-repository-to-delete.json'
+```
