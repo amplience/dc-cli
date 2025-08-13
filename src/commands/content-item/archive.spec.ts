@@ -807,7 +807,25 @@ describe('content-item archive command', () => {
       expect((mockItemUpdate as jest.Mock).mock.calls[0][1]).toEqual({});
     });
 
-    it('should update content item with ignoreSchemaValidation param when delivery key is set', async () => {
+    it('should update content item with no additional params when delivery keys is set', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const { mockItemUpdate, contentItems } = mockValues();
+
+      contentItems[0].body._meta.deliveryKeys = { values: [{ value: 'delivery-key' }] };
+      const argv = {
+        ...yargArgs,
+        ...config
+      };
+      await handler(argv);
+
+      expect(mockItemUpdate).toHaveBeenCalledTimes(1);
+      // check we're not sending any update params
+      expect((mockItemUpdate as jest.Mock).mock.calls[0][1]).toEqual({});
+    });
+
+    it('should update content item with ignoreSchemaValidation param', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
