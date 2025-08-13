@@ -606,7 +606,7 @@ describe('content-item unarchive command', () => {
       expect(mockUnarchive).toBeCalledTimes(2);
     });
 
-    it('should unarchive content items specified in the provided --revertLog', async () => {
+    it('should unarchive content items specified in the provided --revertLog maintaining deliveryKey', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
@@ -643,6 +643,97 @@ describe('content-item unarchive command', () => {
       const updateItem: ContentItem = (mockItemUpdate as jest.Mock).mock.calls[0][0];
       expect(updateItem.body._meta.deliveryKey).toEqual('delivery-key');
       expect(mockUnarchive).toBeCalledTimes(2);
+    });
+
+    it('should unarchive content items specified in the provided --revertLog maintaining deliveryKeys', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
+      const log =
+        '// Type log test file\n' +
+        'ARCHIVE 1\n' +
+        'ARCHIVE 2  delivery-key-1,delivery-key-2\n' +
+        'ARCHIVE idMissing\n';
+
+      const dir = dirname(logFileName);
+      if (!(await promisify(exists)(dir))) {
+        await promisify(mkdir)(dir);
+      }
+      await promisify(writeFile)(logFileName, log);
+
+      const { mockUnarchive, mockItemUpdate, mockItemGetById, contentItems } = mockValues();
+
+      (mockItemGetById as jest.Mock).mockReset();
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[1]);
+      (mockItemGetById as jest.Mock).mockRejectedValue(new Error("Couldn't locate item"));
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        silent: true,
+        force: true,
+        revertLog: logFileName
+      };
+      await handler(argv);
+
+      expect(mockItemGetById).toHaveBeenNthCalledWith(1, '1');
+      expect(mockItemGetById).toHaveBeenNthCalledWith(2, '2');
+      expect(mockItemGetById).toHaveBeenNthCalledWith(3, 'idMissing');
+      expect(mockItemUpdate).toHaveBeenCalled();
+      const updateItem: ContentItem = (mockItemUpdate as jest.Mock).mock.calls[0][0];
+      expect(updateItem.body._meta.deliveryKeys).toEqual({
+        values: [{ value: 'delivery-key-1' }, { value: 'delivery-key-2' }]
+      });
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
+    });
+
+    it('should unarchive content items specified in the provided --revertLog maintaining deliveryKey and deliveryKeys', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['y']);
+
+      const logFileName = `temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`;
+      const log =
+        '// Type log test file\n' +
+        'ARCHIVE 1\n' +
+        'ARCHIVE 2 delivery-key delivery-key-1,delivery-key-2\n' +
+        'ARCHIVE idMissing\n';
+
+      const dir = dirname(logFileName);
+      if (!(await promisify(exists)(dir))) {
+        await promisify(mkdir)(dir);
+      }
+      await promisify(writeFile)(logFileName, log);
+
+      const { mockUnarchive, mockItemUpdate, mockItemGetById, contentItems } = mockValues();
+
+      (mockItemGetById as jest.Mock).mockReset();
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[0]);
+      (mockItemGetById as jest.Mock).mockResolvedValueOnce(contentItems[1]);
+      (mockItemGetById as jest.Mock).mockRejectedValue(new Error("Couldn't locate item"));
+
+      const argv = {
+        ...yargArgs,
+        ...config,
+        logFile: LOG_FILENAME(),
+        silent: true,
+        force: true,
+        revertLog: logFileName
+      };
+      await handler(argv);
+
+      expect(mockItemGetById).toHaveBeenNthCalledWith(1, '1');
+      expect(mockItemGetById).toHaveBeenNthCalledWith(2, '2');
+      expect(mockItemGetById).toHaveBeenNthCalledWith(3, 'idMissing');
+      expect(mockItemUpdate).toHaveBeenCalled();
+      const updateItem: ContentItem = (mockItemUpdate as jest.Mock).mock.calls[0][0];
+      expect(updateItem.body._meta.deliveryKey).toEqual('delivery-key');
+      expect(updateItem.body._meta.deliveryKeys).toEqual({
+        values: [{ value: 'delivery-key-1' }, { value: 'delivery-key-2' }]
+      });
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it("shouldn't unarchive content items, getFacet error", async () => {

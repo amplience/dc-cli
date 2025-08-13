@@ -8,6 +8,7 @@ import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
+import { isEqual } from 'lodash';
 
 export const command = 'unarchive [id]';
 
@@ -108,19 +109,24 @@ export const getContentItems = async ({
       id = revertItems.map(item => item[0]);
     }
 
-    if (id != null) {
+    if (id) {
       const itemIds = Array.isArray(id) ? id : [id];
       const items: ContentItem[] = [];
 
       for (let i = 0; i < itemIds.length; i++) {
-        const id = itemIds[i];
         try {
-          const contentItem = await client.contentItems.get(id);
-          items.push(contentItem);
+          const contentItem = await client.contentItems.get(itemIds[i]);
 
-          if (revertItems.length == itemIds.length) {
-            contentItem.body._meta.deliveryKey = revertItems[i][1];
+          if (revertItems.length === itemIds.length) {
+            contentItem.body._meta.deliveryKey = revertItems[i][1] || null;
+            const archivedDeliveryKeys: string[] = revertItems[i][2] ? revertItems[i][2]?.split(',') : [];
+            if (archivedDeliveryKeys?.length) {
+              contentItem.body._meta.deliveryKeys = {
+                values: archivedDeliveryKeys.map(deliveryKey => ({ value: deliveryKey }))
+              };
+            }
           }
+          items.push(contentItem);
         } catch {
           // Missing item.
         }
@@ -139,7 +145,10 @@ export const getContentItems = async ({
     contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ARCHIVED });
 
     // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
-    contentItems.forEach(item => delete item.body._meta.deliveryKey);
+    contentItems.forEach(item => {
+      delete item.body._meta.deliveryKey;
+      delete item.body._meta.deliveryKeys;
+    });
 
     return { contentItems, missingContent: false };
   } catch (err) {
@@ -197,11 +206,16 @@ export const processItems = async ({
   for (let i = 0; i < contentItems.length; i++) {
     try {
       const deliveryKey = contentItems[i].body._meta.deliveryKey;
+      const deliveryKeys = contentItems[i].body._meta.deliveryKeys;
       contentItems[i] = await contentItems[i].related.unarchive();
 
-      if (contentItems[i].body._meta.deliveryKey != deliveryKey) {
+      if (
+        contentItems[i].body._meta.deliveryKey !== deliveryKey ||
+        !isEqual(contentItems[i].body._meta.deliveryKeys, deliveryKeys)
+      ) {
         // Restore the delivery key if present. (only on ARCHIVE revert)
-        contentItems[i].body._meta.deliveryKey = deliveryKey;
+        contentItems[i].body._meta.deliveryKey = deliveryKey || null;
+        contentItems[i].body._meta.deliveryKeys = deliveryKeys;
         const updateParams = { ...(ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {}) };
         await contentItems[i].related.update(contentItems[i], updateParams);
       }
