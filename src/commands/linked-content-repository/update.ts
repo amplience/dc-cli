@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import DataPresenter, { RenderingArguments } from '../../view/data-presenter';
+import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { jsonResolver } from '../../common/json-resolver/json-resolver';
 import { LinkedContentRepository } from 'dc-management-sdk-js';
@@ -17,6 +17,9 @@ export const builder = (yargs: Argv): void => {
       demandOption: true,
       description: 'Linked Content Repository json file location',
       requiresArg: true
+    },
+    json: {
+      ...RenderingOptions
     }
   });
 };
