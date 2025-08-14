@@ -1,6 +1,6 @@
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
-import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
+import DataPresenter, { RenderingArguments } from '../../view/data-presenter';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { jsonResolver } from '../../common/json-resolver/json-resolver';
 import { LinkedContentRepository } from 'dc-management-sdk-js';
@@ -19,13 +19,16 @@ export const builder = (yargs: Argv): void => {
       requiresArg: true
     },
     json: {
-      ...RenderingOptions
+      type: 'boolean',
+      demandOption: false,
+      description: 'Linked Content Repository json output'
     }
   });
 };
 
 export interface BuilderOptions {
   file: string;
+  json: boolean;
 }
 
 export const handler = async (
@@ -33,10 +36,10 @@ export const handler = async (
 ): Promise<void> => {
   const { file } = argv;
   const client = dynamicContentClientFactory(argv);
-  const json = await jsonResolver(file);
+  const resolvedJson = await jsonResolver(file);
   const hub = await client.hubs.get(argv.hubId);
   const linkedContentRepository = await hub.related.linkedContentRepositories.create(
-    new LinkedContentRepository(JSON.parse(json))
+    new LinkedContentRepository(JSON.parse(resolvedJson))
   );
 
   new DataPresenter(linkedContentRepository.toJSON()).render({
