@@ -342,7 +342,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content by id', async () => {
@@ -361,7 +361,7 @@ describe('content-item archive command', () => {
 
       expect(mockItemGetById).toHaveBeenCalled();
       expect(mockFacet).not.toHaveBeenCalled();
-      expect(mockArchive).toBeCalledTimes(1);
+      expect(mockArchive).toHaveBeenCalledTimes(1);
     });
 
     it("shouldn't archive content by id", async () => {
@@ -379,7 +379,7 @@ describe('content-item archive command', () => {
 
       expect(mockItemGetById).toHaveBeenCalled();
       expect(mockFacet).not.toHaveBeenCalled();
-      expect(mockArchive).not.toBeCalled();
+      expect(mockArchive).not.toHaveBeenCalled();
     });
 
     it('should archive content by repo id', async () => {
@@ -401,7 +401,7 @@ describe('content-item archive command', () => {
         repoId: 'repo1',
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content by repo ids', async () => {
@@ -423,7 +423,7 @@ describe('content-item archive command', () => {
         repoId: ['repo1', 'repo2'],
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content by folder id', async () => {
@@ -447,7 +447,7 @@ describe('content-item archive command', () => {
         repoId: 'repo123',
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content by folder ids', async () => {
@@ -469,7 +469,7 @@ describe('content-item archive command', () => {
         folderId: ['folder1', 'folder1'],
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content by name', async () => {
@@ -492,7 +492,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should exit if a facet AND id are provided', async () => {
@@ -509,10 +509,10 @@ describe('content-item archive command', () => {
       };
       await handler(argv);
 
-      expect(mockFacet).not.toBeCalled();
-      expect(mockFolderGet).not.toBeCalled();
-      expect(mockItemsList).not.toBeCalled();
-      expect(mockArchive).not.toBeCalled();
+      expect(mockFacet).not.toHaveBeenCalled();
+      expect(mockFolderGet).not.toHaveBeenCalled();
+      expect(mockItemsList).not.toHaveBeenCalled();
+      expect(mockArchive).not.toHaveBeenCalled();
     });
 
     it("shouldn't unarchive content when facet returns none", async () => {
@@ -538,7 +538,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).not.toBeCalled();
+      expect(mockArchive).not.toHaveBeenCalled();
     });
 
     it("shouldn't archive content, answer no", async () => {
@@ -561,7 +561,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).not.toBeCalled();
+      expect(mockArchive).not.toHaveBeenCalled();
     });
 
     it('should archive content by content type name', async () => {
@@ -582,7 +582,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content with ignoreError', async () => {
@@ -603,7 +603,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it("shouldn't archive content with ignoreError", async () => {
@@ -624,7 +624,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(1);
+      expect(mockArchive).toHaveBeenCalledTimes(1);
     });
 
     it('should archive content items without asking if --force is provided', async () => {
@@ -645,7 +645,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it('should archive content items specified in the provided --revertLog', async () => {
@@ -680,7 +680,7 @@ describe('content-item archive command', () => {
       expect(mockItemGetById).toHaveBeenNthCalledWith(1, '1');
       expect(mockItemGetById).toHaveBeenNthCalledWith(2, '2');
       expect(mockItemGetById).toHaveBeenNthCalledWith(3, 'idMissing');
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
     });
 
     it("shouldn't archive content items, getFacet error", async () => {
@@ -704,7 +704,7 @@ describe('content-item archive command', () => {
         status: Status.ACTIVE,
         enrichItems: true
       });
-      expect(mockArchive).not.toBeCalled();
+      expect(mockArchive).not.toHaveBeenCalled();
     });
 
     it("shouldn't archive content items, revertLog error", async () => {
@@ -737,7 +737,7 @@ describe('content-item archive command', () => {
 
       expect(mockItemGetById).not.toHaveBeenCalled();
       expect(mockFacet).not.toHaveBeenCalled();
-      expect(mockArchive).not.toBeCalled();
+      expect(mockArchive).not.toHaveBeenCalled();
     });
 
     it('should archive content items, write log file', async () => {
@@ -762,7 +762,7 @@ describe('content-item archive command', () => {
       await handler(argv);
 
       expect(mockItemGetById).toHaveBeenCalled();
-      expect(mockArchive).toBeCalled();
+      expect(mockArchive).toHaveBeenCalled();
 
       const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-archive.log`);
 
@@ -903,7 +903,7 @@ describe('content-item archive command', () => {
         logFile: createLog('./logFile.log')
       });
 
-      expect(mockArchive).toBeCalledTimes(2);
+      expect(mockArchive).toHaveBeenCalledTimes(2);
 
       if (await promisify(exists)('./logFile.log')) {
         await promisify(unlink)('./logFile.log');
@@ -920,7 +920,7 @@ describe('content-item archive command', () => {
         logFile: new FileLog()
       });
 
-      expect(console.log).toBeCalled();
+      expect(console.log).toHaveBeenCalled();
       expect(console.log).toHaveBeenLastCalledWith('Nothing found to archive, aborting.');
     });
   });
