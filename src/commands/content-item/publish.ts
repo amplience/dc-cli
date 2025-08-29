@@ -9,10 +9,12 @@ import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
+import { MAX_PUBLISH_RATE_LIMIT } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
 import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-mapping';
+import { PublishingService } from '../../common/publishing/publishing-service';
+import { PublishingJobService } from '../../common/publishing/publishing-job-service';
 
 export const command = 'publish [id]';
 
@@ -188,18 +190,19 @@ export const processItems = async ({
     }
   }
 
-  const pubQueue = new PublishQueue(argv);
-
   log.appendLine(`Publishing ${rootContentItems.length} items.`);
 
-  if (!argv.batchPublish) {
-    pubQueue.maxWaiting = 1;
-  }
+  // if (!argv.batchPublish) {
+  //   pubQueue.maxWaiting = 1;
+  // }
+
+  const publishingService = new PublishingService();
 
   for (const item of rootContentItems) {
     try {
-      await pubQueue.publish(item);
-      log.appendLine(`Initiating publish for "${item.label}"`);
+      await publishingService.publish(item, () => {
+        log.appendLine(`Initiating publish for "${item.label}"`);
+      });
     } catch (e) {
       log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
@@ -207,26 +210,32 @@ export const processItems = async ({
 
   log.appendLine(`Waiting for all publish jobs to complete...`);
 
+  const client = dynamicContentClientFactory(argv);
+  const publishingJobService = new PublishingJobService(client);
+
+  for (const publishJob of publishingService.publishJobs) {
+    publishingJobService.check(publishJob, async () => {
+      log.appendLine(`trying to retry publish ${publishJob.label}`);
+    });
+  }
+
   let keepWaiting = true;
-
-  while (!pubQueue.isEmpty() && keepWaiting) {
-    await pubQueue.waitForAll();
-
-    if (pubQueue.unresolvedJobs.length > 0) {
+  while (publishingJobService.size > 0 && keepWaiting) {
+    if (publishingJobService.pendingSize > 0) {
       keepWaiting = await asyncQuestion(
         'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
       );
     }
   }
 
-  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publish jobs`);
-  pubQueue.unresolvedJobs.forEach(job => {
-    log.appendLine(` - ${job.item.label}`);
+  log.appendLine(`Finished publishing, with ${publishingJobService.pendingSize} unresolved publish jobs`);
+  publishingJobService.pendingPublishingContentItems.forEach(item => {
+    log.appendLine(` - ${item.label}`);
   });
 
-  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publish jobs`);
-  pubQueue.failedJobs.forEach(job => {
-    log.appendLine(` - ${job.item.label}`);
+  log.appendLine(`Finished publishing, with ${publishingJobService.failedJobs.length} failed publish jobs`);
+  publishingJobService.failedPublishingContentItems.forEach(item => {
+    log.appendLine(` - ${item.label}`);
   });
 
   log.appendLine(`Publish complete`);

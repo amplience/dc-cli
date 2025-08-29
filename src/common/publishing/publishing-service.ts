@@ -3,7 +3,7 @@ import { BurstableQueue } from '../burstable-queue/burstable-queue';
 
 export class PublishingService {
   private queue;
-  private _publishJobs = [];
+  private _publishJobs: ContentItem[] = [];
 
   constructor() {
     this.queue = new BurstableQueue({});
