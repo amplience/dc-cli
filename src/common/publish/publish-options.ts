@@ -8,4 +8,5 @@ export default interface PublishOptions {
   logFile: FileLog;
   force?: boolean;
   silent?: boolean;
+  publishRateLimit?: number;
 }

@@ -1,7 +1,7 @@
 import { builder, handler, getContentItems, processItems, LOG_FILENAME, coerceLog } from './publish';
 import { Status, ContentItem, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { FileLog } from '../../common/file-log';
-import * as publish from '../../common/import/publish-queue';
+import * as publishingService from '../../common/publishing/publishing-service';
 import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import PublishOptions from '../../common/publish/publish-options';
@@ -11,7 +11,6 @@ jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/content-item/confirm-all-content');
 jest.mock('../../common/log-helpers');
 jest.mock('../../common/filter/fetch-content');
-jest.mock('../../common/import/publish-queue');
 
 const mockClient = {
   contentItems: {
@@ -39,10 +38,6 @@ const argv: Arguments<ConfigurationParameters> = {
 } as Arguments<ConfigurationParameters>;
 
 describe('publish tests', () => {
-  afterEach((): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (publish as any).publishCalls = [];
-  });
   describe('builder tests', () => {
     it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
@@ -73,12 +68,6 @@ describe('publish tests', () => {
         type: 'string',
         describe:
           "Publish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
-      });
-
-      expect(spyOption).toHaveBeenCalledWith('batchPublish', {
-        type: 'boolean',
-        boolean: true,
-        describe: 'Batch publish requests up to the rate limit. (35/min)'
       });
 
       expect(spyOption).toHaveBeenCalledWith('f', {
@@ -154,7 +143,27 @@ describe('publish tests', () => {
   });
 
   describe('processItems tests', () => {
-    beforeEach(() => jest.clearAllMocks());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let publishCalls: any[];
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+
+      publishCalls = [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (publishingService as any).PublishingService = jest.fn().mockImplementation(() => ({
+        publish: jest.fn(async (item, action) => {
+          publishCalls.push(item);
+          action();
+        }),
+        publishJobs: [],
+        onIdle: jest.fn().mockResolvedValue(undefined)
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (publishingService as any).publishCalls = publishCalls;
+    });
 
     it('should exit early if no content items', async () => {
       console.log = jest.fn();
@@ -201,8 +210,7 @@ describe('publish tests', () => {
         argv
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((publish as any).publishCalls.length).toEqual(1);
+      expect(publishCalls.length).toBe(1);
     });
 
     it('should process all items while filtering out any dependencies and call publish', async () => {
@@ -235,7 +243,7 @@ describe('publish tests', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((publish as any).publishCalls.length).toEqual(1);
+      expect(publishCalls.length).toBe(1);
     });
   });
 

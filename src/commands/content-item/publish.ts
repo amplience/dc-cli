@@ -9,12 +9,12 @@ import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { MAX_PUBLISH_RATE_LIMIT } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
 import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-mapping';
 import { PublishingService } from '../../common/publishing/publishing-service';
 import { PublishingJobService } from '../../common/publishing/publishing-job-service';
+import { BurstableQueueOptions, RESERVOIR_REFRESH_AMOUNT } from '../../common/burstable-queue/burstable-queue';
 
 export const command = 'publish [id]';
 
@@ -47,14 +47,10 @@ export const builder = (yargs: Argv): void => {
       describe:
         "Publish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
     })
-    .option('batchPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Batch publish requests up to the rate limit. (35/min)'
-    })
+    .alias('publishRateLimit', 'publishRateLimit')
     .options('publishRateLimit', {
       type: 'number',
-      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
+      describe: `Set the number of publishes per minute (max = ${RESERVOIR_REFRESH_AMOUNT})`
     })
     .alias('f', 'force')
     .option('f', {
@@ -192,11 +188,14 @@ export const processItems = async ({
 
   log.appendLine(`Publishing ${rootContentItems.length} items.`);
 
-  // if (!argv.batchPublish) {
-  //   pubQueue.maxWaiting = 1;
-  // }
+  const options: BurstableQueueOptions = {};
 
-  const publishingService = new PublishingService();
+  if (argv.publishRateLimit) {
+    const rate: number = parseInt(argv.publishRateLimit.toString());
+    options.sustainedIntervalCap = rate;
+  }
+
+  const publishingService = new PublishingService(options);
 
   for (const item of rootContentItems) {
     try {
@@ -227,6 +226,8 @@ export const processItems = async ({
       );
     }
   }
+
+  await publishingService.onIdle();
 
   log.appendLine(`Finished publishing, with ${publishingJobService.pendingSize} unresolved publish jobs`);
   publishingJobService.pendingPublishingContentItems.forEach(item => {

@@ -1,9 +1,9 @@
 import Bottleneck from 'bottleneck';
 
-const CONCURRENCY = 4;
-const INITIAL_RESERVOIR = 70;
-const RESERVOIR_REFRESH_AMOUNT = 30;
-const RESERVOIR_INCREASE_INTERVAL = 60_000;
+export const CONCURRENCY = 4;
+export const INITIAL_RESERVOIR = 70;
+export const RESERVOIR_REFRESH_AMOUNT = 30;
+export const RESERVOIR_INCREASE_INTERVAL = 60_000;
 
 export interface BurstableQueueOptions {
   concurrency?: number;

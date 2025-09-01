@@ -1,12 +1,12 @@
 import { ContentItem } from 'dc-management-sdk-js';
-import { BurstableQueue } from '../burstable-queue/burstable-queue';
+import { BurstableQueue, BurstableQueueOptions } from '../burstable-queue/burstable-queue';
 
 export class PublishingService {
   private queue;
   private _publishJobs: ContentItem[] = [];
 
-  constructor() {
-    this.queue = new BurstableQueue({});
+  constructor(options: BurstableQueueOptions) {
+    this.queue = new BurstableQueue(options);
   }
 
   async publish(contentItem: ContentItem, action: () => void) {
