@@ -31,9 +31,12 @@ import { Body } from '../../common/content-item/body';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
-import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import { progressBar } from '../../common/progress-bar/progress-bar';
+import { BurstableQueueOptions, RESERVOIR_REFRESH_AMOUNT } from '../../common/burstable-queue/burstable-queue';
+import { PublishingService } from '../../common/publishing/publishing-service';
+import { PublishingJobService } from '../../common/publishing/publishing-job-service';
+import PublishOptions from '../../common/publish/publish-options';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -106,12 +109,6 @@ export const builder = (yargs: Argv): void => {
         'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
-    .option('batchPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Batch publish requests up to the rate limit. (35/min)'
-    })
-
     .option('republish', {
       type: 'boolean',
       boolean: true,
@@ -120,7 +117,7 @@ export const builder = (yargs: Argv): void => {
 
     .options('publishRateLimit', {
       type: 'number',
-      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
+      describe: `Set the number of publishes per minute (max = ${RESERVOIR_REFRESH_AMOUNT})`
     })
 
     .option('excludeKeys', {
@@ -890,46 +887,59 @@ const importTree = async (
   }
 
   if (argv.publish) {
-    const pubQueue = new PublishQueue(argv);
+    const options: BurstableQueueOptions = {};
+
     log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
 
-    if (!argv.batchPublish) {
-      pubQueue.maxWaiting = 1;
+    if (argv.publishRateLimit) {
+      const rate: number = parseInt(argv.publishRateLimit.toString());
+      options.sustainedIntervalCap = rate;
     }
+
+    const publishingService = new PublishingService(options);
 
     for (let i = 0; i < publishable.length; i++) {
       const item = publishable[i].item;
 
       try {
-        await pubQueue.publish(item);
-        log.appendLine(`Started publish for ${item.label}.`);
+        await publishingService.publish(item, () => {
+          log.appendLine(`Initiating publish for "${item.label}"`);
+        });
       } catch (e) {
         log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
       }
     }
 
-    log.appendLine(`Waiting for all publishes to complete...`);
+    log.appendLine(`Waiting for all publish jobs to complete...`);
+
+    const client = dynamicContentClientFactory(argv);
+    const publishingJobService = new PublishingJobService(client);
+
+    for (const publishJob of publishingService.publishJobs) {
+      publishingJobService.check(publishJob, async () => {
+        log.appendLine(`trying to retry publish ${publishJob.label}`);
+      });
+    }
 
     let keepWaiting = true;
-
-    while (!pubQueue.isEmpty() && keepWaiting) {
-      await pubQueue.waitForAll();
-
-      if (pubQueue.unresolvedJobs.length > 0) {
+    while (publishingJobService.size > 0 && keepWaiting) {
+      if (publishingJobService.pendingSize > 0) {
         keepWaiting = await asyncQuestion(
           'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
         );
       }
     }
 
-    log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
-    pubQueue.unresolvedJobs.forEach(job => {
-      log.appendLine(` - ${job.item.label}`);
+    await publishingService.onIdle();
+
+    log.appendLine(`Finished publishing, with ${publishingJobService.pendingSize} unresolved publish jobs`);
+    publishingJobService.pendingPublishingContentItems.forEach(item => {
+      log.appendLine(` - ${item.label}`);
     });
 
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
-    pubQueue.failedJobs.forEach(job => {
-      log.appendLine(` - ${job.item.label}`);
+    log.appendLine(`Finished publishing, with ${publishingJobService.failedJobs.length} failed publish jobs`);
+    publishingJobService.failedPublishingContentItems.forEach(item => {
+      log.appendLine(` - ${item.label}`);
     });
   }
 
@@ -938,7 +948,7 @@ const importTree = async (
 };
 
 export const handler = async (
-  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
+  argv: Arguments<PublishOptions & ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
   if (await argv.revertLog) {
     return revert(argv);

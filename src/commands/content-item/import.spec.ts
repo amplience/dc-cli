@@ -1,7 +1,7 @@
 import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './import';
 import { dependsOn, dependantType } from './__mocks__/dependant-content-helper';
 import * as reverter from './import-revert';
-import * as publish from '../../common/import/publish-queue';
+import * as publishingService from '../../common/publishing/publishing-service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Folder, ContentType } from 'dc-management-sdk-js';
@@ -20,7 +20,6 @@ import { MediaRewriter } from '../../common/media/media-rewriter';
 jest.mock('readline');
 jest.mock('./import-revert');
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../../common/import/publish-queue');
 jest.mock('../../common/media/media-rewriter');
 jest.mock('../../common/log-helpers', () => ({
   ...jest.requireActual('../../common/log-helpers'),
@@ -111,12 +110,6 @@ describe('content-item import command', () => {
           'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('batchPublish', {
-        type: 'boolean',
-        boolean: true,
-        describe: 'Batch publish requests up to the rate limit. (35/min)'
-      });
-
       expect(spyOption).toHaveBeenCalledWith('republish', {
         type: 'boolean',
         boolean: true,
@@ -167,12 +160,28 @@ describe('content-item import command', () => {
       revertLog: Promise.resolve(undefined)
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let publishCalls: any[];
+
     beforeEach(async () => {
+      jest.clearAllMocks();
       jest.mock('readline');
       jest.mock('../../services/dynamic-content-client-factory');
+
+      publishCalls = [];
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const calls = (publish as any).publishCalls;
-      calls.splice(0, calls.length);
+      (publishingService as any).PublishingService = jest.fn().mockImplementation(() => ({
+        publish: jest.fn(async (item, action) => {
+          publishCalls.push(item);
+          action();
+        }),
+        publishJobs: [],
+        onIdle: jest.fn().mockResolvedValue(undefined)
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (publishingService as any).publishCalls = publishCalls;
     });
 
     beforeAll(async () => {
@@ -1181,8 +1190,9 @@ describe('content-item import command', () => {
       const matches = await mockContent.filterMatch(templates, '', false);
 
       expect(matches.length).toEqual(templates.length);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((publish as any).publishCalls.length).toEqual(2);
+      expect(publishCalls.length).toEqual(2);
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/publish/`);
     });
@@ -1239,7 +1249,7 @@ describe('content-item import command', () => {
       expect(mockContent.metrics.itemsUpdated).toEqual(3);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((publish as any).publishCalls.length).toEqual(1); // One of the circular dependancies will be published.
+      expect(publishCalls.length).toEqual(1); // One of the circular dependancies will be published.
 
       const matches = await mockContent.filterMatch(templates, '', false);
 
