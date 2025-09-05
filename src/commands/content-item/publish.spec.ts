@@ -1,18 +1,45 @@
 import { builder, handler, getContentItems, processItems, LOG_FILENAME, coerceLog } from './publish';
-import { Status, ContentItem, DynamicContent, Hub, PublishingJobLocation, PublishingJob } from 'dc-management-sdk-js';
+import { Status, ContentItem, DynamicContent, Hub, PublishingJob } from 'dc-management-sdk-js';
 import { FileLog } from '../../common/file-log';
-import * as publishingService from '../../common/publishing/content-item-publishing-service';
 import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import PublishOptions from '../../common/publish/publish-options';
 import Yargs from 'yargs/yargs';
 import readline from 'readline';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
+
+const mockPublish = jest.fn().mockImplementation((contentItems, fn) => {
+  fn(contentItems);
+});
+const mockCheck = jest.fn().mockImplementation((publishingJob, fn) => {
+  fn(new PublishingJob({ state: PublishingJobStatus.COMPLETED }));
+});
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/content-item/confirm-all-content');
 jest.mock('../../common/log-helpers');
 jest.mock('../../common/filter/fetch-content');
 jest.mock('readline');
+jest.mock('../../common/publishing/content-item-publishing-service', () => {
+  return {
+    ContentItemPublishingService: jest.fn().mockImplementation(() => {
+      return {
+        publish: mockPublish,
+        onIdle: jest.fn()
+      };
+    })
+  };
+});
+jest.mock('../../common/publishing/content-item-publishing-job-service', () => {
+  return {
+    ContentItemPublishingJobService: jest.fn().mockImplementation(() => {
+      return {
+        check: mockCheck,
+        onIdle: jest.fn()
+      };
+    })
+  };
+});
 
 const mockClient = {
   contentItems: {
@@ -136,26 +163,9 @@ describe('publish tests', () => {
   });
 
   describe('processItems tests', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let publishCalls: any[];
-
     beforeEach(() => {
       jest.clearAllMocks();
-
-      publishCalls = [];
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (publishingService as any).PublishingService = jest.fn().mockImplementation(() => ({
-        publish: jest.fn(async (item, action) => {
-          publishCalls.push(item);
-          action();
-        }),
-        publishJobs: [],
-        onIdle: jest.fn().mockResolvedValue(undefined)
-      }));
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (publishingService as any).publishCalls = publishCalls;
+      jest.mock('readline');
     });
 
     it('should exit early if no content items', async () => {
@@ -193,19 +203,6 @@ describe('publish tests', () => {
     it('should process all items and call publish', async () => {
       const contentItem = new ContentItem({ id: '1', label: 'Publish Me', body: { _meta: {} } });
 
-      const mockedPublishingJob = jest.fn();
-      const mockedPublish = jest.fn();
-
-      const publishingJobLocation = new PublishingJobLocation({
-        location: 'https://api.amplience.net/v2/content/publishing-jobs/68adcb6c1ad05f3b50ebc821'
-      });
-
-      publishingJobLocation.related.publishingJob = mockedPublishingJob.mockResolvedValue(new PublishingJob());
-
-      contentItem.related.publish = mockedPublish.mockResolvedValue(publishingJobLocation);
-
-      mockClient.contentItems.get = jest.fn().mockResolvedValue(contentItem);
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['Y']);
 
@@ -219,8 +216,8 @@ describe('publish tests', () => {
         client: mockClient
       });
 
-      expect(mockedPublish).toHaveBeenCalledTimes(1);
-      expect(mockedPublishingJob).toHaveBeenCalledTimes(1);
+      expect(mockPublish).toHaveBeenCalledTimes(1);
+      expect(mockCheck).toHaveBeenCalledTimes(1);
     });
 
     it('should process all items while filtering out any dependencies and call publish', async () => {
@@ -242,6 +239,9 @@ describe('publish tests', () => {
         body: { _meta: {} }
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['Y']);
+
       await processItems({
         contentItems: [contentItemWithDependency, contentItemDependency],
         force: true,
@@ -252,8 +252,8 @@ describe('publish tests', () => {
         client: mockClient
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(publishCalls.length).toBe(1);
+      expect(mockPublish).toHaveBeenCalledTimes(1);
+      expect(mockCheck).toHaveBeenCalledTimes(1);
     });
   });
 
