@@ -111,12 +111,6 @@ export const builder = (yargs: Argv): void => {
         'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
-    .option('batchPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Batch publish requests up to the rate limit. (35/min)'
-    })
-
     .option('republish', {
       type: 'boolean',
       boolean: true,
