@@ -1,16 +1,18 @@
 import { builder, handler, getContentItems, processItems, LOG_FILENAME, coerceLog } from './publish';
-import { Status, ContentItem, DynamicContent, Hub } from 'dc-management-sdk-js';
+import { Status, ContentItem, DynamicContent, Hub, PublishingJobLocation, PublishingJob } from 'dc-management-sdk-js';
 import { FileLog } from '../../common/file-log';
-import * as publishingService from '../../common/publishing/publishing-service';
+import * as publishingService from '../../common/publishing/content-item-publishing-service';
 import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import PublishOptions from '../../common/publish/publish-options';
 import Yargs from 'yargs/yargs';
+import readline from 'readline';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/content-item/confirm-all-content');
 jest.mock('../../common/log-helpers');
 jest.mock('../../common/filter/fetch-content');
+jest.mock('readline');
 
 const mockClient = {
   contentItems: {
@@ -27,15 +29,6 @@ const mockLog = {
     close: jest.fn()
   })
 } as unknown as FileLog;
-
-const argv: Arguments<ConfigurationParameters> = {
-  $0: '',
-  _: [],
-  clientId: 'client-id',
-  clientSecret: 'client-secret',
-  hubId: 'hub-id',
-  batchPublish: false
-} as Arguments<ConfigurationParameters>;
 
 describe('publish tests', () => {
   describe('builder tests', () => {
@@ -173,7 +166,7 @@ describe('publish tests', () => {
         logFile: mockLog,
         allContent: false,
         missingContent: false,
-        argv
+        client: mockClient
       });
 
       expect(console.log).toHaveBeenCalledWith('Nothing found to publish, aborting.');
@@ -191,7 +184,7 @@ describe('publish tests', () => {
         logFile: mockLog,
         allContent: false,
         missingContent: false,
-        argv
+        client: mockClient
       });
 
       expect(confirmAllContent).toHaveBeenCalled();
@@ -200,6 +193,22 @@ describe('publish tests', () => {
     it('should process all items and call publish', async () => {
       const contentItem = new ContentItem({ id: '1', label: 'Publish Me', body: { _meta: {} } });
 
+      const mockedPublishingJob = jest.fn();
+      const mockedPublish = jest.fn();
+
+      const publishingJobLocation = new PublishingJobLocation({
+        location: 'https://api.amplience.net/v2/content/publishing-jobs/68adcb6c1ad05f3b50ebc821'
+      });
+
+      publishingJobLocation.related.publishingJob = mockedPublishingJob.mockResolvedValue(new PublishingJob());
+
+      contentItem.related.publish = mockedPublish.mockResolvedValue(publishingJobLocation);
+
+      mockClient.contentItems.get = jest.fn().mockResolvedValue(contentItem);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['Y']);
+
       await processItems({
         contentItems: [contentItem],
         force: true,
@@ -207,10 +216,11 @@ describe('publish tests', () => {
         logFile: mockLog,
         allContent: false,
         missingContent: false,
-        argv
+        client: mockClient
       });
 
-      expect(publishCalls.length).toBe(1);
+      expect(mockedPublish).toHaveBeenCalledTimes(1);
+      expect(mockedPublishingJob).toHaveBeenCalledTimes(1);
     });
 
     it('should process all items while filtering out any dependencies and call publish', async () => {
@@ -239,7 +249,7 @@ describe('publish tests', () => {
         logFile: mockLog,
         allContent: false,
         missingContent: false,
-        argv
+        client: mockClient
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

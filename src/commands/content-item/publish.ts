@@ -4,7 +4,7 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import { ContentItem, ContentRepository, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, ContentRepository, DynamicContent, PublishingJob, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
@@ -12,9 +12,9 @@ import { getContent } from '../../common/filter/fetch-content';
 import { asyncQuestion } from '../../common/question-helpers';
 import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-mapping';
-import { PublishingService } from '../../common/publishing/publishing-service';
-import { PublishingJobService } from '../../common/publishing/publishing-job-service';
-import { BurstableQueueOptions, RESERVOIR_REFRESH_AMOUNT } from '../../common/burstable-queue/burstable-queue';
+import { ContentItemPublishingService } from '../../common/publishing/content-item-publishing-service';
+import { ContentItemPublishingJobService } from '../../common/publishing/content-item-publishing-job-service';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
 
 export const command = 'publish [id]';
 
@@ -46,11 +46,6 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       describe:
         "Publish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
-    })
-    .alias('publishRateLimit', 'publishRateLimit')
-    .options('publishRateLimit', {
-      type: 'number',
-      describe: `Set the number of publishes per minute (max = ${RESERVOIR_REFRESH_AMOUNT})`
     })
     .alias('f', 'force')
     .option('f', {
@@ -130,21 +125,21 @@ export const getContentItems = async ({
 };
 
 export const processItems = async ({
+  client,
   contentItems,
   force,
   silent,
   logFile,
   allContent,
-  missingContent,
-  argv
+  missingContent
 }: {
+  client: DynamicContent;
   contentItems: ContentItem[];
   force?: boolean;
   silent?: boolean;
   logFile: FileLog;
   allContent: boolean;
   missingContent: boolean;
-  argv: Arguments<ConfigurationParameters>;
 }): Promise<void> => {
   if (contentItems.length == 0) {
     console.log('Nothing found to publish, aborting.');
@@ -188,58 +183,42 @@ export const processItems = async ({
 
   log.appendLine(`Publishing ${rootContentItems.length} items.`);
 
-  const options: BurstableQueueOptions = {};
+  const publishingService = new ContentItemPublishingService();
 
-  if (argv.publishRateLimit) {
-    const rate: number = parseInt(argv.publishRateLimit.toString());
-    options.sustainedIntervalCap = rate;
-  }
-
-  const publishingService = new PublishingService(options);
-
+  const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
   for (const item of rootContentItems) {
     try {
-      await publishingService.publish(item, () => {
-        log.appendLine(`Initiating publish for "${item.label}"`);
+      await publishingService.publish(item, (contentItem, publishingJob) => {
+        contentItemPublishJobs.push([contentItem, publishingJob]);
+
+        log.appendLine(`Initiated publish for "${item.label}"`);
       });
     } catch (e) {
       log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
     }
   }
 
-  log.appendLine(`Waiting for all publish jobs to complete...`);
-
-  const client = dynamicContentClientFactory(argv);
-  const publishingJobService = new PublishingJobService(client);
-
-  for (const publishJob of publishingService.publishJobs) {
-    publishingJobService.check(publishJob, async () => {
-      log.appendLine(`trying to retry publish ${publishJob.label}`);
-    });
-  }
-
-  let keepWaiting = true;
-  while (publishingJobService.size > 0 && keepWaiting) {
-    if (publishingJobService.pendingSize > 0) {
-      keepWaiting = await asyncQuestion(
-        'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
-      );
-    }
-  }
-
   await publishingService.onIdle();
 
-  log.appendLine(`Finished publishing, with ${publishingJobService.pendingSize} unresolved publish jobs`);
-  publishingJobService.pendingPublishingContentItems.forEach(item => {
-    log.appendLine(` - ${item.label}`);
-  });
+  const checkPublishJobs = await asyncQuestion(
+    'All publishes have been requested, would you like to wait for all publishes to complete? (Y/n)'
+  );
 
-  log.appendLine(`Finished publishing, with ${publishingJobService.failedJobs.length} failed publish jobs`);
-  publishingJobService.failedPublishingContentItems.forEach(item => {
-    log.appendLine(` - ${item.label}`);
-  });
+  if (checkPublishJobs) {
+    const publishingJobService = new ContentItemPublishingJobService(client);
 
-  log.appendLine(`Publish complete`);
+    for (const [contentItem, publishingJob] of contentItemPublishJobs) {
+      publishingJobService.check(publishingJob, async resolvedPublishingJob => {
+        if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
+          log.appendLine(`Failed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
+        }
+      });
+    }
+
+    await publishingJobService.onIdle();
+  }
+
+  log.appendLine(`Publishing complete`);
 
   await log.close(!silent);
 };
@@ -279,12 +258,12 @@ export const handler = async (argv: Arguments<PublishOptions & ConfigurationPara
   });
 
   await processItems({
+    client,
     contentItems,
     force,
     silent,
     logFile,
     allContent,
-    missingContent,
-    argv
+    missingContent
   });
 };

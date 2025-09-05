@@ -17,7 +17,8 @@ import {
   ContentRepository,
   ContentType,
   ContentTypeSchema,
-  Status
+  Status,
+  PublishingJob
 } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-mapping';
 import {
@@ -33,10 +34,10 @@ import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import { progressBar } from '../../common/progress-bar/progress-bar';
-import { BurstableQueueOptions, RESERVOIR_REFRESH_AMOUNT } from '../../common/burstable-queue/burstable-queue';
-import { PublishingService } from '../../common/publishing/publishing-service';
-import { PublishingJobService } from '../../common/publishing/publishing-job-service';
+import { ContentItemPublishingService } from '../../common/publishing/content-item-publishing-service';
 import PublishOptions from '../../common/publish/publish-options';
+import { ContentItemPublishingJobService } from '../../common/publishing/content-item-publishing-job-service';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -113,11 +114,6 @@ export const builder = (yargs: Argv): void => {
       type: 'boolean',
       boolean: true,
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
-    })
-
-    .options('publishRateLimit', {
-      type: 'number',
-      describe: `Set the number of publishes per minute (max = ${RESERVOIR_REFRESH_AMOUNT})`
     })
 
     .option('excludeKeys', {
@@ -887,63 +883,47 @@ const importTree = async (
   }
 
   if (argv.publish) {
-    const options: BurstableQueueOptions = {};
-
     log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
 
-    if (argv.publishRateLimit) {
-      const rate: number = parseInt(argv.publishRateLimit.toString());
-      options.sustainedIntervalCap = rate;
-    }
+    const publishingService = new ContentItemPublishingService();
 
-    const publishingService = new PublishingService(options);
-
+    const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
     for (let i = 0; i < publishable.length; i++) {
       const item = publishable[i].item;
 
       try {
-        await publishingService.publish(item, () => {
-          log.appendLine(`Initiating publish for "${item.label}"`);
+        await publishingService.publish(item, (contentItem, publishingJob) => {
+          contentItemPublishJobs.push([contentItem, publishingJob]);
+
+          log.appendLine(`Initiated publish for "${item.label}"`);
         });
       } catch (e) {
         log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
       }
     }
 
-    log.appendLine(`Waiting for all publish jobs to complete...`);
-
-    const client = dynamicContentClientFactory(argv);
-    const publishingJobService = new PublishingJobService(client);
-
-    for (const publishJob of publishingService.publishJobs) {
-      publishingJobService.check(publishJob, async () => {
-        log.appendLine(`trying to retry publish ${publishJob.label}`);
-      });
-    }
-
-    let keepWaiting = true;
-    while (publishingJobService.size > 0 && keepWaiting) {
-      if (publishingJobService.pendingSize > 0) {
-        keepWaiting = await asyncQuestion(
-          'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
-        );
-      }
-    }
-
     await publishingService.onIdle();
 
-    log.appendLine(`Finished publishing, with ${publishingJobService.pendingSize} unresolved publish jobs`);
-    publishingJobService.pendingPublishingContentItems.forEach(item => {
-      log.appendLine(` - ${item.label}`);
-    });
+    const checkPublishJobs = await asyncQuestion(
+      'All publishes have been requested, would you like to wait for all publishes to complete? (Y/n)'
+    );
 
-    log.appendLine(`Finished publishing, with ${publishingJobService.failedJobs.length} failed publish jobs`);
-    publishingJobService.failedPublishingContentItems.forEach(item => {
-      log.appendLine(` - ${item.label}`);
-    });
+    if (checkPublishJobs) {
+      const publishingJobService = new ContentItemPublishingJobService(client);
+
+      for (const [contentItem, publishingJob] of contentItemPublishJobs) {
+        publishingJobService.check(publishingJob, async resolvedPublishingJob => {
+          if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
+            log.appendLine(`Failed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
+          }
+        });
+      }
+
+      await publishingJobService.onIdle();
+    }
   }
 
-  log.appendLine('Done!');
+  log.appendLine('Publishing complete');
   return true;
 };
 

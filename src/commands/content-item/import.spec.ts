@@ -1,7 +1,7 @@
 import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './import';
 import { dependsOn, dependantType } from './__mocks__/dependant-content-helper';
 import * as reverter from './import-revert';
-import * as publishingService from '../../common/publishing/publishing-service';
+import * as publishingService from '../../common/publishing/content-item-publishing-service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { Folder, ContentType } from 'dc-management-sdk-js';
