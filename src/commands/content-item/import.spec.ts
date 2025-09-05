@@ -1,10 +1,9 @@
 import { builder, command, handler, LOG_FILENAME, getDefaultMappingPath } from './import';
 import { dependsOn, dependantType } from './__mocks__/dependant-content-helper';
 import * as reverter from './import-revert';
-import * as publishingService from '../../common/publishing/content-item-publishing-service';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
-import { Folder, ContentType } from 'dc-management-sdk-js';
+import { Folder, ContentType, PublishingJob } from 'dc-management-sdk-js';
 import Yargs from 'yargs/yargs';
 import { writeFile } from 'fs';
 import { join, dirname, basename } from 'path';
@@ -16,6 +15,14 @@ import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { MockContent, ItemTemplate } from '../../common/dc-management-sdk-js/mock-content';
 import { FileLog } from '../../common/file-log';
 import { MediaRewriter } from '../../common/media/media-rewriter';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
+
+const mockPublish = jest.fn().mockImplementation((contentItems, fn) => {
+  fn(contentItems);
+});
+const mockCheck = jest.fn().mockImplementation((publishingJob, fn) => {
+  fn(new PublishingJob({ state: PublishingJobStatus.COMPLETED }));
+});
 
 jest.mock('readline');
 jest.mock('./import-revert');
@@ -25,6 +32,26 @@ jest.mock('../../common/log-helpers', () => ({
   ...jest.requireActual('../../common/log-helpers'),
   getDefaultLogPath: jest.fn()
 }));
+jest.mock('../../common/publishing/content-item-publishing-service', () => {
+  return {
+    ContentItemPublishingService: jest.fn().mockImplementation(() => {
+      return {
+        publish: mockPublish,
+        onIdle: jest.fn()
+      };
+    })
+  };
+});
+jest.mock('../../common/publishing/content-item-publishing-job-service', () => {
+  return {
+    ContentItemPublishingJobService: jest.fn().mockImplementation(() => {
+      return {
+        check: mockCheck,
+        onIdle: jest.fn()
+      };
+    })
+  };
+});
 
 function rimraf(dir: string): Promise<Error> {
   return new Promise((resolve): void => {
@@ -160,28 +187,10 @@ describe('content-item import command', () => {
       revertLog: Promise.resolve(undefined)
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let publishCalls: any[];
-
     beforeEach(async () => {
       jest.clearAllMocks();
       jest.mock('readline');
       jest.mock('../../services/dynamic-content-client-factory');
-
-      publishCalls = [];
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (publishingService as any).PublishingService = jest.fn().mockImplementation(() => ({
-        publish: jest.fn(async (item, action) => {
-          publishCalls.push(item);
-          action();
-        }),
-        publishJobs: [],
-        onIdle: jest.fn().mockResolvedValue(undefined)
-      }));
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (publishingService as any).publishCalls = publishCalls;
     });
 
     beforeAll(async () => {
@@ -1182,17 +1191,20 @@ describe('content-item import command', () => {
         dir: `temp_${process.env.JEST_WORKER_ID}/import/publish/`,
         mapFile: `temp_${process.env.JEST_WORKER_ID}/import/publish.json`,
         baseRepo: 'targetRepo',
-        publish: true,
-        batchPublish: true
+        publish: true
       };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['Y']);
+
       await handler(argv);
 
       const matches = await mockContent.filterMatch(templates, '', false);
 
       expect(matches.length).toEqual(templates.length);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(publishCalls.length).toEqual(2);
+      expect(mockPublish).toHaveBeenCalledTimes(2);
+      expect(mockCheck).toHaveBeenCalledTimes(2);
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/import/publish/`);
     });
@@ -1238,18 +1250,17 @@ describe('content-item import command', () => {
         dir: `temp_${process.env.JEST_WORKER_ID}/import/circular/`,
         mapFile: `temp_${process.env.JEST_WORKER_ID}/import/circular.json`,
         baseRepo: 'targetRepo',
-        publish: true,
-        batchPublish: false
+        publish: true
       };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (readline as any).setResponses(['Y']);
+
       await handler(argv);
 
       // check items were created appropriately
-
       expect(mockContent.metrics.itemsCreated).toEqual(4);
       expect(mockContent.metrics.itemsUpdated).toEqual(3);
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(publishCalls.length).toEqual(1); // One of the circular dependancies will be published.
 
       const matches = await mockContent.filterMatch(templates, '', false);
 
