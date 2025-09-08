@@ -205,11 +205,12 @@ export const processItems = async ({
   await publishingService.onIdle();
   publishProgress.stop();
 
-  const checkPublishJobs = await asyncQuestion(
-    'All publishes have been requested, would you like to wait for all publishes to complete? (y/n)'
-  );
+  const checkPublishJobs = async () =>
+    await asyncQuestion(
+      'All publishes have been requested, would you like to wait for all publishes to complete? (y/n)'
+    );
 
-  if (checkPublishJobs) {
+  if (force || (await checkPublishJobs())) {
     log.appendLine(`Checking publishing state for ${contentItemPublishJobs.length} items.`);
     const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
       title: 'Content items publishes complete'
