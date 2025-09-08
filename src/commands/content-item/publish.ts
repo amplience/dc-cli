@@ -15,6 +15,7 @@ import { ContentMapping } from '../../common/content-mapping';
 import { ContentItemPublishingService } from '../../common/publishing/content-item-publishing-service';
 import { ContentItemPublishingJobService } from '../../common/publishing/content-item-publishing-job-service';
 import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'publish [id]';
 
@@ -184,38 +185,49 @@ export const processItems = async ({
   log.appendLine(`Publishing ${rootContentItems.length} items.`);
 
   const publishingService = new ContentItemPublishingService();
-
   const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
+  const publishProgress = progressBar(rootContentItems.length, 0, { title: 'Publishing content items' });
+
   for (const item of rootContentItems) {
     try {
       await publishingService.publish(item, (contentItem, publishingJob) => {
         contentItemPublishJobs.push([contentItem, publishingJob]);
 
-        log.appendLine(`Initiated publish for "${item.label}"`);
+        log.addComment(`Initiated publish for "${item.label}"`);
+        publishProgress.increment();
       });
     } catch (e) {
-      log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
+      log.appendLine(`\nFailed to initiate publish for ${item.label}: ${e.toString()}`);
+      publishProgress.increment();
     }
   }
 
   await publishingService.onIdle();
+  publishProgress.stop();
 
   const checkPublishJobs = await asyncQuestion(
-    'All publishes have been requested, would you like to wait for all publishes to complete? (Y/n)'
+    'All publishes have been requested, would you like to wait for all publishes to complete? (y/n)'
   );
 
   if (checkPublishJobs) {
+    log.appendLine(`Checking publishing state for ${contentItemPublishJobs.length} items.`);
+    const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
+      title: 'Content items publishes complete'
+    });
+
     const publishingJobService = new ContentItemPublishingJobService(client);
 
     for (const [contentItem, publishingJob] of contentItemPublishJobs) {
       publishingJobService.check(publishingJob, async resolvedPublishingJob => {
         if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
-          log.appendLine(`Failed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
+          log.appendLine(`\nFailed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
         }
+        checkPublishProgress.increment();
       });
     }
 
     await publishingJobService.onIdle();
+    checkPublishProgress.stop();
   }
 
   log.appendLine(`Publishing complete`);

@@ -886,8 +886,9 @@ const importTree = async (
     log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
 
     const publishingService = new ContentItemPublishingService();
-
     const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
+    const publishProgress = progressBar(publishable.length, 0, { title: 'Publishing content items' });
+
     for (let i = 0; i < publishable.length; i++) {
       const item = publishable[i].item;
 
@@ -895,31 +896,39 @@ const importTree = async (
         await publishingService.publish(item, (contentItem, publishingJob) => {
           contentItemPublishJobs.push([contentItem, publishingJob]);
 
-          log.appendLine(`Initiated publish for "${item.label}"`);
+          log.addComment(`Initiated publish for "${item.label}"`);
+          publishProgress.increment();
         });
       } catch (e) {
-        log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
+        log.appendLine(`\nFailed to initiate publish for ${item.label}: ${e.toString()}`);
+        publishProgress.increment();
       }
     }
 
     await publishingService.onIdle();
+    publishProgress.stop();
 
     const checkPublishJobs = await asyncQuestion(
-      'All publishes have been requested, would you like to wait for all publishes to complete? (Y/n)'
+      'All publishes have been requested, would you like to wait for all publishes to complete? (y/n)'
     );
 
     if (checkPublishJobs) {
       const publishingJobService = new ContentItemPublishingJobService(client);
+      const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
+        title: 'Content items publishes complete'
+      });
 
       for (const [contentItem, publishingJob] of contentItemPublishJobs) {
         publishingJobService.check(publishingJob, async resolvedPublishingJob => {
           if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
-            log.appendLine(`Failed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
+            log.appendLine(`\nFailed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
           }
+          checkPublishProgress.increment();
         });
       }
 
       await publishingJobService.onIdle();
+      checkPublishProgress.stop();
     }
   }
 
