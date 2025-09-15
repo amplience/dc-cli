@@ -6,6 +6,7 @@ describe('burstable-queue', () => {
     const interval = 500;
     const burstableQueue = new BurstableQueue({
       concurrency: 1,
+      minTime: 0,
       burstIntervalCap: 4,
       sustainedIntervalCap: 1,
       interval
@@ -53,6 +54,7 @@ describe('burstable-queue', () => {
     it('should wait until the the queue is idle (queue is empty and all tasks executed)', async () => {
       const burstableQueue = new BurstableQueue({
         concurrency: 1,
+        minTime: 0,
         burstIntervalCap: 4,
         sustainedIntervalCap: 1,
         interval: 400
@@ -77,6 +79,7 @@ describe('burstable-queue', () => {
     it('should return the size of the queue (queued and executing) - all queued', () => {
       const burstableQueue = new BurstableQueue({
         concurrency: 1,
+        minTime: 0,
         burstIntervalCap: 4,
         sustainedIntervalCap: 1,
         interval: 400
@@ -94,6 +97,7 @@ describe('burstable-queue', () => {
     it('should return the size of the queue (queued and executing) - queue task in flight', async () => {
       const burstableQueue = new BurstableQueue({
         concurrency: 1,
+        minTime: 0,
         burstIntervalCap: 4,
         sustainedIntervalCap: 1,
         interval: 400
@@ -115,6 +119,7 @@ describe('burstable-queue', () => {
     it('should return the number of pending queue items (queued, not executing)', () => {
       const burstableQueue = new BurstableQueue({
         concurrency: 1,
+        minTime: 0,
         burstIntervalCap: 4,
         sustainedIntervalCap: 1,
         interval: 400
@@ -132,6 +137,7 @@ describe('burstable-queue', () => {
     it('should return the number of pending queue items (queued, not executing) - queue task in flight', async () => {
       const burstableQueue = new BurstableQueue({
         concurrency: 1,
+        minTime: 0,
         burstIntervalCap: 4,
         sustainedIntervalCap: 1,
         interval: 400

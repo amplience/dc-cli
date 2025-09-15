@@ -1,12 +1,14 @@
 import Bottleneck from 'bottleneck';
 
 export const CONCURRENCY = 4;
+export const MIN_TIME = 1000;
 export const INITIAL_RESERVOIR = 70;
 export const RESERVOIR_REFRESH_AMOUNT = 30;
 export const RESERVOIR_INCREASE_INTERVAL = 60_000;
 
 export interface BurstableQueueOptions {
   concurrency?: number;
+  minTime?: number;
   burstIntervalCap?: number;
   sustainedIntervalCap?: number;
   interval?: number;
@@ -18,6 +20,7 @@ export class BurstableQueue {
   constructor(options: BurstableQueueOptions) {
     this.queue = new Bottleneck({
       maxConcurrent: options.concurrency || CONCURRENCY,
+      minTime: options.minTime ?? MIN_TIME,
       reservoir: options.burstIntervalCap || INITIAL_RESERVOIR, // initial value
       reservoirRefreshAmount: options.sustainedIntervalCap || RESERVOIR_REFRESH_AMOUNT,
       reservoirRefreshInterval: options.interval || RESERVOIR_INCREASE_INTERVAL
