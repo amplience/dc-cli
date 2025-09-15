@@ -933,9 +933,9 @@ const importTree = async (
       await publishingJobService.onIdle();
       checkPublishProgress.stop();
     }
+    log.appendLine('Publishing complete');
   }
 
-  log.appendLine('Publishing complete');
   return true;
 };
 
