@@ -192,7 +192,6 @@ export const processItems = async ({
     try {
       await publishingService.publish(item, (contentItem, publishingJob) => {
         contentItemPublishJobs.push([contentItem, publishingJob]);
-
         log.addComment(`Initiated publish for "${item.label}"`);
         publishProgress.increment();
       });
@@ -220,6 +219,7 @@ export const processItems = async ({
 
     for (const [contentItem, publishingJob] of contentItemPublishJobs) {
       publishingJobService.check(publishingJob, async resolvedPublishingJob => {
+        log.addComment(`Finished checking publish job for ${contentItem.label}`);
         if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
           log.appendLine(`\nFailed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
         }

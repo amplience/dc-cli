@@ -895,7 +895,6 @@ const importTree = async (
       try {
         await publishingService.publish(item, (contentItem, publishingJob) => {
           contentItemPublishJobs.push([contentItem, publishingJob]);
-
           log.addComment(`Initiated publish for "${item.label}"`);
           publishProgress.increment();
         });
@@ -905,6 +904,7 @@ const importTree = async (
       }
     }
 
+    log.addComment(`Waiting for publishes to be requested`);
     await publishingService.onIdle();
     publishProgress.stop();
 
@@ -914,6 +914,7 @@ const importTree = async (
       );
 
     if (argv.force || (await checkPublishJobs())) {
+      log.addComment(`Checking publshing jobs`);
       const publishingJobService = new ContentItemPublishingJobService(client);
       const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
         title: 'Content items publishes complete'
@@ -921,6 +922,7 @@ const importTree = async (
 
       for (const [contentItem, publishingJob] of contentItemPublishJobs) {
         publishingJobService.check(publishingJob, async resolvedPublishingJob => {
+          log.addComment(`Finished checking publish job for ${contentItem.label}`);
           if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
             log.appendLine(`\nFailed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
           }

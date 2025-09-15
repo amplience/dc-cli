@@ -53,6 +53,7 @@ const mockClient = {
 const mockLog = {
   open: jest.fn().mockReturnValue({
     appendLine: jest.fn(),
+    addComment: jest.fn(),
     close: jest.fn()
   })
 } as unknown as FileLog;
