@@ -1,7 +1,7 @@
 import Bottleneck from 'bottleneck';
 
 export const CONCURRENCY = 4;
-export const MIN_TIME = 1000;
+export const MIN_TIME = 800;
 export const INITIAL_RESERVOIR = 70;
 export const RESERVOIR_REFRESH_AMOUNT = 30;
 export const RESERVOIR_INCREASE_INTERVAL = 60_000;
