@@ -6,7 +6,6 @@ export interface ImportItemBuilderOptions {
   baseFolder?: string;
   mapFile?: string;
   publish?: boolean;
-  batchPublish?: boolean;
   republish?: boolean;
   force?: boolean;
   validate?: boolean;

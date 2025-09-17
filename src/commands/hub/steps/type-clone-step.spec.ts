@@ -129,7 +129,7 @@ describe('type clone step', () => {
       ...state.from
     });
 
-    expect(typeImport.handler).toBeCalledWith({
+    expect(typeImport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'type'),
       sync: true,
       logFile: state.logFile,
@@ -148,8 +148,8 @@ describe('type clone step', () => {
     const backupFail = await step.run(state);
 
     expect(backupFail).toBeFalsy();
-    expect(typeExport.handler).toBeCalledTimes(1);
-    expect(typeImport.handler).not.toBeCalled();
+    expect(typeExport.handler).toHaveBeenCalledTimes(1);
+    expect(typeImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -159,8 +159,8 @@ describe('type clone step', () => {
     const exportFail = await step.run(state);
 
     expect(exportFail).toBeFalsy();
-    expect(typeExport.handler).toBeCalledTimes(2);
-    expect(typeImport.handler).not.toBeCalled();
+    expect(typeExport.handler).toHaveBeenCalledTimes(2);
+    expect(typeImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -170,8 +170,8 @@ describe('type clone step', () => {
     const importFail = await step.run(state);
 
     expect(importFail).toBeFalsy();
-    expect(typeExport.handler).toBeCalledTimes(2);
-    expect(typeImport.handler).toBeCalled();
+    expect(typeExport.handler).toHaveBeenCalledTimes(2);
+    expect(typeImport.handler).toHaveBeenCalled();
   });
 
   it('should attempt to archive types with the CREATE action on revert, skipping archived types', async () => {
@@ -193,7 +193,7 @@ describe('type clone step', () => {
     await step.revert(state);
 
     expect(mockContent.metrics.typesArchived).toEqual(1);
-    expect(typeImport.handler).not.toBeCalled();
+    expect(typeImport.handler).not.toHaveBeenCalled();
   });
 
   it('should pass types with the UPDATE action to the type import command on revert, in the oldType folder', async () => {
@@ -212,7 +212,7 @@ describe('type clone step', () => {
     const result = await step.revert(state);
 
     expect(mockContent.metrics.typesArchived).toEqual(1);
-    expect(typeImport.handler).toBeCalledWith(
+    expect(typeImport.handler).toHaveBeenCalledWith(
       {
         dir: join(state.path, 'oldType'),
         sync: true,
