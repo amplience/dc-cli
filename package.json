@@ -8,19 +8,20 @@
     "dc-cli": "./dist/index.js"
   },
   "scripts": {
-    "precommit": "npm run lint",
-    "commit": "npx git-cz",
+    "precommit": "pnpm run lint",
+    "commit": "git-cz",
     "lint": "prettier --check \"**/*.ts\" && eslint \"**/*.ts\"",
-    "pretest": "npm run lint",
+    "pretest": "pnpm run lint",
     "test": "FORCE_COLOR=1 jest --silent --coverage",
     "fix": "prettier --write '**/*.ts'",
     "clean": "rimraf dist packages",
-    "build": "npm run clean && tsc && cp HOW_TO_USE.1 dist/dc-cli.1",
+    "build": "pnpm run clean && tsc && cp HOW_TO_USE.1 dist/dc-cli.1",
     "build:package:pre": "node scripts/package/pre-package.js",
     "build:package:post": "node scripts/package/post-package.js",
-    "build:package": "npm run build && npm run build:package:pre && pkg --targets node22-macos-x64,node22-linux-x64,node22-win-x64 --out-dir packages . && npm run build:package:post",
+    "build:package": "pnpm run build && pnpm run build:package:pre && pkg --targets node22-macos-x64,node22-linux-x64,node22-win-x64 --out-dir packages . && pnpm run build:package:post",
     "update:man": "./update_man.sh",
-    "dev": "ts-node ./src/index.ts"
+    "dev": "ts-node ./src/index.ts",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -36,12 +37,6 @@
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm test",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
   "commitlint": {
@@ -81,11 +76,12 @@
     "@eslint/js": "^9.20.0",
     "@types/cli-progress": "^3.11.6",
     "@types/fs-extra": "^9.0.13",
+    "@types/graceful-fs": "^4.1.9",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.14.144",
     "@types/node": "^20.17.19",
     "@types/node-fetch": "^2.5.7",
-    "@types/rimraf": "^3.0.0",
+    "@types/rimraf": "^2.0.5",
     "@types/table": "^4.0.7",
     "@types/url-template": "^2.0.28",
     "@types/yargs": "^16.0.4",
@@ -98,8 +94,9 @@
     "eslint": "^9.20.1",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
+    "git-cz": "^4.9.0",
     "globals": "^15.15.0",
-    "husky": "^3.0.5",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "nock": "^12.0.3",
     "prettier": "^3.5.1",

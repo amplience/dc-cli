@@ -1,10 +1,11 @@
 ## Building the CLI
 
-We have included some NPM scripts to help create various installations of the CLI and in this section we will include instructions of how to:
+We have included some PNPM scripts to help create various installations of the CLI and in this section we will include instructions of how to:
 
-- [Compile TypeScript to JavaScript](#compiling-typescript)
-- [Package the CLI into executables](#building-executables)
-- [Link the CLI with NPM for local development](#npm-link)
+- [Building the CLI](#building-the-cli)
+  - [Compiling TypeScript to Javascript](#compiling-typescript-to-javascript)
+  - [Building Executables](#building-executables)
+  - [Linking with PNPM for local development](#linking-with-pnpm-for-local-development)
 
 Alternatively, return to [README.md](../README.md) for more information on the DC CLI.
 
@@ -13,12 +14,12 @@ Alternatively, return to [README.md](../README.md) for more information on the D
 ### Compiling TypeScript to Javascript
 
 We are using the TypeScript command `tsc` to compile the code to JavaScript and the output of which is put into the `dist` directory.
-A NPM script has been created to run this compile step and can be utilised if you want to just use the raw JavaScript.
+A PNPM script has been created to run this compile step and can be utilised if you want to just use the raw JavaScript.
 
 The command to achieve this is:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 <a name="building-executables"></a>
@@ -33,7 +34,7 @@ To support the use of the CLI as a standalone application within Windows, Linux 
 This step can be achieved by running the command:
 
 ```bash
-npm run build:package
+pnpm run build:package
 ```
 
 The output of this command will be three executables within the packages directory, one for Linux, Mac OS and Windows:
@@ -45,7 +46,7 @@ The output of this command will be three executables within the packages directo
 Creating a versioned zipped set of executables is also achievable using the following command:
 
 ```bash
-npm run build:compress
+pnpm run build:compress
 ```
 
 Where the output of this command will also be created in the packages directory, they will now be zip files for each OS with a version:
@@ -54,15 +55,15 @@ Where the output of this command will also be created in the packages directory,
 - dc-cli-macos-1.0.0-0.zip
 - dc-cli-win-1.0.0-0.zip
 
-<a name="npm-link"></a>
+<a name="pnpm-link"></a>
 
-### Linking with NPM for local development
+### Linking with PNPM for local development
 
 To run the CLI locally via the command prompt for local development the application must first be [compiled](#compiling-typescript).
-Once compiled the CLI can then be linked with NPM to act like it has been installed, to achieve this we can run the script:
+Once compiled the CLI can then be linked with PNPM to act like it has been installed, to achieve this we can run the script:
 
 ```bash
-npm link
+pnpm link
 ```
 
 This will then allow the CLI to be used as if it was an executable like so:
