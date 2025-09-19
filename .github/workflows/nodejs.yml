@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -14,15 +13,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.0.0
         with:
-          cache: 'npm'
-          node-version: ${{ matrix.node }}
+          version: 10.16.1
 
-      - name: npm install, build, and test
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+
+      - name: pnpm install, build, and test
         run: |
-          npm ci
-          npm run build --if-present
-          npm test
+          pnpm install --frozen-lockfile
+          pnpm run build
+          pnpm test
         env:
           CI: true
