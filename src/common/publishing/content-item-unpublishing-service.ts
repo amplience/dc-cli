@@ -9,8 +9,10 @@ export class ContentItemUnpublishingService {
   }
 
   async unpublish(contentItem: ContentItem, action: (contentItem: ContentItem) => void) {
+    const canUnpublish = (state: ContentItemPublishingStatus | undefined) =>
+      state && [ContentItemPublishingStatus.LATEST, ContentItemPublishingStatus.EARLY].includes(state);
     this.queue.add(async () => {
-      if (contentItem.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED) {
+      if (canUnpublish(contentItem.publishingStatus)) {
         await contentItem.related.unpublish();
       }
 
