@@ -409,6 +409,7 @@ const prepareContentForImport = async (
 
       if (argv.excludeKeys) {
         delete filteredContent.body._meta.deliveryKey;
+        delete filteredContent.body._meta.deliveryKeys;
       }
 
       schemaNames.add(contentJSON.body._meta.schema);

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.27.0](https://github.com/amplience/dc-cli/compare/v0.26.1...v0.27.0) (2025-09-16)
+
+
+### Features
+
+* multiple delivery key support for import archive and unarchive ([#223](https://github.com/amplience/dc-cli/issues/223)) ([df427ee](https://github.com/amplience/dc-cli/commit/df427eeb2ae5d465fa808f113564b75881829ca2))
+
 ## [0.26.1](https://github.com/amplience/dc-cli/compare/v0.26.0...v0.26.1) (2025-08-05)
 
 
