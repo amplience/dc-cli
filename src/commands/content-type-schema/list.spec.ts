@@ -64,8 +64,8 @@ describe('content-type-schema list command', (): void => {
       const argv = { ...yargArgs, ...config };
       await handler(argv);
 
-      expect(mockGetHub).toBeCalledWith('hub-id');
-      expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE });
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+      expect(mockList).toHaveBeenCalledWith({ size: DEFAULT_SIZE });
 
       expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypeSchemas);
       expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ itemMapFn, json: argv.json });
@@ -95,7 +95,7 @@ describe('content-type-schema list command', (): void => {
       const argv = { ...yargArgs, ...config };
       await handler(argv);
 
-      expect(mockGetHub).toBeCalledWith('hub-id');
+      expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(mockList).toHaveBeenCalled();
       expect(mockDataPresenter).toHaveBeenCalledTimes(0);
     });
