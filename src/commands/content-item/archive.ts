@@ -191,13 +191,17 @@ export const processItems = async ({
   for (let i = 0; i < contentItems.length; i++) {
     try {
       const deliveryKey = contentItems[i].body._meta.deliveryKey;
+      const deliveryKeys = (contentItems[i].body._meta.deliveryKeys?.values || []).map(
+        (key: { value: string }) => key.value
+      );
       let args = contentItems[i].id;
-      if (deliveryKey) {
+      if (deliveryKey || deliveryKeys.length) {
         contentItems[i].body._meta.deliveryKey = null;
+        contentItems[i].body._meta.deliveryKeys = null;
         const updateParams = { ...(ignoreSchemaValidation ? { ignoreSchemaValidation: true } : {}) };
         contentItems[i] = await contentItems[i].related.update(contentItems[i], updateParams);
 
-        args += ` ${deliveryKey}`;
+        args += ` ${deliveryKey || ''} ${deliveryKeys.join(',')}`;
       }
       await contentItems[i].related.archive();
       progress.increment();
