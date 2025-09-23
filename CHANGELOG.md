@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.27.1](https://github.com/amplience/dc-cli/compare/v0.27.0...v0.27.1) (2025-09-23)
+
+
+### Bug Fixes
+
+* installing with ignore scripts flag ([#230](https://github.com/amplience/dc-cli/issues/230)) ([c5a9871](https://github.com/amplience/dc-cli/commit/c5a98714a4d7e8a7aa4586884b6f3210180115ab))
+
 ## [0.27.0](https://github.com/amplience/dc-cli/compare/v0.26.1...v0.27.0) (2025-09-16)
 
 
