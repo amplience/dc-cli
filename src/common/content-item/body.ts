@@ -13,4 +13,5 @@ interface ContentMeta {
   name: string;
   schema: string;
   deliveryKey?: string;
+  deliveryKeys?: string;
 }
