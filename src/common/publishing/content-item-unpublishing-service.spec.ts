@@ -50,6 +50,6 @@ describe('ContentItemUnpublishingService', () => {
     await service.onIdle();
 
     expect(item.related.unpublish).not.toHaveBeenCalled();
-    expect(action).not.toHaveBeenCalled();
+    expect(action).toHaveBeenCalled();
   });
 });

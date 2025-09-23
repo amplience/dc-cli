@@ -10,10 +10,10 @@ export class ContentItemUnpublishingService {
 
   async unpublish(contentItem: ContentItem, action: (contentItem: ContentItem) => void) {
     this.queue.add(async () => {
-      if (contentItem.publishingStatus === ContentItemPublishingStatus.UNPUBLISHED) {
-        return;
+      if (contentItem.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED) {
+        await contentItem.related.unpublish();
       }
-      await contentItem.related.unpublish();
+
       action(contentItem);
     });
   }
