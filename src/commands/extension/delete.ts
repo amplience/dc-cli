@@ -67,7 +67,7 @@ export const processExtensions = async (
     }
   }
 
-  log.appendLine(`Deleting ${extensionsToDelete.length} extensions.`);
+  log.addComment(`Deleting ${extensionsToDelete.length} extensions.`);
 
   const progress = progressBar(extensionsToDelete.length, 0, {
     title: `Deleting ${extensionsToDelete.length} extensions.`
@@ -76,12 +76,13 @@ export const processExtensions = async (
   for (const [i, extension] of extensionsToDelete.entries()) {
     try {
       await extension.related.delete();
-      log.appendLine(`Successfully deleted "${extension.label}"`);
+      log.addComment(`Successfully deleted "${extension.label}"`);
       progress.increment();
     } catch (e) {
       failedExtensions.push(extension);
       extensionsToDelete.splice(i, 1);
-      log.appendLine(`Failed to delete ${extension.label}: ${e.toString()}`);
+      log.addComment(`Failed to delete ${extension.label}: ${e.toString()}`);
+      progress.increment();
     }
   }
 
@@ -92,8 +93,6 @@ export const processExtensions = async (
   if (failedExtensions.length > 0) {
     log.appendLine(`Failed to delete ${failedExtensions.length} extensions`);
   }
-
-  log.appendLine(`Extension deletion complete`);
 
   await log.close();
 };
