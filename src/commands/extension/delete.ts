@@ -9,6 +9,7 @@ import { filterExtensionsById } from './export';
 import { nothingExportedExit as nothingToDeleteExit } from '../../services/export.service';
 import { Extension } from 'dc-management-sdk-js';
 import { asyncQuestion } from '../../common/question-helpers';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'delete [id]';
 
@@ -68,16 +69,23 @@ export const processExtensions = async (
 
   log.appendLine(`Deleting ${extensionsToDelete.length} extensions.`);
 
+  const progress = progressBar(extensionsToDelete.length, 0, {
+    title: `Deleting ${extensionsToDelete.length} extensions.`
+  });
+
   for (const [i, extension] of extensionsToDelete.entries()) {
     try {
       await extension.related.delete();
       log.appendLine(`Successfully deleted "${extension.label}"`);
+      progress.increment();
     } catch (e) {
       failedExtensions.push(extension);
       extensionsToDelete.splice(i, 1);
       log.appendLine(`Failed to delete ${extension.label}: ${e.toString()}`);
     }
   }
+
+  progress.stop();
 
   log.appendLine(`Finished successfully deleting ${extensionsToDelete.length} extensions`);
 
