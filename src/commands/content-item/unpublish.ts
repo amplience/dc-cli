@@ -174,7 +174,9 @@ export const processItems = async ({
     .map(node => node.owner.content);
 
   const rootContentPublishedItems = rootContentItems.filter(
-    item => item.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED
+    item =>
+      item.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED &&
+      item.publishingStatus !== ContentItemPublishingStatus.NONE
   );
 
   const log = logFile.open();
