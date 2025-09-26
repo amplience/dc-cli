@@ -1,15 +1,15 @@
 import { Arguments, Argv } from 'yargs';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import paginator from '../../common/dc-management-sdk-js/paginator';
-import { filterExtensionsById } from './export';
 import { nothingExportedExit as nothingToDeleteExit } from '../../services/export.service';
 import { Extension } from 'dc-management-sdk-js';
 import { asyncQuestion } from '../../common/question-helpers';
 import { progressBar } from '../../common/progress-bar/progress-bar';
+import { filterExtensionsById } from '../../common/extension/extension-helpers';
+import { DeleteExtensionBuilderOptions } from '../../interfaces/delete-extension-builder-options';
 
 export const command = 'delete [id]';
 
@@ -98,7 +98,7 @@ export const processExtensions = async (
 };
 
 export const handler = async (
-  argv: Arguments<Pick<ExportBuilderOptions, 'logFile' | 'force'> & ConfigurationParameters>
+  argv: Arguments<DeleteExtensionBuilderOptions & ConfigurationParameters>
 ): Promise<void> => {
   const { id, logFile, force } = argv;
 
@@ -111,6 +111,6 @@ export const handler = async (
   const storedExtensions = await paginator(hub.related.extensions.list);
 
   const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
-  const filteredExtensions = filterExtensionsById(storedExtensions, idArray);
+  const filteredExtensions = filterExtensionsById(storedExtensions, idArray, true);
   await processExtensions(filteredExtensions, allExtensions, logFile, force || false);
 };

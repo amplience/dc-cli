@@ -6,7 +6,7 @@ import { Extension } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
-import { filterExtensionsById } from './export';
+import { filterExtensionsById } from '../../common/extension/extension-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/log-helpers');
