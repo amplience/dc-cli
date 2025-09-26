@@ -104,7 +104,7 @@ describe('delete extensions', () => {
     it('should delete all extensions in a hub', async (): Promise<void> => {
       const id: string[] | undefined = undefined;
       const allExtensions = !id;
-      const argv = { ...yargArgs, ...config, extensionId: extensionIdsToDelete, logFile: new FileLog() };
+      const argv = { ...yargArgs, ...config, id, logFile: new FileLog() };
 
       const filteredExtensionsToDelete = filterExtensionsById(extensionsToDelete, extensionIdsToDelete(id));
 
@@ -131,7 +131,6 @@ describe('delete extensions', () => {
         ...yargArgs,
         ...config,
         id,
-        extensionId: extensionIdsToDelete,
         logFile: new FileLog()
       };
 
