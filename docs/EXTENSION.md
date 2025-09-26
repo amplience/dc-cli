@@ -14,6 +14,7 @@ Return to [README.md](../README.md) for information on other command categories.
 - [Commands](#commands)
   - [export](#export)
   - [import](#import)
+  - [delete](#delete)
 
 <!-- /MarkdownTOC -->
 
@@ -43,10 +44,10 @@ dc-cli extension export <dir>
 
 #### Options
 
-| Option Name     | Type      | Description                                                  |
-| --------------- | --------- | ------------------------------------------------------------ |
+| Option Name     | Type      | Description                                                                                                                                                                                                                                                                |
+| --------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | --id            | [string]  | The ID of an Extension to be exported.<br/>If no --id option is given, all extensions for the hub are exported.<br/>A single --id option may be given to export a single extension.<br/>Multiple --id options may be given to export multiple extensions at the same time. |
-| -f<br />--force | [boolean] | Overwrite extensions without asking.                         |
+| -f<br />--force | [boolean] | Overwrite extensions without asking.                                                                                                                                                                                                                                       |
 
 #### Examples
 
@@ -76,3 +77,35 @@ The import command only uses [common options](#Common Options)
 
 `dc-cli extension import ./myDirectory/extension`
 
+### delete
+
+Deletes extensions from the targeted Dynamic Content hub.
+
+```
+dc-cli extension delete
+```
+
+#### Options
+
+| Option Name     | Type      | Description                                                                                                                                                                                                                                                              |
+| --------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| --id            | [string]  | The ID of an Extension to be deleted.<br/>If no --id option is given, all extensions for the hub are deleted.<br/>A single --id option may be given to delete a single extension.<br/>Multiple --id options may be given to delete multiple extensions at the same time. |
+| -f<br />--force | [boolean] | Delete extensions without asking.                                                                                                                                                                                                                                        |
+
+#### Examples
+
+##### Delete all extensions from a Hub
+
+`dc-cli extension delete`
+
+##### Delete a single extension with the ID of 'foo'
+
+`dc-cli extension delete foo`
+
+or
+
+`dc-cli extension delete --id foo`
+
+##### Delete multiple extensions with the IDs of 'foo' & 'bar'
+
+`dc-cli extension delete --id foo --id bar`
