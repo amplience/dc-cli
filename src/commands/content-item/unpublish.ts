@@ -4,19 +4,11 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import {
-  ContentItem,
-  ContentItemPublishingStatus,
-  ContentRepository,
-  DynamicContent,
-  Status
-} from 'dc-management-sdk-js';
+import { ContentItem, ContentItemPublishingStatus, DynamicContent, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
-import { ContentMapping } from '../../common/content-mapping';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import { ContentItemUnpublishingService } from '../../common/publishing/content-item-unpublishing-service';
 
@@ -148,41 +140,14 @@ export const processItems = async ({
     return;
   }
 
-  const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
-  const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
-  let unpublishChildren = 0;
-  const rootContentItems = contentTree.all
-    .filter(node => {
-      let isTopLevel = true;
-
-      contentTree.traverseDependants(
-        node,
-        dependant => {
-          if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
-            isTopLevel = false;
-          }
-        },
-        true
-      );
-
-      if (!isTopLevel) {
-        unpublishChildren++;
-      }
-
-      return isTopLevel;
-    })
-    .map(node => node.owner.content);
-
-  const rootContentPublishedItems = rootContentItems.filter(
+  const rootContentPublishedItems = contentItems.filter(
     item =>
       item.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED &&
       item.publishingStatus !== ContentItemPublishingStatus.NONE
   );
 
   const log = logFile.open();
-  log.appendLine(
-    `Found ${rootContentPublishedItems.length} items to unpublish. (${unpublishChildren} children included)`
-  );
+  log.appendLine(`Found ${rootContentPublishedItems.length} items to unpublish.`);
 
   if (rootContentPublishedItems.length === 0) {
     return;

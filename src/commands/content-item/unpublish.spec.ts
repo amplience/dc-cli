@@ -204,26 +204,23 @@ describe('unpublish tests', () => {
     });
 
     it('should process all items while filtering out any dependencies and call unpublish', async () => {
-      const contentItemWithDependency = new ContentItem({
-        id: 'da2ee918-34c3-4fc1-ae05-111111111111',
-        label: 'Unpublish me',
-        body: {
-          _meta: {},
-          dependency: {
-            _meta: { schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link' },
-            contentType: 'http://bigcontent.io/cms/schema/v1/text',
-            id: 'da2ee918-34c3-4fc1-ae05-222222222222'
-          }
-        }
-      });
       const contentItemDependency = new ContentItem({
         id: 'da2ee918-34c3-4fc1-ae05-222222222222',
         label: 'No need to unpublish me',
         body: { _meta: {} }
       });
 
+      const contentItemWithDependency = new ContentItem({
+        id: 'da2ee918-34c3-4fc1-ae05-111111111111',
+        label: 'Unpublish me',
+        body: {
+          _meta: {},
+          dependency: contentItemDependency
+        }
+      });
+
       await processItems({
-        contentItems: [contentItemWithDependency, contentItemDependency],
+        contentItems: [contentItemWithDependency],
         force: true,
         silent: true,
         logFile: mockLog,
