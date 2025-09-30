@@ -5,9 +5,7 @@ import { ContentItemPublishingJobService } from './content-item-publishing-job-s
 jest.mock('../burstable-queue/burstable-queue', () => ({
   BurstableQueue: jest.fn().mockImplementation(() => ({
     add: (fn: () => Promise<void>) => fn(),
-    onIdle: async () => Promise.resolve(),
-    size: () => 0,
-    pending: () => 0
+    onIdle: async () => Promise.resolve()
   }))
 }));
 
