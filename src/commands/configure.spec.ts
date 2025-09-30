@@ -97,7 +97,7 @@ describe('configure command', function () {
 
     expect(() => {
       handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
-    }).toThrowError(/^Unable to create dir ".*". Reason: .*/);
+    }).toThrow(/^Unable to create dir ".*". Reason: .*/);
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
     expect(fs.mkdirSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/), { recursive: true });
@@ -113,7 +113,7 @@ describe('configure command', function () {
 
     expect(() => {
       handler({ ...yargArgs, ...configFixture, config: CONFIG_FILENAME() });
-    }).toThrowError(/^Unable to write config file ".*". Reason: .*/);
+    }).toThrow(/^Unable to write config file ".*". Reason: .*/);
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
     expect(fs.mkdirSync).not.toHaveBeenCalledWith();

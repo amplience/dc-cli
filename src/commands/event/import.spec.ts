@@ -1369,7 +1369,7 @@ Array [
       expect(importSlots).toHaveBeenCalledWith(slots, mapping, hub, realEdition, argv, log);
       expect(scheduleEdition).toHaveBeenCalledWith(expect.any(Edition), log);
 
-      expect(importModule.prepareEditionForSchedule).toBeCalledTimes(2); // This should be called again just before schedule.
+      expect(importModule.prepareEditionForSchedule).toHaveBeenCalledTimes(2); // This should be called again just before schedule.
     });
   });
 

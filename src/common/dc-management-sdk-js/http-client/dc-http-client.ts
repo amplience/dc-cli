@@ -34,9 +34,6 @@ const DEFAULT_RETRY_CONFIG: IAxiosRetryConfig = {
   }
 };
 
-/**
- * @hidden
- */
 export class DCHttpClient implements HttpClient {
   public client: AxiosInstance;
 
@@ -46,31 +43,34 @@ export class DCHttpClient implements HttpClient {
   }
 
   public async request(config: HttpRequest): Promise<HttpResponse> {
-    try {
-      const response = await this.client.request({
+    return this.client
+      .request({
         data: config.data,
         headers: config.headers,
         method: config.method,
         url: config.url
+      })
+      .then(response => {
+        return {
+          headers: response.headers,
+          data: response.data,
+          status: response.status
+        };
+      })
+      .catch(error => {
+        if (error?.response) {
+          return {
+            data: error.response.data,
+            status: error.response.status
+          };
+        }
+        if (error?.code) {
+          return {
+            data: { message: error.message },
+            status: error.code
+          };
+        }
+        return error;
       });
-      return {
-        data: response.data,
-        status: response.status
-      };
-    } catch (error) {
-      if (error?.response) {
-        return {
-          data: error.response.data,
-          status: error.response.status
-        };
-      }
-      if (error?.code) {
-        return {
-          data: { message: error.message },
-          status: error.code
-        };
-      }
-      return error;
-    }
   }
 }

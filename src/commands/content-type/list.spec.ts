@@ -67,8 +67,8 @@ describe('content-type list command', (): void => {
     const argv = { ...yargArgs, ...config, ...pagingOptions };
     await handler(argv);
 
-    expect(mockGetHub).toBeCalledWith('hub-id');
-    expect(mockList).toBeCalledWith({ size: DEFAULT_SIZE, ...pagingOptions });
+    expect(mockGetHub).toHaveBeenCalledWith('hub-id');
+    expect(mockList).toHaveBeenCalledWith({ size: DEFAULT_SIZE, ...pagingOptions });
 
     expect(mockDataPresenter).toHaveBeenCalledWith(plainListContentTypes);
     expect(mockDataPresenter.mock.instances[0].render).toHaveBeenCalledWith({ json: argv.json, itemMapFn });

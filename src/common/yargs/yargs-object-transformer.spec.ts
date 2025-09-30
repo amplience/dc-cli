@@ -100,7 +100,7 @@ describe('transformYargObjectToArray', () => {
       }
     };
 
-    expect(() => transformYargObjectToArray(yargsObject)).toThrowError(
+    expect(() => transformYargObjectToArray(yargsObject)).toThrow(
       new Error('Targeted array indexes are unsupported, please provide a full array index starting at 0')
     );
   });
@@ -126,7 +126,7 @@ describe('transformYargObjectToArray', () => {
       }
     };
 
-    expect(() => transformYargObjectToArray(yargsObject)).toThrowError(
+    expect(() => transformYargObjectToArray(yargsObject)).toThrow(
       new Error('Targeted array indexes are unsupported, please provide a full array index starting at 0')
     );
   });
