@@ -165,7 +165,6 @@ dc-cli content-item import <dir>
 | -v<br />--validate       | [boolean]                                  | Only recreate folder structure - content is validated but not imported.                                                                                                                                                |
 | --skipIncomplete         | [boolean]                                  | Skip any content items that has one or more missing dependancy.                                                                                                                                                        |
 | --publish                | [boolean]                                  | Publish any content items that have an existing publish status in their JSON.                                                                                                                                          |
-| --batchPublish           | [boolean]                                  | Batch publish requests up to the rate limit. (35/min)                                                                                                                                                                  |
 | --republish              | [boolean]                                  | Republish content items regardless of whether the import changed them or not.<br />(--publish not required)                                                                                                            |
 | --excludeKeys            | [boolean]                                  | Exclude delivery keys when importing content items.                                                                                                                                                                    |
 | --media                  | [boolean]                                  | Detect and rewrite media links to match assets in the target account's Content Hub. Your client must have Content Hub permissions configured.                                                                          |
@@ -215,7 +214,6 @@ dc-cli content-item copy <dir>
 | --skipIncomplete         | [boolean]                                  | Skip any content item that has one or more missing dependancy.                                                                                                                                                                                                                   |
 | --lastPublish            | [boolean]                                  | When available, export the last published version of a content item rather than its newest version.                                                                                                                                                                              |
 | --publish                | [boolean]                                  | Publish any content items that have an existing publish status in their JSON.                                                                                                                                                                                                    |
-| --batchPublish           | [boolean]                                  | Batch publish requests up to the rate limit. (35/min)                                                                                                                                                                                                                            |
 | --republish              | [boolean]                                  | Republish content items regardless of whether the import changed them or not.<br />(--publish not required)                                                                                                                                                                      |
 | --excludeKeys            | [boolean]                                  | Exclude delivery keys when importing content items.                                                                                                                                                                                                                              |
 | --media                  | [boolean]                                  | Detect and rewrite media links to match assets in the target account's DAM.<br />Your client must have DAM permissions configured.                                                                                                                                               |
@@ -265,7 +263,6 @@ dc-cli content-item move <dir>
 | --skipIncomplete         | [boolean]                                  | Skip any content item that has one or more missing dependancy.                                                                                                                                                                                                                   |
 | --lastPublish            | [boolean]                                  | When available, export the last published version of a content item rather than its newest version.                                                                                                                                                                              |
 | --publish                | [boolean]                                  | Publish any content items that have an existing publish status in their JSON.                                                                                                                                                                                                    |
-| --batchPublish           | [boolean]                                  | Batch publish requests up to the rate limit. (35/min)                                                                                                                                                                                                                            |
 | --republish              | [boolean]                                  | Republish content items regardless of whether the import changed them or not.<br />(--publish not required)                                                                                                                                                                      |
 | --excludeKeys            | [boolean]                                  | Exclude delivery keys when importing content items.                                                                                                                                                                                                                              |
 | --media                  | [boolean]                                  | Detect and rewrite media links to match assets in the target account's DAM.<br />Your client must have DAM permissions configured.                                                                                                                                               |
@@ -402,16 +399,14 @@ If no `id` is provided, all content items in all content repositories in the spe
 
 #### Options
 
-| Option               | Alias | Description                                                                                                                                        |
-| -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--repoId`           |       | The ID of a content repository to restrict publishing scope. _(Optional)_                                                                          |
-| `--folderId`         |       | The ID of a folder to restrict publishing scope. _(Optional)_                                                                                      |
-| `--facet`            |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
-| `--batchPublish`     |       | Enable batch publishing up to 35 items per minute. _(Optional)_                                                                                    |
-| `-f`, `--force`      |       | Skip confirmation prompts before publishing.                                                                                                       |
-| `-s`, `--silent`     |       | Disable log file creation.                                                                                                                         |
-| `--logFile`          |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
-| `--publishRateLimit` |       | Set the number of publishes per minute (max = 80). <br>Default: `35`                                                                               |
+| Option           | Alias | Description                                                                                                                                        |
+| ---------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--repoId`       |       | The ID of a content repository to restrict publishing scope. _(Optional)_                                                                          |
+| `--folderId`     |       | The ID of a folder to restrict publishing scope. _(Optional)_                                                                                      |
+| `--facet`        |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
+| `-f`, `--force`  |       | Skip confirmation prompts before publishing.                                                                                                       |
+| `-s`, `--silent` |       | Disable log file creation.                                                                                                                         |
+| `--logFile`      |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
 
 ---
 
@@ -433,10 +428,4 @@ dc-cli content-item publish --repoId your-repo-id
 
 ```bash
 dc-cli content-item publish --facet "locale:en-GB,label:homepage"
-```
-
-##### Batch publish all items silently
-
-```bash
-dc-cli content-item publish --batchPublish --silent --force
 ```

@@ -119,7 +119,7 @@ describe('extension clone step', () => {
       ...state.from
     });
 
-    expect(extensionImport.handler).toBeCalledWith({
+    expect(extensionImport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'extension'),
       logFile: state.logFile,
       ...state.to
@@ -137,8 +137,8 @@ describe('extension clone step', () => {
     const backupFail = await step.run(state);
 
     expect(backupFail).toBeFalsy();
-    expect(extensionExport.handler).toBeCalledTimes(1);
-    expect(extensionImport.handler).not.toBeCalled();
+    expect(extensionExport.handler).toHaveBeenCalledTimes(1);
+    expect(extensionImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -148,8 +148,8 @@ describe('extension clone step', () => {
     const exportFail = await step.run(state);
 
     expect(exportFail).toBeFalsy();
-    expect(extensionExport.handler).toBeCalledTimes(2);
-    expect(extensionImport.handler).not.toBeCalled();
+    expect(extensionExport.handler).toHaveBeenCalledTimes(2);
+    expect(extensionImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -159,8 +159,8 @@ describe('extension clone step', () => {
     const importFail = await step.run(state);
 
     expect(importFail).toBeFalsy();
-    expect(extensionExport.handler).toBeCalledTimes(2);
-    expect(extensionImport.handler).toBeCalled();
+    expect(extensionExport.handler).toHaveBeenCalledTimes(2);
+    expect(extensionImport.handler).toHaveBeenCalled();
   });
 
   it('should pass extensions with the UPDATE action to the extension import command on revert, in the oldExtension folder', async () => {
@@ -178,7 +178,7 @@ describe('extension clone step', () => {
     const step = new ExtensionCloneStep();
     const result = await step.revert(state);
 
-    expect(extensionImport.handler).toBeCalledWith(
+    expect(extensionImport.handler).toHaveBeenCalledWith(
       {
         dir: join(state.path, 'oldExtension'),
         logFile: state.logFile,

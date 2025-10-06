@@ -155,7 +155,7 @@ describe('event clone step', () => {
       ...state.from
     });
 
-    expect(eventImport.handler).toBeCalledWith({
+    expect(eventImport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'event'),
       originalIds: false,
       schedule: true,
@@ -178,8 +178,8 @@ describe('event clone step', () => {
     const backupFail = await step.run(state);
 
     expect(backupFail).toBeFalsy();
-    expect(eventExport.handler).toBeCalledTimes(1);
-    expect(eventImport.handler).not.toBeCalled();
+    expect(eventExport.handler).toHaveBeenCalledTimes(1);
+    expect(eventImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -189,8 +189,8 @@ describe('event clone step', () => {
     const exportFail = await step.run(state);
 
     expect(exportFail).toBeFalsy();
-    expect(eventExport.handler).toBeCalledTimes(2);
-    expect(eventImport.handler).not.toBeCalled();
+    expect(eventExport.handler).toHaveBeenCalledTimes(2);
+    expect(eventImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -200,8 +200,8 @@ describe('event clone step', () => {
     const importFail = await step.run(state);
 
     expect(importFail).toBeFalsy();
-    expect(eventExport.handler).toBeCalledTimes(2);
-    expect(eventImport.handler).toBeCalled();
+    expect(eventExport.handler).toHaveBeenCalledTimes(2);
+    expect(eventImport.handler).toHaveBeenCalled();
   });
 
   it('should attempt to archive events with the CREATE action on revert, skipping archived events', async () => {
@@ -222,7 +222,7 @@ describe('event clone step', () => {
     expect(mockArchiveEvent).toHaveBeenCalledTimes(1);
     expect(mockFailArchiveEvent).toHaveBeenCalledTimes(1);
     expect(state.logFile.getData('ARCHIVE').length).toEqual(1);
-    expect(eventImport.handler).not.toBeCalled();
+    expect(eventImport.handler).not.toHaveBeenCalled();
   });
 
   it('should pass events with the UPDATE action to the event import command on revert, in the oldEvent folder', async () => {
@@ -241,7 +241,7 @@ describe('event clone step', () => {
     const result = await step.revert(state);
 
     expect(mockArchiveEvent).toHaveBeenCalledTimes(1);
-    expect(eventImport.handler).toBeCalledWith({
+    expect(eventImport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'oldEvent'),
       originalIds: true,
       schedule: true,

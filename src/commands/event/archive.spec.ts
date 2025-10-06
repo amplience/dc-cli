@@ -338,7 +338,7 @@ describe('event archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
-      expect(deleteMock).toBeCalledTimes(1);
+      expect(deleteMock).toHaveBeenCalledTimes(1);
     });
 
     it('should archive event with published', async () => {
@@ -356,7 +356,7 @@ describe('event archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
-      expect(archiveMock).toBeCalledTimes(2);
+      expect(archiveMock).toHaveBeenCalledTimes(2);
     });
 
     it('should archive events when multiple ids provided', async () => {
@@ -374,7 +374,7 @@ describe('event archive command', () => {
 
       expect(mockGet).toHaveBeenCalledTimes(4);
       expect(mockEditionsList).toHaveBeenCalledTimes(2);
-      expect(archiveMock).toBeCalledTimes(4);
+      expect(archiveMock).toHaveBeenCalledTimes(4);
     });
 
     it('should delete event with scheduled edition', async () => {
@@ -392,7 +392,7 @@ describe('event archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
-      expect(deleteMock).toBeCalledTimes(2);
+      expect(deleteMock).toHaveBeenCalledTimes(2);
     });
 
     it('should archive event with published+scheduled edition, after deleting the scheduled one', async () => {
@@ -414,8 +414,8 @@ describe('event archive command', () => {
       expect(mockGet).toHaveBeenCalled();
       expect(mockEditionGet).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
-      expect(deleteMock).toBeCalledTimes(2);
-      expect(archiveMock).toBeCalledTimes(2);
+      expect(deleteMock).toHaveBeenCalledTimes(2);
+      expect(archiveMock).toHaveBeenCalledTimes(2);
     });
 
     it("shouldn't archive event, no id", async () => {
@@ -453,7 +453,7 @@ describe('event archive command', () => {
       expect(mockEventsList).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
       expect(mockGet).toHaveBeenCalled();
-      expect(deleteMock).toBeCalledTimes(2);
+      expect(deleteMock).toHaveBeenCalledTimes(2);
     });
 
     it("shouldn't archive event by name", async () => {
@@ -491,7 +491,7 @@ describe('event archive command', () => {
 
       expect(mockGet).toHaveBeenCalled();
       expect(mockEditionsList).toHaveBeenCalled();
-      expect(deleteMock).toBeCalledTimes(0);
+      expect(deleteMock).toHaveBeenCalledTimes(0);
     });
 
     it('should log error, no resource', async () => {

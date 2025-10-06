@@ -18,7 +18,6 @@ export interface CopyItemBuilderOptions {
   revertLog: Promise<FileLog | undefined>;
   lastPublish?: boolean;
   publish?: boolean;
-  batchPublish?: boolean;
   republish?: boolean;
   excludeKeys?: boolean;
   exportedIds?: string[];
