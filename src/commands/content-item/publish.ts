@@ -149,7 +149,7 @@ export const processItems = async ({
 
   const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
   const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
-  let publishChildren = 0;
+  let childCount = 0;
   const rootContentItems = contentTree.all
     .filter(node => {
       let isTopLevel = true;
@@ -159,21 +159,20 @@ export const processItems = async ({
         dependant => {
           if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
             isTopLevel = false;
+            childCount++;
           }
         },
         true
       );
-
-      if (!isTopLevel) {
-        publishChildren++;
-      }
 
       return isTopLevel;
     })
     .map(node => node.owner.content);
 
   const log = logFile.open();
-  log.appendLine(`Found ${rootContentItems.length} items to publish. (${publishChildren} children included)`);
+  log.appendLine(
+    `Found ${rootContentItems.length} item(s) to publish (ignoring ${childCount} duplicate child item(s)).`
+  );
 
   if (!force) {
     const yes = await confirmAllContent('publish', 'content items', allContent, missingContent);
@@ -182,7 +181,7 @@ export const processItems = async ({
     }
   }
 
-  log.appendLine(`Publishing ${rootContentItems.length} items.`);
+  log.appendLine(`Publishing ${rootContentItems.length} item(s).`);
 
   const publishingService = new ContentItemPublishingService();
   const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
