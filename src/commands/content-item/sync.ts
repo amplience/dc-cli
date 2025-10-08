@@ -4,13 +4,13 @@ import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { withOldFilters } from '../../common/filter/facet';
-import { ContentItem, ContentRepository, DynamicContent, Hub, Job, Status } from 'dc-management-sdk-js';
+import { Job, Status } from 'dc-management-sdk-js';
 import { getContent } from '../../common/filter/fetch-content';
-import { ContentMapping } from '../../common/content-mapping';
-import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import { ContentItemSyncService } from './sync.service';
+import { getRootContentItems } from '../../common/content-item/get-root-content-items';
+import { getContentByIds } from '../../common/content-item/get-content-items-by-ids';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
   getDefaultLogPath('content-item', 'sync', platform);
@@ -68,57 +68,6 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const fetchContentByIds = async (client: DynamicContent, ids: string[]) => {
-  const contentItems: ContentItem[] = [];
-
-  for (const id of ids) {
-    try {
-      contentItems.push(await client.contentItems.get(id));
-    } catch (e) {
-      throw new Error(`Missing content item with id: ${id}: ${e.message} `);
-    }
-  }
-
-  return contentItems.filter(item => item.status === Status.ACTIVE);
-};
-
-export const listContent = async (
-  client: DynamicContent,
-  hub: Hub,
-  {
-    repoId,
-    folderId,
-    facet,
-    status
-  }: { repoId?: string | string[]; folderId?: string | string[]; facet?: string; status?: Status }
-) => {
-  return await getContent(client, hub, facet, { repoId, folderId, status: status || Status.ACTIVE, enrichItems: true });
-};
-
-export const getRootContentItems = (contentItems: ContentItem[]) => {
-  const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
-  const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
-  const rootContentItems = contentTree.all
-    .filter(node => {
-      let isTopLevel = true;
-
-      contentTree.traverseDependants(
-        node,
-        dependant => {
-          if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
-            isTopLevel = false;
-          }
-        },
-        true
-      );
-
-      return isTopLevel;
-    })
-    .map(node => node.owner.content);
-
-  return rootContentItems;
-};
-
 export default interface SyncOptions {
   id?: string | string[];
   repoId?: string | string[];
@@ -157,8 +106,8 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
   const hub = await client.hubs.get(hubId);
 
   const contentItems = id
-    ? await fetchContentByIds(client, Array.isArray(id) ? id : [id])
-    : await listContent(client, hub, { repoId, folderId, facet });
+    ? await getContentByIds(client, Array.isArray(id) ? id : [id])
+    : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
 
   if (!contentItems.length) {
     console.log('Nothing found to sync, aborting');
@@ -180,13 +129,13 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
 
   log.appendLine(`Syncing ${rootContentItems.length} item(s)`);
 
-  const syncProgress = progressBar(rootContentItems.length, 0, { title: 'Syncing content items' });
+  const progress = progressBar(rootContentItems.length, 0, { title: 'Syncing content items' });
   const syncService = new ContentItemSyncService();
 
   rootContentItems.forEach(contentItem => {
     log.addComment(`Requesting content item sync: ${contentItem.label}`);
     syncService.sync(destinationHubId, hub, contentItem, (syncJob: Job) => {
-      syncProgress.increment();
+      progress.increment();
       if (syncJob.status === 'FAILED') {
         log.addComment(`Failed content item sync job ${syncJob.id}: ${JSON.stringify(syncJob.errors)}`);
         return;
@@ -196,11 +145,10 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
   });
 
   await syncService.onIdle();
-  syncProgress.stop();
+  progress.stop();
 
-  const failedJobsMsg = syncService.failedJobs.length
-    ? `with ${syncService.failedJobs.length} failed jobs - check logs for details`
-    : ``;
+  const failedJobCount = syncService.failedJobs.length;
+  const failedJobsMsg = failedJobCount ? `with ${failedJobCount} failed jobs - check logs for details` : ``;
 
   log.appendLine(`Sync complete ${failedJobsMsg}`);
 
