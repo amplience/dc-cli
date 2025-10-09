@@ -9,7 +9,7 @@ import { getContent } from '../../common/filter/fetch-content';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import { ContentItemSyncService } from './sync.service';
-import { getRootContentItems } from '../../common/content-item/get-root-content-items';
+import { getIndependentContentItems } from '../../common/content-item/get-independent-content-items';
 import { getContentByIds } from '../../common/content-item/get-content-items-by-ids';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
@@ -69,7 +69,7 @@ export const builder = (yargs: Argv): void => {
 };
 
 export default interface SyncOptions {
-  id?: string | string[];
+  id?: string;
   repoId?: string | string[];
   folderId?: string | string[];
   facet?: string;
@@ -106,14 +106,14 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
   const hub = await client.hubs.get(hubId);
 
   const contentItems = id
-    ? await getContentByIds(client, Array.isArray(id) ? id : [id])
+    ? await getContentByIds(client, [id])
     : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
 
   if (!contentItems.length) {
     console.log('Nothing found to sync, aborting');
   }
 
-  const rootContentItems = getRootContentItems(contentItems);
+  const rootContentItems = getIndependentContentItems(contentItems);
   const log = logFile.open();
 
   log.appendLine(
@@ -136,11 +136,12 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
     log.addComment(`Requesting content item sync: ${contentItem.label}`);
     syncService.sync(destinationHubId, hub, contentItem, (syncJob: Job) => {
       progress.increment();
-      if (syncJob.status === 'FAILED') {
-        log.addComment(`Failed content item sync job ${syncJob.id}: ${JSON.stringify(syncJob.errors)}`);
-        return;
-      }
-      log.addComment(`Content item synced: ${contentItem.label} (jobId: ${syncJob.id}) ${JSON.stringify(syncJob)}`);
+      const logComment =
+        syncJob.status === 'FAILED'
+          ? `Failed content item sync job ${syncJob.id}: ${JSON.stringify(syncJob.errors)}`
+          : `Content item synced: ${contentItem.label} (jobId: ${syncJob.id})`;
+
+      log.addComment(logComment);
     });
   });
 

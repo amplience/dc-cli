@@ -1,6 +1,5 @@
 import { Arguments, Argv } from 'yargs';
 import DataPresenter, { RenderingArguments, RenderingOptions } from '../../view/data-presenter';
-import { BuilderOptions } from '../content-repository/assign-content-type';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { singleItemTableOptions } from '../../common/table/table.consts';
@@ -17,6 +16,10 @@ export const builder = (yargs: Argv): void => {
     })
     .options(RenderingOptions);
 };
+
+export interface BuilderOptions {
+  id: string;
+}
 
 export const handler = async (
   argv: Arguments<BuilderOptions & ConfigurationParameters & RenderingArguments>

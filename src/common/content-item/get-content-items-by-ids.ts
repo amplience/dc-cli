@@ -7,7 +7,7 @@ export const getContentByIds = async (client: DynamicContent, ids: string[]) => 
     try {
       contentItems.push(await client.contentItems.get(id));
     } catch (e) {
-      throw new Error(`Missing content item with id: ${id}: ${e.message} `);
+      throw new Error(`Missing content item with id ${id}: ${e.message}`);
     }
   }
 
