@@ -1,8 +1,8 @@
 import { ContentItem } from 'dc-management-sdk-js';
 
-import { getIndependentContentItems } from './get-independent-content-items';
+import { dedupeContentItems } from './dedupe-content-items';
 
-describe('getIndependentContentItems', () => {
+describe('dedupeContentItems', () => {
   it('should return the same number of content items when only unique content items supplied', () => {
     const contentItemA = new ContentItem({
       id: 'c5b659df-680e-4711-bfbe-111111111111',
@@ -25,7 +25,7 @@ describe('getIndependentContentItems', () => {
       }
     });
 
-    expect(getIndependentContentItems([contentItemA, contentItemB])).toEqual([contentItemA, contentItemB]);
+    expect(dedupeContentItems([contentItemA, contentItemB])).toEqual([contentItemA, contentItemB]);
   });
 
   it('should filter content items if they already existing in another content items immediate graph', () => {
@@ -65,9 +65,6 @@ describe('getIndependentContentItems', () => {
       }
     });
 
-    expect(getIndependentContentItems([contentItemA, contentItemB, contentItemC])).toEqual([
-      contentItemA,
-      contentItemB
-    ]);
+    expect(dedupeContentItems([contentItemA, contentItemB, contentItemC])).toEqual([contentItemA, contentItemB]);
   });
 });

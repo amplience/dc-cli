@@ -9,7 +9,7 @@ import { getContent } from '../../common/filter/fetch-content';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import { ContentItemSyncService } from './sync.service';
-import { getIndependentContentItems } from '../../common/content-item/get-independent-content-items';
+import { dedupeContentItems } from '../../common/content-item/dedupe-content-items';
 import { getContentByIds } from '../../common/content-item/get-content-items-by-ids';
 
 export const LOG_FILENAME = (platform: string = process.platform): string =>
@@ -113,11 +113,11 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
     console.log('Nothing found to sync, aborting');
   }
 
-  const rootContentItems = getIndependentContentItems(contentItems);
+  const dedupedContentItems = dedupeContentItems(contentItems);
   const log = logFile.open();
 
   log.appendLine(
-    `Found ${rootContentItems.length} item(s) to sync (ignoring ${contentItems.length - rootContentItems.length} duplicate child item(s))`
+    `Found ${dedupedContentItems.length} item(s) to sync (ignoring ${contentItems.length - dedupedContentItems.length} duplicate child item(s))`
   );
 
   if (!force) {
@@ -127,12 +127,12 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
     }
   }
 
-  log.appendLine(`Syncing ${rootContentItems.length} item(s)`);
+  log.appendLine(`Syncing ${dedupedContentItems.length} item(s)`);
 
-  const progress = progressBar(rootContentItems.length, 0, { title: 'Syncing content items' });
+  const progress = progressBar(dedupedContentItems.length, 0, { title: 'Syncing content items' });
   const syncService = new ContentItemSyncService();
 
-  rootContentItems.forEach(contentItem => {
+  dedupedContentItems.forEach(contentItem => {
     log.addComment(`Requesting content item sync: ${contentItem.label}`);
     syncService.sync(destinationHubId, hub, contentItem, (syncJob: Job) => {
       progress.increment();

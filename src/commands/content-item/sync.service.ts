@@ -1,4 +1,4 @@
-import { ContentItem, Hub, Job } from 'dc-management-sdk-js';
+import { ContentItem, CreateDeepSyncJobRequest, Hub, Job } from 'dc-management-sdk-js';
 import { BurstableQueue } from '../../common/burstable-queue/burstable-queue';
 import { setTimeout } from 'node:timers/promises';
 
@@ -15,7 +15,7 @@ export class ContentItemSyncService {
   sync(destinationHubId: string, hub: Hub, contentItem: ContentItem, action: (job: Job) => void): void {
     this.queue.add(async () => {
       const createSyncJob = await hub.related.jobs.createDeepSyncJob(
-        new Job({
+        new CreateDeepSyncJobRequest({
           label: `dc-cli content item: ${contentItem.label}`,
           ignoreSchemaValidation: true,
           destinationHubId,

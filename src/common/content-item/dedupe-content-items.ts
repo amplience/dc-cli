@@ -2,10 +2,10 @@ import { ContentItem, ContentRepository } from 'dc-management-sdk-js';
 import { ContentMapping } from '../content-mapping';
 import { ContentDependancyTree } from './content-dependancy-tree';
 
-export const getIndependentContentItems = (contentItems: ContentItem[]) => {
+export const dedupeContentItems = (contentItems: ContentItem[]) => {
   const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
   const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
-  const independentContentItems = contentTree.all
+  const dedupedContentItems = contentTree.all
     .filter(node => {
       let isTopLevel = true;
 
@@ -23,5 +23,5 @@ export const getIndependentContentItems = (contentItems: ContentItem[]) => {
     })
     .map(node => node.owner.content);
 
-  return independentContentItems;
+  return dedupedContentItems;
 };
