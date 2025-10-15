@@ -119,7 +119,7 @@ describe('index clone step', () => {
       ...state.from
     });
 
-    expect(indexImport.handler).toBeCalledWith({
+    expect(indexImport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'index'),
       logFile: state.logFile,
       webhooks: true,
@@ -138,8 +138,8 @@ describe('index clone step', () => {
     const backupFail = await step.run(state);
 
     expect(backupFail).toBeFalsy();
-    expect(indexExport.handler).toBeCalledTimes(1);
-    expect(indexImport.handler).not.toBeCalled();
+    expect(indexExport.handler).toHaveBeenCalledTimes(1);
+    expect(indexImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -149,8 +149,8 @@ describe('index clone step', () => {
     const exportFail = await step.run(state);
 
     expect(exportFail).toBeFalsy();
-    expect(indexExport.handler).toBeCalledTimes(2);
-    expect(indexImport.handler).not.toBeCalled();
+    expect(indexExport.handler).toHaveBeenCalledTimes(2);
+    expect(indexImport.handler).not.toHaveBeenCalled();
 
     reset();
 
@@ -160,8 +160,8 @@ describe('index clone step', () => {
     const importFail = await step.run(state);
 
     expect(importFail).toBeFalsy();
-    expect(indexExport.handler).toBeCalledTimes(2);
-    expect(indexImport.handler).toBeCalled();
+    expect(indexExport.handler).toHaveBeenCalledTimes(2);
+    expect(indexImport.handler).toHaveBeenCalled();
   });
 
   it('should pass indexes with the UPDATE action to the index import command on revert, in the oldIndex folder', async () => {
@@ -179,7 +179,7 @@ describe('index clone step', () => {
     const step = new IndexCloneStep();
     const result = await step.revert(state);
 
-    expect(indexImport.handler).toBeCalledWith(
+    expect(indexImport.handler).toHaveBeenCalledWith(
       {
         dir: join(state.path, 'oldIndex'),
         logFile: state.logFile,
