@@ -4,12 +4,11 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node: [18, 20, 22]
+        node: [20, 22, 24]
 
     steps:
       - uses: actions/checkout@v4
