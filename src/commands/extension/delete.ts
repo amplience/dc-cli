@@ -41,13 +41,48 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const processExtensions = async (
-  extensionsToDelete: Extension[],
-  allExtensions: boolean,
-  logFile: FileLog,
-  force?: boolean
-): Promise<void> => {
+export const processExtensions = async (extensionsToDelete: Extension[], log: FileLog): Promise<void> => {
   const failedExtensions: Extension[] = [];
+
+  const progress = progressBar(extensionsToDelete.length, 0, {
+    title: `Deleting ${extensionsToDelete.length} extensions.`
+  });
+
+  for (const [i, extension] of extensionsToDelete.entries()) {
+    try {
+      await extension.related.delete();
+      log.addComment(`Successfully deleted "${extension.label}"`);
+      progress.increment();
+    } catch (e) {
+      failedExtensions.push(extension);
+      extensionsToDelete.splice(i, 1);
+      log.addComment(`Failed to delete ${extension.label}: ${e.toString()}`);
+      progress.increment();
+    }
+  }
+
+  progress.stop();
+
+  if (failedExtensions.length > 0) {
+    log.appendLine(`Failed to delete ${failedExtensions.length} extensions`);
+  }
+};
+
+export const handler = async (
+  argv: Arguments<DeleteExtensionBuilderOptions & ConfigurationParameters>
+): Promise<void> => {
+  const { id, logFile, force } = argv;
+
+  const client = dynamicContentClientFactory(argv);
+
+  const allExtensions = !id;
+
+  const hub = await client.hubs.get(argv.hubId);
+
+  const storedExtensions = await paginator(hub.related.extensions.list);
+
+  const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
+  const extensionsToDelete = filterExtensionsById(storedExtensions, idArray, true);
 
   const log = logFile.open();
 
@@ -69,48 +104,9 @@ export const processExtensions = async (
 
   log.addComment(`Deleting ${extensionsToDelete.length} extensions.`);
 
-  const progress = progressBar(extensionsToDelete.length, 0, {
-    title: `Deleting ${extensionsToDelete.length} extensions.`
-  });
-
-  for (const [i, extension] of extensionsToDelete.entries()) {
-    try {
-      await extension.related.delete();
-      log.addComment(`Successfully deleted "${extension.label}"`);
-      progress.increment();
-    } catch (e) {
-      failedExtensions.push(extension);
-      extensionsToDelete.splice(i, 1);
-      log.addComment(`Failed to delete ${extension.label}: ${e.toString()}`);
-      progress.increment();
-    }
-  }
-
-  progress.stop();
+  await processExtensions(extensionsToDelete, log);
 
   log.appendLine(`Finished successfully deleting ${extensionsToDelete.length} extensions`);
 
-  if (failedExtensions.length > 0) {
-    log.appendLine(`Failed to delete ${failedExtensions.length} extensions`);
-  }
-
   await log.close();
-};
-
-export const handler = async (
-  argv: Arguments<DeleteExtensionBuilderOptions & ConfigurationParameters>
-): Promise<void> => {
-  const { id, logFile, force } = argv;
-
-  const client = dynamicContentClientFactory(argv);
-
-  const allExtensions = !id;
-
-  const hub = await client.hubs.get(argv.hubId);
-
-  const storedExtensions = await paginator(hub.related.extensions.list);
-
-  const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
-  const filteredExtensions = filterExtensionsById(storedExtensions, idArray, true);
-  await processExtensions(filteredExtensions, allExtensions, logFile, force || false);
 };

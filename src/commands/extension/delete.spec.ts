@@ -7,9 +7,11 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
 import { filterExtensionsById } from '../../common/extension/extension-helpers';
+import * as questionHelpers from '../../common/question-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/log-helpers');
+jest.mock('../../common/question-helpers');
 
 describe('delete extensions', () => {
   it('should implement an export command', () => {
@@ -103,12 +105,13 @@ describe('delete extensions', () => {
 
     it('should delete all extensions in a hub', async (): Promise<void> => {
       const id: string[] | undefined = undefined;
-      const allExtensions = !id;
       const argv = { ...yargArgs, ...config, id, logFile: new FileLog() };
 
       const filteredExtensionsToDelete = filterExtensionsById(extensionsToDelete, extensionIdsToDelete(id));
 
       jest.spyOn(deleteModule, 'handler');
+
+      (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(true);
 
       await handler(argv);
 
@@ -116,17 +119,11 @@ describe('delete extensions', () => {
       expect(mockList).toHaveBeenCalledTimes(1);
       expect(mockList).toHaveBeenCalledWith({ size: 100 });
 
-      expect(deleteModule.processExtensions).toHaveBeenCalledWith(
-        filteredExtensionsToDelete,
-        allExtensions,
-        argv.logFile,
-        false
-      );
+      expect(deleteModule.processExtensions).toHaveBeenCalledWith(filteredExtensionsToDelete, argv.logFile);
     });
 
     it('should delete an extension by id', async (): Promise<void> => {
       const id: string[] | undefined = ['extension-id-2'];
-      const allExtensions = !id;
       const argv = {
         ...yargArgs,
         ...config,
@@ -138,17 +135,14 @@ describe('delete extensions', () => {
 
       jest.spyOn(deleteModule, 'handler');
 
+      (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(true);
+
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
       expect(mockList).toHaveBeenCalledTimes(1);
 
-      expect(deleteModule.processExtensions).toHaveBeenCalledWith(
-        filteredExtensionsToDelete,
-        allExtensions,
-        argv.logFile,
-        false
-      );
+      expect(deleteModule.processExtensions).toHaveBeenCalledWith(filteredExtensionsToDelete, argv.logFile);
     });
   });
 });
