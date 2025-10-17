@@ -20,6 +20,7 @@ import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { validateNoDuplicateExtensionNames } from './import';
+import { filterExtensionsById } from '../../common/extension/extension-helpers';
 
 export const command = 'export <dir>';
 
@@ -70,25 +71,6 @@ interface ExportRecord {
   readonly status: ExportResult;
   readonly extension: Extension;
 }
-
-export const filterExtensionsById = (listToFilter: Extension[], extensionUriList: string[]): Extension[] => {
-  if (extensionUriList.length === 0) {
-    return listToFilter;
-  }
-
-  const unmatchedExtensionUriList: string[] = extensionUriList.filter(
-    id => !listToFilter.some(extension => extension.id === id)
-  );
-  if (unmatchedExtensionUriList.length > 0) {
-    throw new Error(
-      `The following extension URI(s) could not be found: [${unmatchedExtensionUriList
-        .map(u => `'${u}'`)
-        .join(', ')}].\nNothing was exported, exiting.`
-    );
-  }
-
-  return listToFilter.filter(extension => extensionUriList.some(id => extension.id === id));
-};
 
 export const getExportRecordForExtension = (
   extension: Extension,
