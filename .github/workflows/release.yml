@@ -6,6 +6,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 name: release-please
 jobs:
@@ -16,7 +17,7 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.GH_REPO_ACCESS }}
+          token: ${{ secrets.GH_REPO_ACCESS_PUBLIC_REPOS }}
           release-type: node
 
       - uses: actions/checkout@v4
@@ -35,8 +36,6 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
 
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
 
       - run: |
