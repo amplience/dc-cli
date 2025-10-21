@@ -4,9 +4,7 @@ import { ContentItemPublishingService } from './content-item-publishing-service'
 jest.mock('../burstable-queue/burstable-queue', () => ({
   BurstableQueue: jest.fn().mockImplementation(() => ({
     add: (fn: () => Promise<void>) => fn(),
-    onIdle: async () => Promise.resolve(),
-    size: () => 0,
-    pending: () => 0
+    onIdle: async () => Promise.resolve()
   }))
 }));
 
@@ -30,7 +28,7 @@ describe('ContentItemPublishingService', () => {
     item2 = createMockContentItem('item-2', 'job-2');
   });
 
-  it('publishes an item and records the job', async () => {
+  it('publishes a content item and stores the job', async () => {
     const cb = jest.fn();
 
     await service.publish(item1, cb);

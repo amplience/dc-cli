@@ -915,7 +915,7 @@ const importTree = async (
       );
 
     if (argv.force || (await checkPublishJobs())) {
-      log.addComment(`Checking publshing jobs`);
+      log.addComment(`Checking publishing jobs`);
       const publishingJobService = new ContentItemPublishingJobService(client);
       const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
         title: 'Content items publishes complete'

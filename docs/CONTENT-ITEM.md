@@ -28,6 +28,7 @@ Return to [README.md](../README.md) for information on other command categories.
   - [unarchive](#unarchive)
   - [tree](#tree)
   - [publish](#publish)
+  - [unpublish](#unpublish)
 
 <!-- /MarkdownTOC -->
 
@@ -428,4 +429,57 @@ dc-cli content-item publish --repoId your-repo-id
 
 ```bash
 dc-cli content-item publish --facet "locale:en-GB,label:homepage"
+```
+
+### unpublish
+
+Unpublishes content items to a content hub. You can unpublish all items or specify individual content items by ID.
+
+```bash
+dc-cli content-item unpublish [id]
+```
+
+If no `id` is provided, all content items in all content repositories in the specified hub will be unpublished.
+
+---
+
+#### Positionals
+
+| Argument | Description                                                                                                                 |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `id`     | The ID of a content item to be published. If omitted, all content items in all repositories will be published. _(Optional)_ |
+
+---
+
+#### Options
+
+| Option           | Alias | Description                                                                                                                                        |
+| ---------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--repoId`       |       | The ID of a content repository to restrict unpublishing scope. _(Optional)_                                                                        |
+| `--folderId`     |       | The ID of a folder to restrict unpublishing scope. _(Optional)_                                                                                    |
+| `--facet`        |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
+| `-f`, `--force`  |       | Skip confirmation prompts before unpublishing.                                                                                                     |
+| `-s`, `--silent` |       | Disable log file creation.                                                                                                                         |
+| `--logFile`      |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
+
+---
+
+#### Examples
+
+##### Unpublish a specific content item by ID
+
+```bash
+dc-cli content-item unpublish 1234abcd
+```
+
+##### Unpublish all content in a specific repository
+
+```bash
+dc-cli content-item unpublish --repoId your-repo-id
+```
+
+##### Use facets to unpublish filtered content
+
+```bash
+dc-cli content-item unpublish --facet "locale:en-GB,label:homepage"
 ```
