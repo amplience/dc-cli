@@ -17,8 +17,6 @@ describe('loadJsonFromDirectory tests', () => {
   it('should throw an error if any import file is not json', (): void => {
     expect(() =>
       loadJsonFromDirectory<ContentType>(__dirname + '/__fixtures__/load-json-from-directory/bad-json/', ContentType)
-    ).toThrowError(
-      /^Non-JSON file found: .*__fixtures__\/load-json-from-directory\/bad-json\/bad-json\.json, aborting...$/
-    );
+    ).toThrow(/^Non-JSON file found: .*__fixtures__\/load-json-from-directory\/bad-json\/bad-json\.json, aborting...$/);
   });
 });

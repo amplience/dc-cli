@@ -63,7 +63,7 @@ describe('export service tests', () => {
       (fs.writeFileSync as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Cannot write to file/directory');
       });
-      expect(() => writeJsonToFile<ContentType>('my-filename', new ContentType())).toThrowError(
+      expect(() => writeJsonToFile<ContentType>('my-filename', new ContentType())).toThrow(
         /^Unable to write file: my-filename, aborting export$/
       );
     });
