@@ -16,7 +16,6 @@ export interface CloneHubBuilderOptions {
   logFile: FileLog;
   lastPublish?: boolean;
   publish?: boolean;
-  batchPublish?: boolean;
   republish?: boolean;
   excludeKeys?: boolean;
   acceptSnapshotLimits: boolean;

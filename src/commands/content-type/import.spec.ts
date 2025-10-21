@@ -507,7 +507,7 @@ describe('content-type import command', (): void => {
           }),
           new Map([])
         )
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         new Error('Invalid format supplied for repositories. Please provide an array of repository names')
       );
     });
@@ -522,7 +522,7 @@ describe('content-type import command', (): void => {
           }),
           new Map([])
         )
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         new Error('Invalid format supplied for repositories. Please provide an array of repository names')
       );
     });

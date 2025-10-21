@@ -17,7 +17,8 @@ import {
   ContentRepository,
   ContentType,
   ContentTypeSchema,
-  Status
+  Status,
+  PublishingJob
 } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-mapping';
 import {
@@ -31,9 +32,12 @@ import { Body } from '../../common/content-item/body';
 import { AmplienceSchemaValidator, defaultSchemaLookup } from '../../common/content-item/amplience-schema-validator';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
-import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 import { MediaRewriter } from '../../common/media/media-rewriter';
 import { progressBar } from '../../common/progress-bar/progress-bar';
+import { ContentItemPublishingService } from '../../common/publishing/content-item-publishing-service';
+import PublishOptions from '../../common/publish/publish-options';
+import { ContentItemPublishingJobService } from '../../common/publishing/content-item-publishing-job-service';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -106,21 +110,10 @@ export const builder = (yargs: Argv): void => {
         'Publish any content items that either made a new version on import, or were published more recently in the JSON.'
     })
 
-    .option('batchPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Batch publish requests up to the rate limit. (35/min)'
-    })
-
     .option('republish', {
       type: 'boolean',
       boolean: true,
       describe: 'Republish content items regardless of whether the import changed them or not. (--publish not required)'
-    })
-
-    .options('publishRateLimit', {
-      type: 'number',
-      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
     })
 
     .option('excludeKeys', {
@@ -891,55 +884,64 @@ const importTree = async (
   }
 
   if (argv.publish) {
-    const pubQueue = new PublishQueue(argv);
     log.appendLine(`Publishing ${publishable.length} items. (${publishChildren} children included)`);
 
-    if (!argv.batchPublish) {
-      pubQueue.maxWaiting = 1;
-    }
+    const publishingService = new ContentItemPublishingService();
+    const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
+    const publishProgress = progressBar(publishable.length, 0, { title: 'Publishing content items' });
 
     for (let i = 0; i < publishable.length; i++) {
       const item = publishable[i].item;
 
       try {
-        await pubQueue.publish(item);
-        log.appendLine(`Started publish for ${item.label}.`);
+        await publishingService.publish(item, (contentItem, publishingJob) => {
+          contentItemPublishJobs.push([contentItem, publishingJob]);
+          log.addComment(`Initiated publish for "${item.label}"`);
+          publishProgress.increment();
+        });
       } catch (e) {
-        log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
+        log.appendLine(`\nFailed to initiate publish for ${item.label}: ${e.toString()}`);
+        publishProgress.increment();
       }
     }
 
-    log.appendLine(`Waiting for all publishes to complete...`);
+    log.addComment(`Waiting for publishes to be requested`);
+    await publishingService.onIdle();
+    publishProgress.stop();
 
-    let keepWaiting = true;
+    const checkPublishJobs = async () =>
+      await asyncQuestion(
+        'All publishes have been requested, would you like to wait for all publishes to complete? (y/n)'
+      );
 
-    while (!pubQueue.isEmpty() && keepWaiting) {
-      await pubQueue.waitForAll();
+    if (argv.force || (await checkPublishJobs())) {
+      log.addComment(`Checking publshing jobs`);
+      const publishingJobService = new ContentItemPublishingJobService(client);
+      const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
+        title: 'Content items publishes complete'
+      });
 
-      if (pubQueue.unresolvedJobs.length > 0) {
-        keepWaiting = await asyncQuestion(
-          'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
-        );
+      for (const [contentItem, publishingJob] of contentItemPublishJobs) {
+        publishingJobService.check(publishingJob, async resolvedPublishingJob => {
+          log.addComment(`Finished checking publish job for ${contentItem.label}`);
+          if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
+            log.appendLine(`\nFailed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
+          }
+          checkPublishProgress.increment();
+        });
       }
+
+      await publishingJobService.onIdle();
+      checkPublishProgress.stop();
     }
-
-    log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publishes`);
-    pubQueue.unresolvedJobs.forEach(job => {
-      log.appendLine(` - ${job.item.label}`);
-    });
-
-    log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publishes total`);
-    pubQueue.failedJobs.forEach(job => {
-      log.appendLine(` - ${job.item.label}`);
-    });
+    log.appendLine('Publishing complete');
   }
 
-  log.appendLine('Done!');
   return true;
 };
 
 export const handler = async (
-  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
+  argv: Arguments<PublishOptions & ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
   if (await argv.revertLog) {
     return revert(argv);
