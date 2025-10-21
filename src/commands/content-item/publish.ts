@@ -4,15 +4,18 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import { ContentItem, ContentRepository, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, ContentRepository, DynamicContent, PublishingJob, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
-import { MAX_PUBLISH_RATE_LIMIT, PublishQueue } from '../../common/import/publish-queue';
 import { asyncQuestion } from '../../common/question-helpers';
 import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
 import { ContentMapping } from '../../common/content-mapping';
+import { ContentItemPublishingService } from '../../common/publishing/content-item-publishing-service';
+import { ContentItemPublishingJobService } from '../../common/publishing/content-item-publishing-job-service';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
+import { progressBar } from '../../common/progress-bar/progress-bar';
 
 export const command = 'publish [id]';
 
@@ -44,15 +47,6 @@ export const builder = (yargs: Argv): void => {
       type: 'string',
       describe:
         "Publish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
-    })
-    .option('batchPublish', {
-      type: 'boolean',
-      boolean: true,
-      describe: 'Batch publish requests up to the rate limit. (35/min)'
-    })
-    .options('publishRateLimit', {
-      type: 'number',
-      describe: `Set the number of publishes per minute (max = ${MAX_PUBLISH_RATE_LIMIT})`
     })
     .alias('f', 'force')
     .option('f', {
@@ -132,21 +126,21 @@ export const getContentItems = async ({
 };
 
 export const processItems = async ({
+  client,
   contentItems,
   force,
   silent,
   logFile,
   allContent,
-  missingContent,
-  argv
+  missingContent
 }: {
+  client: DynamicContent;
   contentItems: ContentItem[];
   force?: boolean;
   silent?: boolean;
   logFile: FileLog;
   allContent: boolean;
   missingContent: boolean;
-  argv: Arguments<ConfigurationParameters>;
 }): Promise<void> => {
   if (contentItems.length == 0) {
     console.log('Nothing found to publish, aborting.');
@@ -155,7 +149,7 @@ export const processItems = async ({
 
   const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
   const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
-  let publishChildren = 0;
+  let childCount = 0;
   const rootContentItems = contentTree.all
     .filter(node => {
       let isTopLevel = true;
@@ -165,21 +159,20 @@ export const processItems = async ({
         dependant => {
           if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
             isTopLevel = false;
+            childCount++;
           }
         },
         true
       );
-
-      if (!isTopLevel) {
-        publishChildren++;
-      }
 
       return isTopLevel;
     })
     .map(node => node.owner.content);
 
   const log = logFile.open();
-  log.appendLine(`Found ${rootContentItems.length} items to publish. (${publishChildren} children included)`);
+  log.appendLine(
+    `Found ${rootContentItems.length} item(s) to publish (ignoring ${childCount} duplicate child item(s)).`
+  );
 
   if (!force) {
     const yes = await confirmAllContent('publish', 'content items', allContent, missingContent);
@@ -188,48 +181,56 @@ export const processItems = async ({
     }
   }
 
-  const pubQueue = new PublishQueue(argv);
+  log.appendLine(`Publishing ${rootContentItems.length} item(s).`);
 
-  log.appendLine(`Publishing ${rootContentItems.length} items.`);
-
-  if (!argv.batchPublish) {
-    pubQueue.maxWaiting = 1;
-  }
+  const publishingService = new ContentItemPublishingService();
+  const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
+  const publishProgress = progressBar(rootContentItems.length, 0, { title: 'Publishing content items' });
 
   for (const item of rootContentItems) {
     try {
-      await pubQueue.publish(item);
-      log.appendLine(`Initiating publish for "${item.label}"`);
+      await publishingService.publish(item, (contentItem, publishingJob) => {
+        contentItemPublishJobs.push([contentItem, publishingJob]);
+        log.addComment(`Initiated publish for "${item.label}"`);
+        publishProgress.increment();
+      });
     } catch (e) {
-      log.appendLine(`Failed to initiate publish for ${item.label}: ${e.toString()}`);
+      log.appendLine(`\nFailed to initiate publish for ${item.label}: ${e.toString()}`);
+      publishProgress.increment();
     }
   }
 
-  log.appendLine(`Waiting for all publish jobs to complete...`);
+  await publishingService.onIdle();
+  publishProgress.stop();
 
-  let keepWaiting = true;
+  const checkPublishJobs = async () =>
+    await asyncQuestion(
+      'All publishes have been requested, would you like to wait for all publishes to complete? (y/n)'
+    );
 
-  while (!pubQueue.isEmpty() && keepWaiting) {
-    await pubQueue.waitForAll();
+  if (force || (await checkPublishJobs())) {
+    log.appendLine(`Checking publishing state for ${contentItemPublishJobs.length} items.`);
+    const checkPublishProgress = progressBar(contentItemPublishJobs.length, 0, {
+      title: 'Content items publishes complete'
+    });
 
-    if (pubQueue.unresolvedJobs.length > 0) {
-      keepWaiting = await asyncQuestion(
-        'Some publishes are taking longer than expected, would you like to continue waiting? (Y/n)'
-      );
+    const publishingJobService = new ContentItemPublishingJobService(client);
+
+    for (const [contentItem, publishingJob] of contentItemPublishJobs) {
+      publishingJobService.check(publishingJob, async resolvedPublishingJob => {
+        log.addComment(`Finished checking publish job for ${contentItem.label}`);
+        if (resolvedPublishingJob.state === PublishingJobStatus.FAILED) {
+          log.appendLine(`\nFailed to publish ${contentItem.label}: ${resolvedPublishingJob.publishErrorStatus}`);
+        }
+        checkPublishProgress.increment();
+      });
     }
+
+    await publishingJobService.onIdle();
+    checkPublishProgress.stop();
   }
 
-  log.appendLine(`Finished publishing, with ${pubQueue.unresolvedJobs.length} unresolved publish jobs`);
-  pubQueue.unresolvedJobs.forEach(job => {
-    log.appendLine(` - ${job.item.label}`);
-  });
-
-  log.appendLine(`Finished publishing, with ${pubQueue.failedJobs.length} failed publish jobs`);
-  pubQueue.failedJobs.forEach(job => {
-    log.appendLine(` - ${job.item.label}`);
-  });
-
-  log.appendLine(`Publish complete`);
+  log.appendLine(`Publishing complete`);
 
   await log.close(!silent);
 };
@@ -269,12 +270,12 @@ export const handler = async (argv: Arguments<PublishOptions & ConfigurationPara
   });
 
   await processItems({
+    client,
     contentItems,
     force,
     silent,
     logFile,
     allContent,
-    missingContent,
-    argv
+    missingContent
   });
 };

@@ -13,7 +13,7 @@ describe('file-log', () => {
       const writeSpy = jest.spyOn(log, 'writeToFile').mockImplementation(() => Promise.resolve(true));
       await log.close();
 
-      expect(writeSpy).toBeCalled();
+      expect(writeSpy).toHaveBeenCalled();
     });
 
     it('should not create a log file when filename is null, and closed', async () => {
@@ -22,7 +22,7 @@ describe('file-log', () => {
       const writeSpy = jest.spyOn(log, 'writeToFile').mockImplementation(() => Promise.resolve(true));
       await log.close();
 
-      expect(writeSpy).not.toBeCalled();
+      expect(writeSpy).not.toHaveBeenCalled();
     });
 
     it('should embed the date in the filename', async () => {
@@ -55,11 +55,11 @@ describe('file-log', () => {
       const writeSpy = jest.spyOn(log, 'writeToFile').mockImplementation(() => Promise.resolve(true));
       await log.close();
 
-      expect(writeSpy).not.toBeCalled(); // There is still a user, shouldn't save yet.
+      expect(writeSpy).not.toHaveBeenCalled(); // There is still a user, shouldn't save yet.
 
       await log.close();
 
-      expect(writeSpy).toBeCalled();
+      expect(writeSpy).toHaveBeenCalled();
     });
 
     it('should not save a log file if false is provided to the close method, and it is the last close', async () => {
@@ -68,7 +68,7 @@ describe('file-log', () => {
       const writeSpy = jest.spyOn(log, 'writeToFile').mockImplementation(() => Promise.resolve(true));
       await log.close(false);
 
-      expect(writeSpy).not.toBeCalled();
+      expect(writeSpy).not.toHaveBeenCalled();
     });
   });
 });

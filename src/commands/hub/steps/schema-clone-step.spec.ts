@@ -121,7 +121,7 @@ describe('schema clone step', () => {
       ...state.from
     });
 
-    expect(schemaImport.handler).toBeCalledWith({
+    expect(schemaImport.handler).toHaveBeenCalledWith({
       dir: join(state.path, 'schema'),
       logFile: state.logFile,
       ...state.to

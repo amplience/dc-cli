@@ -1,18 +1,13 @@
-import { builder, handler, getContentItems, processItems, LOG_FILENAME, coerceLog } from './publish';
-import { Status, ContentItem, DynamicContent, Hub, PublishingJob } from 'dc-management-sdk-js';
+import { builder, handler, getContentItems, processItems, LOG_FILENAME, coerceLog } from './unpublish';
+import { Status, ContentItem, DynamicContent, Hub } from 'dc-management-sdk-js';
 import { FileLog } from '../../common/file-log';
 import { Arguments } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import PublishOptions from '../../common/publish/publish-options';
 import Yargs from 'yargs/yargs';
-import readline from 'readline';
-import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
 
-const mockPublish = jest.fn().mockImplementation((contentItems, fn) => {
+const mockUnpublish = jest.fn().mockImplementation((contentItems, fn) => {
   fn(contentItems);
-});
-const mockCheck = jest.fn().mockImplementation((publishingJob, fn) => {
-  fn(new PublishingJob({ state: PublishingJobStatus.COMPLETED }));
 });
 
 jest.mock('../../services/dynamic-content-client-factory');
@@ -20,21 +15,11 @@ jest.mock('../../common/content-item/confirm-all-content');
 jest.mock('../../common/log-helpers');
 jest.mock('../../common/filter/fetch-content');
 jest.mock('readline');
-jest.mock('../../common/publishing/content-item-publishing-service', () => {
+jest.mock('../../common/publishing/content-item-unpublishing-service', () => {
   return {
-    ContentItemPublishingService: jest.fn().mockImplementation(() => {
+    ContentItemUnpublishingService: jest.fn().mockImplementation(() => {
       return {
-        publish: mockPublish,
-        onIdle: jest.fn()
-      };
-    })
-  };
-});
-jest.mock('../../common/publishing/content-item-publishing-job-service', () => {
-  return {
-    ContentItemPublishingJobService: jest.fn().mockImplementation(() => {
-      return {
-        check: mockCheck,
+        unpublish: mockUnpublish,
         onIdle: jest.fn()
       };
     })
@@ -58,7 +43,7 @@ const mockLog = {
   })
 } as unknown as FileLog;
 
-describe('publish tests', () => {
+describe('unpublish tests', () => {
   describe('builder tests', () => {
     it('should configure yargs', function () {
       const argv = Yargs(process.argv.slice(2));
@@ -70,31 +55,31 @@ describe('publish tests', () => {
       expect(spyPositional).toHaveBeenCalledWith('id', {
         type: 'string',
         describe:
-          'The ID of a content item to be published. If id is not provided, this command will publish ALL content items through all content repositories in the hub.'
+          'The ID of a content item to be unpublished. If id is not provided, this command will unpublish ALL content items through all content repositories in the hub.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('repoId', {
         type: 'string',
-        describe: 'The ID of a content repository to search items in to be published.',
+        describe: 'The ID of a content repository to search items in to be unpublished.',
         requiresArg: false
       });
 
       expect(spyOption).toHaveBeenCalledWith('folderId', {
         type: 'string',
-        describe: 'The ID of a folder to search items in to be published.',
+        describe: 'The ID of a folder to search items in to be unpublished.',
         requiresArg: false
       });
 
       expect(spyOption).toHaveBeenCalledWith('facet', {
         type: 'string',
         describe:
-          "Publish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+          "Unpublish content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
       });
 
       expect(spyOption).toHaveBeenCalledWith('f', {
         type: 'boolean',
         boolean: true,
-        describe: 'If present, there will be no confirmation prompt before publishing the found content.'
+        describe: 'If present, there will be no confirmation prompt before unpublishing the found content.'
       });
 
       expect(spyOption).toHaveBeenCalledWith('s', {
@@ -176,14 +161,13 @@ describe('publish tests', () => {
         contentItems: [],
         logFile: mockLog,
         allContent: false,
-        missingContent: false,
-        client: mockClient
+        missingContent: false
       });
 
-      expect(console.log).toHaveBeenCalledWith('Nothing found to publish, aborting.');
+      expect(console.log).toHaveBeenCalledWith('Nothing found to unpublish, aborting.');
     });
 
-    it('should confirm before publishing when force is false', async () => {
+    it('should confirm before unpublishing when force is false', async () => {
       const confirmAllContent = require('../../common/content-item/confirm-all-content').confirmAllContent;
       confirmAllContent.mockResolvedValue(false);
       console.log = jest.fn();
@@ -194,18 +178,18 @@ describe('publish tests', () => {
         silent: true,
         logFile: mockLog,
         allContent: false,
-        missingContent: false,
-        client: mockClient
+        missingContent: false
       });
 
       expect(confirmAllContent).toHaveBeenCalled();
     });
 
-    it('should process all items and call publish', async () => {
-      const contentItem = new ContentItem({ id: '1', label: 'Publish Me', body: { _meta: {} } });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (readline as any).setResponses(['Y']);
+    it('should process all items and call unpublish', async () => {
+      const contentItem = new ContentItem({
+        id: '1',
+        label: 'Unpublish Me',
+        body: { _meta: {} }
+      });
 
       await processItems({
         contentItems: [contentItem],
@@ -213,55 +197,45 @@ describe('publish tests', () => {
         silent: true,
         logFile: mockLog,
         allContent: false,
-        missingContent: false,
-        client: mockClient
+        missingContent: false
       });
 
-      expect(mockPublish).toHaveBeenCalledTimes(1);
-      expect(mockCheck).toHaveBeenCalledTimes(1);
+      expect(mockUnpublish).toHaveBeenCalledTimes(1);
     });
 
-    it('should process all items while filtering out any dependencies and call publish', async () => {
-      const contentItemWithDependency = new ContentItem({
-        id: 'da2ee918-34c3-4fc1-ae05-111111111111',
-        label: 'Publish me',
-        body: {
-          _meta: {},
-          dependency: {
-            _meta: { schema: 'http://bigcontent.io/cms/schema/v1/core#/definitions/content-link' },
-            contentType: 'http://bigcontent.io/cms/schema/v1/text',
-            id: 'da2ee918-34c3-4fc1-ae05-222222222222'
-          }
-        }
-      });
+    it('should process all items while filtering out any dependencies and call unpublish', async () => {
       const contentItemDependency = new ContentItem({
         id: 'da2ee918-34c3-4fc1-ae05-222222222222',
-        label: 'No need to publish me',
+        label: 'No need to unpublish me',
         body: { _meta: {} }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (readline as any).setResponses(['Y']);
+      const contentItemWithDependency = new ContentItem({
+        id: 'da2ee918-34c3-4fc1-ae05-111111111111',
+        label: 'Unpublish me',
+        body: {
+          _meta: {},
+          dependency: contentItemDependency
+        }
+      });
 
       await processItems({
-        contentItems: [contentItemWithDependency, contentItemDependency],
+        contentItems: [contentItemWithDependency],
         force: true,
         silent: true,
         logFile: mockLog,
         allContent: false,
-        missingContent: false,
-        client: mockClient
+        missingContent: false
       });
 
-      expect(mockPublish).toHaveBeenCalledTimes(1);
-      expect(mockCheck).toHaveBeenCalledTimes(1);
+      expect(mockUnpublish).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('handler tests', () => {
     const clientFactory = require('../../services/dynamic-content-client-factory').default;
-    const getItemsSpy = jest.spyOn(require('./publish'), 'getContentItems');
-    const processSpy = jest.spyOn(require('./publish'), 'processItems');
+    const getItemsSpy = jest.spyOn(require('./unpublish'), 'getContentItems');
+    const processSpy = jest.spyOn(require('./unpublish'), 'processItems');
     beforeEach(() => {
       jest.clearAllMocks();
       clientFactory.mockReturnValue(mockClient);

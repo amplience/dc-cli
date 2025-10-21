@@ -324,7 +324,7 @@ describe('content-item unarchive command', () => {
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content by id', async () => {
@@ -342,7 +342,7 @@ describe('content-item unarchive command', () => {
       await handler(argv);
 
       expect(mockItemGetById).toHaveBeenCalled();
-      expect(mockUnarchive).toBeCalledTimes(1);
+      expect(mockUnarchive).toHaveBeenCalledTimes(1);
     });
 
     it("shouldn't unarchive content by id", async () => {
@@ -359,7 +359,7 @@ describe('content-item unarchive command', () => {
       await handler(argv);
 
       expect(mockItemGetById).toHaveBeenCalled();
-      expect(mockUnarchive).not.toBeCalled();
+      expect(mockUnarchive).not.toHaveBeenCalled();
     });
 
     it('should unarchive content by repo id', async () => {
@@ -379,7 +379,7 @@ describe('content-item unarchive command', () => {
         repoId: 'repo1',
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content by repo ids', async () => {
@@ -399,7 +399,7 @@ describe('content-item unarchive command', () => {
         repoId: ['repo1', 'repo2'],
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content by folder id', async () => {
@@ -421,7 +421,7 @@ describe('content-item unarchive command', () => {
         folderId: 'folder1',
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content by folder ids', async () => {
@@ -441,7 +441,7 @@ describe('content-item unarchive command', () => {
         folderId: ['folder1', 'folder1'],
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content by name', async () => {
@@ -462,7 +462,7 @@ describe('content-item unarchive command', () => {
         folderId: 'folder1',
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should exit if a facet AND id are provided', async () => {
@@ -479,10 +479,10 @@ describe('content-item unarchive command', () => {
       };
       await handler(argv);
 
-      expect(mockFacet).not.toBeCalled();
-      expect(mockFolderGet).not.toBeCalled();
-      expect(mockItemsList).not.toBeCalled();
-      expect(mockUnarchive).not.toBeCalled();
+      expect(mockFacet).not.toHaveBeenCalled();
+      expect(mockFolderGet).not.toHaveBeenCalled();
+      expect(mockItemsList).not.toHaveBeenCalled();
+      expect(mockUnarchive).not.toHaveBeenCalled();
     });
 
     it("shouldn't unarchive content when facet returns none", async () => {
@@ -506,7 +506,7 @@ describe('content-item unarchive command', () => {
         folderId: 'folder1',
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).not.toBeCalled();
+      expect(mockUnarchive).not.toHaveBeenCalled();
     });
 
     it("shouldn't unarchive content, answer no", async () => {
@@ -527,7 +527,7 @@ describe('content-item unarchive command', () => {
         folderId: 'folder1',
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).not.toBeCalled();
+      expect(mockUnarchive).not.toHaveBeenCalled();
     });
 
     it('should unarchive content by content type name', async () => {
@@ -546,7 +546,7 @@ describe('content-item unarchive command', () => {
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'schema:http://test.com', {
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content with ignoreError', async () => {
@@ -565,7 +565,7 @@ describe('content-item unarchive command', () => {
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it("shouldn't unarchive content with ignoreError", async () => {
@@ -584,7 +584,7 @@ describe('content-item unarchive command', () => {
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(1);
+      expect(mockUnarchive).toHaveBeenCalledTimes(1);
     });
 
     it('should unarchive content items without asking if --force is provided', async () => {
@@ -603,7 +603,7 @@ describe('content-item unarchive command', () => {
       expect(mockFacet).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), undefined, {
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content items specified in the provided --revertLog maintaining deliveryKey', async () => {
@@ -642,7 +642,7 @@ describe('content-item unarchive command', () => {
       expect(mockItemUpdate).toHaveBeenCalled();
       const updateItem: ContentItem = (mockItemUpdate as jest.Mock).mock.calls[0][0];
       expect(updateItem.body._meta.deliveryKey).toEqual('delivery-key');
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
     });
 
     it('should unarchive content items specified in the provided --revertLog maintaining deliveryKeys', async () => {
@@ -756,7 +756,7 @@ describe('content-item unarchive command', () => {
         folderId: 'folder1',
         status: Status.ARCHIVED
       });
-      expect(mockUnarchive).not.toBeCalled();
+      expect(mockUnarchive).not.toHaveBeenCalled();
     });
 
     it("shouldn't unarchive content items, revertLog error", async () => {
@@ -790,7 +790,7 @@ describe('content-item unarchive command', () => {
 
       expect(mockItemGetById).not.toHaveBeenCalled();
       expect(mockFacet).not.toHaveBeenCalled();
-      expect(mockUnarchive).not.toBeCalled();
+      expect(mockUnarchive).not.toHaveBeenCalled();
     });
 
     it('should unarchive content items, write log file', async () => {
@@ -813,7 +813,7 @@ describe('content-item unarchive command', () => {
       await handler(argv);
 
       expect(mockItemGetById).toHaveBeenCalled();
-      expect(mockUnarchive).toBeCalled();
+      expect(mockUnarchive).toHaveBeenCalled();
 
       const logExists = await promisify(exists)(`temp_${process.env.JEST_WORKER_ID}/content-item-unarchive.log`);
 
@@ -976,7 +976,7 @@ describe('content-item unarchive command', () => {
         logFile: './logFile.log'
       });
 
-      expect(mockUnarchive).toBeCalledTimes(2);
+      expect(mockUnarchive).toHaveBeenCalledTimes(2);
 
       if (await promisify(exists)('./logFile.log')) {
         await promisify(unlink)('./logFile.log');
@@ -992,7 +992,7 @@ describe('content-item unarchive command', () => {
         missingContent: false
       });
 
-      expect(console.log).toBeCalled();
+      expect(console.log).toHaveBeenCalled();
       expect(console.log).toHaveBeenLastCalledWith('Nothing found to unarchive, aborting.');
     });
   });
