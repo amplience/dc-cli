@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.28.0](https://github.com/amplience/dc-cli/compare/v0.27.0...v0.28.0) (2025-10-21)
+
+
+### Features
+
+* add unpublishing support ([#232](https://github.com/amplience/dc-cli/issues/232)) ([f36eaf6](https://github.com/amplience/dc-cli/commit/f36eaf60620b5b1cc06cbdccff3290d5aaace491))
+* delete extensions ([#233](https://github.com/amplience/dc-cli/issues/233)) ([997a63f](https://github.com/amplience/dc-cli/commit/997a63fb25c1c7d5e5923f56dbdc71effe3644bf))
+* node 24 and trusted publish ([#237](https://github.com/amplience/dc-cli/issues/237)) ([a9be85b](https://github.com/amplience/dc-cli/commit/a9be85bf00234d9920524ac20f7841142e71d5e2))
+* publish queue improvements ([#226](https://github.com/amplience/dc-cli/issues/226)) ([d8750fd](https://github.com/amplience/dc-cli/commit/d8750fd0eeea5360cfa9f90d9ce146d7393cdd3a))
+
+
+### Bug Fixes
+
+* installing with ignore scripts flag ([#230](https://github.com/amplience/dc-cli/issues/230)) ([c5a9871](https://github.com/amplience/dc-cli/commit/c5a98714a4d7e8a7aa4586884b6f3210180115ab))
+
 ## [0.27.0](https://github.com/amplience/dc-cli/compare/v0.26.1...v0.27.0) (2025-09-16)
 
 
