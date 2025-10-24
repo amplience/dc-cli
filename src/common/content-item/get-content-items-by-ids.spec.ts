@@ -35,7 +35,7 @@ describe('getContentByIds', () => {
 
     expect(result).toEqual([contentItemA, contentItemB]);
   });
-  it('should throw an error if a supplied id is missing', async () => {
+  it('should ignore error if a supplied id is missing', async () => {
     const mockClient = {
       contentItems: {
         get: jest.fn().mockRejectedValue(new Error('Authorization required.'))
@@ -44,8 +44,8 @@ describe('getContentByIds', () => {
 
     const ids = ['c5b659df-680e-4711-bfbe-111111111111'];
 
-    await expect(getContentByIds(mockClient, ids)).rejects.toThrowErrorMatchingInlineSnapshot(
-      `"Missing content item with id c5b659df-680e-4711-bfbe-111111111111: Authorization required."`
-    );
+    const result = await getContentByIds(mockClient, ids);
+
+    expect(result).toEqual([]);
   });
 });

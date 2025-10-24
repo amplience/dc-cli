@@ -105,9 +105,16 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
 
   const hub = await client.hubs.get(hubId);
 
-  const contentItems = id
-    ? await getContentByIds(client, [id])
-    : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
+  let ids: string[] = [];
+
+  if (id) {
+    ids = Array.isArray(id) ? id : [id];
+  }
+
+  const contentItems =
+    ids.length > 0
+      ? await getContentByIds(client, ids)
+      : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
 
   if (!contentItems.length) {
     console.log('Nothing found to sync, aborting');
@@ -120,8 +127,10 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
     `Found ${dedupedContentItems.length} item(s) to sync (ignoring ${contentItems.length - dedupedContentItems.length} duplicate child item(s))`
   );
 
+  const missingContentItems = Boolean(ids && ids.length !== contentItems.length);
+
   if (!force) {
-    const yes = await confirmAllContent('sync', 'content items', allContent, false);
+    const yes = await confirmAllContent('sync', 'content items', allContent, missingContentItems);
     if (!yes) {
       return;
     }
