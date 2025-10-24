@@ -37,6 +37,8 @@ The following options are available for all **webhook** commands.
 
 Exports webhooks from the targeted Dynamic Content hub into a folder called **exported_webhooks** at the user specified file path.
 
+**Note**: No secret or auth header values will be exported.
+
 ```
 dc-cli webhook export <dir>
 ```
