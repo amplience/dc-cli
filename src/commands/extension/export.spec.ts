@@ -1,9 +1,9 @@
 import * as exportModule from './export';
 import * as directoryUtils from '../../common/import/directory-utils';
+import * as extensionHelpers from '../../common/extension/extension-helpers';
 import {
   builder,
   command,
-  filterExtensionsById,
   getExtensionExports,
   getExportRecordForExtension,
   handler,
@@ -22,6 +22,7 @@ import { FileLog } from '../../common/file-log';
 import { streamTableOptions } from '../../common/table/table.consts';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { validateNoDuplicateExtensionNames } from './import';
+import { filterExtensionsById } from '../../common/extension/extension-helpers';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('./import');
@@ -661,7 +662,7 @@ describe('extension export command', (): void => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir', extensionId: extensionIdsToExport, logFile: new FileLog() };
 
       const filteredExtensionsToExport = [...extensionsToExport];
-      jest.spyOn(exportModule, 'filterExtensionsById').mockReturnValue(filteredExtensionsToExport);
+      jest.spyOn(extensionHelpers, 'filterExtensionsById').mockReturnValue(filteredExtensionsToExport);
 
       await handler(argv);
 
@@ -670,7 +671,7 @@ describe('extension export command', (): void => {
       expect(mockList).toHaveBeenCalledWith({ size: 100 });
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, Extension);
       expect(validateNoDuplicateExtensionNames).toHaveBeenCalled();
-      expect(exportModule.filterExtensionsById).toHaveBeenCalledWith(extensionsToExport, []);
+      expect(extensionHelpers.filterExtensionsById).toHaveBeenCalledWith(extensionsToExport, []);
       expect(exportModule.processExtensions).toHaveBeenCalledWith(
         argv.dir,
         [],
@@ -685,7 +686,7 @@ describe('extension export command', (): void => {
       const argv = { ...yargArgs, ...config, dir: 'my-dir', id: idsToExport, logFile: new FileLog() };
 
       const filteredExtensionsToExport = [extensionsToExport[1]];
-      jest.spyOn(exportModule, 'filterExtensionsById').mockReturnValue(filteredExtensionsToExport);
+      jest.spyOn(extensionHelpers, 'filterExtensionsById').mockReturnValue(filteredExtensionsToExport);
 
       await handler(argv);
 
@@ -693,7 +694,7 @@ describe('extension export command', (): void => {
       expect(mockList).toHaveBeenCalled();
       expect(loadJsonFromDirectory).toHaveBeenCalledWith(argv.dir, Extension);
       expect(validateNoDuplicateExtensionNames).toHaveBeenCalled();
-      expect(exportModule.filterExtensionsById).toHaveBeenCalledWith(extensionsToExport, idsToExport);
+      expect(extensionHelpers.filterExtensionsById).toHaveBeenCalledWith(extensionsToExport, idsToExport);
       expect(exportModule.processExtensions).toHaveBeenCalledWith(
         argv.dir,
         [],
