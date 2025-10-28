@@ -4,18 +4,18 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import { ContentItem, ContentRepository, DynamicContent, PublishingJob, Status } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, PublishingJob, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
 import { asyncQuestion } from '../../common/question-helpers';
-import { ContentDependancyTree } from '../../common/content-item/content-dependancy-tree';
-import { ContentMapping } from '../../common/content-mapping';
 import { ContentItemPublishingService } from '../../common/publishing/content-item-publishing-service';
 import { ContentItemPublishingJobService } from '../../common/publishing/content-item-publishing-job-service';
 import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
 import { progressBar } from '../../common/progress-bar/progress-bar';
+import { getContentByIds } from '../../common/content-item/get-content-items-by-ids';
+import { dedupeContentItems } from '../../common/content-item/dedupe-content-items';
 
 export const command = 'publish [id]';
 
@@ -72,122 +72,27 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const getContentItems = async ({
-  client,
-  id,
-  hubId,
-  repoId,
-  folderId,
-  facet
-}: {
-  client: DynamicContent;
-  id?: string | string[];
-  hubId: string;
-  repoId?: string | string[];
-  folderId?: string | string[];
-  facet?: string;
-}): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
-  try {
-    let contentItems: ContentItem[] = [];
-
-    if (id != null) {
-      const itemIds = Array.isArray(id) ? id : [id];
-      const items: ContentItem[] = [];
-
-      for (const id of itemIds) {
-        try {
-          items.push(await client.contentItems.get(id));
-        } catch {
-          // Missing item.
-        }
-      }
-
-      contentItems.push(...items.filter(item => item.status === Status.ACTIVE));
-
-      return {
-        contentItems,
-        missingContent: contentItems.length != itemIds.length
-      };
-    }
-
-    const hub = await client.hubs.get(hubId);
-
-    contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
-
-    return { contentItems, missingContent: false };
-  } catch (err) {
-    console.log(err);
-
-    return {
-      contentItems: [],
-      missingContent: false
-    };
-  }
-};
-
-export const processItems = async ({
+const processItems = async ({
   client,
   contentItems,
   force,
-  silent,
-  logFile,
-  allContent,
-  missingContent
+  log
 }: {
   client: DynamicContent;
   contentItems: ContentItem[];
   force?: boolean;
-  silent?: boolean;
-  logFile: FileLog;
-  allContent: boolean;
-  missingContent: boolean;
+  log: FileLog;
 }): Promise<void> => {
-  if (contentItems.length == 0) {
-    console.log('Nothing found to publish, aborting.');
-    return;
-  }
+  const dedupedContentItems = dedupeContentItems(contentItems);
 
-  const repoContentItems = contentItems.map(content => ({ repo: new ContentRepository(), content }));
-  const contentTree = new ContentDependancyTree(repoContentItems, new ContentMapping());
-  let childCount = 0;
-  const rootContentItems = contentTree.all
-    .filter(node => {
-      let isTopLevel = true;
-
-      contentTree.traverseDependants(
-        node,
-        dependant => {
-          if (dependant != node && contentTree.all.findIndex(entry => entry === dependant) !== -1) {
-            isTopLevel = false;
-            childCount++;
-          }
-        },
-        true
-      );
-
-      return isTopLevel;
-    })
-    .map(node => node.owner.content);
-
-  const log = logFile.open();
   log.appendLine(
-    `Found ${rootContentItems.length} item(s) to publish (ignoring ${childCount} duplicate child item(s)).`
+    `Publishing ${dedupedContentItems.length} item(s) (ignoring ${contentItems.length - dedupedContentItems.length} duplicate child item(s))`
   );
-
-  if (!force) {
-    const yes = await confirmAllContent('publish', 'content items', allContent, missingContent);
-    if (!yes) {
-      return;
-    }
-  }
-
-  log.appendLine(`Publishing ${rootContentItems.length} item(s).`);
 
   const publishingService = new ContentItemPublishingService();
   const contentItemPublishJobs: [ContentItem, PublishingJob][] = [];
-  const publishProgress = progressBar(rootContentItems.length, 0, { title: 'Publishing content items' });
-
-  for (const item of rootContentItems) {
+  const publishProgress = progressBar(dedupedContentItems.length, 0, { title: 'Publishing content items' });
+  for (const item of dedupedContentItems) {
     try {
       await publishingService.publish(item, (contentItem, publishingJob) => {
         contentItemPublishJobs.push([contentItem, publishingJob]);
@@ -229,14 +134,11 @@ export const processItems = async ({
     await publishingJobService.onIdle();
     checkPublishProgress.stop();
   }
-
-  log.appendLine(`Publishing complete`);
-
-  await log.close(!silent);
 };
 
 export const handler = async (argv: Arguments<PublishOptions & ConfigurationParameters>): Promise<void> => {
   const { id, logFile, force, silent, hubId, repoId, folderId } = argv;
+  const log = logFile.open();
   const client = dynamicContentClientFactory(argv);
 
   const facet = withOldFilters(argv.facet, argv);
@@ -244,38 +146,58 @@ export const handler = async (argv: Arguments<PublishOptions & ConfigurationPara
   const allContent = !id && !facet && !folderId && !repoId;
 
   if (repoId && id) {
-    console.log('ID of content item is specified, ignoring repository ID');
+    log.appendLine('ID of content item is specified, ignoring repository ID');
   }
 
   if (id && facet) {
-    console.log('Please specify either a facet or an ID - not both.');
+    log.appendLine('Please specify either a facet or an ID - not both');
     return;
   }
 
   if (repoId && folderId) {
-    console.log('Folder is specified, ignoring repository ID');
+    log.appendLine('Folder is specified, ignoring repository ID');
   }
 
   if (allContent) {
-    console.log('No filter was given, publishing all content');
+    log.appendLine('No filter was given, publishing all content');
   }
 
-  const { contentItems, missingContent } = await getContentItems({
-    client,
-    id,
-    hubId,
-    repoId,
-    folderId,
-    facet
-  });
+  const hub = await client.hubs.get(hubId);
+  let ids: string[] = [];
+
+  if (id) {
+    ids = Array.isArray(id) ? id : [id];
+  }
+
+  const contentItems =
+    ids.length > 0
+      ? await getContentByIds(client, ids)
+      : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
+
+  if (!contentItems.length) {
+    log.appendLine('Nothing found to publish, aborting');
+    return;
+  }
+
+  const missingContentItems = ids.length > 0 ? Boolean(ids.length !== contentItems.length) : false;
+
+  log.appendLine(`Found ${contentItems.length} content items to publish (including duplicate child items)\n`);
+
+  if (!force) {
+    const yes = await confirmAllContent('publish', 'content items', allContent, missingContentItems);
+    if (!yes) {
+      return;
+    }
+  }
 
   await processItems({
     client,
     contentItems,
     force,
-    silent,
-    logFile,
-    allContent,
-    missingContent
+    log
   });
+
+  log.appendLine(`Publishing complete`);
+
+  await log.close(!silent);
 };
