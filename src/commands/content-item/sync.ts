@@ -81,26 +81,27 @@ export default interface SyncOptions {
 
 export const handler = async (argv: Arguments<SyncOptions & ConfigurationParameters>): Promise<void> => {
   const { id, logFile, force, silent, hubId, repoId, folderId, destinationHubId } = argv;
+  const log = logFile.open();
   const client = dynamicContentClientFactory(argv);
 
   const facet = withOldFilters(argv.facet, argv);
 
   if (repoId && id) {
-    console.log('ID of content item is specified, ignoring repository ID');
+    log.appendLine('ID of content item is specified, ignoring repository ID');
   }
 
   if (id && facet) {
-    console.log('Please specify either a facet or an ID - not both');
+    log.appendLine('Please specify either a facet or an ID - not both');
     return;
   }
 
   if (repoId && folderId) {
-    console.log('Folder is specified, ignoring repository ID');
+    log.appendLine('Folder is specified, ignoring repository ID');
   }
 
   const allContent = !id && !facet && !folderId && !repoId;
   if (allContent) {
-    console.log('No filter was given, syncing all content');
+    log.appendLine('No filter was given, syncing all content');
   }
 
   const hub = await client.hubs.get(hubId);
@@ -117,11 +118,11 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
       : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
 
   if (!contentItems.length) {
-    console.log('Nothing found to sync, aborting');
+    log.appendLine('Nothing found to sync, aborting');
+    return;
   }
 
   const dedupedContentItems = dedupeContentItems(contentItems);
-  const log = logFile.open();
 
   log.appendLine(
     `Found ${dedupedContentItems.length} item(s) to sync (ignoring ${contentItems.length - dedupedContentItems.length} duplicate child item(s))`
