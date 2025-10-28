@@ -127,7 +127,7 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
     `Found ${dedupedContentItems.length} item(s) to sync (ignoring ${contentItems.length - dedupedContentItems.length} duplicate child item(s))`
   );
 
-  const missingContentItems = Boolean(ids && ids.length !== contentItems.length);
+  const missingContentItems = ids.length > 0 ? Boolean(ids.length !== contentItems.length) : false;
 
   if (!force) {
     const yes = await confirmAllContent('sync', 'content items', allContent, missingContentItems);
