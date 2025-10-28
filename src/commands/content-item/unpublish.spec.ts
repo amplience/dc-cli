@@ -1,47 +1,40 @@
-import { builder, handler, getContentItems, processItems, LOG_FILENAME, coerceLog } from './unpublish';
-import { Status, ContentItem, DynamicContent, Hub } from 'dc-management-sdk-js';
+import { builder, handler, LOG_FILENAME, coerceLog } from './unpublish';
+import { ContentItem, Hub, PublishingJob, Job, ContentItemPublishingStatus } from 'dc-management-sdk-js';
 import { FileLog } from '../../common/file-log';
-import { Arguments } from 'yargs';
-import { ConfigurationParameters } from '../configure';
-import PublishOptions from '../../common/publish/publish-options';
 import Yargs from 'yargs/yargs';
+import { PublishingJobStatus } from 'dc-management-sdk-js/build/main/lib/model/PublishingJobStatus';
+import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
+import { getContentByIds } from '../../common/content-item/get-content-items-by-ids';
+import { getContent } from '../../common/filter/fetch-content';
+import * as confirmAllContentModule from '../../common/content-item/confirm-all-content';
+import * as questionHelpers from '../../common/question-helpers';
 
 const mockUnpublish = jest.fn().mockImplementation((contentItems, fn) => {
-  fn(contentItems);
+  fn(contentItems, new PublishingJob({ state: PublishingJobStatus.CREATED }));
 });
+const mockUnpublishOnIdle = jest.fn().mockImplementation(() => Promise.resolve());
+
+const confirmAllContentSpy = jest.spyOn(confirmAllContentModule, 'confirmAllContent');
+const asyncQuestionSpy = jest.spyOn(questionHelpers, 'asyncQuestion');
 
 jest.mock('../../services/dynamic-content-client-factory');
-jest.mock('../../common/content-item/confirm-all-content');
 jest.mock('../../common/log-helpers');
 jest.mock('../../common/filter/fetch-content');
-jest.mock('readline');
+jest.mock('../../common/content-item/get-content-items-by-ids', () => {
+  return {
+    getContentByIds: jest.fn()
+  };
+});
 jest.mock('../../common/publishing/content-item-unpublishing-service', () => {
   return {
     ContentItemUnpublishingService: jest.fn().mockImplementation(() => {
       return {
         unpublish: mockUnpublish,
-        onIdle: jest.fn()
+        onIdle: mockUnpublishOnIdle
       };
     })
   };
 });
-
-const mockClient = {
-  contentItems: {
-    get: jest.fn()
-  },
-  hubs: {
-    get: jest.fn()
-  }
-} as unknown as DynamicContent;
-
-const mockLog = {
-  open: jest.fn().mockReturnValue({
-    appendLine: jest.fn(),
-    addComment: jest.fn(),
-    close: jest.fn()
-  })
-} as unknown as FileLog;
 
 describe('unpublish tests', () => {
   describe('builder tests', () => {
@@ -97,171 +90,196 @@ describe('unpublish tests', () => {
     });
   });
 
-  describe('getContentItems tests', () => {
-    beforeEach(() => jest.clearAllMocks());
+  describe('handler', () => {
+    const HUB_ID = '67d1c1c7642fa239dbe15164';
+    const CONTENT_ITEM_ID = 'c5b659df-680e-4711-bfbe-84eaa10d76cc';
+    const globalArgs = {
+      $0: 'test',
+      _: ['test'],
+      json: true,
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      hubId: HUB_ID
+    };
+    const mockAppendLine = jest.fn();
+    const mockLog = {
+      open: jest.fn().mockReturnValue({
+        appendLine: mockAppendLine,
+        addComment: jest.fn(),
+        close: jest.fn()
+      })
+    } as unknown as FileLog;
 
-    it('should return content items by id', async () => {
-      const mockItem = { id: '1', status: Status.ACTIVE } as ContentItem;
-      mockClient.contentItems.get = jest.fn().mockResolvedValue(mockItem);
-
-      const result = await getContentItems({
-        client: mockClient,
-        id: '1',
-        hubId: 'hub-id'
-      });
-
-      expect(result.contentItems).toEqual([mockItem]);
-      expect(result.missingContent).toBe(false);
-    });
-
-    it('should filter out non-active content items', async () => {
-      mockClient.contentItems.get = jest
-        .fn()
-        .mockResolvedValueOnce({ id: '1', status: Status.ARCHIVED })
-        .mockResolvedValueOnce({ id: '2', status: Status.ACTIVE });
-
-      const result = await getContentItems({
-        client: mockClient,
-        id: ['1', '2'],
-        hubId: 'hub-id'
-      });
-
-      expect(result.contentItems).toHaveLength(1);
-      expect(result.contentItems[0].id).toBe('2');
-      expect(result.missingContent).toBe(true);
-    });
-
-    it('should return content using fallback filters', async () => {
-      const mockHub = {} as Hub;
-      const contentItems = [{ id: 'a', status: Status.ACTIVE }] as ContentItem[];
-      const getContent = require('../../common/filter/fetch-content').getContent;
-      mockClient.hubs.get = jest.fn().mockResolvedValue(mockHub);
-      getContent.mockResolvedValue(contentItems);
-
-      const result = await getContentItems({
-        client: mockClient,
-        hubId: 'hub-id',
-        facet: 'label:test'
-      });
-
-      expect(result.contentItems).toEqual(contentItems);
-    });
-  });
-
-  describe('processItems tests', () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      jest.mock('readline');
+      confirmAllContentSpy.mockResolvedValue(true);
+      asyncQuestionSpy.mockResolvedValue(true);
     });
 
-    it('should exit early if no content items', async () => {
-      console.log = jest.fn();
+    it('should publish content item by id', async () => {
+      const mockGetHub = jest.fn();
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub.mockResolvedValue(new Hub({ id: HUB_ID }))
+        }
+      });
+      (getContentByIds as unknown as jest.Mock).mockResolvedValue([
+        new ContentItem({ id: CONTENT_ITEM_ID, body: { _meta: {} } })
+      ]);
 
-      await processItems({
-        contentItems: [],
-        logFile: mockLog,
-        allContent: false,
-        missingContent: false
+      mockUnpublish.mockImplementation((contentItem, fn) => {
+        fn(new Job({ id: '68e5289f0aba3024bde050f9', status: 'COMPLETE' }));
       });
 
-      expect(console.log).toHaveBeenCalledWith('Nothing found to unpublish, aborting.');
-    });
-
-    it('should confirm before unpublishing when force is false', async () => {
-      const confirmAllContent = require('../../common/content-item/confirm-all-content').confirmAllContent;
-      confirmAllContent.mockResolvedValue(false);
-      console.log = jest.fn();
-
-      await processItems({
-        contentItems: [new ContentItem({ id: '1', label: 'Test', body: { _meta: {} } })],
-        force: false,
-        silent: true,
-        logFile: mockLog,
-        allContent: false,
-        missingContent: false
+      await handler({
+        ...globalArgs,
+        id: CONTENT_ITEM_ID,
+        logFile: mockLog
       });
 
-      expect(confirmAllContent).toHaveBeenCalled();
-    });
-
-    it('should process all items and call unpublish', async () => {
-      const contentItem = new ContentItem({
-        id: '1',
-        label: 'Unpublish Me',
-        body: { _meta: {} }
-      });
-
-      await processItems({
-        contentItems: [contentItem],
-        force: true,
-        silent: true,
-        logFile: mockLog,
-        allContent: false,
-        missingContent: false
-      });
-
+      expect(getContentByIds).toHaveBeenCalledWith(expect.any(Object), [CONTENT_ITEM_ID]);
       expect(mockUnpublish).toHaveBeenCalledTimes(1);
+      expect(mockUnpublish).toHaveBeenCalledWith(expect.any(ContentItem), expect.any(Function));
+      expect(mockUnpublishOnIdle).toHaveBeenCalledTimes(1);
     });
+    it('should publish content items by query', async () => {
+      const REPOSITORY_ID = '67d1c1cf642fa239dbe15165';
+      const mockGetHub = jest.fn();
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub.mockResolvedValue(new Hub({ id: HUB_ID }))
+        }
+      });
+      (getContent as unknown as jest.Mock).mockResolvedValue([
+        new ContentItem({ id: CONTENT_ITEM_ID, body: { _meta: {} } })
+      ]);
 
-    it('should process all items while filtering out any dependencies and call unpublish', async () => {
-      const contentItemDependency = new ContentItem({
-        id: 'da2ee918-34c3-4fc1-ae05-222222222222',
-        label: 'No need to unpublish me',
-        body: { _meta: {} }
+      mockUnpublish.mockImplementation((contentItem, fn) => {
+        fn(new Job({ id: '68e5289f0aba3024bde050f9', status: 'COMPLETE' }));
       });
 
-      const contentItemWithDependency = new ContentItem({
+      await handler({
+        ...globalArgs,
+        repoId: REPOSITORY_ID,
+        logFile: mockLog
+      });
+
+      expect(getContent).toHaveBeenCalledWith(expect.any(Object), expect.any(Hub), undefined, {
+        enrichItems: true,
+        folderId: undefined,
+        repoId: REPOSITORY_ID,
+        status: 'ACTIVE'
+      });
+      expect(mockUnpublish).toHaveBeenCalledTimes(1);
+      expect(mockUnpublish).toHaveBeenCalledWith(expect.any(ContentItem), expect.any(Function));
+      expect(mockUnpublishOnIdle).toHaveBeenCalledTimes(1);
+    });
+
+    it('should process only process content items with an unpublishable status', async () => {
+      const publishedContentItem = new ContentItem({
         id: 'da2ee918-34c3-4fc1-ae05-111111111111',
-        label: 'Unpublish me',
+        label: 'Published - unpublish me',
+        publishingStatus: ContentItemPublishingStatus.LATEST,
         body: {
           _meta: {},
-          dependency: contentItemDependency
+          text: 'text 1'
+        }
+      });
+      const unpublishedContentItemDependency = new ContentItem({
+        id: 'da2ee918-34c3-4fc1-ae05-222222222222',
+        label: 'Already unpublished - ignore me',
+        publishingStatus: ContentItemPublishingStatus.UNPUBLISHED,
+        body: {
+          _meta: {},
+          text: 'text 1'
+        }
+      });
+      const notPublishedContentItemDependency = new ContentItem({
+        id: 'da2ee918-34c3-4fc1-ae05-333333333333',
+        label: 'Never been published - ignore me',
+        publishingStatus: ContentItemPublishingStatus.NONE,
+        body: {
+          _meta: {},
+          text: 'text 1'
         }
       });
 
-      await processItems({
-        contentItems: [contentItemWithDependency],
-        force: true,
-        silent: true,
-        logFile: mockLog,
-        allContent: false,
-        missingContent: false
+      const mockGetHub = jest.fn();
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub.mockResolvedValue(new Hub({ id: HUB_ID }))
+        }
+      });
+      (getContentByIds as unknown as jest.Mock).mockResolvedValue([
+        publishedContentItem,
+        unpublishedContentItemDependency,
+        notPublishedContentItemDependency
+      ]);
+
+      mockUnpublish.mockImplementation((contentItem, fn) => {
+        fn(new ContentItem({ id: '68e5289f0aba3024bde050f9' }));
+      });
+
+      await handler({
+        ...globalArgs,
+        id: [publishedContentItem.id, unpublishedContentItemDependency.id, notPublishedContentItemDependency.id],
+        logFile: mockLog
       });
 
       expect(mockUnpublish).toHaveBeenCalledTimes(1);
+      expect(mockUnpublish).toHaveBeenCalledWith(publishedContentItem, expect.any(Function));
+      expect(mockUnpublishOnIdle).toHaveBeenCalledTimes(1);
     });
-  });
 
-  describe('handler tests', () => {
-    const clientFactory = require('../../services/dynamic-content-client-factory').default;
-    const getItemsSpy = jest.spyOn(require('./unpublish'), 'getContentItems');
-    const processSpy = jest.spyOn(require('./unpublish'), 'processItems');
-    beforeEach(() => {
-      jest.clearAllMocks();
-      clientFactory.mockReturnValue(mockClient);
-      getItemsSpy.mockResolvedValue({
-        contentItems: [{ id: '123', label: 'Test', status: Status.ACTIVE }],
-        missingContent: false
+    it('should exit before processing content items if confirmation to proceed is rejected', async () => {
+      confirmAllContentSpy.mockResolvedValue(false);
+      const mockGetHub = jest.fn();
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub.mockResolvedValue(new Hub({ id: HUB_ID }))
+        }
       });
-      processSpy.mockResolvedValue(undefined);
-    });
-    it('should warn when both id and facet are provided', async () => {
-      console.log = jest.fn();
+      (getContentByIds as unknown as jest.Mock).mockResolvedValue([
+        new ContentItem({ id: CONTENT_ITEM_ID, body: { _meta: {} } })
+      ]);
+
       await handler({
-        id: '1',
-        facet: 'label:test',
-        hubId: 'hub-id',
+        ...globalArgs,
+        id: CONTENT_ITEM_ID,
         logFile: mockLog
-      } as Arguments<PublishOptions & ConfigurationParameters>);
-      expect(console.log).toHaveBeenCalledWith('Please specify either a facet or an ID - not both.');
+      });
+      expect(mockUnpublish).toHaveBeenCalledTimes(0);
+      expect(mockUnpublishOnIdle).toHaveBeenCalledTimes(0);
     });
-    it('should process items with valid inputs', async () => {
+
+    it('should exit early if ID or query args are not passed', async () => {
       await handler({
-        hubId: 'hub-id',
+        ...globalArgs,
+        id: CONTENT_ITEM_ID,
+        facet: 'mock-facet',
         logFile: mockLog
-      } as Arguments<PublishOptions & ConfigurationParameters>);
-      expect(getItemsSpy).toHaveBeenCalled();
-      expect(processSpy).toHaveBeenCalled();
+      });
+      expect(mockAppendLine).toHaveBeenCalledWith('Please specify either a facet or an ID - not both');
+      expect(mockUnpublish).toHaveBeenCalledTimes(0);
+      expect(mockUnpublishOnIdle).toHaveBeenCalledTimes(0);
+    });
+
+    it('should exit early if no content items', async () => {
+      const mockGetHub = jest.fn();
+      (dynamicContentClientFactory as jest.Mock).mockReturnValue({
+        hubs: {
+          get: mockGetHub.mockResolvedValue(new Hub({ id: HUB_ID }))
+        }
+      });
+      (getContentByIds as unknown as jest.Mock).mockResolvedValue([]);
+      await handler({
+        ...globalArgs,
+        id: CONTENT_ITEM_ID,
+        logFile: mockLog
+      });
+      expect(mockAppendLine).toHaveBeenCalledWith('Nothing found to unpublish, aborting');
+      expect(mockUnpublish).toHaveBeenCalledTimes(0);
+      expect(mockUnpublishOnIdle).toHaveBeenCalledTimes(0);
     });
   });
 });

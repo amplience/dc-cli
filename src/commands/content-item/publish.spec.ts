@@ -116,9 +116,10 @@ describe('publish tests', () => {
       hubId: HUB_ID
     };
 
+    const mockAppendLine = jest.fn();
     const mockLog = {
       open: jest.fn().mockReturnValue({
-        appendLine: jest.fn(),
+        appendLine: mockAppendLine,
         addComment: jest.fn(),
         close: jest.fn()
       })
@@ -288,14 +289,13 @@ describe('publish tests', () => {
     });
 
     it('should exit early if ID or query args are not passed', async () => {
-      const logSpy = jest.spyOn(console, 'log');
       await handler({
         ...globalArgs,
         id: CONTENT_ITEM_ID,
         facet: 'mock-facet',
         logFile: mockLog
       });
-      expect(logSpy).toHaveBeenCalledWith('Please specify either a facet or an ID - not both');
+      expect(mockAppendLine).toHaveBeenCalledWith('Please specify either a facet or an ID - not both');
       expect(mockPublish).toHaveBeenCalledTimes(0);
       expect(mockPublishOnIdle).toHaveBeenCalledTimes(0);
       expect(mockCheck).toHaveBeenCalledTimes(0);
@@ -310,13 +310,12 @@ describe('publish tests', () => {
         }
       });
       (getContentByIds as unknown as jest.Mock).mockResolvedValue([]);
-      const logSpy = jest.spyOn(console, 'log');
       await handler({
         ...globalArgs,
         id: CONTENT_ITEM_ID,
         logFile: mockLog
       });
-      expect(logSpy).toHaveBeenCalledWith('Nothing found to publish, aborting');
+      expect(mockAppendLine).toHaveBeenCalledWith('Nothing found to publish, aborting');
       expect(mockPublish).toHaveBeenCalledTimes(0);
       expect(mockPublishOnIdle).toHaveBeenCalledTimes(0);
       expect(mockCheck).toHaveBeenCalledTimes(0);
