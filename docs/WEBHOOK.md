@@ -63,3 +63,42 @@ dc-cli webhook export <dir>
 ##### Export multiple webhooks from a hub
 
 `dc-cli webhook export ./myDirectory/content --id 1111111111  --id 2222222222`
+
+### import
+
+Imports webhooks from the specified filesystem location to the targeted Dynamic Content hub.
+
+**Note**: The following values will not be included during the import:
+
+- secret
+- createdDate
+- lastModifiedDate
+- any header objects that are secrets.
+
+Also for any **customPayload** the following property values will be replaced by those in the destination hub:
+
+- account
+- stagingEnvironment
+
+```
+dc-cli webhook import <dir>
+```
+
+#### Options
+
+| Option Name      | Type                                       | Description                                                                                                                                                                                                            |
+| ---------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --mapFile        | [string]                                   | Mapping file to use when updating content that already exists.<br />Updated with any new mappings that are generated. If not present, will be created.<br />For more information, see [mapping files](#MAPPING-FILES). |
+| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                        |
+| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                                                                                                                                                                              |
+| -f<br />--force  | [boolean]                                  | Overwrite webhooks without asking.                                                                                                                                                                                     |
+
+#### Examples
+
+##### Import content from the filesystem
+
+`dc-cli webhook import ./myDirectory/webhooks`
+
+##### Specify a mapping file when importing
+
+`dc-cli webhook import ./myDirectory/webhooks --mapFile ./myDirectory/mappingFile.json`
