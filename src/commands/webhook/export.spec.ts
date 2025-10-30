@@ -127,7 +127,7 @@ describe('webhook export command', () => {
       });
     });
 
-    it('should export all webhooks when given only an output directory', async () => {
+    it('should export all webhooks to specified directory', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 

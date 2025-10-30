@@ -2,12 +2,11 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
-import { dirname, basename, join, relative, resolve, extname } from 'path';
-
-import { lstat, readdir, readFile } from 'graceful-fs';
+import { join, extname } from 'path';
+import { readdir, readFile } from 'graceful-fs';
 import { promisify } from 'util';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
-import { DynamicContent, Hub, Webhook } from 'dc-management-sdk-js';
+import { Hub, Webhook } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
@@ -40,38 +39,34 @@ export const builder = (yargs: Argv): void => {
     .option('mapFile', {
       type: 'string',
       describe:
-        'Mapping file to use when updating content that already exists. Updated with any new mappings that are generated. If not present, will be created.'
-    })
-    .alias('f', 'force')
-    .option('f', {
-      type: 'boolean',
-      boolean: true,
-      describe:
-        'Overwrite content, create and assign content types, and ignore content with missing types/references without asking.'
+        'Mapping file to use when updating webhooks that already exists. Updated with any new mappings that are generated. If not present, will be created.'
     })
     .option('logFile', {
       type: 'string',
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+    .alias('f', 'force')
+    .option('f', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Overwrite webhooks.'
+    })
+    .alias('s', 'silent')
+    .option('s', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'If present, no log file will be produced.'
     });
 };
-
-// interface ImportContext {
-//   client: DynamicContent;
-//   hub: Hub;
-//   baseDir: string;
-//   pathToFolderMap: Map<string, Promise<Folder | null>>;
-//   mapping: ContentMapping;
-//   log: FileLog;
-// }
 
 interface WebhookImportResult {
   newItem: Webhook;
   state: 'UPDATED' | 'CREATED';
 }
 
-const createOrUpdateContent = async (
+const createOrUpdateWebhook = async (
   hub: Hub,
   item: Webhook,
   existing: string | Webhook | null
@@ -104,47 +99,57 @@ const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMappi
   }
 };
 
-const prepareContentForImport = async (
-  //client: DynamicContent,
+const prepareWebhooksForImport = async (
   hub: Hub,
-  baseDirContents: string[],
+  webhookFiles: string[],
   mapping: ContentMapping,
   log: FileLog,
   argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<Webhook[] | null> => {
   const { force } = argv;
 
-  let contentItems: Webhook[] = [];
+  let webhooks: Webhook[] = [];
 
-  for (let i = 0; i < baseDirContents.length; i++) {
-    log.appendLine(`Scanning webhook data in '${baseDirContents[i]}' for hub '${hub.label}'...`);
+  for (let i = 0; i < webhookFiles.length; i++) {
+    log.appendLine(`Reading webhook data in '${webhookFiles[i]}' for hub '${hub.label}'...`);
 
-    if (extname(baseDirContents[i]) !== '.json') {
+    if (extname(webhookFiles[i]) !== '.json') {
       return null;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let contentJSON: any;
+    let webhookJSON: any;
     try {
-      //TODO: FIX THIS PATH ISSUE!!!!!!!
-      const contentText = await promisify(readFile)(
-        '/Users/dbhari/Desktop/Export/exported_webhooks/' + baseDirContents[i],
-        {
-          encoding: 'utf8'
-        }
-      );
-      contentJSON = JSON.parse(contentText);
+      const webhookText = await promisify(readFile)(webhookFiles[i], {
+        encoding: 'utf8'
+      });
+      webhookJSON = JSON.parse(webhookText);
+
+      if (webhookJSON?.secret) delete webhookJSON.secret;
+      if (webhookJSON?.createdDate) delete webhookJSON.createdDate;
+      if (webhookJSON?.lastModifiedDate) delete webhookJSON.lastModifiedDate;
+
+      if (webhookJSON?.headers) {
+        webhookJSON.headers = webhookJSON.headers.filter((h: { secret: string }) => !h.secret);
+      }
+
+      if (webhookJSON?.customPayload?.value) {
+        webhookJSON.customPayload.value = webhookJSON.customPayload.value
+          .replace(/account="([^"]*)"/g, `account="${hub.name}"`)
+          .replace(
+            /stagingEnvironment="([^"]*)"/g,
+            `stagingEnvironment="${hub.settings?.virtualStagingEnvironment?.hostname}"`
+          );
+      }
     } catch (e) {
-      log.appendLine(`Couldn't read content item at '${baseDirContents[i]}': ${e.toString()}`);
+      log.appendLine(`Couldn't read webhook at '${webhookFiles[i]}': ${e.toString()}`);
       return null;
     }
 
-    contentItems.push(new Webhook(contentJSON));
+    webhooks.push(new Webhook(webhookJSON));
   }
 
-  log.appendLine('Done. Validating content...');
-
-  const alreadyExists = contentItems.filter(item => mapping.getWebhook(item.id) != null);
+  const alreadyExists = webhooks.filter(item => mapping.getWebhook(item.id) != null);
   if (alreadyExists.length > 0) {
     const updateExisting =
       force ||
@@ -154,24 +159,29 @@ const prepareContentForImport = async (
       ));
 
     if (!updateExisting) {
-      contentItems = contentItems.filter(item => mapping.getWebhook(item.id) == null);
+      webhooks = webhooks.filter(item => mapping.getWebhook(item.id) == null);
     }
   }
 
-  return contentItems;
+  return webhooks;
 };
 
-const importTree = async (hub: Hub, tree: Webhook[], mapping: ContentMapping, log: FileLog): Promise<boolean> => {
+const importWebhooks = async (
+  hub: Hub,
+  webhooks: Webhook[],
+  mapping: ContentMapping,
+  log: FileLog
+): Promise<boolean> => {
   const abort = (error: Error): void => {
     log.appendLine(`Importing webhook failed, aborting. Error: ${error.toString()}`);
   };
 
-  const importProgress = progressBar(tree.length, 0, {
-    title: 'Importing content items'
+  const importProgress = progressBar(webhooks.length, 0, {
+    title: 'Importing webhooks'
   });
 
-  for (let j = 0; j < tree.length; j++) {
-    const item = tree[j];
+  for (let j = 0; j < webhooks.length; j++) {
+    const item = webhooks[j];
 
     const originalId = item.id;
     item.id = mapping.getWebhook(item.id as string) || '';
@@ -184,7 +194,7 @@ const importTree = async (hub: Hub, tree: Webhook[], mapping: ContentMapping, lo
     let state: 'CREATED' | 'UPDATED';
 
     try {
-      const result = await createOrUpdateContent(hub, item, mapping.getWebhook(originalId as string) || null);
+      const result = await createOrUpdateWebhook(hub, item, mapping.getWebhook(originalId as string) || null);
 
       newItem = result.newItem;
       state = result.state;
@@ -211,16 +221,10 @@ const importTree = async (hub: Hub, tree: Webhook[], mapping: ContentMapping, lo
 export const handler = async (
   argv: Arguments<PublishOptions & ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
-  const { dir, logFile } = argv;
+  const { dir, logFile, silent } = argv;
   let { mapFile } = argv;
-
   const client = dynamicContentClientFactory(argv);
   const log = logFile.open();
-
-  const closeLog = async (): Promise<void> => {
-    await log.close();
-  };
-
   const hub: Hub = await client.hubs.get(argv.hubId);
   const importTitle = `hub-${hub.id}`;
 
@@ -237,18 +241,21 @@ export const handler = async (
 
   const baseDirContents = await promisify(readdir)(dir);
 
-  const webhooks = await prepareContentForImport(/* client, */ hub, baseDirContents, mapping, log, argv);
+  const webhookFiles = baseDirContents.map(wh => {
+    return `${dir}/${wh}`;
+  });
 
+  const webhooks = await prepareWebhooksForImport(hub, webhookFiles, mapping, log, argv);
   let result = true;
 
   if (webhooks != null) {
-    result = await importTree(hub, webhooks, mapping, log);
+    result = await importWebhooks(hub, webhooks, mapping, log);
   } else {
     log.appendLine('No webhooks found to import.');
   }
 
   trySaveMapping(mapFile, mapping, log);
 
-  closeLog();
+  await log.close(!silent);
   return result;
 };
