@@ -9,7 +9,7 @@ import { FileLog } from '../../common/file-log';
 import { Webhook } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import { filterById } from '../../common/filter/filter';
-import { open, close } from 'fs';
+import { existsSync } from 'fs';
 
 jest.mock('readline');
 jest.mock('../../services/dynamic-content-client-factory');
@@ -19,25 +19,6 @@ function rimraf(dir: string): Promise<Error> {
   return new Promise((resolve): void => {
     rmdir(dir, resolve);
   });
-}
-
-async function itemsExist(baseDir: string, webhooks: Webhook[]): Promise<void> {
-  for (const wh of webhooks) {
-    open(`${baseDir}${wh.label}.json`, 'r', (err, fd) => {
-      if (err) {
-        if (err.code === 'ENOENT') {
-          console.error('webhook not written');
-          return;
-        }
-
-        throw err;
-      }
-
-      close(fd, err => {
-        if (err) throw err;
-      });
-    });
-  }
 }
 
 describe('webhook export command', () => {
@@ -179,7 +160,11 @@ describe('webhook export command', () => {
 
       expect(spy).toHaveBeenCalledWith(filteredWebhooksToExport, argv.dir, argv.logFile);
 
-      await itemsExist(`temp_${process.env.JEST_WORKER_ID}/export/exported_webhooks/`, filteredWebhooksToExport);
+      filteredWebhooksToExport.forEach(webhook => {
+        const path = `temp_${process.env.JEST_WORKER_ID}/export/exported_webhooks/${webhook.label}.json`;
+
+        expect(existsSync(path)).toBe(true);
+      });
 
       await rimraf(`temp_${process.env.JEST_WORKER_ID}/export/exported_webhooks/`);
 

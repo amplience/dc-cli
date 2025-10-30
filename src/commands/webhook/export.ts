@@ -3,7 +3,6 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
-import { asyncQuestion } from '../../common/question-helpers';
 import { nothingExportedExit, uniqueFilenamePath, writeJsonToFile } from '../../services/export.service';
 import paginator from '../../common/dc-management-sdk-js/paginator';
 import { filterById } from '../../common/filter/filter';
@@ -13,6 +12,7 @@ import { join } from 'path';
 import sanitize from 'sanitize-filename';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { progressBar } from '../../common/progress-bar/progress-bar';
+import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 
 export const command = 'export <dir>';
 
@@ -38,6 +38,18 @@ export const builder = (yargs: Argv): void => {
       default: LOG_FILENAME,
       describe: 'Path to a log file to write to.',
       coerce: createLog
+    })
+    .alias('f', 'force')
+    .option('f', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'If present, there will be no confirmation prompt before exporting the webhooks.'
+    })
+    .alias('s', 'silent')
+    .option('s', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'If present, no log file will be produced.'
     });
 };
 
@@ -74,40 +86,34 @@ export const exportWebhooks = async (webhooks: Webhook[], dir: string, log: File
 };
 
 export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, dir } = argv;
-
+  const { id, logFile, dir, force, silent } = argv;
   const client = dynamicContentClientFactory(argv);
-
   const allWebhooks = !id;
-
   const hub = await client.hubs.get(argv.hubId);
-
   const webhooks = await paginator(hub.related.webhooks.list);
-
   const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
   const webhooksToExport = filterById<Webhook>(webhooks, idArray, undefined, 'webhooks');
-
   const log = logFile.open();
 
-  if (webhooksToExport.length === 0) {
+  if (!webhooksToExport.length) {
     nothingExportedExit(log, 'No webhooks to export from this hub, exiting.');
     return;
   }
 
-  const yes = await asyncQuestion(
-    allWebhooks
-      ? `Providing no ID/s will export all webhooks! Are you sure you want to do this? (Y/n)\n`
-      : `${webhooksToExport.length} webhooks will be exported. Would you like to continue? (Y/n)\n`
-  );
-  if (!yes) {
-    return;
+  log.appendLine(`Found ${webhooksToExport.length} webhooks to export`);
+
+  if (!force) {
+    const yes = await confirmAllContent('export', 'webhooks', allWebhooks, false);
+    if (!yes) {
+      return;
+    }
   }
 
-  log.addComment(`Exporting ${webhooksToExport.length} webhooks.`);
+  log.appendLine(`Exporting ${webhooksToExport.length} webhooks.`);
 
   await exportWebhooks(webhooksToExport, dir, log);
 
   log.appendLine(`Finished successfully exporting ${webhooksToExport.length} webhooks`);
 
-  await log.close();
+  await log.close(!silent);
 };
