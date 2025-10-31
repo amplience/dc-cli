@@ -29,6 +29,7 @@ Return to [README.md](../README.md) for information on other command categories.
   - [tree](#tree)
   - [publish](#publish)
   - [unpublish](#unpublish)
+  - [sync] (#sync)
 
 <!-- /MarkdownTOC -->
 
@@ -416,13 +417,13 @@ If no `id` is provided, all content items in all content repositories in the spe
 ##### Publish a specific content item by ID
 
 ```bash
-dc-cli content-item publish 1234abcd
+dc-cli content-item publish ba967c23-4c22-4617-a009-0f976d77b81c
 ```
 
 ##### Publish all content in a specific repository
 
 ```bash
-dc-cli content-item publish --repoId your-repo-id
+dc-cli content-item publish --repoId 67d1c1cf642fa239dbe15165
 ```
 
 ##### Use facets to publish filtered content
@@ -469,17 +470,73 @@ If no `id` is provided, all content items in all content repositories in the spe
 ##### Unpublish a specific content item by ID
 
 ```bash
-dc-cli content-item unpublish 1234abcd
+dc-cli content-item unpublish ba967c23-4c22-4617-a009-0f976d77b81c
 ```
 
 ##### Unpublish all content in a specific repository
 
 ```bash
-dc-cli content-item unpublish --repoId your-repo-id
+dc-cli content-item unpublish --repoId 67d1c1cf642fa239dbe15165
 ```
 
 ##### Use facets to unpublish filtered content
 
 ```bash
 dc-cli content-item unpublish --facet "locale:en-GB,label:homepage"
+```
+
+### sync
+
+> **_NOTE:_** Repository mapping must be setup before using this command
+
+Sync content items between content hubs. You can sync all items or specify individual content items by ID.
+
+```bash
+dc-cli content-item sync [id]
+```
+
+If no `id` is provided, all content items in all content repositories in the specified hub will be unpublished.
+
+---
+
+#### Positionals
+
+| Argument | Description                                                                                                                 |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `id`     | The ID of a content item to be published. If omitted, all content items in all repositories will be published. _(Optional)_ |
+
+---
+
+#### Options
+
+| Option               | Alias | Description                                                                                                                                        |
+| -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--destinationHubId` |       | The destination hub ID to sync the content item with                                                                                               |
+| `--repoId`           |       | The ID of a content repository to restrict sync scope. _(Optional)_                                                                                |
+| `--folderId`         |       | The ID of a folder to restrict sync scope. _(Optional)_                                                                                            |
+| `--facet`            |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
+| `-f`, `--force`      |       | Skip confirmation prompts before sync.                                                                                                             |
+| `-s`, `--silent`     |       | Disable log file creation.                                                                                                                         |
+| `--logFile`          |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
+
+---
+
+#### Examples
+
+##### Sync a specific content item by ID
+
+```bash
+dc-cli content-item sync ba967c23-4c22-4617-a009-0f976d77b81c
+```
+
+##### Sync all content in a specific repository
+
+```bash
+dc-cli content-item sync --repoId 67d1c1cf642fa239dbe15165
+```
+
+##### Use facets to sync filtered content
+
+```bash
+dc-cli content-item sync --facet "locale:en-GB,label:homepage"
 ```
