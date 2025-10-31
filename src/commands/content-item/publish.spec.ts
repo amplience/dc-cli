@@ -254,10 +254,10 @@ describe('publish tests', () => {
         id: CONTENT_ITEM_ID,
         logFile: mockLog
       });
-      expect(mockPublish).toHaveBeenCalledTimes(0);
-      expect(mockPublishOnIdle).toHaveBeenCalledTimes(0);
-      expect(mockCheck).toHaveBeenCalledTimes(0);
-      expect(mockCheckOnIdle).toHaveBeenCalledTimes(0);
+      expect(mockPublish).not.toHaveBeenCalled();
+      expect(mockPublishOnIdle).not.toHaveBeenCalled();
+      expect(mockCheck).not.toHaveBeenCalled();
+      expect(mockCheckOnIdle).not.toHaveBeenCalled();
     });
 
     it('should not check publishing jobs if check question is rejected', async () => {
@@ -284,8 +284,8 @@ describe('publish tests', () => {
 
       expect(mockPublish).toHaveBeenCalledTimes(1);
       expect(mockPublishOnIdle).toHaveBeenCalledTimes(1);
-      expect(mockCheck).toHaveBeenCalledTimes(0);
-      expect(mockCheckOnIdle).toHaveBeenCalledTimes(0);
+      expect(mockCheck).not.toHaveBeenCalled();
+      expect(mockCheckOnIdle).not.toHaveBeenCalled();
     });
 
     it('should exit early if ID or query args are not passed', async () => {
@@ -296,10 +296,10 @@ describe('publish tests', () => {
         logFile: mockLog
       });
       expect(mockAppendLine).toHaveBeenCalledWith('Please specify either a facet or an ID - not both');
-      expect(mockPublish).toHaveBeenCalledTimes(0);
-      expect(mockPublishOnIdle).toHaveBeenCalledTimes(0);
-      expect(mockCheck).toHaveBeenCalledTimes(0);
-      expect(mockCheckOnIdle).toHaveBeenCalledTimes(0);
+      expect(mockPublish).not.toHaveBeenCalled();
+      expect(mockPublishOnIdle).not.toHaveBeenCalled();
+      expect(mockCheck).not.toHaveBeenCalled();
+      expect(mockCheckOnIdle).not.toHaveBeenCalled();
     });
 
     it('should exit early if no content items', async () => {
@@ -316,10 +316,10 @@ describe('publish tests', () => {
         logFile: mockLog
       });
       expect(mockAppendLine).toHaveBeenCalledWith('Nothing found to publish, aborting');
-      expect(mockPublish).toHaveBeenCalledTimes(0);
-      expect(mockPublishOnIdle).toHaveBeenCalledTimes(0);
-      expect(mockCheck).toHaveBeenCalledTimes(0);
-      expect(mockCheckOnIdle).toHaveBeenCalledTimes(0);
+      expect(mockPublish).not.toHaveBeenCalled();
+      expect(mockPublishOnIdle).not.toHaveBeenCalled();
+      expect(mockCheck).not.toHaveBeenCalled();
+      expect(mockCheckOnIdle).not.toHaveBeenCalled();
     });
   });
 });

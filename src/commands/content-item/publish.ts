@@ -139,9 +139,7 @@ export const handler = async (argv: Arguments<PublishOptions & ConfigurationPara
   const { id, logFile, force, silent, hubId, repoId, folderId } = argv;
   const log = logFile.open();
   const client = dynamicContentClientFactory(argv);
-
   const facet = withOldFilters(argv.facet, argv);
-
   const allContent = !id && !facet && !folderId && !repoId;
 
   if (repoId && id) {
@@ -161,13 +159,13 @@ export const handler = async (argv: Arguments<PublishOptions & ConfigurationPara
     log.appendLine('No filter was given, publishing all content');
   }
 
-  const hub = await client.hubs.get(hubId);
   let ids: string[] = [];
 
   if (id) {
     ids = Array.isArray(id) ? id : [id];
   }
 
+  const hub = await client.hubs.get(hubId);
   const contentItems =
     ids.length > 0
       ? await getContentByIds(client, ids)
