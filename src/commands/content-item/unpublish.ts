@@ -1,16 +1,16 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import PublishOptions from '../../common/publish/publish-options';
-import { ContentItem, ContentItemPublishingStatus, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, ContentItemPublishingStatus, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath, createLog } from '../../common/log-helpers';
 import { FileLog } from '../../common/file-log';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import { ContentItemUnpublishingService } from '../../common/publishing/content-item-unpublishing-service';
+import { getContentByIds } from '../../common/content-item/get-content-items-by-ids';
 
 export const command = 'unpublish [id]';
 
@@ -67,106 +67,20 @@ export const builder = (yargs: Argv): void => {
     });
 };
 
-export const getContentItems = async ({
-  client,
-  id,
-  hubId,
-  repoId,
-  folderId,
-  facet
-}: {
-  client: DynamicContent;
-  id?: string | string[];
-  hubId: string;
-  repoId?: string | string[];
-  folderId?: string | string[];
-  facet?: string;
-}): Promise<{ contentItems: ContentItem[]; missingContent: boolean }> => {
-  try {
-    let contentItems: ContentItem[] = [];
-
-    if (id != null) {
-      const itemIds = Array.isArray(id) ? id : [id];
-      const items: ContentItem[] = [];
-
-      for (const id of itemIds) {
-        try {
-          items.push(await client.contentItems.get(id));
-        } catch {
-          // Missing item.
-        }
-      }
-
-      contentItems.push(...items.filter(item => item.status === Status.ACTIVE));
-
-      return {
-        contentItems,
-        missingContent: contentItems.length != itemIds.length
-      };
-    }
-
-    const hub = await client.hubs.get(hubId);
-
-    contentItems = await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
-
-    return { contentItems, missingContent: false };
-  } catch (err) {
-    console.log(err);
-
-    return {
-      contentItems: [],
-      missingContent: false
-    };
-  }
-};
-
 export const processItems = async ({
   contentItems,
-  force,
-  silent,
-  logFile,
-  allContent,
-  missingContent
+  log
 }: {
   contentItems: ContentItem[];
-  force?: boolean;
-  silent?: boolean;
-  logFile: FileLog;
-  allContent: boolean;
-  missingContent: boolean;
+  log: FileLog;
 }): Promise<void> => {
-  if (contentItems.length == 0) {
-    console.log('Nothing found to unpublish, aborting.');
-    return;
-  }
-
-  const rootContentPublishedItems = contentItems.filter(
-    item =>
-      item.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED &&
-      item.publishingStatus !== ContentItemPublishingStatus.NONE
-  );
-
-  const log = logFile.open();
-  log.appendLine(`Found ${rootContentPublishedItems.length} items to unpublish.`);
-
-  if (rootContentPublishedItems.length === 0) {
-    return;
-  }
-
-  if (!force) {
-    const yes = await confirmAllContent('unpublish', 'content items', allContent, missingContent);
-    if (!yes) {
-      return;
-    }
-  }
-
-  log.appendLine(`Unpublishing ${rootContentPublishedItems.length} items.`);
+  log.appendLine(`Unpublishing ${contentItems.length} items.`);
 
   const unpublishingService = new ContentItemUnpublishingService();
   const contentItemUnpublishJobs: ContentItem[] = [];
-  const unpublishProgress = progressBar(rootContentPublishedItems.length, 0, { title: 'Unpublishing content items' });
+  const unpublishProgress = progressBar(contentItems.length, 0, { title: 'Unpublishing content items' });
 
-  for (const item of rootContentPublishedItems) {
+  for (const item of contentItems) {
     try {
       await unpublishingService.unpublish(item, contentItem => {
         contentItemUnpublishJobs.push(contentItem);
@@ -182,52 +96,72 @@ export const processItems = async ({
 
   await unpublishingService.onIdle();
   unpublishProgress.stop();
-
-  log.appendLine(`The request for content item/s to be unpublished has been completed - please manually verify.`);
-
-  await log.close(!silent);
 };
 
 export const handler = async (argv: Arguments<PublishOptions & ConfigurationParameters>): Promise<void> => {
   const { id, logFile, force, silent, hubId, repoId, folderId } = argv;
+  const log = logFile.open();
   const client = dynamicContentClientFactory(argv);
-
   const facet = withOldFilters(argv.facet, argv);
-
   const allContent = !id && !facet && !folderId && !repoId;
 
   if (repoId && id) {
-    console.log('ID of content item is specified, ignoring repository ID');
+    log.appendLine('ID of content item is specified, ignoring repository ID');
   }
 
   if (id && facet) {
-    console.log('Please specify either a facet or an ID - not both.');
+    log.appendLine('Please specify either a facet or an ID - not both');
     return;
   }
 
   if (repoId && folderId) {
-    console.log('Folder is specified, ignoring repository ID');
+    log.appendLine('Folder is specified, ignoring repository ID');
   }
 
   if (allContent) {
-    console.log('No filter was given, unpublishing all content');
+    log.appendLine('No filter was given, unpublishing all content');
   }
 
-  const { contentItems, missingContent } = await getContentItems({
-    client,
-    id,
-    hubId,
-    repoId,
-    folderId,
-    facet
-  });
+  let ids: string[] = [];
+
+  if (id) {
+    ids = Array.isArray(id) ? id : [id];
+  }
+
+  const hub = await client.hubs.get(hubId);
+  const contentItems =
+    ids.length > 0
+      ? await getContentByIds(client, ids)
+      : await getContent(client, hub, facet, { repoId, folderId, status: Status.ACTIVE, enrichItems: true });
+
+  const unpublishableContentItems = contentItems.filter(
+    item =>
+      item.publishingStatus !== ContentItemPublishingStatus.UNPUBLISHED &&
+      item.publishingStatus !== ContentItemPublishingStatus.NONE
+  );
+
+  if (!unpublishableContentItems.length) {
+    log.appendLine('Nothing found to unpublish, aborting');
+    return;
+  }
+
+  const missingContentItems = ids.length > 0 ? Boolean(ids.length !== unpublishableContentItems.length) : false;
+
+  log.appendLine(`Found ${unpublishableContentItems.length} content items to unpublish\n`);
+
+  if (!force) {
+    const yes = await confirmAllContent('unpublish', 'content items', allContent, missingContentItems);
+    if (!yes) {
+      return;
+    }
+  }
 
   await processItems({
-    contentItems,
-    force,
-    silent,
-    logFile,
-    allContent,
-    missingContent
+    contentItems: unpublishableContentItems,
+    log
   });
+
+  log.appendLine(`Unpublish complete - please manually verify unpublish status`);
+
+  await log.close(!silent);
 };
