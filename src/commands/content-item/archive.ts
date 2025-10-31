@@ -205,6 +205,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   const failedArchiveMsg = failedArchives.length
     ? `with ${failedArchives.length} failed archives - check logs for details`
     : ``;
+
   log.appendLine(`Archived content items ${failedArchiveMsg}`);
 
   await log.close(!silent);
