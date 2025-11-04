@@ -66,7 +66,7 @@ interface WebhookImportResult {
   state: 'UPDATED' | 'CREATED';
 }
 
-const createOrUpdateWebhook = async (
+export const createOrUpdateWebhook = async (
   hub: Hub,
   item: Webhook,
   existing: string | Webhook | null
@@ -89,7 +89,11 @@ const createOrUpdateWebhook = async (
   return result;
 };
 
-const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMapping, log: FileLog): Promise<void> => {
+export const trySaveMapping = async (
+  mapFile: string | undefined,
+  mapping: ContentMapping,
+  log: FileLog
+): Promise<void> => {
   if (mapFile != null) {
     try {
       await mapping.save(mapFile);
@@ -99,7 +103,7 @@ const trySaveMapping = async (mapFile: string | undefined, mapping: ContentMappi
   }
 };
 
-const prepareWebhooksForImport = async (
+export const prepareWebhooksForImport = async (
   hub: Hub,
   webhookFiles: string[],
   mapping: ContentMapping,
@@ -166,7 +170,7 @@ const prepareWebhooksForImport = async (
   return webhooks;
 };
 
-const importWebhooks = async (
+export const importWebhooks = async (
   hub: Hub,
   webhooks: Webhook[],
   mapping: ContentMapping,
@@ -221,7 +225,7 @@ const importWebhooks = async (
 export const handler = async (
   argv: Arguments<PublishOptions & ImportItemBuilderOptions & ConfigurationParameters>
 ): Promise<boolean> => {
-  const { dir, logFile, silent } = argv;
+  const { dir, logFile, force, silent } = argv;
   let { mapFile } = argv;
   const client = dynamicContentClientFactory(argv);
   const log = logFile.open();
@@ -248,7 +252,14 @@ export const handler = async (
   const webhooks = await prepareWebhooksForImport(hub, webhookFiles, mapping, log, argv);
   let result = true;
 
-  if (webhooks != null) {
+  if (webhooks !== null) {
+    const proceedImport =
+      force ||
+      (await asyncQuestion(`${webhooks.length} webhook/s will be imported, do you wish to continue? (y/n) `, log));
+    if (!proceedImport) {
+      return false;
+    }
+
     result = await importWebhooks(hub, webhooks, mapping, log);
   } else {
     log.appendLine('No webhooks found to import.');

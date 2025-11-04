@@ -68,14 +68,16 @@ dc-cli webhook export <dir>
 
 Imports webhooks from the specified filesystem location to the targeted Dynamic Content hub.
 
-**Note**: The following values will not be included during the import:
+**Note**: The following values will be stripped out / not included during the import:
 
-- secret
-- createdDate
-- lastModifiedDate
-- any header objects that are secrets.
+- **secret** - this will be recreated for the webhook in the destination hub during import.
+- **createdDate** - this will be assigned during import (if webhook is being created).
+- **lastModifiedDate** - this will be assigned during import (if webhook is being updated).
+- **any header objects that are secrets** - these need to be manually assigned for the webhook in the destination hub.
 
-Also for any **customPayload** the following property values will be replaced by those in the destination hub:
+Please see [the content-management API reference for Webhooks](https://amplience.com/developers/docs/apis/content-management-reference/#tag/Webhooks) for more information.
+
+For any **customPayload** the following property values will be replaced by those in the destination hub:
 
 - account
 - stagingEnvironment
