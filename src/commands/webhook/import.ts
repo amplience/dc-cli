@@ -62,7 +62,7 @@ export const builder = (yargs: Argv): void => {
 };
 
 interface WebhookImportResult {
-  newItem: Webhook;
+  webhook: Webhook;
   state: 'UPDATED' | 'CREATED';
 }
 
@@ -81,9 +81,9 @@ export const createOrUpdateWebhook = async (
   let result: WebhookImportResult;
 
   if (oldItem == null) {
-    result = { newItem: await hub.related.webhooks.create(item), state: 'CREATED' };
+    result = { webhook: await hub.related.webhooks.create(item), state: 'CREATED' };
   } else {
-    result = { newItem: await oldItem.related.update(item), state: 'UPDATED' };
+    result = { webhook: await oldItem.related.update(item), state: 'UPDATED' };
   }
 
   return result;
@@ -114,31 +114,42 @@ export const prepareWebhooksForImport = async (
 
   let webhooks: Webhook[] = [];
 
-  for (let i = 0; i < webhookFiles.length; i++) {
-    log.appendLine(`Reading webhook data in '${webhookFiles[i]}' for hub '${hub.label}'...`);
+  for (const webhookFile of webhookFiles) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let webhook: any = {};
 
-    if (extname(webhookFiles[i]) !== '.json') {
+    log.appendLine(`Reading webhook data in '${webhookFile}' for hub '${hub.label}'...`);
+
+    if (extname(webhookFile) !== '.json') {
       return null;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let webhookJSON: any;
     try {
-      const webhookText = await promisify(readFile)(webhookFiles[i], {
+      const webhookText = await promisify(readFile)(webhookFile, {
         encoding: 'utf8'
       });
-      webhookJSON = JSON.parse(webhookText);
 
-      if (webhookJSON?.secret) delete webhookJSON.secret;
-      if (webhookJSON?.createdDate) delete webhookJSON.createdDate;
-      if (webhookJSON?.lastModifiedDate) delete webhookJSON.lastModifiedDate;
+      const webhookJSON = JSON.parse(webhookText);
 
-      if (webhookJSON?.headers) {
-        webhookJSON.headers = webhookJSON.headers.filter((h: { secret: string }) => !h.secret);
+      webhook = {
+        ...(webhookJSON.id && { id: webhookJSON.id }),
+        ...(webhookJSON.label && { label: webhookJSON.label }),
+        ...(webhookJSON.events && { events: webhookJSON.events }),
+        ...(webhookJSON.active && { active: webhookJSON.active }),
+        ...(webhookJSON.handlers && { handlers: webhookJSON.handlers }),
+        ...(webhookJSON.notifications && { notifications: webhookJSON.notifications }),
+        ...(webhookJSON.headers && { headers: webhookJSON.headers }),
+        ...(webhookJSON.filters && { filters: webhookJSON.filters }),
+        ...(webhookJSON.customPayload && { customPayload: webhookJSON.customPayload }),
+        ...(webhookJSON.method && { method: webhookJSON.method })
+      };
+
+      if (webhook?.headers) {
+        webhook.headers = webhook.headers.filter((h: { secret: string }) => !h.secret);
       }
 
-      if (webhookJSON?.customPayload?.value) {
-        webhookJSON.customPayload.value = webhookJSON.customPayload.value
+      if (webhook?.customPayload?.value) {
+        webhook.customPayload.value = webhook.customPayload.value
           .replace(/account="([^"]*)"/g, `account="${hub.name}"`)
           .replace(
             /stagingEnvironment="([^"]*)"/g,
@@ -146,11 +157,11 @@ export const prepareWebhooksForImport = async (
           );
       }
     } catch (e) {
-      log.appendLine(`Couldn't read webhook at '${webhookFiles[i]}': ${e.toString()}`);
+      log.appendLine(`Couldn't read webhook at '${webhookFile}': ${e.toString()}`);
       return null;
     }
 
-    webhooks.push(new Webhook(webhookJSON));
+    webhooks.push(new Webhook(webhook as Webhook));
   }
 
   const alreadyExists = webhooks.filter(item => mapping.getWebhook(item.id) != null);
@@ -175,56 +186,45 @@ export const importWebhooks = async (
   webhooks: Webhook[],
   mapping: ContentMapping,
   log: FileLog
-): Promise<boolean> => {
-  const abort = (error: Error): void => {
-    log.appendLine(`Importing webhook failed, aborting. Error: ${error.toString()}`);
-  };
-
+): Promise<void> => {
   const importProgress = progressBar(webhooks.length, 0, {
     title: 'Importing webhooks'
   });
 
-  for (let j = 0; j < webhooks.length; j++) {
-    const item = webhooks[j];
+  for (const webhookToImport of webhooks) {
+    const originalId = webhookToImport.id;
+    webhookToImport.id = mapping.getWebhook(webhookToImport.id as string) || '';
 
-    const originalId = item.id;
-    item.id = mapping.getWebhook(item.id as string) || '';
-
-    if (!item.id) {
-      delete item.id;
+    if (!webhookToImport.id) {
+      delete webhookToImport.id;
     }
-
-    let newItem: Webhook;
-    let state: 'CREATED' | 'UPDATED';
 
     try {
-      const result = await createOrUpdateWebhook(hub, item, mapping.getWebhook(originalId as string) || null);
+      const { webhook, state } = await createOrUpdateWebhook(
+        hub,
+        webhookToImport,
+        mapping.getWebhook(originalId as string) || null
+      );
 
-      newItem = result.newItem;
-      state = result.state;
+      log.addComment(`${state} ${webhook.label}.`);
+      log.addAction(state, (webhook.id || 'unknown') + (state === 'UPDATED' ? `  ${webhook.label}` : ''));
+
+      mapping.registerWebhook(originalId as string, webhook.id as string);
+
+      importProgress.increment();
     } catch (e) {
       importProgress.stop();
-      log.error(`Failed creating ${item.label}:`, e);
-      abort(e);
-      return false;
+      log.error(`Failed creating ${webhookToImport.label}:`, e);
+      throw Error(`Importing webhook failed. Error: ${e.toString()}`);
     }
-
-    log.addComment(`${state} ${item.label}.`);
-    log.addAction(state, (newItem.id || 'unknown') + (state === 'UPDATED' ? `  ${newItem.label}` : ''));
-
-    mapping.registerWebhook(originalId as string, newItem.id as string);
-
-    importProgress.increment();
   }
 
   importProgress.stop();
-
-  return true;
 };
 
 export const handler = async (
   argv: Arguments<PublishOptions & ImportItemBuilderOptions & ConfigurationParameters>
-): Promise<boolean> => {
+): Promise<void> => {
   const { dir, logFile, force, silent } = argv;
   let { mapFile } = argv;
   const client = dynamicContentClientFactory(argv);
@@ -250,17 +250,16 @@ export const handler = async (
   });
 
   const webhooks = await prepareWebhooksForImport(hub, webhookFiles, mapping, log, argv);
-  let result = true;
 
   if (webhooks !== null) {
     const proceedImport =
       force ||
       (await asyncQuestion(`${webhooks.length} webhook/s will be imported, do you wish to continue? (y/n) `, log));
     if (!proceedImport) {
-      return false;
+      return;
     }
 
-    result = await importWebhooks(hub, webhooks, mapping, log);
+    await importWebhooks(hub, webhooks, mapping, log);
   } else {
     log.appendLine('No webhooks found to import.');
   }
@@ -268,5 +267,4 @@ export const handler = async (
   trySaveMapping(mapFile, mapping, log);
 
   await log.close(!silent);
-  return result;
 };

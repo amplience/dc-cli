@@ -127,7 +127,7 @@ describe('webhook import command', () => {
 
       await exportWebhooks(webhooks, `temp_${process.env.JEST_WORKER_ID}/importWebhook/`, logFile);
 
-      const importWebhooks = jest.spyOn(importModule, 'importWebhooks').mockResolvedValue(true);
+      const importWebhooks = jest.spyOn(importModule, 'importWebhooks').mockResolvedValue();
       const trySaveMapping = jest.spyOn(importModule, 'trySaveMapping').mockResolvedValue();
 
       const getDefaultMappingPathSpy = jest.spyOn(importModule, 'getDefaultMappingPath');
@@ -202,7 +202,7 @@ describe('webhook import command', () => {
         dir: `temp_${process.env.JEST_WORKER_ID}/importWebhook/exported_webhooks`
       };
 
-      const importWebhooks = jest.spyOn(importModule, 'importWebhooks').mockResolvedValue(true);
+      const importWebhooks = jest.spyOn(importModule, 'importWebhooks').mockResolvedValue();
       const trySaveMapping = jest.spyOn(importModule, 'trySaveMapping').mockResolvedValue();
 
       const getDefaultMappingPathSpy = jest.spyOn(importModule, 'getDefaultMappingPath');
