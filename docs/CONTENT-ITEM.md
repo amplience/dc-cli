@@ -29,7 +29,7 @@ Return to [README.md](../README.md) for information on other command categories.
   - [tree](#tree)
   - [publish](#publish)
   - [unpublish](#unpublish)
-  - [sync] (#sync)
+  - [sync](#sync)
 
 <!-- /MarkdownTOC -->
 
@@ -492,7 +492,7 @@ dc-cli content-item unpublish --facet "locale:en-GB,label:homepage"
 Sync content items between content hubs. You can sync all items or specify individual content items by ID.
 
 ```bash
-dc-cli content-item sync [id]
+dc-cli content-item sync [id] --destinationHubId <destHubID>
 ```
 
 If no `id` is provided, all content items in all content repositories in the specified hub will be unpublished.
@@ -526,17 +526,17 @@ If no `id` is provided, all content items in all content repositories in the spe
 ##### Sync a specific content item by ID
 
 ```bash
-dc-cli content-item sync ba967c23-4c22-4617-a009-0f976d77b81c
+dc-cli content-item sync ba967c23-4c22-4617-a009-0f976d77b81c --destinationHubId 1908eb70436d553464f48cb3
 ```
 
 ##### Sync all content in a specific repository
 
 ```bash
-dc-cli content-item sync --repoId 67d1c1cf642fa239dbe15165
+dc-cli content-item sync --repoId 67d1c1cf642fa239dbe15165 --destinationHubId 1908eb70436d553464f48cb3
 ```
 
 ##### Use facets to sync filtered content
 
 ```bash
-dc-cli content-item sync --facet "locale:en-GB,label:homepage"
+dc-cli content-item sync --facet "locale:en-GB,label:homepage" --destinationHubId 1908eb70436d553464f48cb3
 ```
