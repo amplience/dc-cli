@@ -115,53 +115,54 @@ export const prepareWebhooksForImport = async (
   let webhooks: Webhook[] = [];
 
   for (const webhookFile of webhookFiles) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let webhook: any = {};
-
     log.appendLine(`Reading webhook data in '${webhookFile}' for hub '${hub.label}'...`);
 
     if (extname(webhookFile) !== '.json') {
       return null;
     }
 
+    let webhookJSON;
+
     try {
       const webhookText = await promisify(readFile)(webhookFile, {
         encoding: 'utf8'
       });
 
-      const webhookJSON = JSON.parse(webhookText);
-
-      webhook = {
-        ...(webhookJSON.id && { id: webhookJSON.id }),
-        ...(webhookJSON.label && { label: webhookJSON.label }),
-        ...(webhookJSON.events && { events: webhookJSON.events }),
-        ...(webhookJSON.active && { active: webhookJSON.active }),
-        ...(webhookJSON.handlers && { handlers: webhookJSON.handlers }),
-        ...(webhookJSON.notifications && { notifications: webhookJSON.notifications }),
-        ...(webhookJSON.headers && { headers: webhookJSON.headers }),
-        ...(webhookJSON.filters && { filters: webhookJSON.filters }),
-        ...(webhookJSON.customPayload && { customPayload: webhookJSON.customPayload }),
-        ...(webhookJSON.method && { method: webhookJSON.method })
-      };
-
-      if (webhook?.headers) {
-        webhook.headers = webhook.headers.filter((h: { secret: string }) => !h.secret);
-      }
-
-      if (webhook?.customPayload?.value) {
-        webhook.customPayload.value = webhook.customPayload.value
-          .replace(/account="([^"]*)"/g, `account="${hub.name}"`)
-          .replace(
-            /stagingEnvironment="([^"]*)"/g,
-            `stagingEnvironment="${hub.settings?.virtualStagingEnvironment?.hostname}"`
-          );
-      }
+      webhookJSON = JSON.parse(webhookText);
     } catch (e) {
       log.appendLine(`Couldn't read webhook at '${webhookFile}': ${e.toString()}`);
       return null;
     }
 
-    webhooks.push(new Webhook(webhook as Webhook));
+    const webhook = new Webhook({
+      ...(webhookJSON.id && { id: webhookJSON.id }),
+      ...(webhookJSON.label && { label: webhookJSON.label }),
+      ...(webhookJSON.events && { events: webhookJSON.events }),
+      ...(webhookJSON.active && { active: webhookJSON.active }),
+      ...(webhookJSON.handlers && { handlers: webhookJSON.handlers }),
+      ...(webhookJSON.notifications && { notifications: webhookJSON.notifications }),
+      ...(webhookJSON.headers && { headers: webhookJSON.headers }),
+      ...(webhookJSON.filters && { filters: webhookJSON.filters }),
+      ...(webhookJSON.customPayload && { customPayload: webhookJSON.customPayload }),
+      ...(webhookJSON.method && { method: webhookJSON.method })
+    });
+
+    if (webhook?.headers) {
+      webhook.headers = webhook.headers.filter(header => {
+        return !header.secret;
+      });
+    }
+
+    if (webhook?.customPayload?.value) {
+      webhook.customPayload.value = webhook.customPayload.value
+        .replace(/account="([^"]*)"/g, `account="${hub.name}"`)
+        .replace(
+          /stagingEnvironment="([^"]*)"/g,
+          `stagingEnvironment="${hub.settings?.virtualStagingEnvironment?.hostname}"`
+        );
+    }
+
+    webhooks.push(new Webhook(webhook));
   }
 
   const alreadyExists = webhooks.filter(item => mapping.getWebhook(item.id) != null);
