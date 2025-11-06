@@ -15,6 +15,8 @@ Return to [README.md](../README.md) for information on other command categories.
 - [Common Options](#common-options)
 - [Commands](#commands)
   - [export](#export)
+  - [import](#import)
+  - [delete](#delete)
 
 <!-- /MarkdownTOC -->
 
@@ -104,3 +106,36 @@ dc-cli webhook import <dir>
 ##### Specify a mapping file when importing
 
 `dc-cli webhook import ./myDirectory/webhooks --mapFile ./myDirectory/mappingFile.json`
+
+### delete
+
+Deletes webhooks from the targeted Dynamic Content hub.
+
+```
+dc-cli webhook delete
+```
+
+#### Options
+
+| Option Name     | Type      | Description                                                                                                                                                                                                                                                      |
+| --------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --id            | [string]  | The ID of an Webhook to be deleted.<br/>If no --id option is given, all webhooks for the hub are deleted.<br/>A single --id option may be given to delete a single webhook.<br/>Multiple --id options may be given to delete multiple webhooks at the same time. |
+| -f<br />--force | [boolean] | Delete webhooks without asking.                                                                                                                                                                                                                                  |
+
+#### Examples
+
+##### Delete all webhooks from a Hub
+
+`dc-cli webhook delete`
+
+##### Delete a single webhook with the ID of 'foo'
+
+`dc-cli webhook delete foo`
+
+or
+
+`dc-cli webhook delete --id foo`
+
+##### Delete multiple webhooks with the IDs of 'foo' & 'bar'
+
+`dc-cli webhook delete --id foo --id bar`

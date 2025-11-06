@@ -25,7 +25,7 @@ export const builder = (yargs: Argv): void => {
     .positional('id', {
       type: 'string',
       describe:
-        'The ID of a the extension to be deleted. If id is not provided, this command will delete ALL extensions in the hub.'
+        'The ID of the extension to be deleted. If id is not provided, this command will delete ALL extensions in the hub.'
     })
     .alias('f', 'force')
     .option('f', {
