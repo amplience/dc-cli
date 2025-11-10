@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`cli should create a yarg instance if one is not supplied 1`] = `
 "dc-cli <command>
@@ -12,6 +12,7 @@ Commands:
   dc-cli event                      Event
   dc-cli extension                  Extension
   dc-cli hub                        Hub
+  dc-cli job                        Job
   dc-cli linked-content-repository  Linked Content Repository
   dc-cli search-index               Search Index
   dc-cli settings                   Settings
