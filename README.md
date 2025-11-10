@@ -30,6 +30,7 @@ Run `dc-cli --help` to get a list of available commands.
     - [event](#event)
     - [settings](#settings)
     - [hub](#hub)
+  - [job](#job)
   - [Building the CLI](#building-the-cli)
   - [Required permissions](#required-permissions)
 
@@ -174,6 +175,12 @@ These commands can be used to copy a hub's settings and content in their entiret
 Additionally, these commands may be used to store and retrieve hub configurations.
 
 [View commands for **hub**](docs/HUB.md)
+
+## job
+
+This category includes interactions with Dynamic Content jobs.
+
+[View commands for **job**](docs/JOB.md)
 
 ## Building the CLI
 
