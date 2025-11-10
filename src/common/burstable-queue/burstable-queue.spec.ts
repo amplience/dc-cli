@@ -106,7 +106,7 @@ describe('burstable-queue', () => {
 
       tasks.forEach(() => {
         burstableQueue.add(async () => {
-          await setTimeout(50);
+          await setTimeout(1);
         });
       });
 
@@ -146,7 +146,7 @@ describe('burstable-queue', () => {
 
       tasks.forEach(() => {
         burstableQueue.add(async () => {
-          await setTimeout(50);
+          await setTimeout(1);
         });
       });
 
