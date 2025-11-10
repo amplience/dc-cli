@@ -487,7 +487,12 @@ dc-cli content-item unpublish --facet "locale:en-GB,label:homepage"
 
 ### sync
 
-> **_NOTE:_** Repository mapping must be setup before using this command
+> **_NOTES:_**
+>
+> - The Content sync entitlement must be enabled on your organisation.
+> - Authentication must be via PAT Token with the role associated being developer or higher.
+> - Repository mapping must be setup before using this command.
+> - The destination hub must have Ignore Schema Validation enabled.
 
 Sync content items between content hubs. You can sync all items or specify individual content items by ID.
 
