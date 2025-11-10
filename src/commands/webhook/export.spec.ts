@@ -8,7 +8,6 @@ import rmdir from 'rimraf';
 import { FileLog } from '../../common/file-log';
 import { Webhook } from 'dc-management-sdk-js';
 import MockPage from '../../common/dc-management-sdk-js/mock-page';
-import { filterById } from '../../common/filter/filter';
 import { existsSync } from 'fs';
 
 jest.mock('readline');
@@ -106,8 +105,6 @@ describe('webhook export command', () => {
     let mockGetHub: jest.Mock;
     let mockList: jest.Mock;
 
-    const webhookIdsToExport = (id: unknown) => (id ? (Array.isArray(id) ? id : [id]) : []);
-
     beforeEach((): void => {
       const listResponse = new MockPage(Webhook, webhooksToExport);
       mockList = jest.fn().mockResolvedValue(listResponse);
@@ -141,13 +138,6 @@ describe('webhook export command', () => {
         dir: `temp_${process.env.JEST_WORKER_ID}/export/`
       };
 
-      const filteredWebhooksToExport = filterById<Webhook>(
-        webhooksToExport,
-        webhookIdsToExport(id),
-        undefined,
-        'webhook'
-      );
-
       jest.spyOn(exportWebhooksModule, 'handler');
       await handler(argv);
 
@@ -156,11 +146,11 @@ describe('webhook export command', () => {
       expect(mockList).toHaveBeenCalledWith({ size: 100 });
 
       const spy = jest.spyOn(exportWebhooksModule, 'exportWebhooks');
-      await exportWebhooksModule.exportWebhooks(filteredWebhooksToExport, argv.dir, argv.logFile);
+      await exportWebhooksModule.exportWebhooks(webhooksToExport, argv.dir, argv.logFile);
 
-      expect(spy).toHaveBeenCalledWith(filteredWebhooksToExport, argv.dir, argv.logFile);
+      expect(spy).toHaveBeenCalledWith(webhooksToExport, argv.dir, argv.logFile);
 
-      filteredWebhooksToExport.forEach(webhook => {
+      webhooksToExport.forEach(webhook => {
         const path = `temp_${process.env.JEST_WORKER_ID}/export/exported_webhooks/${webhook.label}.json`;
 
         expect(existsSync(path)).toBe(true);

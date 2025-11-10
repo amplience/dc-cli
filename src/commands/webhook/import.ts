@@ -12,6 +12,7 @@ import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { asyncQuestion } from '../../common/question-helpers';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import PublishOptions from '../../common/publish/publish-options';
+import { ImportWebhookBuilderOptions } from '../../interfaces/import-webhook-builder-options';
 
 export function getDefaultMappingPath(name: string, platform: string = process.platform): string {
   return join(
@@ -224,19 +225,15 @@ export const importWebhooks = async (
 };
 
 export const handler = async (
-  argv: Arguments<PublishOptions & ImportItemBuilderOptions & ConfigurationParameters>
+  argv: Arguments<PublishOptions & ImportWebhookBuilderOptions & ConfigurationParameters>
 ): Promise<void> => {
-  const { dir, logFile, force, silent } = argv;
-  let { mapFile } = argv;
+  const { dir, logFile, force, silent, mapFile: mapFileArg } = argv;
   const client = dynamicContentClientFactory(argv);
   const log = logFile.open();
   const hub: Hub = await client.hubs.get(argv.hubId);
   const importTitle = `hub-${hub.id}`;
-
   const mapping = new ContentMapping();
-  if (mapFile == null) {
-    mapFile = getDefaultMappingPath(importTitle);
-  }
+  const mapFile = mapFileArg ? mapFileArg : getDefaultMappingPath(importTitle);
 
   if (await mapping.load(mapFile)) {
     log.appendLine(`Existing mapping loaded from '${mapFile}', changes will be saved back to it.`);

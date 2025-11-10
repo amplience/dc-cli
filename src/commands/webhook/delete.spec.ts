@@ -7,7 +7,6 @@ import MockPage from '../../common/dc-management-sdk-js/mock-page';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { FileLog } from '../../common/file-log';
 import * as questionHelpers from '../../common/question-helpers';
-import { filterById } from '../../common/filter/filter';
 
 jest.mock('../../services/dynamic-content-client-factory');
 jest.mock('../../common/log-helpers');
@@ -70,17 +69,18 @@ describe('delete webhooks', () => {
 
     let mockGetHub: jest.Mock;
     let mockList: jest.Mock;
-
-    const webhookIdsToDelete = (id: unknown) => (id ? (Array.isArray(id) ? id : [id]) : []);
+    let mockGet: jest.Mock;
 
     beforeEach((): void => {
       const listResponse = new MockPage(Webhook, webhooksToDelete);
       mockList = jest.fn().mockResolvedValue(listResponse);
+      mockGet = jest.fn().mockResolvedValue(webhooksToDelete[1]);
 
       mockGetHub = jest.fn().mockResolvedValue({
         related: {
           webhooks: {
-            list: mockList
+            list: mockList,
+            get: mockGet
           }
         }
       });
@@ -91,7 +91,7 @@ describe('delete webhooks', () => {
         }
       });
 
-      jest.spyOn(deleteModule, 'processWebhooks').mockResolvedValue();
+      jest.spyOn(deleteModule, 'processWebhooks').mockResolvedValue({ failedWebhooks: [] });
     });
 
     it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function () {
@@ -100,10 +100,7 @@ describe('delete webhooks', () => {
     });
 
     it('should delete all webhooks in a hub', async (): Promise<void> => {
-      const id: string[] | undefined = undefined;
-      const argv = { ...yargArgs, ...config, id, logFile: new FileLog() };
-
-      const filteredWebhooksToDelete = filterById(webhooksToDelete, webhookIdsToDelete(id));
+      const argv = { ...yargArgs, ...config, logFile: new FileLog() };
 
       jest.spyOn(deleteModule, 'handler');
 
@@ -115,10 +112,10 @@ describe('delete webhooks', () => {
       expect(mockList).toHaveBeenCalledTimes(1);
       expect(mockList).toHaveBeenCalledWith({ size: 100 });
 
-      expect(deleteModule.processWebhooks).toHaveBeenCalledWith(filteredWebhooksToDelete, argv.logFile);
+      expect(deleteModule.processWebhooks).toHaveBeenCalledWith(webhooksToDelete, argv.logFile);
     });
 
-    it('should delete an webhook by id', async (): Promise<void> => {
+    it('should delete a webhook by id', async (): Promise<void> => {
       const id: string[] | undefined = ['webhook-id-2'];
       const argv = {
         ...yargArgs,
@@ -127,8 +124,6 @@ describe('delete webhooks', () => {
         logFile: new FileLog()
       };
 
-      const filteredWebhooksToDelete = filterById(webhooksToDelete, webhookIdsToDelete(id));
-
       jest.spyOn(deleteModule, 'handler');
 
       (questionHelpers.asyncQuestion as jest.Mock).mockResolvedValue(true);
@@ -136,9 +131,9 @@ describe('delete webhooks', () => {
       await handler(argv);
 
       expect(mockGetHub).toHaveBeenCalledWith('hub-id');
-      expect(mockList).toHaveBeenCalledTimes(1);
+      expect(mockGet).toHaveBeenCalledTimes(1);
 
-      expect(deleteModule.processWebhooks).toHaveBeenCalledWith(filteredWebhooksToDelete, argv.logFile);
+      expect(deleteModule.processWebhooks).toHaveBeenCalledWith([webhooksToDelete[1]], argv.logFile);
     });
   });
 });

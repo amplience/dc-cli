@@ -7,6 +7,5 @@ export interface ExportItemBuilderOptions {
   facet?: string;
   logFile: FileLog;
   publish?: boolean;
-
   exportedIds?: string[];
 }

@@ -2,10 +2,7 @@ import { Arguments, Argv } from 'yargs';
 import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
-import { ExportBuilderOptions } from '../../interfaces/export-builder-options.interface';
 import { nothingExportedExit, uniqueFilenamePath, writeJsonToFile } from '../../services/export.service';
-import paginator from '../../common/dc-management-sdk-js/paginator';
-import { filterById } from '../../common/filter/filter';
 import { Webhook } from 'dc-management-sdk-js';
 import { FileLog } from '../../common/file-log';
 import { join } from 'path';
@@ -13,6 +10,9 @@ import sanitize from 'sanitize-filename';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { progressBar } from '../../common/progress-bar/progress-bar';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
+import { getWebhooksByIds } from '../../common/webhooks/get-webhooks-by-ids';
+import { getAllWebhooks } from '../../common/webhooks/get-all-webhook';
+import { ExportWebhookBuilderOptions } from '../../interfaces/export-webhook-builder-options';
 
 export const command = 'export <dir>';
 
@@ -85,15 +85,21 @@ export const exportWebhooks = async (webhooks: Webhook[], dir: string, log: File
   progress.stop();
 };
 
-export const handler = async (argv: Arguments<ExportBuilderOptions & ConfigurationParameters>): Promise<void> => {
+export const handler = async (
+  argv: Arguments<ExportWebhookBuilderOptions & ConfigurationParameters>
+): Promise<void> => {
   const { id, logFile, dir, force, silent } = argv;
+  const log = logFile.open();
   const client = dynamicContentClientFactory(argv);
   const allWebhooks = !id;
   const hub = await client.hubs.get(argv.hubId);
-  const webhooks = await paginator(hub.related.webhooks.list);
-  const idArray: string[] = id ? (Array.isArray(id) ? id : [id]) : [];
-  const webhooksToExport = filterById<Webhook>(webhooks, idArray, undefined, 'webhooks');
-  const log = logFile.open();
+  let ids: string[] = [];
+
+  if (id) {
+    ids = Array.isArray(id) ? id : [id];
+  }
+
+  const webhooksToExport = ids.length > 0 ? await getWebhooksByIds(hub, ids) : await getAllWebhooks(hub);
 
   if (!webhooksToExport.length) {
     nothingExportedExit(log, 'No webhooks to export from this hub, exiting.');
