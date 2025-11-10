@@ -5,7 +5,6 @@ import { FileLog } from '../../common/file-log';
 import { join, extname } from 'path';
 import { readdir, readFile } from 'graceful-fs';
 import { promisify } from 'util';
-import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 import { Hub, Webhook } from 'dc-management-sdk-js';
 import { ContentMapping } from '../../common/content-mapping';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
@@ -109,7 +108,7 @@ export const prepareWebhooksForImport = async (
   webhookFiles: string[],
   mapping: ContentMapping,
   log: FileLog,
-  argv: Arguments<ImportItemBuilderOptions & ConfigurationParameters>
+  argv: Arguments<ImportWebhookBuilderOptions & ConfigurationParameters>
 ): Promise<Webhook[] | null> => {
   const { force } = argv;
 
