@@ -30,7 +30,8 @@ Run `dc-cli --help` to get a list of available commands.
     - [event](#event)
     - [settings](#settings)
     - [hub](#hub)
-  - [job](#job)
+    - [job](#job)
+    - [linked-content-repository](#linked-content-repository)
   - [Building the CLI](#building-the-cli)
   - [Required permissions](#required-permissions)
 
@@ -176,11 +177,19 @@ Additionally, these commands may be used to store and retrieve hub configuration
 
 [View commands for **hub**](docs/HUB.md)
 
-## job
+### job
 
 This category includes interactions with Dynamic Content jobs.
 
 [View commands for **job**](docs/JOB.md)
+
+### linked-content-repository
+
+This category includes interactions with Dynamic Content's linked content repositories.
+
+These commands can be used to list multiple linked content repository.
+
+[View commands for **linked-content-repository**](docs/LINKED-CONTENT-REPOSITORY.md)
 
 ## Building the CLI
 
