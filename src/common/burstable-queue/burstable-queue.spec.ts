@@ -106,12 +106,12 @@ describe('burstable-queue', () => {
 
       tasks.forEach(() => {
         burstableQueue.add(async () => {
-          await setTimeout(50);
+          await setTimeout(1);
         });
       });
 
       expect(burstableQueue.size()).toEqual(8);
-      await setTimeout(400);
+      await setTimeout(410);
       expect(burstableQueue.size()).toEqual(4);
     });
   });
@@ -146,12 +146,12 @@ describe('burstable-queue', () => {
 
       tasks.forEach(() => {
         burstableQueue.add(async () => {
-          await setTimeout(50);
+          await setTimeout(1);
         });
       });
 
       expect(burstableQueue.pending()).toEqual(8);
-      await setTimeout(400);
+      await setTimeout(410);
       expect(burstableQueue.pending()).toEqual(4);
     });
   });
