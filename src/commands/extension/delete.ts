@@ -92,10 +92,11 @@ export const handler = async (
   }
 
   if (!force) {
+    const baseMessage = 'This action cannot be undone. Are you sure you want to continue? (Y/n)\n';
     const yes = await asyncQuestion(
       allExtensions
-        ? `Providing no ID/s will delete ALL extensions! Are you sure you want to do this? (Y/n)\n`
-        : `${extensionsToDelete.length} extensions will be deleted. Would you like to continue? (Y/n)\n`
+        ? `Providing no ID/s will permanently delete ALL extensions! ${baseMessage}`
+        : `${extensionsToDelete.length} extensions will be permanently deleted. ${baseMessage}`
     );
     if (!yes) {
       return;
