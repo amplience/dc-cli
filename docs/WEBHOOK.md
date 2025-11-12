@@ -47,10 +47,12 @@ dc-cli webhook export <dir>
 
 #### Options
 
-| Option Name | Type                                       | Description                                                                                                                                                                                                                                                         |
-| ----------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| --id        | [string]                                   | The ID of the webhook to be exported.<br/>If no --id option is given, all webhooks for the hub are exported.<br/>A single --id option may be given to export a single webhook.<br/>Multiple --id options may be given to delete multiple webhooks at the same time. |
-| --logFile   | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                     |
+| Option Name      | Type                                       | Description                                                                                                                                                                                                                                                         |
+| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --id             | [string]                                   | The ID of the webhook to be exported.<br/>If no --id option is given, all webhooks for the hub are exported.<br/>A single --id option may be given to export a single webhook.<br/>Multiple --id options may be given to export multiple webhooks at the same time. |
+| --logFile        | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                     |
+| -s<br />--silent | [boolean]                                  | If present, no log file will be produced.                                                                                                                                                                                                                           |
+| -f<br />--force  | [boolean]                                  | Export webhooks without asking.                                                                                                                                                                                                                                     |
 
 #### Examples
 
@@ -117,10 +119,11 @@ dc-cli webhook delete
 
 #### Options
 
-| Option Name     | Type      | Description                                                                                                                                                                                                                                                      |
-| --------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| --id            | [string]  | The ID of an Webhook to be deleted.<br/>If no --id option is given, all webhooks for the hub are deleted.<br/>A single --id option may be given to delete a single webhook.<br/>Multiple --id options may be given to delete multiple webhooks at the same time. |
-| -f<br />--force | [boolean] | Delete webhooks without asking.                                                                                                                                                                                                                                  |
+| Option Name     | Type                                       | Description                                                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --id            | [string]                                   | The ID of an Webhook to be deleted.<br/>If no --id option is given, all webhooks for the hub are deleted.<br/>A single --id option may be given to delete a single webhook.<br/>Multiple --id options may be given to delete multiple webhooks at the same time. |
+| -f<br />--force | [boolean]                                  | Delete webhooks without asking.                                                                                                                                                                                                                                  |
+| --logFile       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                  |
 
 #### Examples
 
