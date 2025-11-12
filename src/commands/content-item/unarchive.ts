@@ -4,7 +4,7 @@ import dynamicContentClientFactory from '../../services/dynamic-content-client-f
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
 import UnarchiveOptions from '../../common/archive/unarchive-options';
-import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, FacetedContentItem, Status } from 'dc-management-sdk-js';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
@@ -150,9 +150,13 @@ export const getContentItems = async ({
         delete item.body._meta.deliveryKey;
         delete item.body._meta.deliveryKeys;
       }
-      if ('deliveryKey' in item && 'deliveryKeys' in item) {
-        delete item.deliveryKey;
-        delete item.deliveryKeys;
+      if (item instanceof FacetedContentItem) {
+        if ('deliveryKey' in item) {
+          delete item.deliveryKey;
+        }
+        if ('deliveryKeys' in item) {
+          delete item.deliveryKeys;
+        }
       }
     });
 
