@@ -146,8 +146,14 @@ export const getContentItems = async ({
 
     // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
     contentItems.forEach(item => {
-      delete item.body._meta.deliveryKey;
-      delete item.body._meta.deliveryKeys;
+      if (item instanceof ContentItem) {
+        delete item.body._meta.deliveryKey;
+        delete item.body._meta.deliveryKeys;
+      }
+      if ('deliveryKey' in item && 'deliveryKeys' in item) {
+        delete item.deliveryKey;
+        delete item.deliveryKeys;
+      }
     });
 
     return { contentItems, missingContent: false };
