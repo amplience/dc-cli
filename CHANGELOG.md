@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.29.0](https://github.com/amplience/dc-cli/compare/v0.28.0...v0.29.0) (2025-11-11)
+
+
+### Features
+
+* content sync ([#236](https://github.com/amplience/dc-cli/issues/236)) ([185eb1c](https://github.com/amplience/dc-cli/commit/185eb1cd6cfdf2c7db7718aebd8638883d254c13))
+* manage linked content repositories ([#222](https://github.com/amplience/dc-cli/issues/222)) ([f6c7151](https://github.com/amplience/dc-cli/commit/f6c71514b6b303c20ea67c7788d0b88a27da28e6))
+
 ## [0.28.0](https://github.com/amplience/dc-cli/compare/v0.27.0...v0.28.0) (2025-10-21)
 
 
