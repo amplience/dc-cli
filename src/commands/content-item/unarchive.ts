@@ -195,14 +195,14 @@ export const processItems = async ({
     return;
   }
 
-  console.log('The following content items will be unarchived:');
+  console.log('The following content item/s will be unarchived:');
   contentItems.forEach((contentItem: ContentItem) => {
     console.log(` ${contentItem.label} (${contentItem.id})`);
   });
   console.log(`Total: ${contentItems.length}`);
 
   if (!force) {
-    const yes = await confirmAllContent('unarchive', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('unarchive', 'content item/s', allContent, missingContent);
     if (!yes) {
       return;
     }
@@ -215,8 +215,8 @@ export const processItems = async ({
 
   for (let i = 0; i < contentItems.length; i++) {
     try {
-      const deliveryKey = contentItems[i].body._meta.deliveryKey;
-      const deliveryKeys = contentItems[i].body._meta.deliveryKeys;
+      const deliveryKey = contentItems[i].body?._meta?.deliveryKey;
+      const deliveryKeys = contentItems[i].body?._meta?.deliveryKeys;
       contentItems[i] = await contentItems[i].related.unarchive();
 
       if (
@@ -249,7 +249,7 @@ export const processItems = async ({
     await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 
-  console.log(`Unarchived ${successCount} content items.`);
+  console.log(`Unarchived ${successCount} content item/s.`);
 };
 
 export const handler = async (argv: Arguments<UnarchiveOptions & ConfigurationParameters>): Promise<void> => {
