@@ -170,14 +170,14 @@ export const processItems = async ({
     return;
   }
 
-  console.log('The following content items will be archived:');
+  console.log('The following content item/s will be archived:');
   contentItems.forEach((contentItem: ContentItem) => {
     console.log(` ${contentItem.label} (${contentItem.id})`);
   });
   console.log(`Total: ${contentItems.length}`);
 
   if (!force) {
-    const yes = await confirmAllContent('archive', 'content item', allContent, missingContent);
+    const yes = await confirmAllContent('archive', 'content item/s', allContent, missingContent);
     if (!yes) {
       return;
     }
@@ -226,7 +226,7 @@ export const processItems = async ({
 
   await log.close(!silent);
 
-  console.log(`Archived ${successCount} content items.`);
+  console.log(`Archived ${successCount} content item/s.`);
 };
 
 export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationParameters>): Promise<void> => {
