@@ -32,6 +32,7 @@ Run `dc-cli --help` to get a list of available commands.
     - [hub](#hub)
     - [job](#job)
     - [linked-content-repository](#linked-content-repository)
+    - [webhook](#webhook)
   - [Building the CLI](#building-the-cli)
   - [Required permissions](#required-permissions)
 
@@ -137,7 +138,7 @@ Before importing, copying, or moving content you must ensure that a valid [conte
 
 ### extension
 
-This category includes interactions with Dynamic Content's UI Extensions, and can be used to export and import extensions from an individual hub.
+This category includes interactions with Dynamic Content's UI Extensions, and can be used to export, import and delete extensions from an individual hub.
 
 [View commands for **extension**](docs/EXTENSION.md)
 
@@ -190,6 +191,12 @@ This category includes interactions with Dynamic Content's linked content reposi
 These commands can be used to list multiple linked content repository.
 
 [View commands for **linked-content-repository**](docs/LINKED-CONTENT-REPOSITORY.md)
+
+### webhook
+
+This category includes interactions with Dynamic Content's UI Webhooks, and can be used to export, import and delete webhooks from an individual hub.
+
+[View commands for **webhook**](docs/WEBHOOK.md)
 
 ## Building the CLI
 
