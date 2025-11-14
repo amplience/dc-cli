@@ -16,6 +16,7 @@ Commands:
   dc-cli linked-content-repository  Linked Content Repository
   dc-cli search-index               Search Index
   dc-cli settings                   Settings
+  dc-cli webhook                    Webhook
 
 Options:
   --help     Show help                                                 [boolean]
