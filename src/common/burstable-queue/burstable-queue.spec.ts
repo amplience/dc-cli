@@ -4,6 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 describe('burstable-queue', () => {
   it('should schedule task and execute them with an initial burst', async () => {
     const interval = 500;
+    const timeoutInterval = interval + 10;
     const burstableQueue = new BurstableQueue({
       concurrency: 1,
       minTime: 0,
@@ -23,19 +24,19 @@ describe('burstable-queue', () => {
 
     expect(burstableQueue.size()).toEqual(8);
     expect(completeTasks).toHaveLength(0);
-    await setTimeout(interval);
+    await setTimeout(timeoutInterval);
     expect(burstableQueue.size()).toEqual(4);
     expect(completeTasks).toHaveLength(4);
-    await setTimeout(interval);
+    await setTimeout(timeoutInterval);
     expect(burstableQueue.size()).toEqual(3);
     expect(completeTasks).toHaveLength(5);
-    await setTimeout(interval);
+    await setTimeout(timeoutInterval);
     expect(burstableQueue.size()).toEqual(2);
     expect(completeTasks).toHaveLength(6);
-    await setTimeout(interval);
+    await setTimeout(timeoutInterval);
     expect(burstableQueue.size()).toEqual(1);
     expect(completeTasks).toHaveLength(7);
-    await setTimeout(interval);
+    await setTimeout(timeoutInterval);
     expect(burstableQueue.size()).toEqual(0);
     expect(completeTasks).toHaveLength(8);
   });
