@@ -9,6 +9,7 @@ export class ContentMapping {
   editions: Map<string, string>;
   slots: Map<string, string>;
   snapshots: Map<string, string>;
+  webhooks: Map<string, string>;
 
   constructor() {
     this.contentItems = new Map<string, string>();
@@ -17,6 +18,7 @@ export class ContentMapping {
     this.editions = new Map<string, string>();
     this.slots = new Map<string, string>();
     this.snapshots = new Map<string, string>();
+    this.webhooks = new Map<string, string>();
   }
 
   getContentItem(id: string | undefined): string | undefined {
@@ -71,6 +73,14 @@ export class ContentMapping {
     this.snapshots.set(fromId, toId);
   }
 
+  getWebhook(id: string | undefined): string | undefined {
+    return id === undefined ? undefined : this.webhooks.get(id);
+  }
+
+  registerWebhook(fromId: string, toId: string): void {
+    this.webhooks.set(fromId, toId);
+  }
+
   async save(filename: string): Promise<void> {
     const obj: SerializedContentMapping = {
       contentItems: Array.from(this.contentItems),
@@ -78,7 +88,8 @@ export class ContentMapping {
       events: Array.from(this.events),
       editions: Array.from(this.editions),
       slots: Array.from(this.slots),
-      snapshots: Array.from(this.snapshots)
+      snapshots: Array.from(this.snapshots),
+      webhooks: Array.from(this.webhooks)
     };
 
     const text = JSON.stringify(obj);
@@ -101,6 +112,7 @@ export class ContentMapping {
       this.editions = obj.editions ? new Map(obj.editions) : new Map();
       this.slots = obj.slots ? new Map(obj.slots) : new Map();
       this.snapshots = obj.snapshots ? new Map(obj.snapshots) : new Map();
+      this.webhooks = obj.webhooks ? new Map(obj.webhooks) : new Map();
       return true;
     } catch (e) {
       return false;
@@ -115,4 +127,5 @@ interface SerializedContentMapping {
   editions?: [string, string][];
   slots?: [string, string][];
   snapshots?: [string, string][];
+  webhooks?: [string, string][];
 }

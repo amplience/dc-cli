@@ -44,10 +44,11 @@ dc-cli extension export <dir>
 
 #### Options
 
-| Option Name     | Type      | Description                                                                                                                                                                                                                                                                |
-| --------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| --id            | [string]  | The ID of an Extension to be exported.<br/>If no --id option is given, all extensions for the hub are exported.<br/>A single --id option may be given to export a single extension.<br/>Multiple --id options may be given to export multiple extensions at the same time. |
-| -f<br />--force | [boolean] | Overwrite extensions without asking.                                                                                                                                                                                                                                       |
+| Option Name     | Type                                       | Description                                                                                                                                                                                                                                                                |
+| --------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --id            | [string]                                   | The ID of an Extension to be exported.<br/>If no --id option is given, all extensions for the hub are exported.<br/>A single --id option may be given to export a single extension.<br/>Multiple --id options may be given to export multiple extensions at the same time. |
+| -f<br />--force | [boolean]                                  | Overwrite extensions without asking.                                                                                                                                                                                                                                       |
+| --logFile       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                            |
 
 #### Examples
 
@@ -87,10 +88,11 @@ dc-cli extension delete
 
 #### Options
 
-| Option Name     | Type      | Description                                                                                                                                                                                                                                                              |
-| --------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| --id            | [string]  | The ID of an Extension to be deleted.<br/>If no --id option is given, all extensions for the hub are deleted.<br/>A single --id option may be given to delete a single extension.<br/>Multiple --id options may be given to delete multiple extensions at the same time. |
-| -f<br />--force | [boolean] | Delete extensions without asking.                                                                                                                                                                                                                                        |
+| Option Name     | Type                                       | Description                                                                                                                                                                                                                                                              |
+| --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| --id            | [string]                                   | The ID of an Extension to be deleted.<br/>If no --id option is given, all extensions for the hub are deleted.<br/>A single --id option may be given to delete a single extension.<br/>Multiple --id options may be given to delete multiple extensions at the same time. |
+| -f<br />--force | [boolean]                                  | Delete extensions without asking.                                                                                                                                                                                                                                        |
+| --logFile       | [string]<br />[default: (generated-value)] | Path to a log file to write to.                                                                                                                                                                                                                                          |
 
 #### Examples
 
