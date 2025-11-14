@@ -3,7 +3,7 @@ import { ConfigurationParameters } from '../configure';
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ArchiveLog } from '../../common/archive/archive-log';
 import { confirmAllContent } from '../../common/content-item/confirm-all-content';
-import { ContentItem, DynamicContent, Status } from 'dc-management-sdk-js';
+import { ContentItem, DynamicContent, FacetedContentItem, Status } from 'dc-management-sdk-js';
 import { createLog, getDefaultLogPath } from '../../common/log-helpers';
 import { Facet, withOldFilters } from '../../common/filter/facet';
 import { getContent } from '../../common/filter/fetch-content';
@@ -140,8 +140,18 @@ const getContentToUnarchiveWithFacet = async ({
 
   // Delete the delivery keys, as the unarchive will attempt to reassign them if present.
   contentItems.forEach(item => {
-    delete item.body._meta.deliveryKey;
-    delete item.body._meta.deliveryKeys;
+    if (item instanceof ContentItem) {
+      delete item.body._meta.deliveryKey;
+      delete item.body._meta.deliveryKeys;
+    }
+    if (item instanceof FacetedContentItem) {
+      if ('deliveryKey' in item) {
+        delete item.deliveryKey;
+      }
+      if ('deliveryKeys' in item) {
+        delete item.deliveryKeys;
+      }
+    }
   });
 
   return contentItems;
@@ -163,13 +173,13 @@ const processItems = async ({
 
   for (let i = 0; i < contentItems.length; i++) {
     try {
-      const deliveryKey = contentItems[i].body._meta.deliveryKey;
-      const deliveryKeys = contentItems[i].body._meta.deliveryKeys;
+      const deliveryKey = contentItems[i].body?._meta?.deliveryKey;
+      const deliveryKeys = contentItems[i].body?._meta?.deliveryKeys;
       contentItems[i] = await contentItems[i].related.unarchive();
 
       if (
-        contentItems[i].body._meta.deliveryKey !== deliveryKey ||
-        !isEqual(contentItems[i].body._meta.deliveryKeys, deliveryKeys)
+        contentItems[i].body?._meta?.deliveryKey !== deliveryKey ||
+        !isEqual(contentItems[i].body?._meta?.deliveryKeys, deliveryKeys)
       ) {
         // Restore the delivery key if present. (only on ARCHIVE revert)
         contentItems[i].body._meta.deliveryKey = deliveryKey || null;
