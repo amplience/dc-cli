@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.30.0](https://github.com/amplience/dc-cli/compare/v0.29.0...v0.30.0) (2025-11-14)
+
+
+### Features
+
+* content item command improvements ([#239](https://github.com/amplience/dc-cli/issues/239)) ([5d02a0b](https://github.com/amplience/dc-cli/commit/5d02a0bb37824cef154663f9ad8d4016d212ec33))
+* webhooks export / import / delete ([#238](https://github.com/amplience/dc-cli/issues/238)) ([5c95d37](https://github.com/amplience/dc-cli/commit/5c95d3765d17e262bee7035478dd0f57049e6359))
+
+
+### Bug Fixes
+
+* unarchive facet bug ([#242](https://github.com/amplience/dc-cli/issues/242)) ([e1f9e70](https://github.com/amplience/dc-cli/commit/e1f9e7063ba5ac887043361509ec6695868c4072))
+
 ## [0.29.0](https://github.com/amplience/dc-cli/compare/v0.28.0...v0.29.0) (2025-11-11)
 
 
