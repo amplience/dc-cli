@@ -12,12 +12,19 @@ export class ContentItemSyncService {
     this.queue = new BurstableQueue({ concurrency: 1 });
   }
 
-  sync(destinationHubId: string, hub: Hub, contentItem: ContentItem, action: (job: Job) => void): void {
+  sync(
+    destinationHubId: string,
+    hub: Hub,
+    contentItem: ContentItem,
+    action: (job: Job) => void,
+    options: { ignoreSchemaValidation?: boolean; forceSync?: boolean }
+  ): void {
     this.queue.add(async () => {
       const createSyncJob = await hub.related.jobs.createDeepSyncJob(
         new CreateDeepSyncJobRequest({
           label: `dc-cli content item: ${contentItem.label}`,
-          ignoreSchemaValidation: true,
+          ignoreSchemaValidation: options.ignoreSchemaValidation || false,
+          forceSync: options.forceSync || false,
           destinationHubId,
           input: { rootContentItemIds: [contentItem.id] }
         })

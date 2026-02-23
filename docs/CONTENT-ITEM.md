@@ -514,15 +514,17 @@ If no `id` is provided, all content items in all content repositories in the spe
 
 #### Options
 
-| Option               | Alias | Description                                                                                                                                        |
-| -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--destinationHubId` |       | The destination hub ID to sync the content item with                                                                                               |
-| `--repoId`           |       | The ID of a content repository to restrict sync scope. _(Optional)_                                                                                |
-| `--folderId`         |       | The ID of a folder to restrict sync scope. _(Optional)_                                                                                            |
-| `--facet`            |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
-| `-f`, `--force`      |       | Skip confirmation prompts before sync.                                                                                                             |
-| `-s`, `--silent`     |       | Disable log file creation.                                                                                                                         |
-| `--logFile`          |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
+| Option                     | Alias | Description                                                                                                                                        |
+| -------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--destinationHubId`       |       | The destination hub ID to sync the content item with                                                                                               |
+| `--repoId`                 |       | The ID of a content repository to restrict sync scope. _(Optional)_                                                                                |
+| `--folderId`               |       | The ID of a folder to restrict sync scope. _(Optional)_                                                                                            |
+| `--facet`                  |       | Filter content using facets. Format: <br>`label:example name,locale:en-GB` <br>Regex supported with `/pattern/`. <br>See README for more examples. |
+| `-f`, `--force`            |       | Skip confirmation prompts before sync.                                                                                                             |
+| `-s`, `--silent`           |       | Disable log file creation.                                                                                                                         |
+| `--logFile`                |       | Path to write the log file. <br>Default: `(log_filename)`                                                                                          |
+| `--ignoreSchemaValidation` |       | Ignore schema validation when syncing content items. _(Optional)_                                                                                  |
+| `--forceSync`              |       | Sync destination content item when modified (overwrite destination modifications). _(Optional)_                                                    |
 
 ---
 

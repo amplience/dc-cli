@@ -65,6 +65,17 @@ export const builder = (yargs: Argv): void => {
       describe: 'The ID of a destination hub to sync with.',
       requiresArg: true,
       demandOption: true
+    })
+    .option('ignoreSchemaValidation', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Ignore schema validation when syncing content items.'
+    })
+
+    .option('forceSync', {
+      type: 'boolean',
+      boolean: true,
+      describe: 'Sync destination content item when modified (overwrite destination modifications).'
     });
 };
 
@@ -77,10 +88,13 @@ export default interface SyncOptions {
   force?: boolean;
   silent?: boolean;
   destinationHubId: string;
+  ignoreSchemaValidation?: boolean;
+  forceSync?: boolean;
 }
 
 export const handler = async (argv: Arguments<SyncOptions & ConfigurationParameters>): Promise<void> => {
-  const { id, logFile, force, silent, hubId, repoId, folderId, destinationHubId } = argv;
+  const { id, logFile, force, silent, hubId, repoId, folderId, destinationHubId, ignoreSchemaValidation, forceSync } =
+    argv;
   const log = logFile.open();
   const client = dynamicContentClientFactory(argv);
   const facet = withOldFilters(argv.facet, argv);
@@ -143,15 +157,21 @@ export const handler = async (argv: Arguments<SyncOptions & ConfigurationParamet
 
   dedupedContentItems.forEach(contentItem => {
     log.addComment(`Requesting content item sync: ${contentItem.label}`);
-    syncService.sync(destinationHubId, hub, contentItem, (syncJob: Job) => {
-      progress.increment();
-      const logComment =
-        syncJob.status === 'FAILED'
-          ? `Failed content item sync job ${syncJob.id}: ${JSON.stringify(syncJob.errors)}`
-          : `Content item synced: ${contentItem.label} (jobId: ${syncJob.id})`;
+    syncService.sync(
+      destinationHubId,
+      hub,
+      contentItem,
+      (syncJob: Job) => {
+        progress.increment();
+        const logComment =
+          syncJob.status === 'FAILED'
+            ? `Failed content item sync job ${syncJob.id}: ${JSON.stringify(syncJob.errors)}`
+            : `Content item synced: ${contentItem.label} (jobId: ${syncJob.id})`;
 
-      log.addComment(logComment);
-    });
+        log.addComment(logComment);
+      },
+      { ignoreSchemaValidation, forceSync }
+    );
   });
 
   await syncService.onIdle();

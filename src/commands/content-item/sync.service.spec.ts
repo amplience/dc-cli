@@ -11,7 +11,7 @@ describe('sync.service', () => {
   });
   describe('ContentItemSyncService', () => {
     describe('sync', () => {
-      it('should add a content item sync job to the queue and process the queue item', async () => {
+      it('should add a content item sync job to the queue and process the queue item (with sync options enabled)', async () => {
         const JOB_ID = '68e5289f0aba3024bde050f9';
         const DEST_HUB_ID = '67d2a201642fa239dbe1523d';
         const CONTENT_ITEM_ID = 'c5b659df-680e-4711-bfbe-84eaa10d76cc';
@@ -22,11 +22,15 @@ describe('sync.service', () => {
         hub.related.jobs.get.mockResolvedValue(new Job({ id: JOB_ID, status: 'COMPLETED' }));
 
         const syncService = new ContentItemSyncService();
-        syncService.sync(DEST_HUB_ID, hub as unknown as Hub, contentItem, () => {});
+        syncService.sync(DEST_HUB_ID, hub as unknown as Hub, contentItem, () => {}, {
+          ignoreSchemaValidation: true,
+          forceSync: true
+        });
         await syncService.onIdle();
 
         expect(hub.related.jobs.createDeepSyncJob).toHaveBeenCalledWith({
           label: `dc-cli content item: sync service test`,
+          forceSync: true,
           ignoreSchemaValidation: true,
           destinationHubId: DEST_HUB_ID,
           input: { rootContentItemIds: [CONTENT_ITEM_ID] }
@@ -47,12 +51,13 @@ describe('sync.service', () => {
           .mockResolvedValueOnce(new Job({ id: JOB_ID, status: 'COMPLETED' }));
 
         const syncService = new ContentItemSyncService();
-        syncService.sync(DEST_HUB_ID, hub as unknown as Hub, contentItem, () => {});
+        syncService.sync(DEST_HUB_ID, hub as unknown as Hub, contentItem, () => {}, {});
         await syncService.onIdle();
 
         expect(hub.related.jobs.createDeepSyncJob).toHaveBeenCalledWith({
           label: `dc-cli content item: sync service test`,
-          ignoreSchemaValidation: true,
+          forceSync: false,
+          ignoreSchemaValidation: false,
           destinationHubId: DEST_HUB_ID,
           input: { rootContentItemIds: [CONTENT_ITEM_ID] }
         });
@@ -70,12 +75,13 @@ describe('sync.service', () => {
         hub.related.jobs.get.mockResolvedValueOnce(new Job({ id: JOB_ID, status: 'FAILED' }));
 
         const syncService = new ContentItemSyncService();
-        syncService.sync(DEST_HUB_ID, hub as unknown as Hub, contentItem, () => {});
+        syncService.sync(DEST_HUB_ID, hub as unknown as Hub, contentItem, () => {}, {});
         await syncService.onIdle();
 
         expect(hub.related.jobs.createDeepSyncJob).toHaveBeenCalledWith({
           label: `dc-cli content item: sync service test`,
-          ignoreSchemaValidation: true,
+          forceSync: false,
+          ignoreSchemaValidation: false,
           destinationHubId: DEST_HUB_ID,
           input: { rootContentItemIds: [CONTENT_ITEM_ID] }
         });
