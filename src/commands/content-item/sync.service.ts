@@ -19,11 +19,12 @@ export class ContentItemSyncService {
     action: (job: Job) => void,
     options: { ignoreSchemaValidation?: boolean; forceSync?: boolean }
   ): void {
+    console.log(options.ignoreSchemaValidation, options.ignoreSchemaValidation ?? true);
     this.queue.add(async () => {
       const createSyncJob = await hub.related.jobs.createDeepSyncJob(
         new CreateDeepSyncJobRequest({
           label: `dc-cli content item: ${contentItem.label}`,
-          ignoreSchemaValidation: options.ignoreSchemaValidation || false,
+          ignoreSchemaValidation: options.ignoreSchemaValidation ?? true,
           forceSync: options.forceSync || false,
           destinationHubId,
           input: { rootContentItemIds: [contentItem.id] }

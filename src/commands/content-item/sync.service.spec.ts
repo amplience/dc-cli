@@ -57,7 +57,7 @@ describe('sync.service', () => {
         expect(hub.related.jobs.createDeepSyncJob).toHaveBeenCalledWith({
           label: `dc-cli content item: sync service test`,
           forceSync: false,
-          ignoreSchemaValidation: false,
+          ignoreSchemaValidation: true,
           destinationHubId: DEST_HUB_ID,
           input: { rootContentItemIds: [CONTENT_ITEM_ID] }
         });
@@ -81,7 +81,7 @@ describe('sync.service', () => {
         expect(hub.related.jobs.createDeepSyncJob).toHaveBeenCalledWith({
           label: `dc-cli content item: sync service test`,
           forceSync: false,
-          ignoreSchemaValidation: false,
+          ignoreSchemaValidation: true,
           destinationHubId: DEST_HUB_ID,
           input: { rootContentItemIds: [CONTENT_ITEM_ID] }
         });
