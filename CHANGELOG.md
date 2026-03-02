@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.31.0](https://github.com/amplience/dc-cli/compare/v0.30.0...v0.31.0) (2026-03-02)
+
+
+### Features
+
+* passing sync options to support force sync ([#250](https://github.com/amplience/dc-cli/issues/250)) ([f74b6d4](https://github.com/amplience/dc-cli/commit/f74b6d465fd618775270757390ae3b738d39e88c))
+
 ## [0.30.0](https://github.com/amplience/dc-cli/compare/v0.29.0...v0.30.0) (2025-11-14)
 
 
