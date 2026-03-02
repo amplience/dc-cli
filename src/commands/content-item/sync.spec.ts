@@ -102,6 +102,18 @@ describe('content-item sync', () => {
         requiresArg: true,
         demandOption: true
       });
+
+      expect(spyOption).toHaveBeenCalledWith('ignoreSchemaValidation', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Ignore schema validation when syncing content items.'
+      });
+
+      expect(spyOption).toHaveBeenCalledWith('forceSync', {
+        type: 'boolean',
+        boolean: true,
+        describe: 'Sync destination content item when modified (overwrite destination modifications).'
+      });
     });
   });
 
@@ -149,6 +161,8 @@ describe('content-item sync', () => {
         ...globalArgs,
         id: CONTENT_ITEM_ID,
         destinationHubId: DEST_HUB_ID,
+        ignoreSchemaValidation: true,
+        forceSync: true,
         logFile: mockLog
       });
 
@@ -158,7 +172,8 @@ describe('content-item sync', () => {
         DEST_HUB_ID,
         expect.any(Hub),
         expect.any(ContentItem),
-        expect.any(Function)
+        expect.any(Function),
+        { forceSync: true, ignoreSchemaValidation: true }
       );
     });
     it('should sync content items by query', async () => {
@@ -200,7 +215,8 @@ describe('content-item sync', () => {
         DEST_HUB_ID,
         expect.any(Hub),
         expect.any(ContentItem),
-        expect.any(Function)
+        expect.any(Function),
+        { forceSync: undefined, ignoreSchemaValidation: undefined }
       );
     });
   });
