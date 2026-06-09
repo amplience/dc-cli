@@ -90,6 +90,12 @@ Multiple facets can be applied at once when separated by a comma. Example:
 
 Commas can be escaped with a backslash, if they are used in your values. The whitespace after a comma is optional.
 
+Multiple facet values can be combined using regex alternation (e.g. `|`). For example:
+
+```bash
+--facet "workflowState:/^655f583334f8833c81af64d1$|^655f5832db7a1637df1984eb$/"
+```
+
 #### Preset date ranges
 
 The preset date ranges are the same as DC provides:
