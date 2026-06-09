@@ -128,6 +128,18 @@ export const tryFetchContent = async (
     });
   }
 
+  const workflowStateArray = tryGetArray(facet.workflowState, true);
+  if (workflowStateArray) {
+    facetQuery.fields.push({
+      facetAs: 'ENUM',
+      field: 'workflow.state',
+      filter: {
+        type: 'IN',
+        values: workflowStateArray
+      }
+    });
+  }
+
   if (facet.name) {
     const names = tryGetArray(facet.name, false);
 
