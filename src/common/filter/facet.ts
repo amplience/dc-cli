@@ -13,6 +13,7 @@ export interface Facet {
   schema?: string;
   status?: string;
   lastModifiedDate?: FacetRange | DatePreset;
+  workflowState?: string;
 }
 
 export type DatePreset = 'Last 7 days' | 'Last 14 days' | 'Last 30 days' | 'Last 60 days' | 'Over 60 days';
@@ -188,6 +189,8 @@ export function applyFacet(items: ContentItem[], facetOrString: Facet | string):
     )
       return false;
     if (facet.status && !equalsOrRegex(item.status, facet.status)) return false;
+    if (facet.workflowState && (!item.workflow || !equalsOrRegex(item.workflow.state, facet.workflowState)))
+      return false;
 
     // Date range checks.
     if (facet.lastModifiedDate && !dateRangeMatch(item.lastModifiedDate, facet.lastModifiedDate)) return false;

@@ -242,6 +242,18 @@ describe('facet', () => {
       const itemsStatus = [new ContentItem({ status: 'ACTIVE' }), new ContentItem({ status: 'ARCHIVED' })];
       expect(applyFacet(itemsStatus, { status: 'ARCHIVED' })).toEqual([itemsStatus[1]]);
 
+      const itemsWorkflowState = [
+        Object.assign(new ContentItem({ label: 'draft', workflow: { state: '655f583334f8833c81af64d1' } }), {
+          workflowState: '655f583334f8833c81af64d1'
+        }),
+        Object.assign(new ContentItem({ label: 'published', workflow: { state: '655f5832db7a1637df1984eb' } }), {
+          workflowState: '655f5832db7a1637df1984eb'
+        })
+      ];
+      expect(applyFacet(itemsWorkflowState, { workflowState: '655f5832db7a1637df1984eb' })).toEqual([
+        itemsWorkflowState[1]
+      ]);
+
       const itemsDate = [
         new ContentItem({ lastModifiedDate: fakeDateM1 }),
         new ContentItem({ lastModifiedDate: fakeDateM10 })

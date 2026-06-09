@@ -357,6 +357,39 @@ describe('fetch-content', () => {
       expect(facetContentModule.shouldFacetEnriched).not.toHaveBeenCalled();
     });
 
+    it('should add workflow state to field if an exact match array can be extracted', async () => {
+      const client = await dynamicContentClientFactory(config);
+      const hub = new Hub({});
+      const item1 = new ContentItem({ label: 'item1' });
+      hub.related.contentItems.facet = jest.fn().mockResolvedValue(new MockPage(ContentItem, [item1]));
+      jest.spyOn(facetContentModule, 'shouldFacetEnriched').mockResolvedValue(true);
+
+      const facet = {
+        workflowState: '/^655f583334f8833c81af64d1$|^655f5832db7a1637df1984eb$/'
+      };
+
+      expect(await facetContentModule.tryFetchContent(client, hub, facet, params)).toEqual([item1]);
+
+      expect(hub.related.contentItems.facet).toHaveBeenCalledWith(
+        {
+          fields: [
+            {
+              facetAs: 'ENUM',
+              field: 'workflow.state',
+              filter: {
+                type: 'IN',
+                values: ['655f583334f8833c81af64d1', '655f5832db7a1637df1984eb']
+              }
+            }
+          ],
+          returnEntities: true
+        },
+        { query: 'contentRepositoryId:"repo"folderId:"folder"', size: expect.any(Number) }
+      );
+      expect(client.contentItems.get).not.toHaveBeenCalled();
+      expect(facetContentModule.shouldFacetEnriched).not.toHaveBeenCalled();
+    });
+
     it('should prefer status from params to the one in the facet object', async () => {
       const client = await dynamicContentClientFactory(config);
       const hub = new Hub({});

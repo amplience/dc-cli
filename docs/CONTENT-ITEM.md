@@ -83,11 +83,18 @@ The content item export, copy, move, archive and unarchive commands allow the us
 - `schema`: Filter on schema ids. Example: `--facet schema:http://example.com/schema.json`
 - `locale`: Filter on content item locale. Example: `--facet locale:en-GB`
 - `lastModifiedDate`: Filter on last modified date. Example: `--facet "lastModifiedDate:Last 7 days"`
+- `workflowState`: Filter on workflow state (by workflow state ID). Example: `--facet "workflowState:655f5832db7a1637df1984eb"`
 
 Multiple facets can be applied at once when separated by a comma. Example:
 `--facet "schema:http://example.com/schema.json, name:/name regex/"`
 
 Commas can be escaped with a backslash, if they are used in your values. The whitespace after a comma is optional.
+
+Multiple facet values can be combined using regex alternation (e.g. `|`). For example:
+
+```bash
+--facet "workflowState:/^655f583334f8833c81af64d1$|^655f5832db7a1637df1984eb$/"
+```
 
 #### Preset date ranges
 
